@@ -35,6 +35,7 @@ export interface Property {
   villaFacing: VillaFacing;
   extent: number;
   propertyType: PropertyType;
+  customerId: User;
   customerName: string;
   customerStatus: CustomerStatus;
   status: PropertyStatus;

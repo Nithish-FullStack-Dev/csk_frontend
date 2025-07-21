@@ -74,6 +74,7 @@ export function PropertyDetails({
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  console.log(property);
 
   // Format the date string to a readable format
   const formatDate = (dateString: string) => {

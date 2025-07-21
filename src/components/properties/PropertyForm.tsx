@@ -61,6 +61,7 @@ const propertyFormSchema = z.object({
     "South-East",
     "South-West",
   ]),
+  priority: z.enum(["low", "medium", "high"]),
   extent: z.coerce.number().min(0, "Extent must be a positive number"),
   customerName: z.string().optional(),
   customerStatus: z.enum(["Purchased", "Inquiry", "Blocked", "Open"]),
@@ -73,7 +74,7 @@ const propertyFormSchema = z.object({
   ]),
   contractor: z.string().optional(),
   siteIncharge: z.string().optional(),
-  customer: z.string().optional(),
+  customerId: z.string().optional(),
   totalAmount: z.coerce
     .number()
     .min(0, "Total amount must be a positive number"),
@@ -282,7 +283,7 @@ export function PropertyForm({
           facingDirection: data.villaFacing,
         },
         customerInfo: {
-          customerId: data.customer || "",
+          customerId: data.customerId || "",
           customerName: data.customerName || "",
           customerStatus: data.customerStatus,
           propertyStatus: data.status,
@@ -576,7 +577,7 @@ export function PropertyForm({
             {/* Customer Name */}
             <FormField
               control={form.control}
-              name="customer"
+              name="customerId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Choose Customer</FormLabel>

@@ -78,13 +78,25 @@ const Properties = () => {
   );
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  const isCustomer = user && ["customer_purchased"].includes(user.role);
 
   const fetchProperties = async () => {
     try {
-      const { data } = await axios.get(
-        "http://localhost:3000/api/properties/getProperties",
-        { withCredentials: true }
-      );
+      let data = [];
+
+      if (isCustomer) {
+        const { data: customer } = await axios.get(
+          "http://localhost:3000/api/customer/getCustomerByUser",
+          { withCredentials: true }
+        );
+        data = customer.properties.map((p: any) => p.property);
+      } else {
+        const { data: properties } = await axios.get(
+          "http://localhost:3000/api/properties/getProperties",
+          { withCredentials: true }
+        );
+        data = properties;
+      }
 
       const sampleProperties: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};
@@ -101,7 +113,9 @@ const Properties = () => {
           villaFacing: basic.facingDirection || "-",
           extent: basic.Extent || 0,
           propertyType: basic.propertyType || "Apartment",
-          customerId: customer.customerId || "-",
+          projectStatus: basic.projectStatus,
+          preBooking: basic.preBooking,
+          customerId: customer.customerId || "",
           customerName: customer.customerName || "-",
           customerStatus: customer.customerStatus || "-",
           status: customer.propertyStatus || "-",
@@ -127,7 +141,10 @@ const Properties = () => {
       });
 
       setProperties(sampleProperties);
-      setFilteredProperties(sampleProperties);
+      if (isCustomer) {
+      } else {
+        setFilteredProperties(sampleProperties);
+      }
     } catch (error) {
       console.error("Failed to fetch properties:", error);
       toast.error("Failed to load properties.");
