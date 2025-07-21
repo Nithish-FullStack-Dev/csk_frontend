@@ -86,7 +86,8 @@ interface CommissionEligibleLead extends Lead {
 
 const fetchAllCommission = async (): Promise<Commission[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/commission/getAllCommissions"
+    "http://localhost:3000/api/commission/getAllCommissions",
+    { withCredentials: true }
   );
   return Array.isArray(data) ? data : [];
 };
@@ -95,7 +96,8 @@ const fetchCommissionEligibleLeads = async (): Promise<
   CommissionEligibleLead[]
 > => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/leads/getClosedLeads"
+    "http://localhost:3000/api/leads/getClosedLeads",
+    { withCredentials: true }
   );
   return Array.isArray(data)
     ? data
@@ -1011,6 +1013,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionAmount}
                     onChange={handleFormChange}
                     required
+                    min={0}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -1025,6 +1028,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionPercent}
                     onChange={handleFormChange}
                     required
+                    min={0}
                   />
                 </div>
               </div>

@@ -1,13 +1,31 @@
+import { User } from "@/contexts/AuthContext";
 
-export type VillaFacing = 'North' | 'East' | 'West' | 'South' | 'North-East' | 'North-West' | 'South-East' | 'South-West';
+export type VillaFacing =
+  | "North"
+  | "East"
+  | "West"
+  | "South"
+  | "North-East"
+  | "North-West"
+  | "South-East"
+  | "South-West";
 
-export type CustomerStatus = 'Purchased' | 'Inquiry' | 'Blocked' | 'Open';
+export type CustomerStatus = "Purchased" | "Inquiry" | "Blocked" | "Open";
 
-export type PropertyStatus = 'Available' | 'Sold' | 'Under Construction' | 'Reserved' | 'Blocked';
+export type PropertyStatus =
+  | "Available"
+  | "Sold"
+  | "Under Construction"
+  | "Reserved"
+  | "Blocked";
 
-export type RegistrationStatus = 'Completed' | 'In Progress' | 'Pending' | 'Not Started';
+export type RegistrationStatus =
+  | "Completed"
+  | "In Progress"
+  | "Pending"
+  | "Not Started";
 
-export type PropertyType = 'Villa' | 'Apartment' | 'Plot' | 'Land Parcel';
+export type PropertyType = "Villa" | "Apartment" | "Plot" | "Land Parcel";
 
 export interface Property {
   id: string;
@@ -27,7 +45,7 @@ export interface Property {
   deliveryDate: string;
   emiScheme: boolean;
   contactNo?: string;
-  agentName?: string;
+  agentId?: User;
   registrationStatus: RegistrationStatus;
   ratePlan?: string;
   amountReceived: number;

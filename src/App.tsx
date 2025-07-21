@@ -25,7 +25,6 @@ import Finances from "./pages/Finances";
 import ExpenseManagementPage from "./pages/expenseManagement";
 
 // Sales Manager specific pages
-import SalesPipeline from "./pages/SalesPipeline";
 import TeamManagement from "./pages/TeamManagement";
 
 // Team Lead specific pages
@@ -265,14 +264,6 @@ const App = () => (
             />
             {/* Sales Manager Routes */}
             <Route
-              path="/pipeline"
-              element={
-                <ProtectedRoute allowedRoles={SALES}>
-                  <SalesPipeline />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/team"
               element={
                 <ProtectedRoute allowedRoles={[...SALES, ...LEAD]}>
@@ -281,14 +272,13 @@ const App = () => (
               }
             />
             <Route
-                            path="/teamLead"
-                            element={
-                              <ProtectedRoute allowedRoles={SALES}>
-                                <TeamLeadManagement />
-                              </ProtectedRoute>
-                            }
-                          />
-
+              path="/teamLead"
+              element={
+                <ProtectedRoute allowedRoles={SALES}>
+                  <TeamLeadManagement />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Team Lead Routes */}
             <Route
@@ -312,7 +302,7 @@ const App = () => (
             <Route
               path="/leads"
               element={
-                <ProtectedRoute allowedRoles={AGENT}>
+                <ProtectedRoute allowedRoles={[...AGENT, ...SALES]}>
                   {<LeadManagement />}
                 </ProtectedRoute>
               }
@@ -458,7 +448,6 @@ const App = () => (
 
             {/* Catch-all route for 404 */}
             <Route path="*" element={<NotFound />} />
-            
           </Routes>
         </BrowserRouter>
       </AuthProvider>

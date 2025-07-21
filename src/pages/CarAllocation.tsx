@@ -104,6 +104,13 @@ const addVehicle = async (
   return data;
 };
 
+export const useVehicles = () =>
+  useQuery<Vehicle[]>({
+    queryKey: ["cars"],
+    queryFn: fetchAllVehicles,
+    staleTime: 0,
+  });
+
 const CarAllocation = () => {
   const { user } = useAuth();
   const [filterStatus, setFilterStatus] = useState("all");
@@ -169,16 +176,7 @@ const CarAllocation = () => {
   }, [selectedVehicle]);
 
   // Fetches all the cars
-  const {
-    data: vehicles,
-    isError,
-    isLoading,
-    error,
-  } = useQuery<Vehicle[]>({
-    queryKey: ["cars"],
-    queryFn: fetchAllVehicles,
-    staleTime: 0,
-  });
+  const { data: vehicles, isError, isLoading, error } = useVehicles();
 
   // Fetch Agents for the current Team Lead
   const {
@@ -200,10 +198,6 @@ const CarAllocation = () => {
         vehicle.assignedTo && vehicle.assignedTo.agent._id === member._id
     );
   });
-
-  console.log(unassignedTeamMembers);
-  console.log(teamMembers);
-  console.log("vechiles", vehicles);
 
   // Update car by id
   const queryClient = useQueryClient();

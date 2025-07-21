@@ -12,7 +12,6 @@ import axios from "axios";
 
 const ProfileForm = () => {
   const { user } = useAuth();
-  console.log("Profile -2 : ", user);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",

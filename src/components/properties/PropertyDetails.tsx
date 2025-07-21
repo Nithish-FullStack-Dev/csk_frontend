@@ -84,7 +84,6 @@ export function PropertyDetails({
       day: "numeric",
     });
   };
-
   return (
     <>
       <div className="space-y-6">
@@ -205,7 +204,9 @@ export function PropertyDetails({
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Agent Name</p>
-                  <p className="font-medium">{property.agentName || "N/A"}</p>
+                  <p className="font-medium">
+                    {property?.agentId?.name || "N/A"}
+                  </p>
                 </div>
               </div>
             </CardContent>

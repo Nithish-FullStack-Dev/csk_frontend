@@ -17,7 +17,6 @@ import {
 
 const Profile = () => {
   const { user } = useAuth();
-  console.log("Profile page user : ", user);
 
   const getPermissions = () => {
     const permissions = {

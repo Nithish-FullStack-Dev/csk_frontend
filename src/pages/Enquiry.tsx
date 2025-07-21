@@ -426,7 +426,7 @@ const EnquiryManagement = () => {
                         <TableHead className="min-w-[150px]">
                           Assigned To
                         </TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[150px]">Status</TableHead>
                       </>
                     )}
                     <TableHead className="min-w-[100px]">Received At</TableHead>

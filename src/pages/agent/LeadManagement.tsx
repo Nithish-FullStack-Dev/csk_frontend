@@ -66,6 +66,7 @@ import { useNavigate } from "react-router-dom";
 import { Property } from "../public/PropertyInterfaces";
 import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
+import { AddCustomerDialog, CustomerPayload } from "./AddCustomerDialog";
 
 export interface Lead {
   _id: string;
@@ -126,6 +127,15 @@ const saveLead = async (
   return data;
 };
 
+const saveCustomer = async (payload: CustomerPayload) => {
+  const { data } = await axios.post(
+    "http://localhost:3000/api/customer/addCustomer",
+    payload,
+    { withCredentials: true }
+  );
+  return data;
+};
+
 const updateLead = async (payload: Lead) => {
   const { _id, ...updateData } = payload;
   const dataToSend = {
@@ -144,9 +154,36 @@ const updateLead = async (payload: Lead) => {
   return data;
 };
 
+const fetchAllcustomers = async () => {
+  const { data } = await axios.get(
+    "http://localhost:3000/api/customer/getAllCustomers"
+  );
+  return data;
+};
+
+const fetchAllAgents = async () => {
+  const { data } = await axios.get(
+    "http://localhost:3000/api/user/getAllAgents"
+  );
+  return data;
+};
+
+const fetchAllCustomer_purchased = async () => {
+  const { data } = await axios.get(
+    "http://localhost:3000/api/user/getAllcustomer_purchased"
+  );
+  return data;
+};
+
 export const useSaveLead = () => {
   return useMutation({
     mutationFn: saveLead,
+  });
+};
+
+export const useSaveCustomer = () => {
+  return useMutation({
+    mutationFn: saveCustomer,
   });
 };
 
@@ -177,11 +214,25 @@ const LeadManagement = () => {
   const [property, setProperty] = useState(""); // This state should hold the string ID
   const [notes, setNote] = useState("");
 
+  // Form states for the new customer
+  const [bookingDate, setBookingDate] = useState("");
+  const [finalPrice, setFinalPrice] = useState("");
+  const [paymentPlan, setPaymentPlan] = useState("Down Payment");
+  const [paymentStatus, setPaymentStatus] = useState("Pending");
+  const [selectedProperty, setSelectedProperty] = useState("");
+  const [selectedUser, setSelectedUser] = useState("");
+  const [purchasedFromAgent, setPurchasedFromAgent] = useState("");
+
+  const [availableAgents, setAvailableAgents] = useState<User[]>([]);
+  const [availableCustomer, setAvailableCustomer] = useState<User[]>([]);
+  const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { mutate: submitLead } = useSaveLead();
   const { mutate: editLead } = useUpdateLead();
+  const { mutate: submitCustomer } = useSaveCustomer();
   const isSalesManager = user.role === "sales_manager";
   type LeadInput = Omit<
     Lead,
@@ -196,6 +247,28 @@ const LeadManagement = () => {
   } = useQuery<Lead[]>({
     queryKey: [isSalesManager ? "allLeads" : "leads"],
     queryFn: isSalesManager ? fetchAllLeads : fetchLeads,
+    staleTime: 0,
+  });
+
+  const {
+    data: agents,
+    isLoading: agentsLoad,
+    isError: agentError,
+    error: agentErr,
+  } = useQuery<User[]>({
+    queryKey: ["agents"],
+    queryFn: fetchAllAgents,
+    staleTime: 0,
+  });
+
+  const {
+    data: customer_purchased,
+    isLoading: CustomerLoad,
+    isError: customerError,
+    error: customerErr,
+  } = useQuery<User[]>({
+    queryKey: ["customer_purchased"],
+    queryFn: fetchAllCustomer_purchased,
     staleTime: 0,
   });
 
@@ -241,12 +314,28 @@ const LeadManagement = () => {
     }
   }, [leadToEdit]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (agents) setAvailableAgents(agents);
+  }, [agents]);
+
+  useEffect(() => {
+    if (customer_purchased) setAvailableCustomer(customer_purchased);
+  }, [customer_purchased]);
+
+  if (isLoading || agentsLoad || CustomerLoad) {
     return <Loader />;
   }
   if (isError) {
     toast.error("Failed to fetch leads");
     console.error("Error fetching leads", error);
+  }
+  if (agentError) {
+    toast.error("Failed to fetch agents");
+    console.error("Error fetching agents", agentErr);
+  }
+  if (customerError) {
+    toast.error("Failed to fetch customer");
+    console.error("Error fetching customer_purchased", customerErr);
   }
 
   // Filter leads based on search and tab
@@ -341,6 +430,29 @@ const LeadManagement = () => {
     });
   };
 
+  const handleSaveCustomer = () => {
+    const payload: CustomerPayload = {
+      user: selectedUser,
+      property: selectedProperty,
+      bookingDate,
+      finalPrice: Number(finalPrice),
+      paymentPlan: paymentPlan as "Down Payment" | "EMI" | "Full Payment",
+      paymentStatus: paymentStatus as "Pending" | "In Progress" | "Completed",
+      purchasedFrom: purchasedFromAgent,
+    };
+    submitCustomer(payload, {
+      onSuccess: (res) => {
+        toast.success("Customer saved successfully!");
+        setIsAddCustomerDialogOpen(false); // Close the add dialog
+      },
+      onError: (err) => {
+        toast.error("Failed to save customer.");
+        console.error(err);
+      },
+    });
+    console.log(payload);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -352,6 +464,32 @@ const LeadManagement = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            {isSalesManager && (
+              <AddCustomerDialog
+                isSalesManager={isSalesManager}
+                isAddCustomerDialogOpen={isAddCustomerDialogOpen}
+                setIsAddCustomerDialogOpen={setIsAddCustomerDialogOpen}
+                bookingDate={bookingDate}
+                setBookingDate={setBookingDate}
+                finalPrice={finalPrice}
+                setFinalPrice={setFinalPrice}
+                paymentPlan={paymentPlan}
+                setPaymentPlan={setPaymentPlan}
+                paymentStatus={paymentStatus}
+                setPaymentStatus={setPaymentStatus}
+                selectedProperty={selectedProperty}
+                setSelectedProperty={setSelectedProperty}
+                purchasedFromAgent={purchasedFromAgent}
+                setPurchasedFromAgent={setPurchasedFromAgent}
+                availableProperties={availableProperties}
+                availableAgents={availableAgents}
+                selectedUser={selectedUser}
+                setSelectedUser={setSelectedUser}
+                usersPurchased={availableCustomer}
+                handleSaveCustomer={handleSaveCustomer}
+              />
+            )}
+
             {/* Add New Lead Dialog */}
             <Dialog
               onOpenChange={setIsAddLeadDialogOpen}
@@ -684,10 +822,20 @@ const LeadManagement = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>
-                                  <PhoneCall className="mr-2 h-4 w-4" /> Call
+                                  <a
+                                    href={`tel:${lead.phone}`}
+                                    className="flex items-center gap-3"
+                                  >
+                                    <PhoneCall className="mr-2 h-4 w-4" /> Call
+                                  </a>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" /> Email
+                                  <a
+                                    href={`mailto:${lead.email}`}
+                                    className="flex items-center gap-3"
+                                  >
+                                    <Mail className="mr-2 h-4 w-4" /> Email
+                                  </a>
                                 </DropdownMenuItem>
                                 {!isSalesManager && (
                                   <DropdownMenuItem

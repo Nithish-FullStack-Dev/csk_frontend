@@ -82,7 +82,8 @@ const Properties = () => {
   const fetchProperties = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/getProperties"
+        "http://localhost:3000/api/properties/getProperties",
+        { withCredentials: true }
       );
 
       const sampleProperties: Property[] = data.map((item: any) => {
@@ -100,6 +101,7 @@ const Properties = () => {
           villaFacing: basic.facingDirection || "-",
           extent: basic.Extent || 0,
           propertyType: basic.propertyType || "Apartment",
+          customerId: customer.customerId || "-",
           customerName: customer.customerName || "-",
           customerStatus: customer.customerStatus || "-",
           status: customer.propertyStatus || "-",
@@ -110,7 +112,7 @@ const Properties = () => {
           deliveryDate: construction.deliveryDate?.slice(0, 10) || "",
           emiScheme: finance.eMIScheme || false,
           contactNo: customer.contactNumber?.toString() || "-",
-          agentName: customer.agentName || "-",
+          agentId: customer.agentId || "-",
           registrationStatus: finance.registrationStatus || "-",
           ratePlan: finance.ratePlan || "-",
           amountReceived: finance.amountReceived || 0,

@@ -100,7 +100,7 @@ interface Lead {
   notes: string;
 }
 
-interface SiteVisitData {
+export interface SiteVisitData {
   _id: string;
   clientId: Lead;
   vehicleId: Vehicle;

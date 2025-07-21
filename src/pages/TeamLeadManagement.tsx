@@ -44,7 +44,7 @@ export interface TeamMember {
   _id: string;
   salesId: User; // This is the sales agent user
   teamLeadId: User; // This is the actual team lead user (the manager)
-  status: "active" | "training" | "inactive" | "on-leave";
+  status: "active" | "training" | "on-leave";
   performance: {
     sales: number;
     target: number;
@@ -556,10 +556,16 @@ const TeamLeadManagement = () => {
                       <Phone className="mr-2 h-3 w-3" />
                       Call
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Mail className="mr-2 h-3 w-3" />
-                      Email
-                    </Button>
+                    <a
+                      href={`mailto:${member.teamLeadId.email}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Mail className="mr-2 h-3 w-3" />
+                        Email
+                      </Button>
+                    </a>
                     <Button size="sm" variant="outline" className="flex-1">
                       <BarChart3 className="mr-2 h-3 w-3" />
                       Report
@@ -726,11 +732,19 @@ const TeamLeadManagement = () => {
                       type="number"
                       id={key}
                       value={performance[key as keyof typeof performance]}
-                      onChange={(e) =>
-                        handlePerformanceChange(key, parseFloat(e.target.value))
-                      }
-                      className="col-span-3"
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (value >= 0 || isNaN(value)) {
+                          handlePerformanceChange(key, value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (["-", "e"].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       min={0}
+                      className="col-span-3"
                     />
                   </div>
                 )
