@@ -483,4 +483,3 @@ const OpenPlotsPage = () => {
 };
 
 export default OpenPlotsPage;
-

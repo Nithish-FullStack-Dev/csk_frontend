@@ -1,16 +1,40 @@
-
-import { 
-  BarChart3, Building, Users, Home, FileText, MessageCircle, 
-  Calendar, Settings, CreditCard, Map, CheckSquare, UserPlus, 
-  ClipboardList, HelpCircle, LayoutDashboard, Briefcase, 
-  Hammer, Construction, ListTodo, Receipt, Camera, AlertTriangle,
-  Clock, Gauge, CheckCircle, Car,Shield,
-  MessagesSquare
+import {
+  BarChart3,
+  Building,
+  Users,
+  Home,
+  FileText,
+  MessageCircle,
+  Calendar,
+  Settings,
+  CreditCard,
+  Map,
+  CheckSquare,
+  UserPlus,
+  ClipboardList,
+  HelpCircle,
+  LayoutDashboard,
+  Briefcase,
+  Hammer,
+  Construction,
+  ListTodo,
+  Receipt,
+  Camera,
+  AlertTriangle,
+  Clock,
+  Gauge,
+  CheckCircle,
+  Car,
+  Shield,
+  MessagesSquare,
 } from "lucide-react";
 import { UserRole } from "@/contexts/AuthContext";
 
 // Define navigation items for each role
-export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.ElementType; label: string; }>> = {
+export const navigationByRole: Record<
+  UserRole,
+  Array<{ to: string; icon: React.ElementType; label: string }>
+> = {
   owner: [
     { to: "/", icon: LayoutDashboard, label: "Executive Dashboard" },
     { to: "/analytics", icon: BarChart3, label: "Business Analytics" },
@@ -20,7 +44,7 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     { to: "/sales", icon: CreditCard, label: "Sales Overview" },
     { to: "/operations", icon: CheckSquare, label: "Operations" },
     { to: "/finances", icon: CreditCard, label: "Finances" },
-    { to: "/expenditure", icon:CreditCard , label: "Expense Management" },
+    { to: "/expenditure", icon: CreditCard, label: "Expense Management" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     //{ to: "/settings", icon: Settings, label: "System Settings" },
     { to: "/profile", icon: Users, label: "Profile" },
@@ -33,18 +57,18 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     { to: "/content", icon: FileText, label: "CMS" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     //{ to: "/settings", icon: Settings, label: "System Config" },
+    { to: "/enquiry", icon: MessagesSquare, label: "Enquiry" },
     { to: "/profile", icon: Users, label: "Profile" },
   ],
   sales_manager: [
     { to: "/", icon: LayoutDashboard, label: "Sales Dashboard" },
-    { to: "/pipeline", icon: BarChart3, label: "Sales Pipeline" },
     { to: "/leads", icon: UserPlus, label: "Lead Management" },
     { to: "/teamLead", icon: Users, label: "Team Management" },
     { to: "/commissions", icon: CreditCard, label: "Commissions" },
     { to: "/properties", icon: Building, label: "Properties" },
-    { to: "/reports", icon: FileText, label: "Sales Reports" },
+    // { to: "/reports", icon: FileText, label: "Sales Reports" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
-    { to: "/enquiry", icon: MessagesSquare, label: "Enquiry"},
+    { to: "/enquiry", icon: MessagesSquare, label: "Enquiry" },
   ],
   team_lead: [
     { to: "/", icon: LayoutDashboard, label: "Team Dashboard" },
@@ -71,7 +95,11 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
   ],
   site_incharge: [
     { to: "/", icon: LayoutDashboard, label: "Site Dashboard" },
-    { to: "/site-incharge/projects", icon: Building, label: "Projects Overview" },
+    {
+      to: "/site-incharge/projects",
+      icon: Building,
+      label: "Projects Overview",
+    },
     { to: "/verifications", icon: CheckCircle, label: "Task Verifications" },
     { to: "/quality", icon: AlertTriangle, label: "Quality Control" },
     { to: "/inspections", icon: Camera, label: "Site Inspections" },
@@ -80,7 +108,6 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     // { to: "/progress", icon: Gauge, label: "Construction Progress" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     { to: "/profile", icon: Users, label: "Profile" },
-
   ],
   contractor: [
     { to: "/", icon: LayoutDashboard, label: "Contractor Dashboard" },
@@ -93,7 +120,6 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     { to: "/evidence", icon: Camera, label: "Photo Evidence" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     { to: "/profile", icon: Users, label: "Profile" },
-
   ],
   accountant: [
     { to: "/", icon: LayoutDashboard, label: "Finance Dashboard" },
@@ -110,8 +136,8 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     { to: "/documents", icon: FileText, label: "My Documents" },
     { to: "/payments", icon: CreditCard, label: "Payment History" },
     { to: "/progress", icon: Building, label: "Construction Progress" },
-    { to: "/support", icon: HelpCircle, label: "Support" },
-    { to: "/messaging", icon: MessageCircle, label: "Messages" },
+    // { to: "/support", icon: HelpCircle, label: "Support" },
+    { to: "/profile", icon: Users, label: "Profile" },
   ],
   customer_prospect: [
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -120,7 +146,6 @@ export const navigationByRole: Record<UserRole, Array<{ to: string; icon: React.
     { to: "/visits", icon: Calendar, label: "Site Visits" },
     { to: "/documents", icon: FileText, label: "My Documents" },
     { to: "/status", icon: ClipboardList, label: "Application Status" },
-    { to: "/support", icon: HelpCircle, label: "Support" },
+    // { to: "/support", icon: HelpCircle, label: "Support" },
   ],
-  
 };

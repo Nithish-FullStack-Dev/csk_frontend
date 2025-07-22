@@ -63,14 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // gets the logged in user
+  const fetchLoggedInUser = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/user/getLoggedInUser",
+        { withCredentials: true }
+      );
+      setUser(data);
+    } catch (error) {
+      console.log("failed to load logged in user ", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      console.log(storedUser);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    fetchLoggedInUser();
   }, []);
 
   // Login function
@@ -86,13 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           email,
           password,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       localStorage.setItem("token", data.token); // ⬅️ store JWT
-      localStorage.setItem("user", JSON.stringify(data.user));
+      // localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}`);
     } catch (error: any) {
@@ -106,42 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // const login = async (email: string, password: string) => {
-  //   setIsLoading(true);
-
-  //   try {
-  //     const { data } = await axios.post(
-  //       "http://localhost:3000/api/user/login",
-  //       { email, password },
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-
-  //     // Assuming backend already strips password
-  //     setUser(data);
-  //     console.log(data);
-  //     localStorage.setItem("user", JSON.stringify(data));
-  //     toast.success(`Welcome back, ${data.name}`);
-  //   } catch (error: any) {
-  //     console.error("Login error:", error);
-
-  //     if (error.response && error.response.status === 401) {
-  //       toast.error("Invalid email or password");
-  //     } else {
-  //       toast.error("An error occurred during login");
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // Logout function
-
   const logout = () => {
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
     toast.info("You have been logged out");

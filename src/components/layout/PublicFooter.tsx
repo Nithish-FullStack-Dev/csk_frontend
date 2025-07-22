@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   Building,
   Phone,
@@ -8,17 +9,46 @@ import {
   Instagram,
   Linkedin,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+interface ContactInfo {
+  facebook: string;
+  instagram: string;
+  linkedin: string;
+  twitter: string;
+}
+
 const PublicFooter = () => {
+  const [contact, setContact] = useState<ContactInfo>({
+    facebook: "",
+    instagram: "",
+    linkedin: "",
+    twitter: "",
+  });
+
+  const fetchContactInfo = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/contact/contactInfo"
+      );
+      setContact(data.socialMedia);
+    } catch (error) {
+      console.log("error while fetching contact", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchContactInfo();
+  }, []);
+
   return (
     <footer className="bg-gradient-to-r from-gray-900 to-estate-navy text-white shadow-lg">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="flex flex-col items-start">
-            <div className="mb-6 w-[180px] transform transition-transform duration-500 hover:scale-105 cursor-pointer">
-              {/* Replace with your actual logo path */}
+            <div className="mb-6 w-full max-w-[180px] sm:max-w-[100px] md:max-w-[150px] transform transition-transform duration-500 hover:scale-105 cursor-pointer">
               <img
                 src="/assets/images/logo.png"
                 alt="EstateCorp Logo"
@@ -31,10 +61,37 @@ const PublicFooter = () => {
               living.
             </p>
             <div className="flex space-x-5">
-              <Facebook className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
-              <Twitter className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
-              <Instagram className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
-              <Linkedin className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
+              <a
+                href={contact?.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Facebook className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
+              </a>
+
+              <a
+                href={contact?.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Twitter className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
+              </a>
+
+              <a
+                href={contact?.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Instagram className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
+              </a>
+
+              <a
+                href={contact.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Linkedin className="h-6 w-6 text-gray-400 hover:text-estate-gold transition-colors duration-300 cursor-pointer" />
+              </a>
             </div>
           </div>
 
@@ -55,7 +112,7 @@ const PublicFooter = () => {
               </li>
               <li>
                 <Link
-                  to="/public/properties"
+                  to="/public/upcoming-projects"
                   className="text-gray-300 hover:text-estate-gold transition-colors duration-300 flex items-center"
                   onClick={() => window.scrollTo(0, 0)}
                 >

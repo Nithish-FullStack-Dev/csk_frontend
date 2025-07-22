@@ -27,7 +27,9 @@ const TopBar = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [aggregatedLatestMessages, setAggregatedLatestMessages] = useState<Record<string, any>>({});
+  const [aggregatedLatestMessages, setAggregatedLatestMessages] = useState<
+    Record<string, any>
+  >({});
   const [totalUnreadMessageCount, setTotalUnreadMessageCount] = useState(0);
   const [allUsers, setAllUsers] = useState<any[]>([]);
 
@@ -91,22 +93,83 @@ const TopBar = () => {
     const unreadsRootRef = ref(db, `unreads`);
     let currentUnreadCounts: Record<string, number> = {};
 
+    const processChatData = (
+      chatsData: any,
+      unreadCountsMap: Record<string, number>,
+      usersList: any[],
+      currentUserId: string,
+      setLatestFn: React.Dispatch<React.SetStateAction<Record<string, any>>>
+    ) => {
+      const newAggregatedLatestMessages: Record<string, any> = {};
+
+      Object.entries(chatsData).forEach(
+        ([chatId, messagesInChat]: [string, any]) => {
+          const [userA, userB] = chatId.split("_");
+          const otherUserId =
+            userA === currentUserId
+              ? userB
+              : userB === currentUserId
+              ? userA
+              : null;
+
+          if (otherUserId) {
+            const messagesArray = Object.entries(messagesInChat || {})
+              .map(([msgId, msgVal]: [string, any]) => ({
+                id: msgId,
+                ...msgVal,
+                timestamp:
+                  typeof msgVal.timestamp === "object" &&
+                  msgVal.timestamp !== null &&
+                  "seconds" in msgVal.timestamp
+                    ? msgVal.timestamp.seconds * 1000 +
+                      (msgVal.timestamp.nanoseconds || 0) / 1000000
+                    : msgVal.timestamp,
+              }))
+              .sort((a, b) => a.timestamp - b.timestamp);
+
+            if (messagesArray.length > 0) {
+              const lastMessage = messagesArray[messagesArray.length - 1];
+              const otherUser = usersList.find((u) => u._id === otherUserId);
+
+              if (otherUser) {
+                newAggregatedLatestMessages[otherUserId] = {
+                  content: lastMessage.content,
+                  timestamp: lastMessage.timestamp,
+                  senderId: lastMessage.senderId,
+                  otherUserId: otherUserId,
+                  otherUserName: otherUser.name,
+                  otherUserAvatar:
+                    otherUser.avatar ||
+                    `https://ui-avatars.com/api/?name=${otherUser.name}&background=random&color=fff`,
+                  unreadCount: unreadCountsMap[otherUserId] || 0,
+                };
+              }
+            }
+          }
+        }
+      );
+
+      setLatestFn(newAggregatedLatestMessages);
+    };
+
     const unsubUnreads = onValue(unreadsRootRef, (snapshot) => {
       const unreadsData = snapshot.val() || {};
       let totalUnreads = 0;
       const newAggregatedUnreads: Record<string, number> = {};
 
-      Object.entries(unreadsData).forEach(([chatId, receivers]: [string, any]) => {
-        const [userA, userB] = chatId.split("_");
-        const otherUserId =
-          userA === userId ? userB : userB === userId ? userA : null;
+      Object.entries(unreadsData).forEach(
+        ([chatId, receivers]: [string, any]) => {
+          const [userA, userB] = chatId.split("_");
+          const otherUserId =
+            userA === userId ? userB : userB === userId ? userA : null;
 
-        if (otherUserId && receivers[userId] !== undefined) {
-          const count = receivers[userId] || 0;
-          newAggregatedUnreads[otherUserId] = count;
-          totalUnreads += count;
+          if (otherUserId && receivers[userId] !== undefined) {
+            const count = receivers[userId] || 0;
+            newAggregatedUnreads[otherUserId] = count;
+            totalUnreads += count;
+          }
         }
-      });
+      );
 
       currentUnreadCounts = newAggregatedUnreads;
       setTotalUnreadMessageCount(totalUnreads);
@@ -124,7 +187,9 @@ const TopBar = () => {
             );
           }
         })
-        .catch((err) => console.error("Error re-processing chats for unreads:", err));
+        .catch((err) =>
+          console.error("Error re-processing chats for unreads:", err)
+        );
     });
 
     const unsubChats = onValue(chatsRootRef, (snapshot) => {
@@ -137,59 +202,6 @@ const TopBar = () => {
         setAggregatedLatestMessages
       );
     });
-
-    const processChatData = (
-      chatsData: any,
-      unreadCountsMap: Record<string, number>,
-      usersList: any[],
-      currentUserId: string,
-      setLatestFn: React.Dispatch<React.SetStateAction<Record<string, any>>>
-    ) => {
-      const newAggregatedLatestMessages: Record<string, any> = {};
-
-      Object.entries(chatsData).forEach(([chatId, messagesInChat]: [string, any]) => {
-        const [userA, userB] = chatId.split("_");
-        const otherUserId =
-          userA === currentUserId ? userB : userB === currentUserId ? userA : null;
-
-        if (otherUserId) {
-          const messagesArray = Object.entries(messagesInChat || {})
-            .map(([msgId, msgVal]: [string, any]) => ({
-              id: msgId,
-              ...msgVal,
-              timestamp:
-                typeof msgVal.timestamp === "object" &&
-                msgVal.timestamp !== null &&
-                "seconds" in msgVal.timestamp
-                  ? msgVal.timestamp.seconds * 1000 +
-                    (msgVal.timestamp.nanoseconds || 0) / 1000000
-                  : msgVal.timestamp,
-            }))
-            .sort((a, b) => a.timestamp - b.timestamp);
-
-          if (messagesArray.length > 0) {
-            const lastMessage = messagesArray[messagesArray.length - 1];
-            const otherUser = usersList.find((u) => u._id === otherUserId);
-
-            if (otherUser) {
-              newAggregatedLatestMessages[otherUserId] = {
-                content: lastMessage.content,
-                timestamp: lastMessage.timestamp,
-                senderId: lastMessage.senderId,
-                otherUserId: otherUserId,
-                otherUserName: otherUser.name,
-                otherUserAvatar:
-                  otherUser.avatar ||
-                  `https://ui-avatars.com/api/?name=${otherUser.name}&background=random&color=fff`,
-                unreadCount: unreadCountsMap[otherUserId] || 0,
-              };
-            }
-          }
-        }
-      });
-
-      setLatestFn(newAggregatedLatestMessages);
-    };
 
     return () => {
       unsubUnreads();
@@ -207,10 +219,17 @@ const TopBar = () => {
     const date = new Date(timestamp);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const messageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const messageDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
 
     if (messageDay.getTime() === today.getTime()) {
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } else if (messageDay.getTime() === today.getTime() - 24 * 60 * 60 * 1000) {
       return "Yesterday";
     } else {
@@ -249,12 +268,19 @@ const TopBar = () => {
                   </p>
                 ) : (
                   notifications.map((n) => (
-                    <DropdownMenuItem key={n._id} className="cursor-pointer py-3">
+                    <DropdownMenuItem
+                      key={n._id}
+                      className="cursor-pointer py-3"
+                    >
                       <div className="flex flex-col gap-1">
                         <p className="text-sm font-medium">{n.title}</p>
-                        <p className="text-xs text-muted-foreground">{n.message}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(n.createdAt), {
+                            addSuffix: true,
+                          })}
                         </p>
                       </div>
                     </DropdownMenuItem>
@@ -316,7 +342,9 @@ const TopBar = () => {
                       </Avatar>
                       <div className="flex flex-col gap-1 flex-1">
                         <div className="flex justify-between items-center">
-                          <p className="text-sm font-medium">{msgSummary.otherUserName}</p>
+                          <p className="text-sm font-medium">
+                            {msgSummary.otherUserName}
+                          </p>
                           {msgSummary.unreadCount > 0 && (
                             <Badge className="bg-estate-navy text-white text-xs px-2 py-0.5 rounded-full">
                               {msgSummary.unreadCount}

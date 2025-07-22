@@ -61,6 +61,7 @@ const propertyFormSchema = z.object({
     "South-East",
     "South-West",
   ]),
+  priority: z.enum(["low", "medium", "high"]),
   extent: z.coerce.number().min(0, "Extent must be a positive number"),
   customerName: z.string().optional(),
   customerStatus: z.enum(["Purchased", "Inquiry", "Blocked", "Open"]),
@@ -73,6 +74,7 @@ const propertyFormSchema = z.object({
   ]),
   contractor: z.string().optional(),
   siteIncharge: z.string().optional(),
+  customerId: z.string().optional(),
   totalAmount: z.coerce
     .number()
     .min(0, "Total amount must be a positive number"),
@@ -80,7 +82,7 @@ const propertyFormSchema = z.object({
   deliveryDate: z.date({ required_error: "Delivery date is required" }),
   emiScheme: z.boolean().default(false),
   contactNo: z.string().optional(),
-  agentName: z.string().optional(),
+  agentId: z.string().optional(),
   registrationStatus: z.enum([
     "Completed",
     "In Progress",
@@ -98,36 +100,27 @@ const propertyFormSchema = z.object({
 
   // New Fields
   units: z.string().optional(),
-  deadline: z.preprocess(
-  (val) => {
+  deadline: z.preprocess((val) => {
     if (typeof val === "string" || val instanceof Date) {
       const date = new Date(val);
       return isNaN(date.getTime()) ? undefined : date;
     }
     return undefined;
-  },
-  z.date({ required_error: "Deadline is required" })
-),
-startDate: z.preprocess(
-  (val) => {
+  }, z.date({ required_error: "Deadline is required" })),
+  startDate: z.preprocess((val) => {
     if (typeof val === "string" || val instanceof Date) {
       const date = new Date(val);
       return isNaN(date.getTime()) ? undefined : date;
     }
     return undefined;
-  },
-  z.date({ required_error: "Start date is required" })
-),
-endDate: z.preprocess(
-  (val) => {
+  }, z.date({ required_error: "Start date is required" })),
+  endDate: z.preprocess((val) => {
     if (typeof val === "string" || val instanceof Date) {
       const date = new Date(val);
       return isNaN(date.getTime()) ? undefined : date;
     }
     return undefined;
-  },
-  z.date({ required_error: "End date is required" })
-),
+  }, z.date({ required_error: "End date is required" })),
 
   teamSize: z.coerce.number().min(1, "Team size must be at least 1"),
   estimatedBudget: z.coerce.number().min(0, "Must be a positive number"),
@@ -153,6 +146,8 @@ export function PropertyForm({
   const [imageUrls, setImageUrls] = useState<string[]>(property?.images || []);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [siteIncharges, setSiteIncharges] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [agents, setAgents] = useState([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     property?.thumbnailUrl || ""
   );
@@ -268,7 +263,6 @@ export function PropertyForm({
   }, [totalAmount, amountReceived]);
 
   const handleSubmit = async (data: PropertyFormValues) => {
-
     setLoading(true);
     try {
       const csrfToken = await getCsrfToken();
@@ -289,16 +283,20 @@ export function PropertyForm({
           facingDirection: data.villaFacing,
         },
         customerInfo: {
+          customerId: data.customerId || "",
           customerName: data.customerName || "",
           customerStatus: data.customerStatus,
           propertyStatus: data.status,
           contactNumber: data.contactNo
             ? parseInt(data.contactNo.replace(/\D/g, ""))
             : null,
-          agentName: data.agentName || "",
+          agentId: data.agentId || "",
         },
         constructionDetails: {
-          contractor:  data.contractor && data.contractor !== "-" ? data.contractor : undefined,
+          contractor:
+            data.contractor && data.contractor !== "-"
+              ? data.contractor
+              : undefined,
           siteIncharge: data.siteIncharge || "",
           workCompleted: data.workCompleted,
           deliveryDate: data.deliveryDate,
@@ -364,6 +362,34 @@ export function PropertyForm({
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/customer/getAllCustomers",
+        {
+          withCredentials: true,
+        }
+      );
+      setCustomers(data.data || []);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+    }
+  };
+
+  const fetchAllAgents = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/user/getAllAgents",
+        {
+          withCredentials: true,
+        }
+      );
+      setAgents(data || []);
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+    }
+  };
+
   const fetchSiteIncharges = async () => {
     try {
       const res = await axios.get(
@@ -380,6 +406,8 @@ export function PropertyForm({
 
   useEffect(() => {
     fetchSiteIncharges();
+    fetchCustomers();
+    fetchAllAgents();
   }, []);
 
   return (
@@ -525,7 +553,12 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Extent (sq. ft)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="1200" {...field} />
+                    <Input
+                      type="number"
+                      placeholder="1200"
+                      {...field}
+                      min={0}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -542,6 +575,35 @@ export function PropertyForm({
           <Separator />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Customer Name */}
+            <FormField
+              control={form.control}
+              name="customerId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Choose Customer</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Customer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer._id} value={customer._id}>
+                          {customer.user.name} , {customer.user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="customerName"
@@ -641,17 +703,28 @@ export function PropertyForm({
             {/* Agent Name */}
             <FormField
               control={form.control}
-              name="agentName"
+              name="agentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Agent Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Robert Wilson"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
+                  <FormLabel>Choose Agent</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Agent" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {agents.map((agent) => (
+                        <SelectItem key={agent._id} value={agent._id}>
+                          {agent?.name} , {agent?.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -666,25 +739,6 @@ export function PropertyForm({
           </div>
           <Separator />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Contractor */}
-            {/* <FormField
-              control={form.control}
-              name="contractor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contractor</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="ABC Contractors"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
-
             {/* Site Incharge */}
             <FormField
               control={form.control}
@@ -845,7 +899,12 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Team Size</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 10" {...field} />
+                    <Input
+                      type="number"
+                      placeholder="e.g., 10"
+                      {...field}
+                      min={0}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -864,6 +923,7 @@ export function PropertyForm({
                       type="number"
                       placeholder="e.g., 5000000"
                       {...field}
+                      min={0}
                     />
                   </FormControl>
                   <FormMessage />
@@ -894,27 +954,6 @@ export function PropertyForm({
                 </FormItem>
               )}
             />
-
-            {/* Work Completed */}
-            {/* <FormField
-              control={form.control}
-              name="workCompleted"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Work Completed (%)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder="75"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
 
             {/* Delivery Date */}
             <FormField
@@ -1006,6 +1045,7 @@ export function PropertyForm({
                           field.onChange(e);
                           recalculateBalance();
                         }}
+                        min={0}
                       />
                     </div>
                   </FormControl>
@@ -1033,6 +1073,7 @@ export function PropertyForm({
                           field.onChange(e);
                           recalculateBalance();
                         }}
+                        min={0}
                       />
                     </div>
                   </FormControl>
@@ -1057,6 +1098,7 @@ export function PropertyForm({
                         {...field}
                         className="pl-10"
                         readOnly
+                        min={0}
                       />
                     </div>
                   </FormControl>

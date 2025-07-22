@@ -17,7 +17,6 @@ import {
 
 const Profile = () => {
   const { user } = useAuth();
-  console.log("Profile page user : ", user);
 
   const getPermissions = () => {
     const permissions = {
@@ -86,30 +85,29 @@ const Profile = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold font-sans">Profile</h1>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            {user && user.updatedAt && (
-              <span className="text-sm text-muted-foreground">
-                Last updated:{" "}
-                {new Date(user.updatedAt).toLocaleDateString("en-GB")}
-              </span>
-            )}
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold font-sans">Profile</h1>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          {user && user.updatedAt && (
+            <span className="text-sm text-muted-foreground">
+              Last updated:{" "}
+              {new Date(user.updatedAt).toLocaleDateString("en-GB")}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <ProfileForm />
+          {/* <RoleSpecificStats /> */}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <ProfileForm />
-            {/* <RoleSpecificStats /> */}
-          </div>
-
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            {/* <Card>
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          {/* <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -134,82 +132,77 @@ const Profile = () => {
               </CardContent>
             </Card> */}
 
-            {/* Permissions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-sans">
-                  <Shield className="h-5 w-5" />
-                  Permissions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {getPermissions().map((permission, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="mr-2 mb-2"
-                    >
-                      {permission}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-sans">
-                  <Calendar className="h-5 w-5" />
-                  Account Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 ">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-sans">
-                    Member Since:
-                  </span>
-                  <span>
-                    {user &&
-                      user.createdAt &&
-                      new Date(user.createdAt).toLocaleString("en-IN", {
-                        month: "long",
-                        year: "numeric",
-                      })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-sans">
-                    Account Status:
-                  </span>
-                  <Badge variant="default" className="bg-green-500">
-                    Active
+          {/* Permissions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-sans">
+                <Shield className="h-5 w-5" />
+                Permissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {getPermissions().map((permission, index) => (
+                  <Badge key={index} variant="secondary" className="mr-2 mb-2">
+                    {permission}
                   </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground font-sans">
-                    Last Login:
-                  </span>
-                  <span>
-                    {user &&
-                      user.lastLogin &&
-                      new Date(user.lastLogin).toLocaleString("en-IN", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Account Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-sans">
+                <Calendar className="h-5 w-5" />
+                Account Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 ">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-sans">
+                  Member Since:
+                </span>
+                <span>
+                  {user &&
+                    user.createdAt &&
+                    new Date(user.createdAt).toLocaleString("en-IN", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-sans">
+                  Account Status:
+                </span>
+                <Badge variant="default" className="bg-green-500">
+                  Active
+                </Badge>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground font-sans">
+                  Last Login:
+                </span>
+                <span>
+                  {user &&
+                    user.lastLogin &&
+                    new Date(user.lastLogin).toLocaleString("en-IN", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

@@ -333,177 +333,213 @@ const BudgetTracking = () => {
   }, []);
 
   return (
-    <MainLayout>
+    <div className="p-6 space-y-6">
       <div className="p-6 space-y-6">
-        <div className="p-6 space-y-6">
-          <div className="flex justify-between items-center">
-            {/* Left side: Title & Subtitle */}
-            <div>
-              <h1 className="text-3xl font-bold">
-                Budget Tracking & Cash Flow
-              </h1>
-              <p className="text-muted-foreground">
-                Monitor budgets, track expenses, and manage cash flow
-              </p>
-            </div>
+        <div className="flex justify-between items-center">
+          {/* Left side: Title & Subtitle */}
+          <div>
+            <h1 className="text-3xl font-bold">Budget Tracking & Cash Flow</h1>
+            <p className="text-muted-foreground">
+              Monitor budgets, track expenses, and manage cash flow
+            </p>
+          </div>
 
-            {/* Right side: Buttons with spacing */}
-            <div className="flex space-x-4">
-              {/* Add Budget Dialog */}
-              <Dialog open={addBudgetopen} onOpenChange={setAddBudgetOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Budget
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Budget</DialogTitle>
-                  </DialogHeader>
-                  <AddBudgetForm onClose={() => setAddBudgetOpen(false)} />
-                </DialogContent>
-              </Dialog>
+          {/* Right side: Buttons with spacing */}
+          <div className="flex space-x-4">
+            {/* Add Budget Dialog */}
+            <Dialog open={addBudgetopen} onOpenChange={setAddBudgetOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Budget
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Budget</DialogTitle>
+                </DialogHeader>
+                <AddBudgetForm onClose={() => setAddBudgetOpen(false)} />
+              </DialogContent>
+            </Dialog>
 
-              {/* Add Expense Dialog */}
-              <Dialog open={addExpenseOpen} onOpenChange={setAddExpenseOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Add Expense
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Expense</DialogTitle>
-                  </DialogHeader>
-                  <ExpenseForm onSubmit={handleAddExpense} />
-                </DialogContent>
-              </Dialog>
-            </div>
+            {/* Add Expense Dialog */}
+            <Dialog open={addExpenseOpen} onOpenChange={setAddExpenseOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Expense
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Expense</DialogTitle>
+                </DialogHeader>
+                <ExpenseForm onSubmit={handleAddExpense} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
+      </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="budget">Budget Analysis</TabsTrigger>
-            <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
-            <TabsTrigger value="expenses">Expense Management</TabsTrigger>
-          </TabsList>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="budget">Budget Analysis</TabsTrigger>
+          <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
+          <TabsTrigger value="expenses">Expense Management</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="overview">
-            <BudgetOverviewCards
-              totalBudget={totalBudget}
-              totalSpent={totalSpent}
-              netCashFlow={netCashFlow}
-              changePercent={changePercent}
-              pendingApprovals={pendingCount}
-            />
+        <TabsContent value="overview">
+          <BudgetOverviewCards
+            totalBudget={totalBudget}
+            totalSpent={totalSpent}
+            netCashFlow={netCashFlow}
+            changePercent={changePercent}
+            pendingApprovals={pendingCount}
+          />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <BudgetVarianceChart categories={budgetCategories} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <BudgetVarianceChart categories={budgetCategories} />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Monthly Cash Flow Trend</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart
-                      data={cashFlowData}
-                      margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-                    >
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar
-                        dataKey="inflow"
-                        stackId="a"
-                        fill="#34d399"
-                        name="Inflow"
-                      />
-                      <Bar
-                        dataKey="outflow"
-                        stackId="a"
-                        fill="#f87171"
-                        name="Outflow"
-                      />
-                      <Bar dataKey="net" fill="#60a5fa" name="Net" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="budget">
             <Card>
               <CardHeader>
-                <CardTitle>Budget vs Actual Analysis</CardTitle>
+                <CardTitle>Monthly Cash Flow Trend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart
+                    data={cashFlowData}
+                    margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                  >
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="inflow"
+                      stackId="a"
+                      fill="#34d399"
+                      name="Inflow"
+                    />
+                    <Bar
+                      dataKey="outflow"
+                      stackId="a"
+                      fill="#f87171"
+                      name="Outflow"
+                    />
+                    <Bar dataKey="net" fill="#60a5fa" name="Net" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="budget">
+          <Card>
+            <CardHeader>
+              <CardTitle>Budget vs Actual Analysis</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Budgeted Amount</TableHead>
+                    <TableHead>Actual Spent</TableHead>
+                    <TableHead>Variance</TableHead>
+                    <TableHead>Utilization</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {budgetCategories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">
+                        {category.name}
+                      </TableCell>
+                      <TableCell>
+                        ₹{category.budgeted.toLocaleString()}
+                      </TableCell>
+                      <TableCell>₹{category.spent.toLocaleString()}</TableCell>
+                      <TableCell
+                        className={
+                          category.variance < 0
+                            ? "text-red-500"
+                            : "text-green-500"
+                        }
+                      >
+                        ₹{Math.abs(category.variance).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Progress
+                            value={(category.spent / category.budgeted) * 100}
+                            className="w-16 h-2"
+                          />
+                          <span className="text-sm">
+                            {Math.round(
+                              (category.spent / category.budgeted) * 100
+                            )}
+                            %
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            category.variance < 0 ? "destructive" : "default"
+                          }
+                        >
+                          {category.variance < 0
+                            ? "Over Budget"
+                            : "Within Budget"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cashflow">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Cash Flow Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Budgeted Amount</TableHead>
-                      <TableHead>Actual Spent</TableHead>
-                      <TableHead>Variance</TableHead>
-                      <TableHead>Utilization</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Month</TableHead>
+                      <TableHead>Inflow</TableHead>
+                      <TableHead>Outflow</TableHead>
+                      <TableHead>Net Flow</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {budgetCategories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="font-medium">
-                          {category.name}
+                    {cashFlowData.map((data) => (
+                      <TableRow key={data.month}>
+                        <TableCell>{data.month}</TableCell>
+                        <TableCell className="text-green-600">
+                          ₹{data.inflow.toLocaleString()}
                         </TableCell>
-                        <TableCell>
-                          ₹{category.budgeted.toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          ₹{category.spent.toLocaleString()}
+                        <TableCell className="text-red-600">
+                          ₹{data.outflow.toLocaleString()}
                         </TableCell>
                         <TableCell
                           className={
-                            category.variance < 0
-                              ? "text-red-500"
-                              : "text-green-500"
+                            data.net > 0 ? "text-green-600" : "text-red-600"
                           }
                         >
-                          ₹{Math.abs(category.variance).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress
-                              value={(category.spent / category.budgeted) * 100}
-                              className="w-16 h-2"
-                            />
-                            <span className="text-sm">
-                              {Math.round(
-                                (category.spent / category.budgeted) * 100
-                              )}
-                              %
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              category.variance < 0 ? "destructive" : "default"
-                            }
-                          >
-                            {category.variance < 0
-                              ? "Over Budget"
-                              : "Within Budget"}
-                          </Badge>
+                          ₹{data.net.toLocaleString()}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -511,157 +547,115 @@ const BudgetTracking = () => {
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="cashflow">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cash Flow Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Month</TableHead>
-                        <TableHead>Inflow</TableHead>
-                        <TableHead>Outflow</TableHead>
-                        <TableHead>Net Flow</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {cashFlowData.map((data) => (
-                        <TableRow key={data.month}>
-                          <TableCell>{data.month}</TableCell>
-                          <TableCell className="text-green-600">
-                            ₹{data.inflow.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-red-600">
-                            ₹{data.outflow.toLocaleString()}
-                          </TableCell>
-                          <TableCell
-                            className={
-                              data.net > 0 ? "text-green-600" : "text-red-600"
-                            }
-                          >
-                            ₹{data.net.toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cash Flow Projection</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie
-                        data={budgetCategories.map((c) => ({
-                          name: c.name,
-                          value: c.spent,
-                        }))}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        label
-                      >
-                        {budgetCategories.map((_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              [
-                                "#0ea5e9",
-                                "#6366f1",
-                                "#10b981",
-                                "#f59e0b",
-                                "#ef4444",
-                              ][index % 5]
-                            }
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="expenses">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Expense Transactions</CardTitle>
+                <CardTitle>Cash Flow Projection</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Expense Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expenseTransactions.map((transaction) => (
-                      <TableRow key={transaction._id}>
-                        <TableCell>
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell>
-                          ₹{Number(transaction.amount).toLocaleString()}
-                        </TableCell>
-                        <TableCell>{transaction.expenseName}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              transaction.status === "Approved"
-                                ? "default"
-                                : transaction.status === "Pending"
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {transaction.proof ? (
-                            <a
-                              href={transaction.proof}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="ghost" size="sm">
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            </a>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie
+                      data={budgetCategories.map((c) => ({
+                        name: c.name,
+                        value: c.spent,
+                      }))}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {budgetCategories.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              "#0ea5e9",
+                              "#6366f1",
+                              "#10b981",
+                              "#f59e0b",
+                              "#ef4444",
+                            ][index % 5]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </MainLayout>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="expenses">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Expense Transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Expense Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenseTransactions.map((transaction) => (
+                    <TableRow key={transaction._id}>
+                      <TableCell>
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{transaction.category}</TableCell>
+                      <TableCell>
+                        ₹{Number(transaction.amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell>{transaction.expenseName}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            transaction.status === "Approved"
+                              ? "default"
+                              : transaction.status === "Pending"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {transaction.proof ? (
+                          <a
+                            href={transaction.proof}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="ghost" size="sm">
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
