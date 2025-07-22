@@ -3,8 +3,8 @@ import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import MainLayout from "@/components/layout/MainLayout";
-import testLogoBase64 from './testLogoBase64.txt?raw';
-import testQrBase64 from "./testQrBase64.txt?raw"
+import testLogoBase64 from "./testLogoBase64.txt?raw";
+import testQrBase64 from "./testQrBase64.txt?raw";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   DropdownMenu,
@@ -405,7 +405,7 @@ const ContractorInvoices = () => {
         button.setAttribute("data-downloading", "true");
       }
 
-      await generateInvoicePDFWithExtras(invoice,testLogoBase64,testQrBase64);
+      await generateInvoicePDFWithExtras(invoice, testLogoBase64, testQrBase64);
 
       toast(`Invoice ${invoice.invoiceNumber} downloaded successfully`);
     } catch (error) {
@@ -420,11 +420,11 @@ const ContractorInvoices = () => {
     }
   };
 
-  const handleMarkAsPaid = async (invoice: any,paymentMethod: any) => {
+  const handleMarkAsPaid = async (invoice: any, paymentMethod: any) => {
     try {
       const response = await axios.put(
         `http://localhost:3000/api/invoices/${invoice._id}/mark-paid`,
-        {paymentMethod}, // no body, just params
+        { paymentMethod }, // no body, just params
         { withCredentials: true } // if you're using cookies/auth
       );
 
@@ -550,237 +550,234 @@ const ContractorInvoices = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6 p-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
-          <p className="text-muted-foreground">
-            Create, view, and manage construction invoices
-          </p>
-        </div>
+    <div className="space-y-6 p-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
+        <p className="text-muted-foreground">
+          Create, view, and manage construction invoices
+        </p>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoice Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Invoices
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 text-muted-foreground mr-2" />
-                      <div className="text-2xl font-bold">
-                        {invoices.length}
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {invoices.filter((i) => i.status === "paid").length} paid,{" "}
-                      {invoices.filter((i) => i.status !== "paid").length}{" "}
-                      unpaid
-                    </p>
-                  </CardContent>
-                </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Invoices
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 text-muted-foreground mr-2" />
+                    <div className="text-2xl font-bold">{invoices.length}</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {invoices.filter((i) => i.status === "paid").length} paid,{" "}
+                    {invoices.filter((i) => i.status !== "paid").length} unpaid
+                  </p>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Total Amount
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-4 w-4 text-muted-foreground mr-2" />
-                      <div className="text-2xl font-bold">
-                        ₹{totalInvoiceAmount.toLocaleString()}
-                      </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Amount
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <BadgeIndianRupee className="h-4 w-4 text-muted-foreground mr-2" />
+                    <div className="text-2xl font-bold">
+                      ₹{totalInvoiceAmount.toLocaleString()}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Across {invoices.length} invoices
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Across {invoices.length} invoices
+                  </p>
+                </CardContent>
+              </Card>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      Outstanding Amount
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-4 w-4 text-muted-foreground mr-2" />
-                      <div className="text-2xl font-bold">
-                        ₹{pendingInvoicesAmount.toLocaleString()}
-                      </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Outstanding Amount
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center">
+                    <BadgeIndianRupee className="h-4 w-4 text-muted-foreground mr-2" />
+                    <div className="text-2xl font-bold">
+                      ₹{pendingInvoicesAmount.toLocaleString()}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {Math.round(
-                        (pendingInvoicesAmount / totalInvoiceAmount) * 100
-                      ) || 0}
-                      % of total amount
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {Math.round(
+                      (pendingInvoicesAmount / totalInvoiceAmount) * 100
+                    ) || 0}
+                    % of total amount
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Actions */}
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search invoices by number, project..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Create Invoice
+              </Button>
+            </div>
 
-              {/* Search and Actions */}
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search invoices by number, project..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Create Invoice
-                </Button>
-              </div>
+            {/* Tabs for filtering */}
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid grid-cols-5 w-full">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="draft" className="flex items-center">
+                  <Clock className="mr-2 h-4 w-4" /> Draft
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="flex items-center">
+                  <ArrowDown className="mr-2 h-4 w-4" /> Pending
+                </TabsTrigger>
+                <TabsTrigger value="paid" className="flex items-center">
+                  <CheckCircle className="mr-2 h-4 w-4" /> Paid
+                </TabsTrigger>
+                <TabsTrigger value="overdue" className="flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4" /> Overdue
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-              {/* Tabs for filtering */}
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className="grid grid-cols-5 w-full">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="draft" className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4" /> Draft
-                  </TabsTrigger>
-                  <TabsTrigger value="pending" className="flex items-center">
-                    <ArrowDown className="mr-2 h-4 w-4" /> Pending
-                  </TabsTrigger>
-                  <TabsTrigger value="paid" className="flex items-center">
-                    <CheckCircle className="mr-2 h-4 w-4" /> Paid
-                  </TabsTrigger>
-                  <TabsTrigger value="overdue" className="flex items-center">
-                    <AlertCircle className="mr-2 h-4 w-4" /> Overdue
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {/* Invoices Table */}
-              <div className="border rounded-md overflow-x-auto">
-                <Table>
-                  <TableHeader>
+            {/* Invoices Table */}
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice No.</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead>Amount (₹)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.length === 0 ? (
                     <TableRow>
-                      <TableHead>Invoice No.</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Amount (₹)</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        No invoices found.
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                          No invoices found.
+                  ) : (
+                    filteredInvoices.map((invoice) => (
+                      <TableRow key={invoice._id}>
+                        <TableCell className="font-medium">
+                          {invoice.invoiceNumber}
                         </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredInvoices.map((invoice) => (
-                        <TableRow key={invoice._id}>
-                          <TableCell className="font-medium">
-                            {invoice.invoiceNumber}
-                          </TableCell>
-                          <TableCell>
-                            {invoice.project.projectId.basicInfo.projectName +
-                              " / " +
-                              (invoice.unit || "-")}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(invoice.issueDate).toLocaleDateString(
-                              "en-GB",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "2-digit",
-                              }
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(invoice.dueDate).toLocaleDateString(
-                              "en-GB",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "2-digit",
-                              }
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                              {invoice.total.toLocaleString()}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={`${
-                                invoice.status === "paid" ||
-                                invoice.status === "Paid"
-                                  ? "bg-green-100 text-green-800"
-                                  : invoice.status === "Pending"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : invoice.status === "Overdue"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {invoice.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-white z-50"
+                        <TableCell>
+                          {invoice.project.projectId.basicInfo.projectName +
+                            " / " +
+                            (invoice.unit || "-")}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invoice.issueDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                            }
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(invoice.dueDate).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                            }
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                            {invoice.total.toLocaleString()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${
+                              invoice.status === "paid" ||
+                              invoice.status === "Paid"
+                                ? "bg-green-100 text-green-800"
+                                : invoice.status === "Pending"
+                                ? "bg-blue-100 text-blue-800"
+                                : invoice.status === "Overdue"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {invoice.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
                               >
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => viewInvoice(invoice)}
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-white z-50"
+                            >
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => viewInvoice(invoice)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDownloadPDF(invoice, e);
+                                  }}
+                                  className="flex items-center w-full px-2 py-1 text-left cursor-pointer"
                                 >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDownloadPDF(invoice, e);
-                                    }}
-                                    className="flex items-center w-full px-2 py-1 text-left cursor-pointer"
-                                  >
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download Invoice
-                                  </button>
-                                </DropdownMenuItem>
-                                {(invoice.status !== "paid" && invoice.status!=="Paid") && (
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download Invoice
+                                </button>
+                              </DropdownMenuItem>
+                              {invoice.status !== "paid" &&
+                                invoice.status !== "Paid" && (
                                   <DropdownMenuItem
                                     onClick={() => {
                                       setSelectedInvoice(invoice);
@@ -791,206 +788,202 @@ const ContractorInvoices = () => {
                                     Mark as Paid
                                   </DropdownMenuItem>
                                 )}
-                                {invoice.task && (
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedInvoice(invoice);
-                                      setVerificationDialogOpen(true);
-                                    }}
-                                  >
-                                    <Camera className="h-4 w-4 mr-1" />
-                                    {invoice.status==="paid"?"View Task":"Verify Task"}
-                                  </DropdownMenuItem>
-                                )}
+                              {invoice.task && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedInvoice(invoice);
+                                    setVerificationDialogOpen(true);
+                                  }}
+                                >
+                                  <Camera className="h-4 w-4 mr-1" />
+                                  {invoice.status === "paid"
+                                    ? "View Task"
+                                    : "Verify Task"}
+                                </DropdownMenuItem>
+                              )}
 
-                                {/* <DropdownMenuItem>
+                              {/* <DropdownMenuItem>
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem> */}
 
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Create Invoice Dialog */}
-              <Dialog
-                open={createDialogOpen}
-                onOpenChange={setCreateDialogOpen}
-              >
-                <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
-                  <DialogHeader>
-                    <DialogTitle>Create New Invoice</DialogTitle>
-                  </DialogHeader>
+            {/* Create Invoice Dialog */}
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
+                <DialogHeader>
+                  <DialogTitle>Create New Invoice</DialogTitle>
+                </DialogHeader>
 
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(handleSubmit)}
-                      className="space-y-6"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="project"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Project</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select project" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {projects.map((project) => (
-                                    <SelectItem
-                                      key={project._id}
-                                      value={project._id}
-                                    >
-                                      {project.projectTitle || "-"}
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(handleSubmit)}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="project"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Project</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {projects.map((project) => (
+                                  <SelectItem
+                                    key={project._id}
+                                    value={project._id}
+                                  >
+                                    {project.projectTitle || "-"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="unit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Unit</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value ?? ""}
+                              disabled={!selectedProject}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select unit" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {(selectedProject?.unitNames || []).map(
+                                  (unitName) => (
+                                    <SelectItem key={unitName} value={unitName}>
+                                      {unitName}
                                     </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                  )
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="unit"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Unit</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value ?? ""}
-                                disabled={!selectedProject}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select unit" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {(selectedProject?.unitNames || []).map(
-                                    (unitName) => (
-                                      <SelectItem
-                                        key={unitName}
-                                        value={unitName}
-                                      >
-                                        {unitName}
-                                      </SelectItem>
-                                    )
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      <FormField
+                        control={form.control}
+                        name="issueDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Issue Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="issueDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Issue Date</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name="dueDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Due Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="sgst"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SGST (%)</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value?.toString()}
+                            >
                               <FormControl>
-                                <Input type="date" {...field} />
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select SGST rate" />
+                                </SelectTrigger>
                               </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                              <SelectContent>
+                                <SelectItem value="0">0%</SelectItem>
+                                <SelectItem value="2.5">2.5%</SelectItem>
+                                <SelectItem value="6">6%</SelectItem>
+                                <SelectItem value="9">9%</SelectItem>
+                                <SelectItem value="14">14%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                        <FormField
-                          control={form.control}
-                          name="dueDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Due Date</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name="cgst"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CGST (%)</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value?.toString()}
+                            >
                               <FormControl>
-                                <Input type="date" {...field} />
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select CGST rate" />
+                                </SelectTrigger>
                               </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                              <SelectContent>
+                                <SelectItem value="0">0%</SelectItem>
+                                <SelectItem value="2.5">2.5%</SelectItem>
+                                <SelectItem value="6">6%</SelectItem>
+                                <SelectItem value="9">9%</SelectItem>
+                                <SelectItem value="14">14%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                        <FormField
-                          control={form.control}
-                          name="sgst"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SGST (%)</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value?.toString()}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select SGST rate" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="0">0%</SelectItem>
-                                  <SelectItem value="2.5">2.5%</SelectItem>
-                                  <SelectItem value="6">6%</SelectItem>
-                                  <SelectItem value="9">9%</SelectItem>
-                                  <SelectItem value="14">14%</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="cgst"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CGST (%)</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value?.toString()}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select CGST rate" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="0">0%</SelectItem>
-                                  <SelectItem value="2.5">2.5%</SelectItem>
-                                  <SelectItem value="6">6%</SelectItem>
-                                  <SelectItem value="9">9%</SelectItem>
-                                  <SelectItem value="14">14%</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {/* Related to a Task */}
-                      {/* <div className="col-span-1 md:col-span-2">
+                    {/* Related to a Task */}
+                    {/* <div className="col-span-1 md:col-span-2">
                         <FormItem>
                           <FormLabel>Related to a Task?</FormLabel>
                           <div className="flex space-x-4 mt-1">
@@ -1052,87 +1045,117 @@ const ContractorInvoices = () => {
                         />
                       )} */}
 
-                      {/* Invoice Items */}
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-medium">Invoice Items</h3>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setShowAddItem(true)}
-                          >
-                            <Plus className="mr-2 h-4 w-4" /> Add Item
-                          </Button>
+                    {/* Invoice Items */}
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Invoice Items</h3>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowAddItem(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Item
+                        </Button>
+                      </div>
+
+                      {invoiceItems.length === 0 ? (
+                        <div className="border rounded-md p-4 text-center text-muted-foreground">
+                          No items added to this invoice. Click "Add Item" to
+                          get started.
                         </div>
-
-                        {invoiceItems.length === 0 ? (
-                          <div className="border rounded-md p-4 text-center text-muted-foreground">
-                            No items added to this invoice. Click "Add Item" to
-                            get started.
-                          </div>
-                        ) : (
-                          <div className="border rounded-md overflow-x-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead>Qty</TableHead>
-                                  <TableHead>Unit</TableHead>
-                                  <TableHead>Rate (₹)</TableHead>
-                                  <TableHead>Tax %</TableHead>
-                                  <TableHead>Amount (₹)</TableHead>
-                                  <TableHead></TableHead>
+                      ) : (
+                        <div className="border rounded-md overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Qty</TableHead>
+                                <TableHead>Unit</TableHead>
+                                <TableHead>Rate (₹)</TableHead>
+                                <TableHead>Tax %</TableHead>
+                                <TableHead>Amount (₹)</TableHead>
+                                <TableHead></TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {invoiceItems.map((item) => (
+                                <TableRow key={item.id}>
+                                  <TableCell>{item.description}</TableCell>
+                                  <TableCell>{item.quantity}</TableCell>
+                                  <TableCell>{item.unit}</TableCell>
+                                  <TableCell>
+                                    ₹{item.rate.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell>{item.taxRate}%</TableCell>
+                                  <TableCell>
+                                    ₹{item.amount.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeInvoiceItem(item.id)}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </TableCell>
                                 </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {invoiceItems.map((item) => (
-                                  <TableRow key={item.id}>
-                                    <TableCell>{item.description}</TableCell>
-                                    <TableCell>{item.quantity}</TableCell>
-                                    <TableCell>{item.unit}</TableCell>
-                                    <TableCell>
-                                      ₹{item.rate.toLocaleString()}
-                                    </TableCell>
-                                    <TableCell>{item.taxRate}%</TableCell>
-                                    <TableCell>
-                                      ₹{item.amount.toLocaleString()}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                          removeInvoiceItem(item.id)
-                                        }
-                                      >
-                                        Remove
-                                      </Button>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        )}
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
 
-                        {/* Add Item Form */}
-                        {showAddItem && (
-                          <Form {...itemForm}>
-                            <div className="border rounded-md p-4 mt-4">
-                              <h4 className="text-sm font-medium mb-4">
-                                Add New Item
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Add Item Form */}
+                      {showAddItem && (
+                        <Form {...itemForm}>
+                          <div className="border rounded-md p-4 mt-4">
+                            <h4 className="text-sm font-medium mb-4">
+                              Add New Item
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <FormField
+                                control={itemForm.control}
+                                name="description"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Item description"
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <div className="grid grid-cols-2 gap-4">
                                 <FormField
                                   control={itemForm.control}
-                                  name="description"
+                                  name="quantity"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Description</FormLabel>
+                                      <FormLabel>Quantity</FormLabel>
                                       <FormControl>
                                         <Input
-                                          placeholder="Item description"
+                                          type="number"
+                                          min="1"
+                                          step="1"
                                           {...field}
+                                          onChange={(e) => {
+                                            const numericValue = parseInt(
+                                              e.target.value,
+                                              10
+                                            );
+                                            itemForm.setValue(
+                                              "quantity",
+                                              isNaN(numericValue)
+                                                ? 0
+                                                : numericValue
+                                            );
+                                          }}
                                         />
                                       </FormControl>
                                       <FormMessage />
@@ -1140,130 +1163,36 @@ const ContractorInvoices = () => {
                                   )}
                                 />
 
-                                <div className="grid grid-cols-2 gap-4">
-                                  <FormField
-                                    control={itemForm.control}
-                                    name="quantity"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Quantity</FormLabel>
-                                        <FormControl>
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            {...field}
-                                            onChange={(e) => {
-                                              const numericValue = parseInt(
-                                                e.target.value,
-                                                10
-                                              );
-                                              itemForm.setValue(
-                                                "quantity",
-                                                isNaN(numericValue)
-                                                  ? 0
-                                                  : numericValue
-                                              );
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-
-                                  <FormField
-                                    control={itemForm.control}
-                                    name="unit"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Unit</FormLabel>
-                                        <Select
-                                          onValueChange={field.onChange}
-                                          defaultValue={field.value}
-                                        >
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Unit" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            <SelectItem value="Job">
-                                              Job
-                                            </SelectItem>
-                                            <SelectItem value="Hours">
-                                              Hours
-                                            </SelectItem>
-                                            <SelectItem value="Days">
-                                              Days
-                                            </SelectItem>
-                                            <SelectItem value="Sq.ft">
-                                              Sq.ft
-                                            </SelectItem>
-                                            <SelectItem value="Units">
-                                              Units
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </div>
-
                                 <FormField
                                   control={itemForm.control}
-                                  name="rate"
+                                  name="unit"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Rate (₹)</FormLabel>
-                                      <FormControl>
-                                        <div className="relative">
-                                          <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                          <Input
-                                            className="pl-10"
-                                            type="number"
-                                            min="0"
-                                            {...field}
-                                            onChange={(e) =>
-                                              field.onChange(
-                                                Number(e.target.value)
-                                              )
-                                            }
-                                          />
-                                        </div>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
-                                />
-
-                                <FormField
-                                  control={itemForm.control}
-                                  name="taxRate"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Tax Rate (%)</FormLabel>
+                                      <FormLabel>Unit</FormLabel>
                                       <Select
                                         onValueChange={field.onChange}
-                                        defaultValue={field.value.toString()}
+                                        defaultValue={field.value}
                                       >
                                         <FormControl>
                                           <SelectTrigger>
-                                            <SelectValue placeholder="Select tax rate" />
+                                            <SelectValue placeholder="Unit" />
                                           </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                          <SelectItem value="0">0%</SelectItem>
-                                          <SelectItem value="5">5%</SelectItem>
-                                          <SelectItem value="12">
-                                            12%
+                                          <SelectItem value="Job">
+                                            Job
                                           </SelectItem>
-                                          <SelectItem value="18">
-                                            18%
+                                          <SelectItem value="Hours">
+                                            Hours
                                           </SelectItem>
-                                          <SelectItem value="28">
-                                            28%
+                                          <SelectItem value="Days">
+                                            Days
+                                          </SelectItem>
+                                          <SelectItem value="Sq.ft">
+                                            Sq.ft
+                                          </SelectItem>
+                                          <SelectItem value="Units">
+                                            Units
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
@@ -1273,318 +1202,372 @@ const ContractorInvoices = () => {
                                 />
                               </div>
 
-                              <div className="flex justify-end space-x-2">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => setShowAddItem(false)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={async () => {
-                                    const isValid = await itemForm.trigger();
-                                    console.log("Form Valid?", isValid);
-                                    console.log(
-                                      "Form Values",
-                                      itemForm.getValues()
-                                    );
-                                    console.log(
-                                      "Quantity typeof:",
-                                      typeof itemForm.getValues("quantity")
-                                    );
-
-                                    if (isValid) {
-                                      addInvoiceItem(itemForm.getValues());
-                                      itemForm.reset();
-                                      setShowAddItem(false);
-                                    }
-                                  }}
-                                >
-                                  Add Item
-                                </Button>
-                              </div>
-                            </div>
-                          </Form>
-                        )}
-                      </div>
-
-                      {/* Invoice Summary */}
-                      {(() => {
-                        const subtotal = invoiceItems.reduce(
-                          (sum, item) => sum + item.amount,
-                          0
-                        );
-                        const sgst = parseFloat(
-                          form.watch("sgst")?.toString() || "0"
-                        );
-                        const cgst = parseFloat(
-                          form.watch("cgst")?.toString() || "0"
-                        );
-                        const sgstAmount = subtotal * (sgst / 100);
-                        const cgstAmount = subtotal * (cgst / 100);
-                        const total = subtotal + sgstAmount + cgstAmount;
-
-                        return (
-                          <div className="border rounded-md p-4">
-                            <div className="flex justify-between mb-2">
-                              <span>Subtotal:</span>
-                              <span>₹{subtotal.toLocaleString()}</span>
-                            </div>
-
-                            <div className="flex justify-between mb-2">
-                              <span>SGST ({sgst}%):</span>
-                              <span>₹{sgstAmount.toLocaleString()}</span>
-                            </div>
-
-                            <div className="flex justify-between mb-2">
-                              <span>CGST ({cgst}%):</span>
-                              <span>₹{cgstAmount.toLocaleString()}</span>
-                            </div>
-
-                            <Separator className="my-2" />
-
-                            <div className="flex justify-between font-bold">
-                              <span>Total:</span>
-                              <span>₹{total.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Notes</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Any additional notes for the invoice"
-                                className="resize-none"
-                                {...field}
+                              <FormField
+                                control={itemForm.control}
+                                name="rate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Rate (₹)</FormLabel>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                          className="pl-10"
+                                          type="number"
+                                          min="0"
+                                          {...field}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              Number(e.target.value)
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setRelatedToTask(false);
-                            setCreateDialogOpen(false);
-                            setInvoiceItems([]);
-                            setShowAddItem(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="submit"
-                          onClick={() => {
-                            console.log("Errors", form.formState.errors);
-                            console.log("Values", form.getValues());
-                          }}
-                        >
-                          Create Invoice
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-
-              {/* View Invoice Dialog */}
-              {selectedInvoice && (
-                <Dialog
-                  open={viewInvoiceDialogOpen}
-                  onOpenChange={setViewInvoiceDialogOpen}
-                >
-                  <DialogContent className="sm:max-w-[800px]">
-                    <DialogHeader>
-                      <DialogTitle>Invoice {selectedInvoice.id}</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-6">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-bold text-xl">INVOICE</h3>
-                          <p className="text-muted-foreground">
-                            {selectedInvoice.invoiceNumber}
-                          </p>
-                        </div>
-                        <Badge
-                          className={`${
-                            selectedInvoice.status === "paid"
-                              ? "bg-green-100 text-green-800"
-                              : selectedInvoice.status === "Pending"
-                              ? "bg-blue-100 text-blue-800"
-                              : selectedInvoice.status === "Overdue"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                          } text-sm py-1 px-3`}
-                        >
-                          {selectedInvoice.status}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-6">
-                        {/* <div>
-                  <p className="text-sm text-muted-foreground">Invoice To:</p>
-                  <p className="font-medium">{selectedInvoice.to}</p>
-                </div> */}
-
-                        <div className="space-y-1">
-                          <div className="grid grid-cols-2">
-                            <p className="text-sm text-muted-foreground">
-                              Issue Date:
-                            </p>
-                            <p>
-                              {new Date(
-                                selectedInvoice.issueDate
-                              ).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2">
-                            <p className="text-sm text-muted-foreground">
-                              Due Date:
-                            </p>
-                            <p>
-                              {new Date(
-                                selectedInvoice.issueDate
-                              ).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2">
-                            <p className="text-sm text-muted-foreground">
-                              Project:
-                            </p>
-                            <p>
-                              {selectedInvoice.project.projectId.basicInfo
-                                .projectName || "-"}
-                            </p>
-                          </div>
-                          {selectedInvoice.paymentDate && (
-                            <div className="grid grid-cols-2">
-                              <p className="text-sm text-muted-foreground">
-                                Payment Date:
-                              </p>
-                              <p>{selectedInvoice.paymentDate}</p>
+                              <FormField
+                                control={itemForm.control}
+                                name="taxRate"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Tax Rate (%)</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value.toString()}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select tax rate" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="0">0%</SelectItem>
+                                        <SelectItem value="5">5%</SelectItem>
+                                        <SelectItem value="12">12%</SelectItem>
+                                        <SelectItem value="18">18%</SelectItem>
+                                        <SelectItem value="28">28%</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             </div>
-                          )}
-                        </div>
-                      </div>
 
-                      <div className="border rounded-md overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[50%]">
-                                Description
-                              </TableHead>
-                              <TableHead>Qty</TableHead>
-                              <TableHead>Rate (₹)</TableHead>
-                              <TableHead>Amount (₹)</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {/* Use sample items when viewing an invoice */}
-                            {selectedInvoice.items.map((item) => (
-                              <TableRow key={item._id}>
-                                <TableCell>{item.description}</TableCell>
-                                <TableCell>
-                                  {item.quantity} {item.unit}
-                                </TableCell>
-                                <TableCell>
-                                  ₹{item.rate.toLocaleString()}
-                                </TableCell>
-                                <TableCell>
-                                  ₹{item.amount.toLocaleString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                            <div className="flex justify-end space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowAddItem(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                onClick={async () => {
+                                  const isValid = await itemForm.trigger();
+                                  console.log("Form Valid?", isValid);
+                                  console.log(
+                                    "Form Values",
+                                    itemForm.getValues()
+                                  );
+                                  console.log(
+                                    "Quantity typeof:",
+                                    typeof itemForm.getValues("quantity")
+                                  );
 
-                      <div className="flex justify-end">
-                        <div className="w-1/2 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              Subtotal:
-                            </span>
-                            <span>
-                              ₹{selectedInvoice.subtotal.toLocaleString()}
-                            </span>
+                                  if (isValid) {
+                                    addInvoiceItem(itemForm.getValues());
+                                    itemForm.reset();
+                                    setShowAddItem(false);
+                                  }
+                                }}
+                              >
+                                Add Item
+                              </Button>
+                            </div>
+                          </div>
+                        </Form>
+                      )}
+                    </div>
+
+                    {/* Invoice Summary */}
+                    {(() => {
+                      const subtotal = invoiceItems.reduce(
+                        (sum, item) => sum + item.amount,
+                        0
+                      );
+                      const sgst = parseFloat(
+                        form.watch("sgst")?.toString() || "0"
+                      );
+                      const cgst = parseFloat(
+                        form.watch("cgst")?.toString() || "0"
+                      );
+                      const sgstAmount = subtotal * (sgst / 100);
+                      const cgstAmount = subtotal * (cgst / 100);
+                      const total = subtotal + sgstAmount + cgstAmount;
+
+                      return (
+                        <div className="border rounded-md p-4">
+                          <div className="flex justify-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>₹{subtotal.toLocaleString()}</span>
                           </div>
 
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              SGST ({selectedInvoice.sgst}%):
-                            </span>
-                            <span>
-                              ₹
-                              {(
-                                selectedInvoice.subtotal *
-                                (selectedInvoice.sgst / 100)
-                              ).toLocaleString()}
-                            </span>
+                          <div className="flex justify-between mb-2">
+                            <span>SGST ({sgst}%):</span>
+                            <span>₹{sgstAmount.toLocaleString()}</span>
                           </div>
 
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              CGST ({selectedInvoice.cgst}%):
-                            </span>
-                            <span>
-                              ₹
-                              {(
-                                selectedInvoice.subtotal *
-                                (selectedInvoice.cgst / 100)
-                              ).toLocaleString()}
-                            </span>
+                          <div className="flex justify-between mb-2">
+                            <span>CGST ({cgst}%):</span>
+                            <span>₹{cgstAmount.toLocaleString()}</span>
                           </div>
 
                           <Separator className="my-2" />
 
                           <div className="flex justify-between font-bold">
-                            <span>Total Amount:</span>
-                            <span>
-                              ₹{selectedInvoice.total.toLocaleString()}
-                            </span>
+                            <span>Total:</span>
+                            <span>₹{total.toLocaleString()}</span>
                           </div>
                         </div>
-                      </div>
+                      );
+                    })()}
 
-                      {selectedInvoice.notes && (
-                        <div>
-                          <h4 className="text-sm font-medium">Notes:</h4>
-                          <p className="text-muted-foreground">
-                            {selectedInvoice.notes}
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Any additional notes for the invoice"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setRelatedToTask(false);
+                          setCreateDialogOpen(false);
+                          setInvoiceItems([]);
+                          setShowAddItem(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        onClick={() => {
+                          console.log("Errors", form.formState.errors);
+                          console.log("Values", form.getValues());
+                        }}
+                      >
+                        Create Invoice
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+
+            {/* View Invoice Dialog */}
+            {selectedInvoice && (
+              <Dialog
+                open={viewInvoiceDialogOpen}
+                onOpenChange={setViewInvoiceDialogOpen}
+              >
+                <DialogContent className="sm:max-w-[800px]">
+                  <DialogHeader>
+                    <DialogTitle>Invoice {selectedInvoice.id}</DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-xl">INVOICE</h3>
+                        <p className="text-muted-foreground">
+                          {selectedInvoice.invoiceNumber}
+                        </p>
+                      </div>
+                      <Badge
+                        className={`${
+                          selectedInvoice.status === "paid"
+                            ? "bg-green-100 text-green-800"
+                            : selectedInvoice.status === "Pending"
+                            ? "bg-blue-100 text-blue-800"
+                            : selectedInvoice.status === "Overdue"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        } text-sm py-1 px-3`}
+                      >
+                        {selectedInvoice.status}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* <div>
+                  <p className="text-sm text-muted-foreground">Invoice To:</p>
+                  <p className="font-medium">{selectedInvoice.to}</p>
+                </div> */}
+
+                      <div className="space-y-1">
+                        <div className="grid grid-cols-2">
+                          <p className="text-sm text-muted-foreground">
+                            Issue Date:
+                          </p>
+                          <p>
+                            {new Date(
+                              selectedInvoice.issueDate
+                            ).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                            })}
                           </p>
                         </div>
-                      )}
+                        <div className="grid grid-cols-2">
+                          <p className="text-sm text-muted-foreground">
+                            Due Date:
+                          </p>
+                          <p>
+                            {new Date(
+                              selectedInvoice.issueDate
+                            ).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2">
+                          <p className="text-sm text-muted-foreground">
+                            Project:
+                          </p>
+                          <p>
+                            {selectedInvoice.project.projectId.basicInfo
+                              .projectName || "-"}
+                          </p>
+                        </div>
+                        {selectedInvoice.paymentDate && (
+                          <div className="grid grid-cols-2">
+                            <p className="text-sm text-muted-foreground">
+                              Payment Date:
+                            </p>
+                            <p>{selectedInvoice.paymentDate}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setViewInvoiceDialogOpen(false)}
-                        >
-                          Close
-                        </Button>
-                        {/* {selectedInvoice.status !== "Paid" && (
+                    <div className="border rounded-md overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[50%]">
+                              Description
+                            </TableHead>
+                            <TableHead>Qty</TableHead>
+                            <TableHead>Rate (₹)</TableHead>
+                            <TableHead>Amount (₹)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Use sample items when viewing an invoice */}
+                          {selectedInvoice.items.map((item) => (
+                            <TableRow key={item._id}>
+                              <TableCell>{item.description}</TableCell>
+                              <TableCell>
+                                {item.quantity} {item.unit}
+                              </TableCell>
+                              <TableCell>
+                                ₹{item.rate.toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                ₹{item.amount.toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <div className="w-1/2 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            Subtotal:
+                          </span>
+                          <span>
+                            ₹{selectedInvoice.subtotal.toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            SGST ({selectedInvoice.sgst}%):
+                          </span>
+                          <span>
+                            ₹
+                            {(
+                              selectedInvoice.subtotal *
+                              (selectedInvoice.sgst / 100)
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            CGST ({selectedInvoice.cgst}%):
+                          </span>
+                          <span>
+                            ₹
+                            {(
+                              selectedInvoice.subtotal *
+                              (selectedInvoice.cgst / 100)
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <Separator className="my-2" />
+
+                        <div className="flex justify-between font-bold">
+                          <span>Total Amount:</span>
+                          <span>₹{selectedInvoice.total.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedInvoice.notes && (
+                      <div>
+                        <h4 className="text-sm font-medium">Notes:</h4>
+                        <p className="text-muted-foreground">
+                          {selectedInvoice.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setViewInvoiceDialogOpen(false)}
+                      >
+                        Close
+                      </Button>
+                      {/* {selectedInvoice.status !== "Paid" && (
                   <Button
                     onClick={() => {
                       // Mark invoice as paid
@@ -1611,68 +1594,68 @@ const ContractorInvoices = () => {
                     Mark as Paid
                   </Button>
                 )} */}
-                      </div>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-
-              <Dialog
-                open={showPaymentDialog}
-                onOpenChange={setShowPaymentDialog}
-              >
-                <DialogContent className="sm:max-w-[400px]">
-                  <DialogHeader>
-                    <DialogTitle>Mark Invoice as Paid</DialogTitle>
-                    <DialogDescription>
-                      Select payment method before marking this invoice as paid.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4">
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
-                    <Select
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                    >
-                      <SelectTrigger id="paymentMethod">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="upi">UPI</SelectItem>
-                        <SelectItem value="bank_transfer">
-                          Bank Transfer
-                        </SelectItem>
-                        <SelectItem value="cheque">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowPaymentDialog(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        handleMarkAsPaid(selectedInvoice, paymentMethod);
-                        setShowPaymentDialog(false);
-                      }}
-                      disabled={!paymentMethod}
-                    >
-                      Mark as Paid
-                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
-          </CardContent>
-        </Card>
+            )}
 
-        {selectedInvoice && selectedInvoice.task &&
+            <Dialog
+              open={showPaymentDialog}
+              onOpenChange={setShowPaymentDialog}
+            >
+              <DialogContent className="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle>Mark Invoice as Paid</DialogTitle>
+                  <DialogDescription>
+                    Select payment method before marking this invoice as paid.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger id="paymentMethod">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        Bank Transfer
+                      </SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPaymentDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleMarkAsPaid(selectedInvoice, paymentMethod);
+                      setShowPaymentDialog(false);
+                    }}
+                    disabled={!paymentMethod}
+                  >
+                    Mark as Paid
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedInvoice && selectedInvoice.task && (
         <Dialog
           open={verificationDialogOpen}
           onOpenChange={setVerificationDialogOpen}
@@ -1860,26 +1843,26 @@ const ContractorInvoices = () => {
                 >
                   Cancel
                 </Button>
-                {selectedInvoice && (selectedInvoice.status!=="paid") &&
-                <Button
-                  type="submit"
-                  variant={
-                    verificationStatus === "approved"
-                      ? "default"
-                      : verificationStatus === "rework"
-                      ? "secondary"
-                      : "destructive"
-                  }
-                >
-                  {isUpdating ? "Updating..." : "Done"}
-                </Button>}
+                {selectedInvoice && selectedInvoice.status !== "paid" && (
+                  <Button
+                    type="submit"
+                    variant={
+                      verificationStatus === "approved"
+                        ? "default"
+                        : verificationStatus === "rework"
+                        ? "secondary"
+                        : "destructive"
+                    }
+                  >
+                    {isUpdating ? "Updating..." : "Done"}
+                  </Button>
+                )}
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-}
-      </div>
-    </MainLayout>
+      )}
+    </div>
   );
 };
 

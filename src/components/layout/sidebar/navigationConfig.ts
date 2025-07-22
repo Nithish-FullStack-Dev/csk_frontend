@@ -66,7 +66,7 @@ export const navigationByRole: Record<
     { to: "/teamLead", icon: Users, label: "Team Management" },
     { to: "/commissions", icon: CreditCard, label: "Commissions" },
     { to: "/properties", icon: Building, label: "Properties" },
-    { to: "/reports", icon: FileText, label: "Sales Reports" },
+    // { to: "/reports", icon: FileText, label: "Sales Reports" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     { to: "/enquiry", icon: MessagesSquare, label: "Enquiry" },
   ],
@@ -136,7 +136,8 @@ export const navigationByRole: Record<
     { to: "/documents", icon: FileText, label: "My Documents" },
     { to: "/payments", icon: CreditCard, label: "Payment History" },
     { to: "/progress", icon: Building, label: "Construction Progress" },
-    { to: "/support", icon: HelpCircle, label: "Support" },
+    // { to: "/support", icon: HelpCircle, label: "Support" },
+    { to: "/profile", icon: Users, label: "Profile" },
   ],
   customer_prospect: [
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -145,6 +146,6 @@ export const navigationByRole: Record<
     { to: "/visits", icon: Calendar, label: "Site Visits" },
     { to: "/documents", icon: FileText, label: "My Documents" },
     { to: "/status", icon: ClipboardList, label: "Application Status" },
-    { to: "/support", icon: HelpCircle, label: "Support" },
+    // { to: "/support", icon: HelpCircle, label: "Support" },
   ],
 };

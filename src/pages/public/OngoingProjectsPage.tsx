@@ -9,54 +9,61 @@ import {
   House,
   Rocket,
   DollarSign,
+  MapPin,
+  Calendar,
 } from "lucide-react"; // Added more icons for fun!
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { url } from "inspector";
+import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { Property } from "@/types/property";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const OngoingProjectsPage = () => {
-  const ongoingProjects = [
-    {
-      id: 2,
-      title: "Sunrise Heights",
-      location: "New Town, Kolkata",
-      type: "Ongoing",
-      category: "Apartment",
-      price: "₹65 Lakhs onwards",
-      image:
-        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["2-3 BHK", "Gym", "Garden", "Parking"],
-      description:
-        "Modern apartment complex with excellent connectivity. 75% completed, possession by Dec 2024.",
-    },
-    {
-      id: 6,
-      title: "Tech Park Residency",
-      location: "HITEC City, Hyderabad",
-      type: "Ongoing",
-      category: "Apartment",
-      price: "₹55 Lakhs onwards",
-      image:
-        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["1-2 BHK", "IT Hub", "Metro", "Food Court"],
-      description:
-        "Compact homes near major IT companies. 60% completed, possession by Jun 2025.",
-    },
-    {
-      id: 7,
-      title: "Royal Gardens",
-      location: "Sector 62, Noida",
-      type: "Ongoing",
-      category: "Villa",
-      price: "₹1.2 Crores onwards",
-      image:
-        "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["3-4 BHK", "Private Garden", "Club", "Security"],
-      description:
-        "Premium villa project with large gardens. 45% completed, possession by Mar 2025.",
-    },
-  ];
+  const [ongoingProjects, setOngoingProjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const fetchOngoingProperties = async () => {
+    if (loading) return;
+    try {
+      setLoading(true);
+      const { data } = await axios.get(
+        "http://localhost:3000/api/properties/ongoing-properties"
+      );
+      const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
+        const basic = item.basicInfo || {};
+        const finance = item.financialDetails || {};
+        const location = item.locationInfo || {};
+        return {
+          id: item._id,
+          title: basic?.projectName,
+          launchDate: "Coming Soon",
+          price: finance.totalAmount.toString().slice(0, 2),
+          location: location?.googleMapsLocation,
+          image: location?.mainPropertyImage,
+          category: basic?.propertyType,
+          preBooking: basic.preBooking,
+        };
+      });
+      setOngoingProjects(ongoingProjectsFromDB);
+      setIsError(false);
+    } catch (error) {
+      console.error("Failed to ongoing properties:", error);
+      setIsError(true);
+      toast.error("Failed to load ongoing properties.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOngoingProperties();
+    // window.scrollTo(0, 0);
+  }, []);
 
   const projectProgress = [
     { name: "Sunrise Heights", progress: 75, expectedCompletion: "Dec 2024" },
@@ -152,7 +159,7 @@ const OngoingProjectsPage = () => {
                     stiffness: 120,
                   }}
                 >
-                  <h3 className="text-2xl font-md font-vidaloka mb-3 text-purple-800 text-center">
+                  <h3 className="text-2xl font-md font-vidaloka mb-3 text-blue-800 text-center">
                     <Hammer className="inline-block mr-2 text-purple-600" />
                     {project.name}
                   </h3>
@@ -193,26 +200,93 @@ const OngoingProjectsPage = () => {
                 choose the best spot!
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {ongoingProjects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{
-                    delay: index * 0.1,
-                    type: "spring",
-                    stiffness: 100,
-                  }}
-                  whileHover={{
-                    y: -10,
-                    boxShadow: "0 15px 30px rgba(0,0,0,0.2)",
-                  }}
+
+            {loading ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-gray-600 animate-pulse">
+                  Please wait...
+                </h1>
+              </div>
+            ) : isError ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-red-500 mb-4">
+                  Something went wrong...
+                </h1>
+                <button
+                  onClick={fetchOngoingProperties}
+                  className="px-4 py-2 flex items-center justify-center gap-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
                 >
-                  <PropertyListingCard property={project} />
-                </motion.div>
-              ))}
-            </div>
+                  retry
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {ongoingProjects.map((project, index) => (
+                  <CardContainer key={project.id} className="inter-var">
+                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                      {/* Title */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
+                      >
+                        {project.title}
+                      </CardItem>
+
+                      {/* Image */}
+                      <CardItem
+                        translateZ={80}
+                        className="w-full mt-1 rounded-xl overflow-hidden"
+                      >
+                        <img
+                          src={project.image}
+                          alt={project.title}
+                          className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
+                        />
+                      </CardItem>
+
+                      {/* Location */}
+                      <CardItem
+                        translateZ={20}
+                        className="mt-1 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                      >
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {project.location}
+                      </CardItem>
+
+                      {/* Price */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-lg font-bold text-indigo-700 mt-1"
+                      >
+                        ₹{project.price} Lakhs onwards
+                      </CardItem>
+
+                      {/* Buttons */}
+                      <div className="mt-1 space-y-2">
+                        <Link to={`/public/project/${project.id}`}>
+                          <CardItem
+                            translateZ={40}
+                            as="button"
+                            className="w-full px-4 py-2 rounded-full text-sm font-medium text-estate-navy/90 border border-estate-navy/80 hover:bg-estate-navy/30 transition-colors"
+                          >
+                            View Details
+                          </CardItem>
+                        </Link>
+
+                        <CardItem
+                          translateZ={40}
+                          as="button"
+                          className="w-full px-4 py-2 rounded-full text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
+                        >
+                          Schedule Site Visit
+                          <Calendar className="ml-2 h-4 w-4" />
+                        </CardItem>
+                      </div>
+                    </CardBody>
+                  </CardContainer>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 

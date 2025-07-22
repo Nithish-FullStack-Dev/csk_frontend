@@ -1,6 +1,4 @@
-
 import { useAuth } from "@/contexts/AuthContext";
-import MainLayout from "@/components/layout/MainLayout";
 import OwnerDashboard from "./dashboards/OwnerDashboard";
 import AdminDashboard from "./dashboards/AdminDashboard";
 import SalesManagerDashboard from "./dashboards/SalesManagerDashboard";
@@ -51,7 +49,7 @@ const Dashboard = () => {
     }
   };
 
-  return <MainLayout>{renderDashboard()}</MainLayout>;
+  return <>{renderDashboard()}</>;
 };
 
 export default Dashboard;

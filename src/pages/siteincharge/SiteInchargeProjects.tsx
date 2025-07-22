@@ -77,8 +77,8 @@ const defaultValues: Partial<ProjectFormValues> = {
   projectType: undefined,
   startDate: "",
   estimatedEndDate: "",
-  estimatedBudget:0,
-  teamSize:0,
+  estimatedBudget: 0,
+  teamSize: 0,
   description: "",
 };
 
@@ -98,67 +98,21 @@ interface Project {
   teamSize: number;
 }
 
-// // Sample project data
-// const sampleProjects = [
-//   {
-//     id: "1",
-//     name: "Skyline Towers Construction",
-//     location: "Downtown Metro City",
-//     clientName: "CSK Realtors Ltd.",
-//     projectType: "Residential",
-//     startDate: "2023-06-01",
-//     estimatedEndDate: "2024-12-15",
-//     estimatedBudget: 7800000,
-//     description:
-//       "Construction of a 12-story residential tower with 48 premium apartments and amenities including gym, swimming pool, and community space.",
-//     status: "In Progress",
-//     completion: 35,
-//     teamSize: 48,
-//   },
-//   {
-//     id: "2",
-//     name: "Green Valley Villas Phase 1",
-//     location: "East Metro City",
-//     clientName: "CSK Realtors Ltd.",
-//     projectType: "Residential",
-//     startDate: "2023-02-15",
-//     estimatedEndDate: "2023-12-30",
-//     estimatedBudget: 4500000,
-//     description:
-//       "Development of 24 luxury villas in a gated community with landscaped gardens and community center.",
-//     status: "In Progress",
-//     completion: 75,
-//     teamSize: 32,
-//   },
-//   {
-//     id: "3",
-//     name: "Riverside Apartments Foundation",
-//     location: "River District",
-//     clientName: "CSK Realtors Ltd.",
-//     projectType: "Residential",
-//     startDate: "2023-09-01",
-//     estimatedEndDate: "2024-05-30",
-//     estimatedBudget: 2800000,
-//     description:
-//       "Foundation and structural work for the Riverside Apartments complex.",
-//     status: "In Progress",
-//     completion: 15,
-//     teamSize: 24,
-//   },
-// ];
-
 const SiteInchargeProjects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/project/projects`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `http://localhost:3000/api/project/projects`,
+        {
+          withCredentials: true,
+        }
+      );
       setProjects(res.data);
     } catch (err) {
       console.error("Error fetching project data:", err);
@@ -171,7 +125,7 @@ const SiteInchargeProjects = () => {
     fetchProjects();
   }, []);
 
-   const form = useForm<ProjectFormValues>({
+  const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues,
   });
@@ -196,10 +150,9 @@ const SiteInchargeProjects = () => {
     }
   };
 
-
   if (loading) return <div>Loading...</div>;
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 p-8">
         <div className="flex justify-between items-center">
           <div>
@@ -253,7 +206,7 @@ const SiteInchargeProjects = () => {
                   : 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                Across {projects?projects.length:"0"} projects
+                Across {projects ? projects.length : "0"} projects
               </p>
             </CardContent>
           </Card>
@@ -325,9 +278,7 @@ const SiteInchargeProjects = () => {
                         <ArrowRight className="mx-1 h-3 w-3" />
                         <span>
                           {project.endDate
-                            ? new Date(
-                                project.endDate
-                              ).toLocaleDateString()
+                            ? new Date(project.endDate).toLocaleDateString()
                             : "?"}
                         </span>
                       </div>
@@ -436,17 +387,24 @@ const SiteInchargeProjects = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Project Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select project type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Residential">Residential</SelectItem>
+                          <SelectItem value="Residential">
+                            Residential
+                          </SelectItem>
                           <SelectItem value="Commercial">Commercial</SelectItem>
                           <SelectItem value="Industrial">Industrial</SelectItem>
-                          <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+                          <SelectItem value="Infrastructure">
+                            Infrastructure
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -491,7 +449,11 @@ const SiteInchargeProjects = () => {
                       <FormControl>
                         <div className="relative">
                           <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-10" placeholder="5000000" {...field} />
+                          <Input
+                            className="pl-10"
+                            placeholder="5000000"
+                            {...field}
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -506,7 +468,12 @@ const SiteInchargeProjects = () => {
                     <FormItem>
                       <FormLabel>Team Size</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" placeholder="10" {...field} />
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="10"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -525,11 +492,12 @@ const SiteInchargeProjects = () => {
                         placeholder="Enter project details"
                         className="min-h-[100px]"
                         {...field}
-                        value={field.value || ''}
+                        value={field.value || ""}
                       />
                     </FormControl>
                     <FormDescription>
-                      Provide a brief description of the project scope and objectives
+                      Provide a brief description of the project scope and
+                      objectives
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -537,18 +505,20 @@ const SiteInchargeProjects = () => {
               />
 
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  Add Project
-                </Button>
+                <Button type="submit">Add Project</Button>
               </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 };
 

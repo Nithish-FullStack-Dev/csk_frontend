@@ -387,7 +387,7 @@ const EnquiryManagement = () => {
 
   // --- Render Logic ---
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
@@ -1029,7 +1029,7 @@ const EnquiryManagement = () => {
           </DialogContent>
         </Dialog>
       )}
-    </MainLayout>
+    </>
   );
 };
 

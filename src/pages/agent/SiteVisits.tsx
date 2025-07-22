@@ -306,547 +306,534 @@ const SiteVisits = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Site Visits</h1>
-            <p className="text-muted-foreground">
-              Schedule and manage property visits with clients
-            </p>
-          </div>
-          <Button onClick={() => setIsBookingOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Book New Visit
-          </Button>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Site Visits</h1>
+          <p className="text-muted-foreground">
+            Schedule and manage property visits with clients
+          </p>
         </div>
+        <Button onClick={() => setIsBookingOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Book New Visit
+        </Button>
+      </div>
 
-        <Tabs defaultValue="upcoming">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upcoming">Upcoming Visits</TabsTrigger>
-            <TabsTrigger value="completed">Completed Visits</TabsTrigger>
-          </TabsList>
-          <div className="mt-6">
-            <TabsContent value="upcoming">
-              <div className="grid gap-6">
-                {upcomingVisits.length > 0 ? (
-                  upcomingVisits.map((visit) => (
-                    <VisitCard
-                      key={visit._id}
-                      visit={visit}
-                      buttonText="View Details"
-                      buttonVariant="outline"
-                      onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
-                    />
-                  ))
+      <Tabs defaultValue="upcoming">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upcoming">Upcoming Visits</TabsTrigger>
+          <TabsTrigger value="completed">Completed Visits</TabsTrigger>
+        </TabsList>
+        <div className="mt-6">
+          <TabsContent value="upcoming">
+            <div className="grid gap-6">
+              {upcomingVisits.length > 0 ? (
+                upcomingVisits.map((visit) => (
+                  <VisitCard
+                    key={visit._id}
+                    visit={visit}
+                    buttonText="View Details"
+                    buttonVariant="outline"
+                    onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground">No upcoming visits.</p>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="completed">
+            <div className="grid gap-6">
+              {completedVisits.length > 0 ? (
+                completedVisits.map((visit) => (
+                  <VisitCard
+                    key={visit._id}
+                    visit={visit}
+                    buttonText="View Details"
+                    buttonVariant="outline"
+                    showNotes
+                    onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
+                  />
+                ))
+              ) : (
+                <p className="text-muted-foreground">No completed visits.</p>
+              )}
+            </div>
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      {/* Dialog for Vehicle Details (remains unchanged) */}
+      {selectedVehicle && (
+        <Dialog
+          open={!!selectedVehicle && !isBookingOpen}
+          onOpenChange={(open) => {
+            if (!open) setSelectedVehicle(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Vehicle Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-estate-navy" />
+                <h3 className="text-lg font-medium">{selectedVehicle.model}</h3>
+                <Badge
+                  className={
+                    selectedVehicle.status === "available"
+                      ? "bg-green-100 text-green-800"
+                      : selectedVehicle.status === "booked"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }
+                >
+                  {selectedVehicle.status}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium">Type:</p>
+                  <p>{selectedVehicle.type}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Capacity:</p>
+                  <p>{selectedVehicle.capacity}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Registration:</p>
+                  <p>{selectedVehicle.licensePlate}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Fuel Level:</p>
+                  <p>{selectedVehicle.fuelLevel}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Last Maintenance:</p>
+                  <p>
+                    {new Date(selectedVehicle.lastService).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        year: "2-digit",
+                        month: "short",
+                      }
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedVehicle(null)}
+              >
+                Close
+              </Button>
+              {selectedVehicle.status === "available" && (
+                <Button
+                  onClick={() => {
+                    setIsBookingOpen(true);
+                    // No need to call handleVehicleSelect here, as selectedVehicle is already set
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Book for Site Visit
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Dialog for Booking a Site Visit */}
+      <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+        <DialogContent className="sm:max-w-[600px] sm:max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Book a Site Visit</DialogTitle>
+            <DialogDescription>
+              Complete the form to book a vehicle for your client's site visit
+            </DialogDescription>
+          </DialogHeader>
+
+          {bookingStep === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">1. Select a Client</p>
+                <Input
+                  placeholder="Search clients..."
+                  value={clientSearch}
+                  onChange={(e) => {
+                    setClientSearch(e.target.value);
+                  }}
+                />
+                <div className="h-[200px] overflow-y-auto border rounded-md p-4">
+                  {filteredClients.length > 0 ? (
+                    filteredClients.map((client) => (
+                      <ClientSelectionItem
+                        key={client._id}
+                        client={client}
+                        onClick={() => setSelectedClient(client)}
+                        isSelected={selectedClient?._id === client._id}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      No clients found.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2 p-4 border rounded-xl bg-white shadow-sm">
+                <p className="text-base font-semibold text-gray-700">
+                  2. Client's Property Details
+                </p>
+
+                {selectedClient ? (
+                  <div className="space-y-1">
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-800">
+                        Property:{" "}
+                      </span>
+                      {selectedClient.property.basicInfo.projectName}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-800">Notes: </span>
+                      {selectedClient.notes || "N/A"}
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-muted-foreground">No upcoming visits.</p>
+                  <div className="text-sm text-gray-500 italic">
+                    No client selected.
+                  </div>
                 )}
               </div>
-            </TabsContent>
-            <TabsContent value="completed">
-              <div className="grid gap-6">
-                {completedVisits.length > 0 ? (
-                  completedVisits.map((visit) => (
-                    <VisitCard
-                      key={visit._id}
-                      visit={visit}
-                      buttonText="View Details"
-                      buttonVariant="outline"
-                      showNotes
-                      onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
-                    />
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">No completed visits.</p>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">3. Select a Vehicle</p>
+                {(isTeamLead || isAgent) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {vehicles
+                      ?.filter((v) => {
+                        if (isTeamLead) return v.status === "available";
+                        if (isAgent) return v.status === "assigned";
+                        return false;
+                      })
+                      .map((vehicle) => (
+                        <Button
+                          key={vehicle._id}
+                          variant={
+                            selectedVehicle?._id === vehicle._id
+                              ? "default"
+                              : "outline"
+                          }
+                          className="justify-start h-auto p-3"
+                          onClick={() => setSelectedVehicle(vehicle)}
+                        >
+                          <div className="flex items-center">
+                            <Car className="mr-2 h-4 w-4 text-estate-navy" />
+                            <div className="text-left">
+                              <p className="font-medium">{vehicle.model}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {vehicle.type} • {vehicle.capacity}
+                              </p>
+                            </div>
+                          </div>
+                        </Button>
+                      ))}
+                  </div>
+                )}
+                {!isTeamLead && !isAgent && (
+                  <p className="text-muted-foreground">
+                    Only Team Leads and Agents can select vehicles.
+                  </p>
+                )}
+                {selectedClient && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Selected Vehicle:{" "}
+                    {selectedVehicle ? (
+                      <span className="font-semibold">
+                        {selectedVehicle.model} ({selectedVehicle.licensePlate})
+                      </span>
+                    ) : (
+                      "None"
+                    )}
+                  </p>
                 )}
               </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
 
-        {/* Dialog for Vehicle Details (remains unchanged) */}
-        {selectedVehicle && (
-          <Dialog
-            open={!!selectedVehicle && !isBookingOpen}
-            onOpenChange={(open) => {
-              if (!open) setSelectedVehicle(null);
-            }}
-          >
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Vehicle Details</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
+          {bookingStep === 2 && selectedVehicle && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 p-3 rounded-md">
                 <div className="flex items-center gap-2">
                   <Car className="h-5 w-5 text-estate-navy" />
-                  <h3 className="text-lg font-medium">
-                    {selectedVehicle.model}
-                  </h3>
-                  <Badge
-                    className={
-                      selectedVehicle.status === "available"
-                        ? "bg-green-100 text-green-800"
-                        : selectedVehicle.status === "booked"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }
-                  >
-                    {selectedVehicle.status}
+                  <p className="font-medium">{selectedVehicle.model}</p>
+                  <Badge className="bg-green-100 text-green-800">
+                    {selectedVehicle?.status}
                   </Badge>
                 </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedVehicle.type} • {selectedVehicle.capacity} •{" "}
+                  {selectedVehicle.licensePlate}
+                </p>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="mb-4">
+                <Label
+                  htmlFor="priority"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Priority
+                </Label>
+
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger
+                    id="priority"
+                    className="w-[150px] border px-3 py-2 rounded-md"
+                  >
+                    <SelectValue placeholder="Select Priority" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Visit Date & Time</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="font-medium">Type:</p>
-                    <p>{selectedVehicle.type}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Date</p>
+                    <Input
+                      type="date"
+                      required
+                      value={visitDate}
+                      onChange={(e) => setVisitDate(e.target.value)}
+                    />
                   </div>
                   <div>
-                    <p className="font-medium">Capacity:</p>
-                    <p>{selectedVehicle.capacity}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Time</p>
+                    <Input
+                      type="time"
+                      required
+                      value={visitTime}
+                      onChange={(e) => setVisitTime(e.target.value)}
+                    />
                   </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Additional Information</p>
+                <Input
+                  placeholder="Special requests or notes"
+                  value={additionalNotes}
+                  onChange={(e) => setAdditionalNotes(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {bookingStep === 1 ? (
+              <div className="flex justify-between w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBookingOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => handleVehicleSelect(selectedVehicle!)} // Use handleVehicleSelect to transition to step 2
+                  disabled={!selectedClient || !selectedVehicle}
+                >
+                  Next: Schedule Visit
+                </Button>
+              </div>
+            ) : (
+              <div className="flex justify-between w-full">
+                <Button variant="outline" onClick={() => setBookingStep(1)}>
+                  Back
+                </Button>
+                <Button
+                  onClick={handleBookingComplete}
+                  disabled={
+                    bookSiteVisitMutation.isPending || !visitDate || !visitTime
+                  }
+                >
+                  {bookSiteVisitMutation.isPending
+                    ? "Booking..."
+                    : "Confirm Booking"}
+                </Button>
+              </div>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for Viewing Site Visit Details */}
+      <Dialog
+        open={!!selectedVisit}
+        onOpenChange={() => setSelectedVisit(null)}
+      >
+        <DialogContent className="sm:max-w-[600px] sm:max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Site Visit Details</DialogTitle>
+            <DialogDescription>
+              Comprehensive information about this site visit.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedVisit && (
+            <div className="space-y-6 py-4">
+              {/* Client Information */}
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
+                  <MapPin className="h-5 w-5 text-muted-foreground" /> Client &
+                  Property
+                </h3>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={undefined} />
+                    <AvatarFallback>
+                      {selectedVisit.clientId.name
+                        ?.split(" ")
+                        .map((word) => word[0])
+                        .join("")
+                        .toUpperCase() || "NA"}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
-                    <p className="font-medium">Registration:</p>
-                    <p>{selectedVehicle.licensePlate}</p>
+                    <p className="font-medium text-lg">
+                      {selectedVisit.clientId.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedVisit.clientId.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />{" "}
+                      {selectedVisit.clientId.property.basicInfo.projectName}
+                    </p>
                   </div>
-                  <div>
-                    <p className="font-medium">Fuel Level:</p>
-                    <p>{selectedVehicle.fuelLevel}</p>
+                </div>
+                {selectedVisit.clientId.notes && (
+                  <div className="mt-2 text-sm text-muted-foreground border-t pt-2">
+                    <p className="font-medium">Client Notes:</p>
+                    <p>{selectedVisit.clientId.notes}</p>
                   </div>
+                )}
+              </div>
+
+              {/* Visit Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">Last Maintenance:</p>
+                    <p className="font-medium">Date:</p>
                     <p>
-                      {new Date(selectedVehicle.lastService).toLocaleDateString(
+                      {new Date(selectedVisit.date).toLocaleDateString(
                         "en-IN",
                         {
-                          day: "2-digit",
-                          year: "2-digit",
-                          month: "short",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
                         }
                       )}
                     </p>
                   </div>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedVehicle(null)}
-                >
-                  Close
-                </Button>
-                {selectedVehicle.status === "available" && (
-                  <Button
-                    onClick={() => {
-                      setIsBookingOpen(true);
-                      // No need to call handleVehicleSelect here, as selectedVehicle is already set
-                    }}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Book for Site Visit
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Dialog for Booking a Site Visit */}
-        <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-          <DialogContent className="sm:max-w-[600px] sm:max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Book a Site Visit</DialogTitle>
-              <DialogDescription>
-                Complete the form to book a vehicle for your client's site visit
-              </DialogDescription>
-            </DialogHeader>
-
-            {bookingStep === 1 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">1. Select a Client</p>
-                  <Input
-                    placeholder="Search clients..."
-                    value={clientSearch}
-                    onChange={(e) => {
-                      setClientSearch(e.target.value);
-                    }}
-                  />
-                  <div className="h-[200px] overflow-y-auto border rounded-md p-4">
-                    {filteredClients.length > 0 ? (
-                      filteredClients.map((client) => (
-                        <ClientSelectionItem
-                          key={client._id}
-                          client={client}
-                          onClick={() => setSelectedClient(client)}
-                          isSelected={selectedClient?._id === client._id}
-                        />
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No clients found.
-                      </p>
-                    )}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Time:</p>
+                    <p>{selectedVisit.time}</p>
                   </div>
                 </div>
-
-                <div className="space-y-2 p-4 border rounded-xl bg-white shadow-sm">
-                  <p className="text-base font-semibold text-gray-700">
-                    2. Client's Property Details
-                  </p>
-
-                  {selectedClient ? (
-                    <div className="space-y-1">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium text-gray-800">
-                          Property:{" "}
-                        </span>
-                        {selectedClient.property.basicInfo.projectName}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium text-gray-800">
-                          Notes:{" "}
-                        </span>
-                        {selectedClient.notes || "N/A"}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500 italic">
-                      No client selected.
-                    </div>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Priority:</p>
+                    <p className="capitalize">{selectedVisit.priority}</p>
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">3. Select a Vehicle</p>
-                  {(isTeamLead || isAgent) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {vehicles
-                        ?.filter((v) => {
-                          if (isTeamLead) return v.status === "available";
-                          if (isAgent) return v.status === "assigned";
-                          return false;
-                        })
-                        .map((vehicle) => (
-                          <Button
-                            key={vehicle._id}
-                            variant={
-                              selectedVehicle?._id === vehicle._id
-                                ? "default"
-                                : "outline"
-                            }
-                            className="justify-start h-auto p-3"
-                            onClick={() => setSelectedVehicle(vehicle)}
-                          >
-                            <div className="flex items-center">
-                              <Car className="mr-2 h-4 w-4 text-estate-navy" />
-                              <div className="text-left">
-                                <p className="font-medium">{vehicle.model}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {vehicle.type} • {vehicle.capacity}
-                                </p>
-                              </div>
-                            </div>
-                          </Button>
-                        ))}
-                    </div>
-                  )}
-                  {!isTeamLead && !isAgent && (
-                    <p className="text-muted-foreground">
-                      Only Team Leads and Agents can select vehicles.
-                    </p>
-                  )}
-                  {selectedClient && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Selected Vehicle:{" "}
-                      {selectedVehicle ? (
-                        <span className="font-semibold">
-                          {selectedVehicle.model} (
-                          {selectedVehicle.licensePlate})
-                        </span>
-                      ) : (
-                        "None"
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {bookingStep === 2 && selectedVehicle && (
-              <div className="space-y-4">
-                <div className="bg-muted/50 p-3 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-5 w-5 text-estate-navy" />
-                    <p className="font-medium">{selectedVehicle.model}</p>
-                    <Badge className="bg-green-100 text-green-800">
-                      {selectedVehicle?.status}
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Status:</p>
+                    <Badge className={getStatusColor(selectedVisit?.status)}>
+                      {selectedVisit.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {selectedVehicle.type} • {selectedVehicle.capacity} •{" "}
-                    {selectedVehicle.licensePlate}
-                  </p>
-                </div>
-
-                <div className="mb-4">
-                  <Label
-                    htmlFor="priority"
-                    className="block text-sm font-medium mb-1"
-                  >
-                    Priority
-                  </Label>
-
-                  <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger
-                      id="priority"
-                      className="w-[150px] border px-3 py-2 rounded-md"
-                    >
-                      <SelectValue placeholder="Select Priority" />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Visit Date & Time</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Date</p>
-                      <Input
-                        type="date"
-                        required
-                        value={visitDate}
-                        onChange={(e) => setVisitDate(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Time</p>
-                      <Input
-                        type="time"
-                        required
-                        value={visitTime}
-                        onChange={(e) => setVisitTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Additional Information</p>
-                  <Input
-                    placeholder="Special requests or notes"
-                    value={additionalNotes}
-                    onChange={(e) => setAdditionalNotes(e.target.value)}
-                  />
                 </div>
               </div>
-            )}
 
-            <DialogFooter>
-              {bookingStep === 1 ? (
-                <div className="flex justify-between w-full">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsBookingOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => handleVehicleSelect(selectedVehicle!)} // Use handleVehicleSelect to transition to step 2
-                    disabled={!selectedClient || !selectedVehicle}
-                  >
-                    Next: Schedule Visit
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex justify-between w-full">
-                  <Button variant="outline" onClick={() => setBookingStep(1)}>
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleBookingComplete}
-                    disabled={
-                      bookSiteVisitMutation.isPending ||
-                      !visitDate ||
-                      !visitTime
+              {/* Vehicle Information */}
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
+                  <Car className="h-5 w-5 text-muted-foreground" /> Assigned
+                  Vehicle
+                </h3>
+                <div className="space-y-1">
+                  <p className="font-medium">{selectedVisit.vehicleId.model}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Type: {selectedVisit.vehicleId.type} • Capacity:{" "}
+                    {selectedVisit.vehicleId.capacity}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    License Plate: {selectedVisit.vehicleId.licensePlate}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Fuel Level: {selectedVisit.vehicleId.fuelLevel} • Last
+                    Service:{" "}
+                    {new Date(
+                      selectedVisit.vehicleId.lastService
+                    ).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      year: "2-digit",
+                      month: "short",
+                    })}
+                  </p>
+                  <Badge
+                    className={
+                      selectedVisit.vehicleId.status === "available"
+                        ? "bg-green-100 text-green-800"
+                        : selectedVisit.vehicleId.status === "booked"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-red-100 text-red-800"
                     }
                   >
-                    {bookSiteVisitMutation.isPending
-                      ? "Booking..."
-                      : "Confirm Booking"}
-                  </Button>
+                    {selectedVisit.vehicleId.status}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Additional Notes */}
+              {selectedVisit.notes && (
+                <div>
+                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
+                    <StickyNote className="h-5 w-5 text-muted-foreground" />{" "}
+                    Additional Notes
+                  </h3>
+                  <p className="text-muted-foreground">{selectedVisit.notes}</p>
                 </div>
               )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Dialog for Viewing Site Visit Details */}
-        <Dialog
-          open={!!selectedVisit}
-          onOpenChange={() => setSelectedVisit(null)}
-        >
-          <DialogContent className="sm:max-w-[600px] sm:max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Site Visit Details</DialogTitle>
-              <DialogDescription>
-                Comprehensive information about this site visit.
-              </DialogDescription>
-            </DialogHeader>
-            {selectedVisit && (
-              <div className="space-y-6 py-4">
-                {/* Client Information */}
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" /> Client
-                    & Property
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={undefined} />
-                      <AvatarFallback>
-                        {selectedVisit.clientId.name
-                          ?.split(" ")
-                          .map((word) => word[0])
-                          .join("")
-                          .toUpperCase() || "NA"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-lg">
-                        {selectedVisit.clientId.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedVisit.clientId.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />{" "}
-                        {selectedVisit.clientId.property.basicInfo.projectName}
-                      </p>
-                    </div>
-                  </div>
-                  {selectedVisit.clientId.notes && (
-                    <div className="mt-2 text-sm text-muted-foreground border-t pt-2">
-                      <p className="font-medium">Client Notes:</p>
-                      <p>{selectedVisit.clientId.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Visit Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Date:</p>
-                      <p>
-                        {new Date(selectedVisit.date).toLocaleDateString(
-                          "en-IN",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          }
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Time:</p>
-                      <p>{selectedVisit.time}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Priority:</p>
-                      <p className="capitalize">{selectedVisit.priority}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Status:</p>
-                      <Badge className={getStatusColor(selectedVisit?.status)}>
-                        {selectedVisit.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vehicle Information */}
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                    <Car className="h-5 w-5 text-muted-foreground" /> Assigned
-                    Vehicle
-                  </h3>
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      {selectedVisit.vehicleId.model}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Type: {selectedVisit.vehicleId.type} • Capacity:{" "}
-                      {selectedVisit.vehicleId.capacity}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      License Plate: {selectedVisit.vehicleId.licensePlate}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Fuel Level: {selectedVisit.vehicleId.fuelLevel} • Last
-                      Service:{" "}
-                      {new Date(
-                        selectedVisit.vehicleId.lastService
-                      ).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        year: "2-digit",
-                        month: "short",
-                      })}
-                    </p>
-                    <Badge
-                      className={
-                        selectedVisit.vehicleId.status === "available"
-                          ? "bg-green-100 text-green-800"
-                          : selectedVisit.vehicleId.status === "booked"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }
-                    >
-                      {selectedVisit.vehicleId.status}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Additional Notes */}
-                {selectedVisit.notes && (
-                  <div>
-                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                      <StickyNote className="h-5 w-5 text-muted-foreground" />{" "}
-                      Additional Notes
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {selectedVisit.notes}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedVisit(null)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </MainLayout>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedVisit(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

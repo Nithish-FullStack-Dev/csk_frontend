@@ -142,9 +142,12 @@ const ContractorProjects = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/project/projects`, {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `http://localhost:3000/api/project/projects`,
+        {
+          withCredentials: true,
+        }
+      );
       setProjects(res.data);
     } catch (err) {
       console.error("Error fetching project data:", err);
@@ -159,7 +162,7 @@ const ContractorProjects = () => {
 
   if (loading) return <div>Loading...</div>;
   return (
-    <MainLayout>
+    <>
       <div className="space-y-6 p-8">
         <div className="flex justify-between items-center">
           <div>
@@ -213,7 +216,7 @@ const ContractorProjects = () => {
                   : 0}
               </div>
               <p className="text-xs text-muted-foreground">
-                Across {projects?projects.length:"0"} projects
+                Across {projects ? projects.length : "0"} projects
               </p>
             </CardContent>
           </Card>
@@ -285,9 +288,7 @@ const ContractorProjects = () => {
                         <ArrowRight className="mx-1 h-3 w-3" />
                         <span>
                           {project.endDate
-                            ? new Date(
-                                project.endDate
-                              ).toLocaleDateString()
+                            ? new Date(project.endDate).toLocaleDateString()
                             : "?"}
                         </span>
                       </div>
@@ -508,7 +509,7 @@ const ContractorProjects = () => {
           </Form>
         </DialogContent>
       </Dialog> */}
-    </MainLayout>
+    </>
   );
 };
 

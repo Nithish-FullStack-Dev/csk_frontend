@@ -6,52 +6,58 @@ import { MapPin, Calendar, Star, Bell, Gift, Users } from "lucide-react";
 import EnquiryForm from "@/components/public/EnquiryForm";
 import { motion } from "framer-motion";
 import "../../shine.css";
+import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
+import { ColourfulText } from "@/components/ui/colourful-text";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { Property } from "@/types/property";
+import { toast } from "sonner";
 
 const UpcomingProjectsPage = () => {
-  const upcomingProjects = [
-    {
-      id: 8,
-      title: "Infinity Towers",
-      location: "Sector 150, Noida",
-      launchDate: "March 2024",
-      category: "Apartment",
-      expectedPrice: "₹45 Lakhs onwards",
-      image:
-        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["1-3 BHK", "Rooftop Pool", "Sky Lounge", "Smart Homes"],
-      description:
-        "Ultra-modern apartments with smart home technology and premium amenities.",
-      preBooking: true,
-    },
-    {
-      id: 9,
-      title: "Emerald Greens",
-      location: "Sarjapur Road, Bangalore",
-      launchDate: "June 2024",
-      category: "Villa",
-      expectedPrice: "₹95 Lakhs onwards",
-      image:
-        "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["3-4 BHK", "Golf Course", "Private Pool", "Helipad"],
-      description:
-        "Luxury villas adjacent to golf course with world-class amenities.",
-      preBooking: true,
-    },
-    {
-      id: 10,
-      title: "Coastal Paradise",
-      location: "ECR, Chennai",
-      launchDate: "September 2024",
-      category: "Apartment",
-      expectedPrice: "₹65 Lakhs onwards",
-      image:
-        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      features: ["2-3 BHK", "Beach Access", "Infinity Pool", "Spa"],
-      description:
-        "Beachfront apartments with direct beach access and resort-style amenities.",
-      preBooking: false,
-    },
-  ];
+  const [upcomingProjects, setUpcomingProjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  const fetchUpcomingProperties = async () => {
+    if (loading) return;
+    try {
+      setLoading(true);
+      const { data } = await axios.get(
+        "http://localhost:3000/api/properties/upcoming-properties"
+      );
+      const upcomingProjectsFromDB: Property[] = data.map((item: any) => {
+        const basic = item.basicInfo || {};
+        const finance = item.financialDetails || {};
+        const location = item.locationInfo || {};
+        return {
+          id: item._id,
+          title: basic?.projectName || "Untitled Project",
+          launchDate: "coming soon",
+          price: finance?.totalAmount?.toString()?.slice(0, 2) || "00",
+          location: location?.googleMapsLocation || "Not specified",
+          image:
+            location?.mainPropertyImage ||
+            "https://via.placeholder.com/400x300?text=No+Image",
+          category: basic?.propertyType || "Unknown",
+          preBooking:
+            typeof basic?.preBooking === "boolean" ? basic.preBooking : false,
+        };
+      });
+      setUpcomingProjects(upcomingProjectsFromDB);
+      setIsError(false);
+    } catch (error) {
+      console.error("Failed to upcoming properties:", error);
+      setIsError(true);
+      toast.error("Failed to load upcoming properties.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUpcomingProperties();
+    // window.scrollTo(0, 0);
+  }, []);
 
   const benefits = [
     {
@@ -98,7 +104,7 @@ const UpcomingProjectsPage = () => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8 }}
             >
-              Upcoming Real Estate Projects
+              Our Upcoming Projects
             </motion.h1>
             <motion.p
               className="text-lg sm:text-xl text-white max-w-2xl mx-auto"
@@ -176,85 +182,139 @@ const UpcomingProjectsPage = () => {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-md font-vidaloka text-red-600 mb-2">
-                Coming Soon!
+              <h2 className="text-5xl font-md font-vidaloka  mb-2">
+                <ColourfulText text="Coming Soon!" />
               </h2>
               <p className="text-gray-600">
                 Discover our upcoming developments
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {upcomingProjects.map((project) => (
-                <Card
-                  key={project.id}
-                  className="overflow-hidden hover:shadow-xl transition-all rounded-xl"
+
+            {loading ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-gray-600 animate-pulse">
+                  Please wait...
+                </h1>
+              </div>
+            ) : isError ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-red-500 mb-4">
+                  Something went wrong...
+                </h1>
+                <button
+                  onClick={fetchUpcomingProperties}
+                  disabled={loading}
+                  className={`px-4 py-2 flex items-center justify-center gap-2 rounded transition ${
+                    loading
+                      ? "bg-gray-400 cursor-not-allowed text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
                 >
-                  <div className="relative shine-effect">
-                    <img
-                      src={project.image}
-                      alt={project.title}
-                      className="w-full h-52 object-cover brightness-75"
-                    />
-                    <Badge className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 z-10">
-                      Coming Soon
-                    </Badge>
-                    {project.preBooking && (
-                      <Badge className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 z-10">
-                        Pre-Booking Open
-                      </Badge>
-                    )}
-                    <div className="absolute bottom-4 left-4 z-10 text-white">
-                      <h3 className="text-lg font-semibold">{project.title}</h3>
-                      <div className="flex items-center text-sm">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-300" />
-                        {project.location}
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="flex items-center mb-2">
-                      <Calendar className="h-4 w-4 mr-2 text-blue-600" />
-                      <span className="text-sm text-gray-600">
-                        Launch: {project.launchDate}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {project.description}
-                    </p>
-                    <div className="mb-3">
-                      {project.features.slice(0, 2).map((feature, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-block bg-gray-100 text-xs px-2 py-1 rounded-full mr-2 text-gray-700"
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {upcomingProjects.map((project) => (
+                  <CardContainer key={project.id} className="inter-var">
+                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                      {/* Pre-Booking Badge */}
+                      {project.preBooking ? (
+                        <CardItem
+                          translateZ={30}
+                          className="absolute top-4 right-4 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm z-10"
                         >
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="text-lg font-bold text-indigo-700 mb-3">
-                      {project.expectedPrice}
-                    </div>
-                    {project.preBooking ? (
-                      <Button className="w-full bg-green-600 hover:bg-green-700 rounded-full">
-                        Register Interest
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full text-blue-600 hover:bg-blue-100 rounded-full"
+                          Pre-Booking Open
+                        </CardItem>
+                      ) : (
+                        <CardItem
+                          translateZ={30}
+                          className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm z-10"
+                        >
+                          Coming Soon
+                        </CardItem>
+                      )}
+
+                      {/* Title */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
                       >
-                        Get Notified
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        {project.title}
+                      </CardItem>
+
+                      {/* Image */}
+                      <CardItem
+                        translateZ={80}
+                        className="w-full mt-4 rounded-xl overflow-hidden"
+                      >
+                        <img
+                          src={project.image}
+                          alt={project.title}
+                          className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
+                        />
+                      </CardItem>
+
+                      {/* Location */}
+                      <CardItem
+                        translateZ={20}
+                        className="mt-3 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                      >
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {project.location}
+                      </CardItem>
+
+                      {/* Launch Date */}
+                      <CardItem
+                        translateZ={20}
+                        className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                      >
+                        <Calendar className="h-4 w-4 mr-2 text-blue-600" />
+                        Launch: {project.launchDate}
+                      </CardItem>
+
+                      {/* Description */}
+                      <CardItem
+                        translateZ={20}
+                        className="text-sm text-gray-600 mt-2 line-clamp-2"
+                      >
+                        Category: {project.category}
+                      </CardItem>
+
+                      {/* Price */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-lg font-bold text-indigo-700 mt-3"
+                      >
+                        ₹{project.price} Lakhs onwards
+                      </CardItem>
+
+                      {/* Button */}
+                      <div className="mt-4">
+                        <CardItem
+                          translateZ={40}
+                          as="button"
+                          className={`w-full px-4 py-2 rounded-full text-sm font-medium ${
+                            project.preBooking
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "text-blue-600 border border-blue-600 hover:bg-blue-100"
+                          }`}
+                        >
+                          {project.preBooking
+                            ? "Register Interest"
+                            : "Get Notified"}
+                        </CardItem>
+                      </div>
+                    </CardBody>
+                  </CardContainer>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         {/* Enquiry Form */}
-        <section className="py-20 bg-gray-100">
+        <section className="py-10 bg-gray-100">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-md font-vidaloka text-orange-600 mb-2">

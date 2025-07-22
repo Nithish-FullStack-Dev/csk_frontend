@@ -187,442 +187,430 @@ const Approvals = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div>
-          <h1 className="text-3xl font-bold">Approvals</h1>
-          <p className="text-muted-foreground">
-            Review and manage team approval requests
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div>
+        <h1 className="text-3xl font-bold">Approvals</h1>
+        <p className="text-muted-foreground">
+          Review and manage team approval requests
+        </p>
+      </div>
 
-        {/* Info Cards Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending Approvals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  {pendingRequests.length}
-                </span>
-                <Clock className="h-6 w-6 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Info Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pending Approvals
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">
+                {pendingRequests.length}
+              </span>
+              <Clock className="h-6 w-6 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                High Priority
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  {pendingRequests.filter((r) => r.priority === "high").length}
-                </span>
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              High Priority
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold">
+                {pendingRequests.filter((r) => r.priority === "high").length}
+              </span>
+              <AlertCircle className="h-6 w-6 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Approved Today
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                {/* This count needs to be dynamic based on approvedRequests today */}
-                <span className="text-2xl font-bold">
-                  {
-                    approvedRequests.filter(
-                      (req) =>
-                        new Date(req.createdAt).toDateString() ===
-                        new Date().toDateString()
-                    ).length
-                  }
-                </span>
-                <Check className="h-6 w-6 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Approved Today
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              {/* This count needs to be dynamic based on approvedRequests today */}
+              <span className="text-2xl font-bold">
+                {
+                  approvedRequests.filter(
+                    (req) =>
+                      new Date(req.createdAt).toDateString() ===
+                      new Date().toDateString()
+                  ).length
+                }
+              </span>
+              <Check className="h-6 w-6 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average Response Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                {/* This is hardcoded. You'd need logic to calculate this. */}
-                <span className="text-2xl font-bold">4h</span>
-                <CheckSquare className="h-6 w-6 text-estate-navy" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Response Time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              {/* This is hardcoded. You'd need logic to calculate this. */}
+              <span className="text-2xl font-bold">4h</span>
+              <CheckSquare className="h-6 w-6 text-estate-navy" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Tabs Section */}
-        <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="pending">
-              Pending ({pendingRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="approved">
-              Approved ({approvedRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected ({rejectedRequests.length})
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs Section */}
+      <Tabs defaultValue="pending" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="pending">
+            Pending ({pendingRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved ({approvedRequests.length})
+          </TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected ({rejectedRequests.length})
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Pending Requests Tab Content */}
-          <TabsContent value="pending" className="space-y-4">
-            {pendingRequests.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
-                    No pending requests found.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              pendingRequests.map((request) => (
-                <Card
-                  key={request._id}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge
-                              className={getPriorityColor(request.priority)}
-                            >
-                              {request.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Requested by:{" "}
-                              {request.bookedBy?.name || "Unknown"}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {new Date(request.createdAt).toLocaleString()}
-                            </span>
-                          </div>
+        {/* Pending Requests Tab Content */}
+        <TabsContent value="pending" className="space-y-4">
+          {pendingRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No pending requests found.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            pendingRequests.map((request) => (
+              <Card
+                key={request._id}
+                className="hover:shadow-md transition-shadow"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={request.bookedBy?.avatar || ""} />
+                        <AvatarFallback>
+                          {request.bookedBy?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-semibold">Site Visit Request</h3>
+                          <Badge className={getPriorityColor(request.priority)}>
+                            {request.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {request.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <span>
+                            Requested by: {request.bookedBy?.name || "Unknown"}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {new Date(request.createdAt).toLocaleString()}
+                          </span>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="flex space-x-2">
-                        <Dialog
-                          open={
-                            isDialogOpen && selectedRequest?._id === request._id
-                          }
-                          onOpenChange={setIsDialogOpen}
-                        >
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setIsDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="mr-1 h-3 w-3" />
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          {selectedRequest && ( // Only render dialog content if a request is selected
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Site Visit Request</DialogTitle>
-                                <DialogDescription>
-                                  Review request details and take action
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Requested By</Label>
-                                    <div className="flex items-center space-x-2 mt-1">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage
-                                          src={
-                                            selectedRequest.bookedBy?.avatar ||
-                                            ""
-                                          }
-                                        />
-                                        <AvatarFallback>
-                                          {selectedRequest.bookedBy?.name?.charAt(
-                                            0
-                                          ) || "U"}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">
-                                        {selectedRequest.bookedBy?.name}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Label>Request Time</Label>
-                                    <p className="text-sm mt-1">
-                                      {new Date(
-                                        selectedRequest.createdAt
-                                      ).toLocaleString()}
-                                    </p>
+                    <div className="flex space-x-2">
+                      <Dialog
+                        open={
+                          isDialogOpen && selectedRequest?._id === request._id
+                        }
+                        onOpenChange={setIsDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedRequest(request);
+                              setIsDialogOpen(true);
+                            }}
+                          >
+                            <Eye className="mr-1 h-3 w-3" />
+                            View
+                          </Button>
+                        </DialogTrigger>
+                        {selectedRequest && ( // Only render dialog content if a request is selected
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Site Visit Request</DialogTitle>
+                              <DialogDescription>
+                                Review request details and take action
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Requested By</Label>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage
+                                        src={
+                                          selectedRequest.bookedBy?.avatar || ""
+                                        }
+                                      />
+                                      <AvatarFallback>
+                                        {selectedRequest.bookedBy?.name?.charAt(
+                                          0
+                                        ) || "U"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm">
+                                      {selectedRequest.bookedBy?.name}
+                                    </span>
                                   </div>
                                 </div>
-
-                                <div className="space-y-2">
-                                  <Label>Details</Label>
-                                  <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span>Date:</span>
-                                      <span>{selectedRequest.date}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Time:</span>
-                                      <span>{selectedRequest.time}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Priority:</span>
-                                      <span>{selectedRequest.priority}</span>
-                                    </div>
-                                    {selectedRequest.notes && (
-                                      <div className="flex justify-between">
-                                        <span>Notes:</span>
-                                        <span>{selectedRequest.notes}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label htmlFor="approval-notes">
-                                    Approval Notes (Optional)
-                                  </Label>
-                                  <Textarea
-                                    id="approval-notes"
-                                    placeholder="Add any notes or conditions..."
-                                    onChange={(e) =>
-                                      setApprovalNotes(e.target.value)
-                                    }
-                                    value={approvalNotes}
-                                  />
-                                </div>
-
-                                <div className="flex space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    className="flex-1 text-red-600 border-red-200"
-                                    onClick={() =>
-                                      handleAction(
-                                        selectedRequest._id,
-                                        "cancelled"
-                                      )
-                                    }
-                                    disabled={updateSiteVisitStatus.isPending}
-                                  >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Reject
-                                  </Button>
-                                  <Button
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                    onClick={() =>
-                                      handleAction(
-                                        selectedRequest._id,
-                                        "confirmed"
-                                      )
-                                    }
-                                    disabled={updateSiteVisitStatus.isPending}
-                                  >
-                                    <Check className="mr-2 h-4 w-4" />
-                                    Approve
-                                  </Button>
+                                <div>
+                                  <Label>Request Time</Label>
+                                  <p className="text-sm mt-1">
+                                    {new Date(
+                                      selectedRequest.createdAt
+                                    ).toLocaleString()}
+                                  </p>
                                 </div>
                               </div>
-                            </DialogContent>
-                          )}
-                        </Dialog>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600"
-                          onClick={() => handleAction(request._id, "cancelled")}
-                          disabled={updateSiteVisitStatus.isPending}
-                        >
-                          <X className="mr-1 h-3 w-3" />
-                          Reject
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleAction(request._id, "confirmed")}
-                          disabled={updateSiteVisitStatus.isPending}
-                        >
-                          <Check className="mr-1 h-3 w-3" />
-                          Approve
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
 
-          {/* Approved Requests Tab Content */}
-          <TabsContent value="approved" className="space-y-4">
-            {approvedRequests.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
-                    No approved requests found.
-                  </p>
+                              <div className="space-y-2">
+                                <Label>Details</Label>
+                                <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span>Date:</span>
+                                    <span>{selectedRequest.date}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Time:</span>
+                                    <span>{selectedRequest.time}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Priority:</span>
+                                    <span>{selectedRequest.priority}</span>
+                                  </div>
+                                  {selectedRequest.notes && (
+                                    <div className="flex justify-between">
+                                      <span>Notes:</span>
+                                      <span>{selectedRequest.notes}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="approval-notes">
+                                  Approval Notes (Optional)
+                                </Label>
+                                <Textarea
+                                  id="approval-notes"
+                                  placeholder="Add any notes or conditions..."
+                                  onChange={(e) =>
+                                    setApprovalNotes(e.target.value)
+                                  }
+                                  value={approvalNotes}
+                                />
+                              </div>
+
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1 text-red-600 border-red-200"
+                                  onClick={() =>
+                                    handleAction(
+                                      selectedRequest._id,
+                                      "cancelled"
+                                    )
+                                  }
+                                  disabled={updateSiteVisitStatus.isPending}
+                                >
+                                  <X className="mr-2 h-4 w-4" />
+                                  Reject
+                                </Button>
+                                <Button
+                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  onClick={() =>
+                                    handleAction(
+                                      selectedRequest._id,
+                                      "confirmed"
+                                    )
+                                  }
+                                  disabled={updateSiteVisitStatus.isPending}
+                                >
+                                  <Check className="mr-2 h-4 w-4" />
+                                  Approve
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        )}
+                      </Dialog>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600"
+                        onClick={() => handleAction(request._id, "cancelled")}
+                        disabled={updateSiteVisitStatus.isPending}
+                      >
+                        <X className="mr-1 h-3 w-3" />
+                        Reject
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => handleAction(request._id, "confirmed")}
+                        disabled={updateSiteVisitStatus.isPending}
+                      >
+                        <Check className="mr-1 h-3 w-3" />
+                        Approve
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              approvedRequests.map((request) => (
-                <Card key={request._id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge className="bg-green-100 text-green-800">
-                              <Check className="h-3 w-3 mr-1" />
-                              Approved
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Approved by:{" "}
-                              {/* You might need to store who approved it in your backend data */}
-                              You
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {/* Display approval date if available, otherwise creation date */}
-                              {request.approvedAt
-                                ? new Date(request.approvedAt).toLocaleString()
-                                : new Date(request.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {request.approvalNotes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Notes: {request.approvalNotes}
-                            </p>
-                          )}
+            ))
+          )}
+        </TabsContent>
+
+        {/* Approved Requests Tab Content */}
+        <TabsContent value="approved" className="space-y-4">
+          {approvedRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No approved requests found.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            approvedRequests.map((request) => (
+              <Card key={request._id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={request.bookedBy?.avatar || ""} />
+                        <AvatarFallback>
+                          {request.bookedBy?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-semibold">Site Visit Request</h3>
+                          <Badge className="bg-green-100 text-green-800">
+                            <Check className="h-3 w-3 mr-1" />
+                            Approved
+                          </Badge>
                         </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {request.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <span>
+                            Approved by:{" "}
+                            {/* You might need to store who approved it in your backend data */}
+                            You
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {/* Display approval date if available, otherwise creation date */}
+                            {request.approvedAt
+                              ? new Date(request.approvedAt).toLocaleString()
+                              : new Date(request.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        {request.approvalNotes && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Notes: {request.approvalNotes}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-
-          {/* Rejected Requests Tab Content */}
-          <TabsContent value="rejected" className="space-y-4">
-            {rejectedRequests.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
-                    No rejected requests found.
-                  </p>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              rejectedRequests.map((request) => (
-                <Card key={request._id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge className="bg-red-100 text-red-800">
-                              <X className="h-3 w-3 mr-1" />
-                              Rejected
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Rejected by:{" "}
-                              {/* You might need to store who rejected it in your backend data */}
-                              You
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {/* Display rejection date if available, otherwise creation date */}
-                              {request.approvedAt // Assuming 'approvedAt' could also store rejection date
-                                ? new Date(request.approvedAt).toLocaleString()
-                                : new Date(request.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {request.approvalNotes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Notes: {request.approvalNotes}
-                            </p>
-                          )}
+            ))
+          )}
+        </TabsContent>
+
+        {/* Rejected Requests Tab Content */}
+        <TabsContent value="rejected" className="space-y-4">
+          {rejectedRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No rejected requests found.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            rejectedRequests.map((request) => (
+              <Card key={request._id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={request.bookedBy?.avatar || ""} />
+                        <AvatarFallback>
+                          {request.bookedBy?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="font-semibold">Site Visit Request</h3>
+                          <Badge className="bg-red-100 text-red-800">
+                            <X className="h-3 w-3 mr-1" />
+                            Rejected
+                          </Badge>
                         </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {request.description}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <span>
+                            Rejected by:{" "}
+                            {/* You might need to store who rejected it in your backend data */}
+                            You
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {/* Display rejection date if available, otherwise creation date */}
+                            {request.approvedAt // Assuming 'approvedAt' could also store rejection date
+                              ? new Date(request.approvedAt).toLocaleString()
+                              : new Date(request.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        {request.approvalNotes && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Notes: {request.approvalNotes}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </MainLayout>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

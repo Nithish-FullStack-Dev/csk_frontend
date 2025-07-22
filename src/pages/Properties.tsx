@@ -297,241 +297,317 @@ const Properties = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
-        {/* If a property is selected, show its details */}
-        {selectedProperty ? (
-          <PropertyDetails
-            property={selectedProperty}
-            onEdit={() => {
-              setCurrentProperty(selectedProperty);
-              setDialogOpen(true);
-            }}
-            onDelete={handleDeleteProperty}
-            onBack={() => setSelectedProperty(undefined)}
-          />
-        ) : (
-          <>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold flex items-center font-sans">
-                  <Building className="mr-2 h-7 w-7 font-sans" />
-                  Properties
-                </h1>
-                <p className="text-muted-foreground font-sans">
-                  Manage and track your real estate portfolio
-                </p>
-              </div>
-              {canEdit && (
-                <div className="flex gap-3">
-                  <Button
-                    className="bg-estate-navy hover:bg-estate-navy/90"
-                    onClick={() => {
-                      setCurrentProperty(undefined);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add New Property
-                  </Button>
-                  <Button
-                    className="bg-estate-tomato hover:bg-estate-tomato/90"
-                    onClick={() => {
-                      setCurrentOpenPlot(undefined);
-                      setDialogOpenPlot(true);
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> Add Open Plots
-                  </Button>
-                </div>
-              )}
+    <div className="space-y-6">
+      {/* If a property is selected, show its details */}
+      {selectedProperty ? (
+        <PropertyDetails
+          property={selectedProperty}
+          onEdit={() => {
+            setCurrentProperty(selectedProperty);
+            setDialogOpen(true);
+          }}
+          onDelete={handleDeleteProperty}
+          onBack={() => setSelectedProperty(undefined)}
+        />
+      ) : (
+        <>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center font-sans">
+                <Building className="mr-2 h-7 w-7 font-sans" />
+                Properties
+              </h1>
+              <p className="text-muted-foreground font-sans">
+                Manage and track your real estate portfolio
+              </p>
             </div>
+            {canEdit && (
+              <div className="flex gap-3">
+                <Button
+                  className="bg-estate-navy hover:bg-estate-navy/90"
+                  onClick={() => {
+                    setCurrentProperty(undefined);
+                    setDialogOpen(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add New Property
+                </Button>
+                <Button
+                  className="bg-estate-tomato hover:bg-estate-tomato/90"
+                  onClick={() => {
+                    setCurrentOpenPlot(undefined);
+                    setDialogOpenPlot(true);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Open Plots
+                </Button>
+              </div>
+            )}
+          </div>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Search and main filters */}
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search properties by plot no, project, mem. no..."
-                        className="pl-8"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Select
-                        value={projectFilter}
-                        onValueChange={setProjectFilter}
-                      >
-                        <SelectTrigger className="w-[200px]">
-                          <Building className="mr-2 h-4 w-4" />
-                          <SelectValue placeholder="Project" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Projects</SelectItem>
-                          {uniqueProjects.map((project) => (
-                            <SelectItem key={project} value={project}>
-                              {project}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={statusFilter}
-                        onValueChange={setStatusFilter}
-                      >
-                        <SelectTrigger className="w-[200px] font-sans">
-                          <Filter className="mr-2 h-4 w-4" />
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="Available">Available</SelectItem>
-                          <SelectItem value="Sold">Sold</SelectItem>
-                          <SelectItem value="Under Construction">
-                            Under Construction
-                          </SelectItem>
-                          <SelectItem value="Reserved">Reserved</SelectItem>
-                          <SelectItem value="Blocked">Blocked</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Button
-                        variant="outline"
-                        className="w-[50px] flex-shrink-0"
-                        onClick={() => setShowFilters(!showFilters)}
-                      >
-                        <SlidersHorizontal className="h-4 w-4" />
-                      </Button>
-
-                      {hasActiveFilters() && (
-                        <Button
-                          variant="ghost"
-                          className="flex-shrink-0"
-                          onClick={clearFilters}
-                        >
-                          <X className="mr-2 h-4 w-4" /> Clear
-                        </Button>
-                      )}
-                    </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {/* Search and main filters */}
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search properties by plot no, project, mem. no..."
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
-
-                  {/* Additional filters section */}
-                  {showFilters && (
-                    <Card className="bg-muted/50 font-sans">
-                      <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div>
-                            <p className="text-sm font-medium mb-2">
-                              Customer Status
-                            </p>
-                            <Select
-                              value={customerFilter}
-                              onValueChange={setCustomerFilter}
-                            >
-                              <SelectTrigger>
-                                <User className="mr-2 h-4 w-4" />
-                                <SelectValue placeholder="Customer Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">
-                                  All Customers
-                                </SelectItem>
-                                <SelectItem value="Purchased">
-                                  Purchased
-                                </SelectItem>
-                                <SelectItem value="Inquiry">Inquiry</SelectItem>
-                                <SelectItem value="Blocked">Blocked</SelectItem>
-                                <SelectItem value="Open">Open</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {/* Additional filter options could be added here */}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* View mode toggle */}
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-muted-foreground">
-                      {filteredProperties.length}{" "}
-                      {filteredProperties.length === 1
-                        ? "property"
-                        : "properties"}{" "}
-                      found
-                    </div>
-                    <Tabs
-                      value={viewMode}
-                      onValueChange={setViewMode}
-                      className="w-auto"
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Select
+                      value={projectFilter}
+                      onValueChange={setProjectFilter}
                     >
-                      <TabsList>
-                        <TabsTrigger value="list" className="flex items-center">
-                          <PanelLeft className="mr-2 h-4 w-4" />
-                          List
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="detail"
-                          className="flex items-center"
-                        >
-                          <LayoutGrid className="mr-2 h-4 w-4" />
-                          Details
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                      <SelectTrigger className="w-[200px]">
+                        <Building className="mr-2 h-4 w-4" />
+                        <SelectValue placeholder="Project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Projects</SelectItem>
+                        {uniqueProjects.map((project) => (
+                          <SelectItem key={project} value={project}>
+                            {project}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
+                      <SelectTrigger className="w-[200px] font-sans">
+                        <Filter className="mr-2 h-4 w-4" />
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Available">Available</SelectItem>
+                        <SelectItem value="Sold">Sold</SelectItem>
+                        <SelectItem value="Under Construction">
+                          Under Construction
+                        </SelectItem>
+                        <SelectItem value="Reserved">Reserved</SelectItem>
+                        <SelectItem value="Blocked">Blocked</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      variant="outline"
+                      className="w-[50px] flex-shrink-0"
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+
+                    {hasActiveFilters() && (
+                      <Button
+                        variant="ghost"
+                        className="flex-shrink-0"
+                        onClick={clearFilters}
+                      >
+                        <X className="mr-2 h-4 w-4" /> Clear
+                      </Button>
+                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Properties listing */}
-            {filteredProperties.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Building className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <h3 className="text-xl font-medium">No properties found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search or filters to find properties.
-                </p>
+                {/* Additional filters section */}
+                {showFilters && (
+                  <Card className="bg-muted/50 font-sans">
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm font-medium mb-2">
+                            Customer Status
+                          </p>
+                          <Select
+                            value={customerFilter}
+                            onValueChange={setCustomerFilter}
+                          >
+                            <SelectTrigger>
+                              <User className="mr-2 h-4 w-4" />
+                              <SelectValue placeholder="Customer Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Customers</SelectItem>
+                              <SelectItem value="Purchased">
+                                Purchased
+                              </SelectItem>
+                              <SelectItem value="Inquiry">Inquiry</SelectItem>
+                              <SelectItem value="Blocked">Blocked</SelectItem>
+                              <SelectItem value="Open">Open</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {/* Additional filter options could be added here */}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* View mode toggle */}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-muted-foreground">
+                    {filteredProperties.length}{" "}
+                    {filteredProperties.length === 1
+                      ? "property"
+                      : "properties"}{" "}
+                    found
+                  </div>
+                  <Tabs
+                    value={viewMode}
+                    onValueChange={setViewMode}
+                    className="w-auto"
+                  >
+                    <TabsList>
+                      <TabsTrigger value="list" className="flex items-center">
+                        <PanelLeft className="mr-2 h-4 w-4" />
+                        List
+                      </TabsTrigger>
+                      <TabsTrigger value="detail" className="flex items-center">
+                        <LayoutGrid className="mr-2 h-4 w-4" />
+                        Details
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <Tabs
-                  value={statusTab}
-                  onValueChange={setStatusTab}
-                  className="w-full"
-                >
-                  <TabsList className="grid grid-cols-5 mb-4">
-                    <TabsTrigger value="all">All Properties</TabsTrigger>
-                    <TabsTrigger
-                      value="available"
-                      className="flex items-center"
-                    >
-                      <Building className="mr-2 h-4 w-4" /> Available
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="construction"
-                      className="flex items-center"
-                    >
-                      <CalendarClock className="mr-2 h-4 w-4" /> Under
-                      Construction
-                    </TabsTrigger>
-                    <TabsTrigger value="sold" className="flex items-center">
-                      <Banknote className="mr-2 h-4 w-4" /> Sold
-                    </TabsTrigger>
-                    <TabsTrigger value="upcoming" className="flex items-center">
-                      <CalendarCheck2 className="mr-2 h-4 w-4" /> Upcoming
-                    </TabsTrigger>
-                  </TabsList>
+            </CardContent>
+          </Card>
 
-                  <TabsContent value="all">
-                    <div className="space-y-4">
-                      {viewMode === "list" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredProperties.map((property) => (
+          {/* Properties listing */}
+          {filteredProperties.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Building className="h-16 w-16 text-muted-foreground/30 mb-4" />
+              <h3 className="text-xl font-medium">No properties found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search or filters to find properties.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Tabs
+                value={statusTab}
+                onValueChange={setStatusTab}
+                className="w-full"
+              >
+                <TabsList className="grid grid-cols-5 mb-4">
+                  <TabsTrigger value="all">All Properties</TabsTrigger>
+                  <TabsTrigger value="available" className="flex items-center">
+                    <Building className="mr-2 h-4 w-4" /> Available
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="construction"
+                    className="flex items-center"
+                  >
+                    <CalendarClock className="mr-2 h-4 w-4" /> Under
+                    Construction
+                  </TabsTrigger>
+                  <TabsTrigger value="sold" className="flex items-center">
+                    <Banknote className="mr-2 h-4 w-4" /> Sold
+                  </TabsTrigger>
+                  <TabsTrigger value="upcoming" className="flex items-center">
+                    <CalendarCheck2 className="mr-2 h-4 w-4" /> Upcoming
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all">
+                  <div className="space-y-4">
+                    {viewMode === "list" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProperties.map((property) => (
+                          <div
+                            key={property.id}
+                            className="cursor-pointer"
+                            onClick={() => setSelectedProperty(property)}
+                          >
+                            <div className="relative group">
+                              {/* Thumbnail */}
+                              <div className="relative h-48 overflow-hidden rounded-t-lg">
+                                {property.thumbnailUrl ? (
+                                  <img
+                                    src={property.thumbnailUrl}
+                                    alt={property.projectName}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                                    <Building className="h-12 w-12 text-muted-foreground/20" />
+                                  </div>
+                                )}
+
+                                {/* Status indicator */}
+                                <div className="absolute top-3 right-3">
+                                  <Badge
+                                    variant="outline"
+                                    className={`${
+                                      property.status === "Available"
+                                        ? "bg-green-500"
+                                        : property.status === "Sold"
+                                        ? "bg-blue-500"
+                                        : property.status ===
+                                          "Under Construction"
+                                        ? "bg-yellow-500"
+                                        : property.status === "Reserved"
+                                        ? "bg-purple-500"
+                                        : "bg-red-500"
+                                    } text-white`}
+                                  >
+                                    {property.status}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Info section */}
+                              <div className="p-4 border border-t-0 rounded-b-lg">
+                                <h3 className="font-medium text-lg">
+                                  {property.projectName}
+                                </h3>
+                                <div className="flex items-center text-muted-foreground text-sm mt-1">
+                                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                                  <span>Plot {property.plotNo}</span>
+                                </div>
+                                <div className="mt-3 flex justify-between items-center">
+                                  <div className="font-medium">
+                                    ₹{property.totalAmount.toLocaleString()}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Mem. {property.memNo}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredProperties.map((property) => (
+                          <PropertyCardDetailed
+                            key={property.id}
+                            property={property}
+                            onView={() => setSelectedProperty(property)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="available">
+                  <div className="space-y-4">
+                    {viewMode === "list" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProperties
+                          .filter((property) => property.status === "Available")
+                          .map((property) => (
                             <div
                               key={property.id}
                               className="cursor-pointer"
@@ -595,406 +671,316 @@ const Properties = () => {
                               </div>
                             </div>
                           ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredProperties.map((property) => (
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredProperties
+                          .filter((property) => property.status === "Available")
+                          .map((property) => (
                             <PropertyCardDetailed
                               key={property.id}
                               property={property}
                               onView={() => setSelectedProperty(property)}
                             />
                           ))}
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
 
-                  <TabsContent value="available">
-                    <div className="space-y-4">
-                      {viewMode === "list" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredProperties
-                            .filter(
-                              (property) => property.status === "Available"
-                            )
-                            .map((property) => (
-                              <div
-                                key={property.id}
-                                className="cursor-pointer"
-                                onClick={() => setSelectedProperty(property)}
-                              >
-                                <div className="relative group">
-                                  {/* Thumbnail */}
-                                  <div className="relative h-48 overflow-hidden rounded-t-lg">
-                                    {property.thumbnailUrl ? (
-                                      <img
-                                        src={property.thumbnailUrl}
-                                        alt={property.projectName}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                                        <Building className="h-12 w-12 text-muted-foreground/20" />
-                                      </div>
-                                    )}
-
-                                    {/* Status indicator */}
-                                    <div className="absolute top-3 right-3">
-                                      <Badge
-                                        variant="outline"
-                                        className={`${
-                                          property.status === "Available"
-                                            ? "bg-green-500"
-                                            : property.status === "Sold"
-                                            ? "bg-blue-500"
-                                            : property.status ===
-                                              "Under Construction"
-                                            ? "bg-yellow-500"
-                                            : property.status === "Reserved"
-                                            ? "bg-purple-500"
-                                            : "bg-red-500"
-                                        } text-white`}
-                                      >
-                                        {property.status}
-                                      </Badge>
+                <TabsContent value="construction">
+                  <div className="space-y-4">
+                    {viewMode === "list" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProperties
+                          .filter(
+                            (property) =>
+                              property.status === "Under Construction"
+                          )
+                          .map((property) => (
+                            <div
+                              key={property.id}
+                              className="cursor-pointer"
+                              onClick={() => setSelectedProperty(property)}
+                            >
+                              <div className="relative group">
+                                {/* Thumbnail */}
+                                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                                  {property.thumbnailUrl ? (
+                                    <img
+                                      src={property.thumbnailUrl}
+                                      alt={property.projectName}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                                      <Building className="h-12 w-12 text-muted-foreground/20" />
                                     </div>
+                                  )}
+
+                                  {/* Status indicator */}
+                                  <div className="absolute top-3 right-3">
+                                    <Badge
+                                      variant="outline"
+                                      className={`${
+                                        property.status === "Available"
+                                          ? "bg-green-500"
+                                          : property.status === "Sold"
+                                          ? "bg-blue-500"
+                                          : property.status ===
+                                            "Under Construction"
+                                          ? "bg-yellow-500"
+                                          : property.status === "Reserved"
+                                          ? "bg-purple-500"
+                                          : "bg-red-500"
+                                      } text-white`}
+                                    >
+                                      {property.status}
+                                    </Badge>
                                   </div>
+                                </div>
 
-                                  {/* Info section */}
-                                  <div className="p-4 border border-t-0 rounded-b-lg">
-                                    <h3 className="font-medium text-lg">
-                                      {property.projectName}
-                                    </h3>
-                                    <div className="flex items-center text-muted-foreground text-sm mt-1">
-                                      <MapPin className="h-3.5 w-3.5 mr-1" />
-                                      <span>Plot {property.plotNo}</span>
+                                {/* Info section */}
+                                <div className="p-4 border border-t-0 rounded-b-lg">
+                                  <h3 className="font-medium text-lg">
+                                    {property.projectName}
+                                  </h3>
+                                  <div className="flex items-center text-muted-foreground text-sm mt-1">
+                                    <MapPin className="h-3.5 w-3.5 mr-1" />
+                                    <span>Plot {property.plotNo}</span>
+                                  </div>
+                                  <div className="mt-3 flex justify-between items-center">
+                                    <div className="font-medium">
+                                      ₹{property.totalAmount.toLocaleString()}
                                     </div>
-                                    <div className="mt-3 flex justify-between items-center">
-                                      <div className="font-medium">
-                                        ₹{property.totalAmount.toLocaleString()}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">
-                                        Mem. {property.memNo}
-                                      </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Mem. {property.memNo}
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredProperties
-                            .filter(
-                              (property) => property.status === "Available"
-                            )
-                            .map((property) => (
-                              <PropertyCardDetailed
-                                key={property.id}
-                                property={property}
-                                onView={() => setSelectedProperty(property)}
-                              />
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredProperties
+                          .filter(
+                            (property) =>
+                              property.status === "Under Construction"
+                          )
+                          .map((property) => (
+                            <PropertyCardDetailed
+                              key={property.id}
+                              property={property}
+                              onView={() => setSelectedProperty(property)}
+                            />
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
 
-                  <TabsContent value="construction">
-                    <div className="space-y-4">
-                      {viewMode === "list" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredProperties
-                            .filter(
-                              (property) =>
-                                property.status === "Under Construction"
-                            )
-                            .map((property) => (
-                              <div
-                                key={property.id}
-                                className="cursor-pointer"
-                                onClick={() => setSelectedProperty(property)}
-                              >
-                                <div className="relative group">
-                                  {/* Thumbnail */}
-                                  <div className="relative h-48 overflow-hidden rounded-t-lg">
-                                    {property.thumbnailUrl ? (
-                                      <img
-                                        src={property.thumbnailUrl}
-                                        alt={property.projectName}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                                        <Building className="h-12 w-12 text-muted-foreground/20" />
-                                      </div>
-                                    )}
-
-                                    {/* Status indicator */}
-                                    <div className="absolute top-3 right-3">
-                                      <Badge
-                                        variant="outline"
-                                        className={`${
-                                          property.status === "Available"
-                                            ? "bg-green-500"
-                                            : property.status === "Sold"
-                                            ? "bg-blue-500"
-                                            : property.status ===
-                                              "Under Construction"
-                                            ? "bg-yellow-500"
-                                            : property.status === "Reserved"
-                                            ? "bg-purple-500"
-                                            : "bg-red-500"
-                                        } text-white`}
-                                      >
-                                        {property.status}
-                                      </Badge>
+                <TabsContent value="sold">
+                  <div className="space-y-4">
+                    {viewMode === "list" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProperties
+                          .filter((property) => property.status === "Sold")
+                          .map((property) => (
+                            <div
+                              key={property.id}
+                              className="cursor-pointer"
+                              onClick={() => setSelectedProperty(property)}
+                            >
+                              <div className="relative group">
+                                {/* Thumbnail */}
+                                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                                  {property.thumbnailUrl ? (
+                                    <img
+                                      src={property.thumbnailUrl}
+                                      alt={property.projectName}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                                      <Building className="h-12 w-12 text-muted-foreground/20" />
                                     </div>
+                                  )}
+
+                                  {/* Status indicator */}
+                                  <div className="absolute top-3 right-3">
+                                    <Badge
+                                      variant="outline"
+                                      className={`${
+                                        property.status === "Available"
+                                          ? "bg-green-500"
+                                          : property.status === "Sold"
+                                          ? "bg-blue-500"
+                                          : property.status ===
+                                            "Under Construction"
+                                          ? "bg-yellow-500"
+                                          : property.status === "Reserved"
+                                          ? "bg-purple-500"
+                                          : "bg-red-500"
+                                      } text-white`}
+                                    >
+                                      {property.status}
+                                    </Badge>
                                   </div>
+                                </div>
 
-                                  {/* Info section */}
-                                  <div className="p-4 border border-t-0 rounded-b-lg">
-                                    <h3 className="font-medium text-lg">
-                                      {property.projectName}
-                                    </h3>
-                                    <div className="flex items-center text-muted-foreground text-sm mt-1">
-                                      <MapPin className="h-3.5 w-3.5 mr-1" />
-                                      <span>Plot {property.plotNo}</span>
+                                {/* Info section */}
+                                <div className="p-4 border border-t-0 rounded-b-lg">
+                                  <h3 className="font-medium text-lg">
+                                    {property.projectName}
+                                  </h3>
+                                  <div className="flex items-center text-muted-foreground text-sm mt-1">
+                                    <MapPin className="h-3.5 w-3.5 mr-1" />
+                                    <span>Plot {property.plotNo}</span>
+                                  </div>
+                                  <div className="mt-3 flex justify-between items-center">
+                                    <div className="font-medium">
+                                      ₹{property.totalAmount.toLocaleString()}
                                     </div>
-                                    <div className="mt-3 flex justify-between items-center">
-                                      <div className="font-medium">
-                                        ₹{property.totalAmount.toLocaleString()}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">
-                                        Mem. {property.memNo}
-                                      </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Mem. {property.memNo}
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredProperties
-                            .filter(
-                              (property) =>
-                                property.status === "Under Construction"
-                            )
-                            .map((property) => (
-                              <PropertyCardDetailed
-                                key={property.id}
-                                property={property}
-                                onView={() => setSelectedProperty(property)}
-                              />
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredProperties
+                          .filter((property) => property.status === "Sold")
+                          .map((property) => (
+                            <PropertyCardDetailed
+                              key={property.id}
+                              property={property}
+                              onView={() => setSelectedProperty(property)}
+                            />
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
 
-                  <TabsContent value="sold">
-                    <div className="space-y-4">
-                      {viewMode === "list" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredProperties
-                            .filter((property) => property.status === "Sold")
-                            .map((property) => (
-                              <div
-                                key={property.id}
-                                className="cursor-pointer"
-                                onClick={() => setSelectedProperty(property)}
-                              >
-                                <div className="relative group">
-                                  {/* Thumbnail */}
-                                  <div className="relative h-48 overflow-hidden rounded-t-lg">
-                                    {property.thumbnailUrl ? (
-                                      <img
-                                        src={property.thumbnailUrl}
-                                        alt={property.projectName}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                                        <Building className="h-12 w-12 text-muted-foreground/20" />
-                                      </div>
-                                    )}
-
-                                    {/* Status indicator */}
-                                    <div className="absolute top-3 right-3">
-                                      <Badge
-                                        variant="outline"
-                                        className={`${
-                                          property.status === "Available"
-                                            ? "bg-green-500"
-                                            : property.status === "Sold"
-                                            ? "bg-blue-500"
-                                            : property.status ===
-                                              "Under Construction"
-                                            ? "bg-yellow-500"
-                                            : property.status === "Reserved"
-                                            ? "bg-purple-500"
-                                            : "bg-red-500"
-                                        } text-white`}
-                                      >
-                                        {property.status}
-                                      </Badge>
+                <TabsContent value="upcoming">
+                  <div className="space-y-4">
+                    {viewMode === "list" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredProperties
+                          .filter((property) => {
+                            property.status === "Reserved" ||
+                              property.status === "Blocked";
+                          })
+                          .map((property) => (
+                            <div
+                              key={property.id}
+                              className="cursor-pointer"
+                              onClick={() => setSelectedProperty(property)}
+                            >
+                              <div className="relative group">
+                                {/* Thumbnail */}
+                                <div className="relative h-48 overflow-hidden rounded-t-lg">
+                                  {property.thumbnailUrl ? (
+                                    <img
+                                      src={property.thumbnailUrl}
+                                      alt={property.projectName}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                                      <Building className="h-12 w-12 text-muted-foreground/20" />
                                     </div>
+                                  )}
+
+                                  {/* Status indicator */}
+                                  <div className="absolute top-3 right-3">
+                                    <Badge
+                                      variant="outline"
+                                      className={`${
+                                        property.status === "Available"
+                                          ? "bg-green-500"
+                                          : property.status === "Sold"
+                                          ? "bg-blue-500"
+                                          : property.status ===
+                                            "Under Construction"
+                                          ? "bg-yellow-500"
+                                          : property.status === "Reserved"
+                                          ? "bg-purple-500"
+                                          : "bg-red-500"
+                                      } text-white`}
+                                    >
+                                      {property.status}
+                                    </Badge>
                                   </div>
+                                </div>
 
-                                  {/* Info section */}
-                                  <div className="p-4 border border-t-0 rounded-b-lg">
-                                    <h3 className="font-medium text-lg">
-                                      {property.projectName}
-                                    </h3>
-                                    <div className="flex items-center text-muted-foreground text-sm mt-1">
-                                      <MapPin className="h-3.5 w-3.5 mr-1" />
-                                      <span>Plot {property.plotNo}</span>
+                                {/* Info section */}
+                                <div className="p-4 border border-t-0 rounded-b-lg">
+                                  <h3 className="font-medium text-lg">
+                                    {property.projectName}
+                                  </h3>
+                                  <div className="flex items-center text-muted-foreground text-sm mt-1">
+                                    <MapPin className="h-3.5 w-3.5 mr-1" />
+                                    <span>Plot {property.plotNo}</span>
+                                  </div>
+                                  <div className="mt-3 flex justify-between items-center">
+                                    <div className="font-medium">
+                                      ₹{property.totalAmount.toLocaleString()}
                                     </div>
-                                    <div className="mt-3 flex justify-between items-center">
-                                      <div className="font-medium">
-                                        ₹{property.totalAmount.toLocaleString()}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">
-                                        Mem. {property.memNo}
-                                      </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Mem. {property.memNo}
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredProperties
-                            .filter((property) => property.status === "Sold")
-                            .map((property) => (
-                              <PropertyCardDetailed
-                                key={property.id}
-                                property={property}
-                                onView={() => setSelectedProperty(property)}
-                              />
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredProperties
+                          .filter((property) => {
+                            property.status === "Reserved" ||
+                              property.status === "Blocked";
+                          })
+                          .map((property) => (
+                            <PropertyCardDetailed
+                              key={property.id}
+                              property={property}
+                              onView={() => setSelectedProperty(property)}
+                            />
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </>
+      )}
 
-                  <TabsContent value="upcoming">
-                    <div className="space-y-4">
-                      {viewMode === "list" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredProperties
-                            .filter((property) => {
-                              property.status === "Reserved" ||
-                                property.status === "Blocked";
-                            })
-                            .map((property) => (
-                              <div
-                                key={property.id}
-                                className="cursor-pointer"
-                                onClick={() => setSelectedProperty(property)}
-                              >
-                                <div className="relative group">
-                                  {/* Thumbnail */}
-                                  <div className="relative h-48 overflow-hidden rounded-t-lg">
-                                    {property.thumbnailUrl ? (
-                                      <img
-                                        src={property.thumbnailUrl}
-                                        alt={property.projectName}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                                        <Building className="h-12 w-12 text-muted-foreground/20" />
-                                      </div>
-                                    )}
+      {/* Dialog for creating/editing properties */}
+      <PropertyDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        property={currentProperty}
+        onSubmit={handlePropertySubmit}
+      />
 
-                                    {/* Status indicator */}
-                                    <div className="absolute top-3 right-3">
-                                      <Badge
-                                        variant="outline"
-                                        className={`${
-                                          property.status === "Available"
-                                            ? "bg-green-500"
-                                            : property.status === "Sold"
-                                            ? "bg-blue-500"
-                                            : property.status ===
-                                              "Under Construction"
-                                            ? "bg-yellow-500"
-                                            : property.status === "Reserved"
-                                            ? "bg-purple-500"
-                                            : "bg-red-500"
-                                        } text-white`}
-                                      >
-                                        {property.status}
-                                      </Badge>
-                                    </div>
-                                  </div>
-
-                                  {/* Info section */}
-                                  <div className="p-4 border border-t-0 rounded-b-lg">
-                                    <h3 className="font-medium text-lg">
-                                      {property.projectName}
-                                    </h3>
-                                    <div className="flex items-center text-muted-foreground text-sm mt-1">
-                                      <MapPin className="h-3.5 w-3.5 mr-1" />
-                                      <span>Plot {property.plotNo}</span>
-                                    </div>
-                                    <div className="mt-3 flex justify-between items-center">
-                                      <div className="font-medium">
-                                        ₹{property.totalAmount.toLocaleString()}
-                                      </div>
-                                      <div className="text-sm text-muted-foreground">
-                                        Mem. {property.memNo}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {filteredProperties
-                            .filter((property) => {
-                              property.status === "Reserved" ||
-                                property.status === "Blocked";
-                            })
-                            .map((property) => (
-                              <PropertyCardDetailed
-                                key={property.id}
-                                property={property}
-                                onView={() => setSelectedProperty(property)}
-                              />
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Dialog for creating/editing properties */}
-        <PropertyDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          property={currentProperty}
-          onSubmit={handlePropertySubmit}
-        />
-
-        <OpenPlotDialog
-          open={dialogOpenPlot}
-          onOpenChange={setDialogOpenPlot}
-          openPlot={currentOpenPolt}
-          onSubmit={handleOpenPlotSubmit}
-        />
-      </div>
-    </MainLayout>
+      <OpenPlotDialog
+        open={dialogOpenPlot}
+        onOpenChange={setDialogOpenPlot}
+        openPlot={currentOpenPolt}
+        onSubmit={handleOpenPlotSubmit}
+      />
+    </div>
   );
 };
 
