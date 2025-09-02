@@ -435,92 +435,162 @@ const ContractorMaterials = () => {
       </Tabs>
 
       {/* Materials Table */}
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Material</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Rate (₹)</TableHead>
-              <TableHead>Total (₹)</TableHead>
-              <TableHead>Supplier</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredMaterials.length === 0 ? (
+      <div className="border rounded-md">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  No materials found.
-                </TableCell>
+                <TableHead>Material</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Rate (₹)</TableHead>
+                <TableHead>Total (₹)</TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredMaterials.map((material) => (
-                <TableRow key={material._id}>
-                  <TableCell className="font-medium">{material.name}</TableCell>
-                  <TableCell>{material.type}</TableCell>
-                  <TableCell>
-                    {material.quantity} {material.unit}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {material.rate.toLocaleString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center font-medium">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {material.totalCost.toLocaleString()}
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[150px] truncate"
-                    title={material.supplier}
-                  >
-                    {material.supplier}
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[150px] truncate"
-                    title={material.project}
-                  >
-                    {material.project.projectId.basicInfo.projectName}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`${
-                        material.status === "Delivered"
-                          ? "bg-green-100 text-green-800"
-                          : material.status === "Pending"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {material.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => viewMaterial(material)}
-                    >
-                      View
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {filteredMaterials.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-24 text-center">
+                    No materials found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredMaterials.map((material) => (
+                  <TableRow key={material._id}>
+                    <TableCell className="font-medium">
+                      {material.name}
+                    </TableCell>
+                    <TableCell>{material.type}</TableCell>
+                    <TableCell>
+                      {material.quantity} {material.unit}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {material.rate.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center font-medium">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {material.totalCost.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[150px] truncate"
+                      title={material.supplier}
+                    >
+                      {material.supplier}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[150px] truncate"
+                      title={material.project}
+                    >
+                      {material.project.projectId.basicInfo.projectName}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${
+                          material.status === "Delivered"
+                            ? "bg-green-100 text-green-800"
+                            : material.status === "Pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {material.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => viewMaterial(material)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="block md:hidden p-2 space-y-4">
+          {filteredMaterials.length === 0 ? (
+            <div className="text-center py-6 text-sm text-gray-500">
+              No materials found.
+            </div>
+          ) : (
+            filteredMaterials.map((material) => (
+              <div
+                key={material._id}
+                className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
+              >
+                <div className="font-semibold text-lg">{material.name}</div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Type:</span> {material.type}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Quantity:</span>{" "}
+                  {material.quantity} {material.unit}
+                </div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Rate:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {material.rate.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Total:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {material.totalCost.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 truncate">
+                  <span className="font-medium">Supplier:</span>{" "}
+                  {material.supplier}
+                </div>
+                <div className="text-sm text-gray-600 truncate">
+                  <span className="font-medium">Project:</span>{" "}
+                  {material.project.projectId.basicInfo.projectName}
+                </div>
+                <div>
+                  <Badge
+                    className={`${
+                      material.status === "Delivered"
+                        ? "bg-green-100 text-green-800"
+                        : material.status === "Pending"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {material.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => viewMaterial(material)}
+                  >
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Add Material Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Material</DialogTitle>
           </DialogHeader>

@@ -156,7 +156,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
   };
 
   return (
-    <DialogContent className="sm:max-w-[550px]">
+    <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
       <DialogHeader>
         <DialogTitle>Add New Construction Task</DialogTitle>
         <DialogDescription>

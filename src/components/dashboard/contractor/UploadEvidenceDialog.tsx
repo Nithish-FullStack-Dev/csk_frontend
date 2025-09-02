@@ -217,7 +217,7 @@ const UploadEvidenceDialog = ({
   };
 
   return (
-    <DialogContent className="sm:max-w-[650px]">
+    <DialogContent className="md:w-[650px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
       <DialogHeader>
         <DialogTitle>Upload Task Evidence</DialogTitle>
         <DialogDescription>

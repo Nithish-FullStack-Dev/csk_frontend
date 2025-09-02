@@ -4,23 +4,25 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const ContractorTasks = () => {
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Task Management</h1>
-        <p className="text-muted-foreground">
-          Manage and track construction tasks across all projects
-        </p>
-      </div>
+    <MainLayout>
+      <div className="space-y-6 md:p-8 p-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Task Management</h1>
+          <p className="text-muted-foreground">
+            Manage and track construction tasks across all projects
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Task Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ContractorTaskList />
-        </CardContent>
-      </Card>
-    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Task Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractorTaskList />
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 };
 
