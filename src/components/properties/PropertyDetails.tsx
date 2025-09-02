@@ -7,8 +7,6 @@ import {
   Calendar,
   Edit,
   Trash,
-  DollarSign,
-  Clock,
   FileText,
   PercentIcon,
   Phone,
@@ -74,7 +72,6 @@ export function PropertyDetails({
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
-  console.log(property);
 
   // Format the date string to a readable format
   const formatDate = (dateString: string) => {
@@ -85,6 +82,7 @@ export function PropertyDetails({
       day: "numeric",
     });
   };
+
   return (
     <>
       <div className="space-y-6">
@@ -95,7 +93,7 @@ export function PropertyDetails({
             Back to All Properties
           </Button>
           {canEdit && (
-            <div className="space-x-2">
+            <div className="flex md:flex-row flex-col gap-3">
               <Button size="sm" onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
@@ -205,9 +203,7 @@ export function PropertyDetails({
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Agent Name</p>
-                  <p className="font-medium">
-                    {property?.agentId?.name || "N/A"}
-                  </p>
+                  <p className="font-medium">{property.agentName || "N/A"}</p>
                 </div>
               </div>
             </CardContent>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { User, Mail, Phone, MapPin, Edit, Save, X } from "lucide-react";
+import { User, Edit, Save, X } from "lucide-react";
 import axios from "axios";
 
 const ProfileForm = () => {
@@ -29,12 +29,9 @@ const ProfileForm = () => {
         ...formData,
       };
       console.log(updatedUser);
-      const response = await axios.post(
-        `${import.meta.env.VITE_URL}/api/user/updateUser`,
-        {
-          updatedUser,
-        }
-      );
+      await axios.post(`${import.meta.env.VITE_URL}/api/user/updateUser`, {
+        updatedUser,
+      });
       toast.success("Profile updated successfully");
       setIsEditing(false);
     } catch (error) {
@@ -78,8 +75,8 @@ const ProfileForm = () => {
       {/* Profile Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <User className="h-5 w-5" />
               Profile Information
             </CardTitle>
@@ -87,6 +84,7 @@ const ProfileForm = () => {
               variant={isEditing ? "destructive" : "outline"}
               size="sm"
               onClick={isEditing ? handleCancel : () => setIsEditing(true)}
+              className="self-start sm:self-auto"
             >
               {isEditing ? (
                 <X className="h-4 w-4 mr-2" />
@@ -98,23 +96,25 @@ const ProfileForm = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-start gap-6">
-            <Avatar className="h-24 w-24">
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
               <AvatarImage src={user.avatar} />
-              <AvatarFallback className="text-xl">
+              <AvatarFallback className="text-lg sm:text-xl">
                 {user.name
                   .split(" ")
                   .map((n) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-semibold font-sans">
+            <div className="flex-1 space-y-4 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <h2 className="text-xl sm:text-2xl font-semibold font-sans break-words">
                   {user.name}
                 </h2>
                 <Badge
-                  className={`${getRoleColor(user.role)} text-white font-sans`}
+                  className={`${getRoleColor(
+                    user.role
+                  )} text-white font-sans w-fit`}
                 >
                   {user.role.replace("_", " ").toUpperCase()}
                 </Badge>
@@ -184,12 +184,16 @@ const ProfileForm = () => {
                 </div>
               </div>
               {isEditing && (
-                <div className="flex gap-2">
-                  <Button onClick={handleSave}>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={handleSave} className="w-full sm:w-auto">
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>
-                  <Button variant="outline" onClick={handleCancel}>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    className="w-full sm:w-auto"
+                  >
                     Cancel
                   </Button>
                 </div>

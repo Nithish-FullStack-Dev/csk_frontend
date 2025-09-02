@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
@@ -61,8 +61,9 @@ const propertyFormSchema = z.object({
     "South-East",
     "South-West",
   ]),
-  priority: z.enum(["low", "medium", "high"]),
   extent: z.coerce.number().min(0, "Extent must be a positive number"),
+  projectStatus: z.enum(["ongoing", "upcoming", "completed"]),
+  preBooking: z.boolean().optional().default(false),
   customerName: z.string().optional(),
   customerStatus: z.enum(["Purchased", "Inquiry", "Blocked", "Open"]),
   status: z.enum([
@@ -74,15 +75,19 @@ const propertyFormSchema = z.object({
   ]),
   contractor: z.string().optional(),
   siteIncharge: z.string().optional(),
-  customerId: z.string().optional(),
   totalAmount: z.coerce
     .number()
     .min(0, "Total amount must be a positive number"),
-  workCompleted: z.coerce.number().min(0).max(100, "Must be between 0 and 100"),
-  deliveryDate: z.date({ required_error: "Delivery date is required" }),
+  workCompleted: z.coerce
+    .number()
+    .min(0, "Work completed percentage must be between 0 and 100")
+    .max(100),
+  deliveryDate: z.date({
+    required_error: "Delivery date is required",
+  }),
   emiScheme: z.boolean().default(false),
   contactNo: z.string().optional(),
-  agentId: z.string().optional(),
+  agentName: z.string().optional(),
   registrationStatus: z.enum([
     "Completed",
     "In Progress",
@@ -90,41 +95,17 @@ const propertyFormSchema = z.object({
     "Not Started",
   ]),
   ratePlan: z.string().optional(),
-  amountReceived: z.coerce.number().min(0, "Must be a positive number"),
-  balanceAmount: z.coerce.number().min(0, "Must be a positive number"),
+  amountReceived: z.coerce
+    .number()
+    .min(0, "Amount received must be a positive number"),
+  balanceAmount: z.coerce
+    .number()
+    .min(0, "Balance amount must be a positive number"),
   remarks: z.string().optional(),
   municipalPermission: z.boolean().default(false),
   googleMapsLocation: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   images: z.array(z.string()).optional(),
-
-  // New Fields
-  units: z.string().optional(),
-  deadline: z.preprocess((val) => {
-    if (typeof val === "string" || val instanceof Date) {
-      const date = new Date(val);
-      return isNaN(date.getTime()) ? undefined : date;
-    }
-    return undefined;
-  }, z.date({ required_error: "Deadline is required" })),
-  startDate: z.preprocess((val) => {
-    if (typeof val === "string" || val instanceof Date) {
-      const date = new Date(val);
-      return isNaN(date.getTime()) ? undefined : date;
-    }
-    return undefined;
-  }, z.date({ required_error: "Start date is required" })),
-  endDate: z.preprocess((val) => {
-    if (typeof val === "string" || val instanceof Date) {
-      const date = new Date(val);
-      return isNaN(date.getTime()) ? undefined : date;
-    }
-    return undefined;
-  }, z.date({ required_error: "End date is required" })),
-
-  teamSize: z.coerce.number().min(1, "Team size must be at least 1"),
-  estimatedBudget: z.coerce.number().min(0, "Must be a positive number"),
-  projectStatus: z.enum(["completed", "on going", "on hold"]),
 });
 
 type PropertyFormValues = z.infer<typeof propertyFormSchema>;
@@ -145,9 +126,6 @@ export function PropertyForm({
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(property?.images || []);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [siteIncharges, setSiteIncharges] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [agents, setAgents] = useState([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     property?.thumbnailUrl || ""
   );
@@ -158,34 +136,24 @@ export function PropertyForm({
     ? {
         ...property,
         propertyType: property.propertyType || "Villa",
+        projectStatus: property.projectStatus || "upcoming",
         deliveryDate: property.deliveryDate
           ? new Date(property.deliveryDate)
           : undefined,
-        deadline: property.deadline ? new Date(property.deadline) : undefined,
-        startDate: property.startDate
-          ? new Date(property.startDate)
-          : undefined,
-        endDate: property.endDate ? new Date(property.endDate) : undefined,
         images: property.images || [],
       }
     : {
         propertyType: "Villa",
         customerStatus: "Open",
         status: "Available",
+        workCompleted: 0,
         registrationStatus: "Not Started",
         emiScheme: false,
         municipalPermission: false,
         amountReceived: 0,
         balanceAmount: 0,
-        workCompleted: 0,
         images: [],
-        units: [],
-        deadline: undefined,
-        priority: "medium",
-        startDate: undefined,
-        endDate: undefined,
-        teamSize: 1,
-        estimatedBudget: 0,
+        preBooking: false,
       };
 
   const form = useForm<PropertyFormValues>({
@@ -197,6 +165,7 @@ export function PropertyForm({
   const totalAmount = form.watch("totalAmount");
   const amountReceived = form.watch("amountReceived");
   const propertyType = form.watch("propertyType");
+  const projectStatus = form.watch("projectStatus");
 
   // Update balance amount when total or received amount changes
   const recalculateBalance = () => {
@@ -263,15 +232,47 @@ export function PropertyForm({
   }, [totalAmount, amountReceived]);
 
   const handleSubmit = async (data: PropertyFormValues) => {
+    if (!user || !["owner", "admin"].includes(user.role)) {
+      toast.error("You don't have permission to perform this action");
+      return;
+    }
+    console.log(data);
     setLoading(true);
     try {
       const csrfToken = await getCsrfToken();
 
-      onSubmit({
-        ...data,
-        images: imageUrls,
-        thumbnailUrl: thumbnailPreview,
-      });
+      // 🔹 1. Upload new thumbnail (if selected), otherwise keep the old one
+      let thumbnailUrl = thumbnailPreview;
+      if (thumbnailFile) {
+        const thumbForm = new FormData();
+        thumbForm.append("file", thumbnailFile);
+        const thumbRes = await axios.post(
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
+          thumbForm,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        thumbnailUrl = thumbRes.data.url;
+      }
+
+      // 🔹 2. Upload new additional images (if any), otherwise keep existing ones
+      let uploadedImageUrls: string[] = imageUrls; // default to existing
+      if (imageFiles.length > 0) {
+        uploadedImageUrls = []; // reset if uploading new ones
+        for (const photo of imageFiles) {
+          const formData = new FormData();
+          formData.append("file", photo);
+          const res = await axios.post(
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+          if (res.data.url) uploadedImageUrls.push(res.data.url);
+        }
+      }
 
       const transformedPayload = {
         basicInfo: {
@@ -281,31 +282,24 @@ export function PropertyForm({
           propertyType: data.propertyType,
           Extent: data.extent,
           facingDirection: data.villaFacing,
+          projectStatus: data.projectStatus,
+          preBooking: data.preBooking,
         },
         customerInfo: {
-          customerId: data.customerId || "",
           customerName: data.customerName || "",
           customerStatus: data.customerStatus,
           propertyStatus: data.status,
           contactNumber: data.contactNo
             ? parseInt(data.contactNo.replace(/\D/g, ""))
             : null,
-          agentId: data.agentId || "",
+          agentName: data.agentName || "",
         },
         constructionDetails: {
-          contractor:
-            data.contractor && data.contractor !== "-"
-              ? data.contractor
-              : undefined,
+          contractor: data.contractor || "",
           siteIncharge: data.siteIncharge || "",
           workCompleted: data.workCompleted,
           deliveryDate: data.deliveryDate,
           municipalPermission: data.municipalPermission,
-          status: data.projectStatus,
-          units: data.units,
-          startDate: data.startDate,
-          endDate: data.endDate,
-          teamSize: data.teamSize,
         },
         financialDetails: {
           totalAmount: data.totalAmount,
@@ -316,12 +310,12 @@ export function PropertyForm({
           ratePlan: data.ratePlan || "",
         },
         locationInfo: {
-          mainPropertyImage: data.thumbnailUrl || "",
+          mainPropertyImage: thumbnailUrl,
           googleMapsLocation: data.googleMapsLocation || "",
-          additionalPropertyImages: data.images || [],
+          additionalPropertyImages: uploadedImageUrls,
           remarks: data.remarks || "",
         },
-        images: data.images || [],
+        images: uploadedImageUrls,
       };
 
       const config = {
@@ -331,31 +325,28 @@ export function PropertyForm({
         withCredentials: true,
       };
 
-      let response;
+      console.log(config);
 
-      if (isEditing) {
-        response = await axios.put(
-          `${import.meta.env.VITE_URL}/api/properties/updateProperty/${
-            data.memNo
-          }`,
-          transformedPayload,
-          config
-        );
-      } else {
-        response = await axios.post(
-          `${import.meta.env.VITE_URL}/api/properties/addProperty`,
-          transformedPayload,
-          config
-        );
-      }
-
-      console.log(response.data);
+      const response = isEditing
+        ? await axios.put(
+            `${import.meta.env.VITE_URL}/api/properties/updateProperty/${
+              property.id
+            }`,
+            transformedPayload,
+            config
+          )
+        : await axios.post(
+            `${import.meta.env.VITE_URL}/api/properties/addProperty`,
+            transformedPayload,
+            config
+          );
 
       toast.success(
         isEditing
           ? "Property updated successfully"
           : "Property added successfully"
       );
+      console.log(response.data);
     } catch (error) {
       console.error("Error submitting property form:", error);
       toast.error("Failed to save property");
@@ -364,73 +355,9 @@ export function PropertyForm({
     }
   };
 
-  const fetchCustomers = async () => {
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
-        {
-          withCredentials: true,
-        }
-      );
-      setCustomers(data.data || []);
-    } catch (error) {
-      console.error("Error fetching customer:", error);
-    }
-  };
-
-  const fetchAllAgents = async () => {
-    try {
-      const { data } = await axios.get(
-        "${import.meta.env.VITE_URL}/api/user/getAllAgents",
-        {
-          withCredentials: true,
-        }
-      );
-      setAgents(data || []);
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-    }
-  };
-
-  const fetchSiteIncharges = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/site-incharges`,
-        {
-          withCredentials: true,
-        }
-      );
-      setSiteIncharges(res.data || []);
-    } catch (error) {
-      console.error("Error fetching site incharges:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchSiteIncharges();
-    fetchCustomers();
-    fetchAllAgents();
-  }, []);
-
   return (
-    <FormProvider {...form}>
-      <form
-        onSubmit={(e) => {
-          console.log("🔁 Form submitted (raw)");
-          e.preventDefault();
-          form.handleSubmit(
-            (data) => {
-              console.log("✅ Valid data", data);
-              handleSubmit(data);
-            },
-            (errors) => {
-              console.error("❌ Validation failed:", errors);
-              toast.error("Form validation failed. Check console.");
-            }
-          )(e); // manually call with event
-        }}
-        className="space-y-6"
-      >
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="space-y-6">
           <div>
             <h3 className="text-lg font-medium">Basic Information</h3>
@@ -555,17 +482,66 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Extent (sq. ft)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="1200"
-                      {...field}
-                      min={0}
-                    />
+                    <Input type="number" placeholder="1200" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* project Status  */}
+            <FormField
+              control={form.control}
+              name="projectStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="upcoming">upcoming</SelectItem>
+                      <SelectItem value="ongoing">ongoing</SelectItem>
+                      <SelectItem value="completed">completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {projectStatus === "upcoming" && (
+              <FormField
+                control={form.control}
+                name="preBooking"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pre Booking</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === "Yes")}
+                      defaultValue={field.value ? "Yes" : "No"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Booking" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           <div className="pt-4">
@@ -577,35 +553,6 @@ export function PropertyForm({
           <Separator />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Customer Name */}
-            <FormField
-              control={form.control}
-              name="customerId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Choose Customer</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer._id} value={customer._id}>
-                          {customer.user.name} , {customer.user.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="customerName"
@@ -705,28 +652,17 @@ export function PropertyForm({
             {/* Agent Name */}
             <FormField
               control={form.control}
-              name="agentId"
+              name="agentName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Choose Agent</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Agent" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {agents.map((agent) => (
-                        <SelectItem key={agent._id} value={agent._id}>
-                          {agent?.name} , {agent?.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Agent Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Robert Wilson"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -741,6 +677,25 @@ export function PropertyForm({
           </div>
           <Separator />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Contractor */}
+            <FormField
+              control={form.control}
+              name="contractor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contractor</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ABC Contractors"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Site Incharge */}
             <FormField
               control={form.control}
@@ -748,40 +703,11 @@ export function PropertyForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Site Incharge</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Site Incharge" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {siteIncharges.map((incharge) => (
-                        <SelectItem key={incharge._id} value={incharge._id}>
-                          {incharge.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Units - Comma separated or multiselect input */}
-            <FormField
-              control={form.control}
-              name="units"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Units</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., Block-A, Villa-1, Block-B"
+                      placeholder="Jane Smith"
                       {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -789,169 +715,22 @@ export function PropertyForm({
               )}
             />
 
-            {/* Priority */}
+            {/* Work Completed */}
             <FormField
               control={form.control}
-              name="priority"
+              name="workCompleted"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Priority</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Priority" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Start Date */}
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* End Date - same as above, change name and label */}
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>End Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {/* Team Size */}
-
-            <FormField
-              control={form.control}
-              name="teamSize"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Team Size</FormLabel>
+                  <FormLabel>Work Completed (%)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="e.g., 10"
+                      min="0"
+                      max="100"
+                      placeholder="75"
                       {...field}
-                      min={0}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Estimated Budget */}
-            <FormField
-              control={form.control}
-              name="estimatedBudget"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estimated Budget (₹)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g., 5000000"
-                      {...field}
-                      min={0}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Status */}
-            <FormField
-              control={form.control}
-              name="projectStatus"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="on going">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="on hold">On Hold</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -960,10 +739,10 @@ export function PropertyForm({
             {/* Delivery Date */}
             <FormField
               control={form.control}
-              name="deadline"
+              name="deliveryDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Deadline</FormLabel>
+                  <FormLabel>Delivery Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -1047,7 +826,6 @@ export function PropertyForm({
                           field.onChange(e);
                           recalculateBalance();
                         }}
-                        min={0}
                       />
                     </div>
                   </FormControl>
@@ -1075,7 +853,6 @@ export function PropertyForm({
                           field.onChange(e);
                           recalculateBalance();
                         }}
-                        min={0}
                       />
                     </div>
                   </FormControl>
@@ -1100,7 +877,6 @@ export function PropertyForm({
                         {...field}
                         className="pl-10"
                         readOnly
-                        min={0}
                       />
                     </div>
                   </FormControl>
@@ -1339,6 +1115,6 @@ export function PropertyForm({
           </Button>
         </div>
       </form>
-    </FormProvider>
+    </Form>
   );
 }

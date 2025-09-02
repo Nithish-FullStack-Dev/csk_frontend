@@ -393,7 +393,7 @@ const EnquiryManagement = () => {
 
   // --- Render Logic ---
   return (
-    <>
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
@@ -412,214 +412,337 @@ const EnquiryManagement = () => {
             </div>
           )}
         </div>
-
-        <Card>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[120px]">Name</TableHead>
-                    <TableHead className="min-w-[150px]">Email</TableHead>
-                    <TableHead className="min-w-[120px]">Project</TableHead>
-                    <TableHead className="min-w-[120px]">
-                      Property type
-                    </TableHead>
-                    <TableHead className="min-w-[100px]">Budget</TableHead>
-                    <TableHead className="min-w-[100px]">Address</TableHead>
-                    {isAdminOrOwner && ( // Only Admin/Owner sees these columns
-                      <>
-                        <TableHead className="min-w-[150px]">
-                          Assigned To
-                        </TableHead>
-                        <TableHead className="min-w-[150px]">Status</TableHead>
-                      </>
-                    )}
-                    <TableHead className="min-w-[100px]">Received At</TableHead>
-                    {isSalesManager && ( // Sales Manager sees last contact/follow up
-                      <>
-                        <TableHead className="min-w-[120px]">
-                          Last Contact
-                        </TableHead>
-                        <TableHead className="min-w-[120px]">
-                          Next Follow-up
-                        </TableHead>
-                      </>
-                    )}
-                    <TableHead className=" min-w-[120px]">Actions</TableHead>
-                    {isSalesManager && <TableHead>Status</TableHead>}
-                    {isSalesManager && <TableHead>Edit</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {enquiries.length === 0 ? (
+        <div className="rounded-md border overflow-x-auto hidden md:block">
+          <Card>
+            <CardContent>
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell
-                        colSpan={isAdminOrOwner ? 9 : 7}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {isSalesManager
-                          ? "No enquiries assigned to you."
-                          : "No enquiries found."}
-                      </TableCell>
+                      <TableHead className="min-w-[120px]">Name</TableHead>
+                      <TableHead className="min-w-[150px]">Email</TableHead>
+                      <TableHead className="min-w-[120px]">Project</TableHead>
+                      <TableHead className="min-w-[120px]">
+                        Property type
+                      </TableHead>
+                      <TableHead className="min-w-[100px]">Budget</TableHead>
+                      <TableHead className="min-w-[100px]">Address</TableHead>
+                      {isAdminOrOwner && ( // Only Admin/Owner sees these columns
+                        <>
+                          <TableHead className="min-w-[150px]">
+                            Assigned To
+                          </TableHead>
+                          <TableHead className="min-w-[100px]">
+                            Status
+                          </TableHead>
+                        </>
+                      )}
+                      <TableHead className="min-w-[100px]">
+                        Received At
+                      </TableHead>
+                      {isSalesManager && ( // Sales Manager sees last contact/follow up
+                        <>
+                          <TableHead className="min-w-[120px]">
+                            Last Contact
+                          </TableHead>
+                          <TableHead className="min-w-[120px]">
+                            Next Follow-up
+                          </TableHead>
+                        </>
+                      )}
+                      <TableHead className=" min-w-[120px]">Actions</TableHead>
+                      {isSalesManager && <TableHead>Status</TableHead>}
+                      {isSalesManager && <TableHead>Edit</TableHead>}
                     </TableRow>
-                  ) : (
-                    enquiries.map((enquiry) => (
-                      <TableRow key={enquiry._id}>
-                        <TableCell className="font-medium">
-                          {enquiry.name}
-                        </TableCell>
-                        <TableCell>{enquiry.email}</TableCell>
-                        <TableCell>{enquiry.propertyType}</TableCell>
-                        <TableCell>{enquiry.project || "N/A"}</TableCell>
-                        <TableCell>{enquiry.budget}</TableCell>
-                        <TableCell>{enquiry.address || "N/A"}</TableCell>
-                        {isAdminOrOwner && (
-                          <>
-                            <TableCell>
-                              {enquiry.assignedTo
-                                ? salespersons.find(
-                                    (sp) => sp._id === enquiry.assignedTo
-                                  )?.name || "Unknown"
-                                : "Unassigned"}
-                            </TableCell>
-                            <TableCell>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                  enquiry.status === "New"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : enquiry.status === "Assigned"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : enquiry.status === "Enquiry"
-                                    ? "bg-green-100 text-green-800"
-                                    : enquiry.status === "Follow up"
-                                    ? "bg-purple-100 text-purple-800"
-                                    : enquiry.status === "In Progress"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : enquiry.status === "Rejected"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {enquiry.status}
-                              </span>
-                            </TableCell>
-                          </>
-                        )}
-                        <TableCell>
-                          {new Date(enquiry.createdAt).toLocaleDateString(
-                            "en-IN",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </TableCell>
-                        {isSalesManager && (
-                          <>
-                            <TableCell>
-                              {enquiry.lastContactDate
-                                ? format(
-                                    new Date(enquiry.lastContactDate),
-                                    "PPP"
-                                  )
-                                : "N/A"}
-                            </TableCell>
-                            <TableCell>
-                              {enquiry.nextFollowUpDate
-                                ? format(
-                                    new Date(enquiry.nextFollowUpDate),
-                                    "PPP"
-                                  )
-                                : "N/A"}
-                            </TableCell>
-                          </>
-                        )}
-                        <TableCell className="text-right flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewEnquiry(enquiry)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {isAdminOrOwner && !enquiry.assignedTo && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-estate-navy hover:bg-estate-navy/90"
-                              onClick={() => handleAssignEnquiryClick(enquiry)}
-                            >
-                              <UserPlus className="h-4 w-4" /> Assign
-                            </Button>
-                          )}
-                          {isSalesManager && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700"
-                              onClick={() => handleManageEnquiryClick(enquiry)}
-                            >
-                              <Edit className="h-4 w-4" /> Manage
-                            </Button>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isSalesManager && (
-                            <Select
-                              value={enquiry?.status}
-                              onValueChange={(value: Enquiry["status"]) =>
-                                handleStatusUpdate(enquiry._id, value)
-                              }
-                            >
-                              <SelectTrigger className="col-span-3">
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {/* Only allow relevant status updates from Sales Manager context */}
-                                <SelectItem value="New">New</SelectItem>
-                                <SelectItem value="Enquiry">Enquiry</SelectItem>
-                                <SelectItem value="Assigned">
-                                  Assigned
-                                </SelectItem>
-                                <SelectItem value="Follow up">
-                                  Follow up
-                                </SelectItem>
-                                <SelectItem value="In Progress">
-                                  In Progress
-                                </SelectItem>
-                                <SelectItem value="Closed">Closed</SelectItem>
-                                <SelectItem value="Rejected">
-                                  Rejected
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isSalesManager && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="bg-estate-navy/75 hover:bg-estate-navy/90"
-                              onClick={() => {
-                                setSelectedEnquiry(enquiry);
-                                setDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" /> Edit
-                            </Button>
-                          )}
+                  </TableHeader>
+                  <TableBody>
+                    {enquiries.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={isAdminOrOwner ? 9 : 7}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {isSalesManager
+                            ? "No enquiries assigned to you."
+                            : "No enquiries found."}
                         </TableCell>
                       </TableRow>
-                    ))
+                    ) : (
+                      enquiries.map((enquiry) => (
+                        <TableRow key={enquiry._id}>
+                          <TableCell className="font-medium">
+                            {enquiry.name}
+                          </TableCell>
+                          <TableCell>{enquiry.email}</TableCell>
+                          <TableCell>{enquiry.propertyType}</TableCell>
+                          <TableCell>{enquiry.project || "N/A"}</TableCell>
+                          <TableCell>{enquiry.budget}</TableCell>
+                          <TableCell>{enquiry.address || "N/A"}</TableCell>
+                          {isAdminOrOwner && (
+                            <>
+                              <TableCell>
+                                {enquiry.assignedTo
+                                  ? salespersons.find(
+                                      (sp) => sp._id === enquiry.assignedTo
+                                    )?.name || "Unknown"
+                                  : "Unassigned"}
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    enquiry.status === "New"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : enquiry.status === "Assigned"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : enquiry.status === "Enquiry"
+                                      ? "bg-green-100 text-green-800"
+                                      : enquiry.status === "Follow up"
+                                      ? "bg-purple-100 text-purple-800"
+                                      : enquiry.status === "In Progress"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : enquiry.status === "Rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                                  }`}
+                                >
+                                  {enquiry.status}
+                                </span>
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell>
+                            {new Date(enquiry.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )}
+                          </TableCell>
+                          {isSalesManager && (
+                            <>
+                              <TableCell>
+                                {enquiry.lastContactDate
+                                  ? format(
+                                      new Date(enquiry.lastContactDate),
+                                      "PPP"
+                                    )
+                                  : "N/A"}
+                              </TableCell>
+                              <TableCell>
+                                {enquiry.nextFollowUpDate
+                                  ? format(
+                                      new Date(enquiry.nextFollowUpDate),
+                                      "PPP"
+                                    )
+                                  : "N/A"}
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell className="text-right flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewEnquiry(enquiry)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {isAdminOrOwner && !enquiry.assignedTo && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-estate-navy hover:bg-estate-navy/90"
+                                onClick={() =>
+                                  handleAssignEnquiryClick(enquiry)
+                                }
+                              >
+                                <UserPlus className="h-4 w-4" /> Assign
+                              </Button>
+                            )}
+                            {isSalesManager && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() =>
+                                  handleManageEnquiryClick(enquiry)
+                                }
+                              >
+                                <Edit className="h-4 w-4" /> Manage
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isSalesManager && (
+                              <Select
+                                value={enquiry?.status}
+                                onValueChange={(value: Enquiry["status"]) =>
+                                  handleStatusUpdate(enquiry._id, value)
+                                }
+                              >
+                                <SelectTrigger className="col-span-3">
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {/* Only allow relevant status updates from Sales Manager context */}
+                                  <SelectItem value="New">New</SelectItem>
+                                  <SelectItem value="Enquiry">
+                                    Enquiry
+                                  </SelectItem>
+                                  <SelectItem value="Assigned">
+                                    Assigned
+                                  </SelectItem>
+                                  <SelectItem value="Follow up">
+                                    Follow up
+                                  </SelectItem>
+                                  <SelectItem value="In Progress">
+                                    In Progress
+                                  </SelectItem>
+                                  <SelectItem value="Closed">Closed</SelectItem>
+                                  <SelectItem value="Rejected">
+                                    Rejected
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isSalesManager && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-estate-navy/75 hover:bg-estate-navy/90"
+                                onClick={() => {
+                                  setSelectedEnquiry(enquiry);
+                                  setDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" /> Edit
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Mobile Cards */}
+        <div className="space-y-4 md:hidden">
+          {enquiries.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">
+              {isSalesManager
+                ? "No enquiries assigned to you."
+                : "No enquiries found."}
+            </p>
+          ) : (
+            enquiries.map((enquiry) => (
+              <div
+                key={enquiry._id}
+                className="border rounded-lg p-4 shadow-sm bg-white"
+              >
+                <p className="font-semibold text-lg">{enquiry.name}</p>
+                <p className="text-sm text-gray-600">{enquiry.email}</p>
+                <p className="text-sm">
+                  <span className="font-medium">Project:</span>{" "}
+                  {enquiry.project || "N/A"}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Property Type:</span>{" "}
+                  {enquiry.propertyType}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Budget:</span> {enquiry.budget}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Address:</span>{" "}
+                  {enquiry.address || "N/A"}
+                </p>
+
+                {isAdminOrOwner && (
+                  <p className="text-sm">
+                    <span className="font-medium">Assigned To:</span>{" "}
+                    {enquiry.assignedTo
+                      ? salespersons.find((sp) => sp._id === enquiry.assignedTo)
+                          ?.name || "Unknown"
+                      : "Unassigned"}
+                  </p>
+                )}
+
+                {/* Status badge */}
+                <div className="mt-2">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      enquiry.status === "New"
+                        ? "bg-blue-100 text-blue-800"
+                        : enquiry.status === "Assigned"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : enquiry.status === "Enquiry"
+                        ? "bg-green-100 text-green-800"
+                        : enquiry.status === "Follow up"
+                        ? "bg-purple-100 text-purple-800"
+                        : enquiry.status === "In Progress"
+                        ? "bg-orange-100 text-orange-800"
+                        : enquiry.status === "Rejected"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {enquiry.status}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewEnquiry(enquiry)}
+                  >
+                    <Eye className="h-4 w-4" /> View
+                  </Button>
+                  {isAdminOrOwner && !enquiry.assignedTo && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-estate-navy hover:bg-estate-navy/90"
+                      onClick={() => handleAssignEnquiryClick(enquiry)}
+                    >
+                      <UserPlus className="h-4 w-4" /> Assign
+                    </Button>
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  {isSalesManager && (
+                    <>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => handleManageEnquiryClick(enquiry)}
+                      >
+                        <Edit className="h-4 w-4" /> Manage
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="bg-estate-navy/75 hover:bg-estate-navy/90"
+                        onClick={() => {
+                          setSelectedEnquiry(enquiry);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" /> Edit
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* --- Dialogs --- */}
@@ -629,7 +752,7 @@ const EnquiryManagement = () => {
         open={viewEnquiryDialogOpen}
         onOpenChange={setViewEnquiryDialogOpen}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Enquiry Details</DialogTitle>
           </DialogHeader>
@@ -860,7 +983,7 @@ const EnquiryManagement = () => {
           open={manageEnquiryDialogOpen}
           onOpenChange={setManageEnquiryDialogOpen}
         >
-          <DialogContent className="sm:max-w-[425px] md:max-w-md">
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Manage Enquiry Progress</DialogTitle>
               <DialogDescription>
@@ -994,7 +1117,7 @@ const EnquiryManagement = () => {
       {/* Edit Dialog */}
       {isSalesManager && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] md:max-w-md">
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Manage Enquiry Progress</DialogTitle>
               <DialogDescription>
@@ -1035,7 +1158,7 @@ const EnquiryManagement = () => {
           </DialogContent>
         </Dialog>
       )}
-    </>
+    </MainLayout>
   );
 };
 

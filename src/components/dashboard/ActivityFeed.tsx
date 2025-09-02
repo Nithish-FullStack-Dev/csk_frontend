@@ -1,7 +1,14 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CheckCircle2, Clock, FileText, UserPlus, Building, DollarSign, Truck } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  FileText,
+  UserPlus,
+  Building,
+  DollarSign,
+  Truck,
+} from "lucide-react";
 
 interface Activity {
   id: string;
@@ -12,7 +19,14 @@ interface Activity {
   action: string;
   target: string;
   timestamp: string;
-  type: 'lead' | 'document' | 'property' | 'payment' | 'visit' | 'approval' | 'material';
+  type:
+    | "lead"
+    | "document"
+    | "property"
+    | "payment"
+    | "visit"
+    | "approval"
+    | "material";
 }
 
 const ACTIVITY_ICONS = {
@@ -31,22 +45,28 @@ interface ActivityFeedProps {
 
 const ActivityItem = ({ activity }: { activity: Activity }) => {
   return (
-    <div className="flex gap-4 mb-4">
-      <Avatar className="h-8 w-8">
+    <div className="flex gap-3 mb-4 sm:gap-4">
+      {/* Avatar */}
+      <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
         <AvatarImage src={activity.user.avatar} />
         <AvatarFallback>{activity.user.name.charAt(0)}</AvatarFallback>
       </Avatar>
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1 text-sm">
+
+      {/* Content */}
+      <div className="flex flex-col w-full">
+        {/* User + Action */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-1 text-sm">
           <span className="font-medium">{activity.user.name}</span>
           <span className="text-muted-foreground">{activity.action}</span>
-          <span className="font-medium">{activity.target}</span>
+          <span className="font-medium break-words">{activity.target}</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <div className="p-0.5 rounded-full bg-muted">
+
+        {/* Timestamp + Icon */}
+        <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+          <div className="p-0.5 rounded-full bg-muted flex items-center justify-center">
             {ACTIVITY_ICONS[activity.type]}
           </div>
-          <span>{activity.timestamp}</span>
+          <span className="whitespace-nowrap">{activity.timestamp}</span>
         </div>
       </div>
     </div>
@@ -55,11 +75,11 @@ const ActivityItem = ({ activity }: { activity: Activity }) => {
 
 const ActivityFeed = ({ activities }: ActivityFeedProps) => {
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader className="pb-3">
-        <CardTitle>Recent Activity</CardTitle>
+        <CardTitle className="text-base sm:text-lg">Recent Activity</CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[400px] overflow-auto">
+      <CardContent className="max-h-[400px] overflow-y-auto px-2 sm:px-4">
         {activities.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-8">
             No recent activity

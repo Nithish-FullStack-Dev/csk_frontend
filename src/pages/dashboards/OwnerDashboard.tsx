@@ -1,18 +1,23 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
-import PropertyCard, { PropertyCardProps } from "@/components/dashboard/PropertyCard";
-import { BarChart3, Building, DollarSign, Users, Calendar, BarChart, FileText, Briefcase } from "lucide-react";
+import PropertyCard, {
+  PropertyCardProps,
+} from "@/components/dashboard/PropertyCard";
+import {
+  BarChart3,
+  Building,
+  DollarSign,
+  Users,
+  Calendar,
+  BarChart,
+  FileText,
+  Briefcase,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Sample data
 const recentActivities = [
@@ -20,7 +25,8 @@ const recentActivities = [
     id: "1",
     user: {
       name: "Sarah Johnson",
-      avatar: "https://ui-avatars.com/api/?name=Rakshit+Agarwal&background=2C7A7B&color=fff",
+      avatar:
+        "https://ui-avatars.com/api/?name=Rakshit+Agarwal&background=2C7A7B&color=fff",
     },
     action: "approved",
     target: "Golden Heights Phase 2",
@@ -31,7 +37,8 @@ const recentActivities = [
     id: "2",
     user: {
       name: "Michael Brown",
-      avatar: "https://ui-avatars.com/api/?name=Michael+Brown&background=ECC94B&color=1A365D",
+      avatar:
+        "https://ui-avatars.com/api/?name=Michael+Brown&background=ECC94B&color=1A365D",
     },
     action: "added a new lead for",
     target: "Riverside Apartments",
@@ -42,7 +49,8 @@ const recentActivities = [
     id: "3",
     user: {
       name: "Emily Davis",
-      avatar: "https://ui-avatars.com/api/?name=Emily+Davis&background=718096&color=fff",
+      avatar:
+        "https://ui-avatars.com/api/?name=Emily+Davis&background=718096&color=fff",
     },
     action: "scheduled a site visit for",
     target: "Evergreen Villas",
@@ -53,7 +61,8 @@ const recentActivities = [
     id: "4",
     user: {
       name: "Robert Wilson",
-      avatar: "https://ui-avatars.com/api/?name=Robert+Wilson&background=38A169&color=fff",
+      avatar:
+        "https://ui-avatars.com/api/?name=Robert+Wilson&background=38A169&color=fff",
     },
     action: "uploaded documents for",
     target: "Skyline Towers",
@@ -64,7 +73,8 @@ const recentActivities = [
     id: "5",
     user: {
       name: "Jennifer Martinez",
-      avatar: "https://ui-avatars.com/api/?name=Jennifer+Martinez&background=4299E1&color=fff",
+      avatar:
+        "https://ui-avatars.com/api/?name=Jennifer+Martinez&background=4299E1&color=fff",
     },
     action: "completed milestone inspection for",
     target: "Parkview Residences",
@@ -83,7 +93,8 @@ const properties: PropertyCardProps[] = [
     availableUnits: 45,
     price: "₹250,000 - ₹450,000",
     status: "listed",
-    thumbnailUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "2",
@@ -94,7 +105,8 @@ const properties: PropertyCardProps[] = [
     availableUnits: 12,
     price: "₹320,000 - ₹550,000",
     status: "under-construction",
-    thumbnailUrl: "https://images.unsplash.com/photo-1564013434775-f71db0030976?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1564013434775-f71db0030976?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "3",
@@ -105,7 +117,8 @@ const properties: PropertyCardProps[] = [
     availableUnits: 20,
     price: "₹400,000 - ₹750,000",
     status: "listed",
-    thumbnailUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
   },
   {
     id: "4",
@@ -116,7 +129,8 @@ const properties: PropertyCardProps[] = [
     availableUnits: 28,
     price: "₹600,000 - $₹,200,000",
     status: "under-construction",
-    thumbnailUrl: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
+    thumbnailUrl:
+      "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
   },
 ];
 
@@ -132,14 +146,6 @@ const OwnerDashboard = () => {
             Welcome back! Here's your business summary
           </p>
         </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto mt-4 md:mt-0">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="operations">Operations</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -192,25 +198,41 @@ const OwnerDashboard = () => {
                   <BarChart3 className="h-16 w-16 text-estate-navy/20" />
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button asChild variant="outline" className="h-auto py-4 flex flex-col">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col"
+                  >
                     <Link to="/analytics">
                       <BarChart className="h-6 w-6 mb-2 text-estate-navy" />
                       <span>Business Analytics</span>
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex flex-col">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col"
+                  >
                     <Link to="/users">
                       <Users className="h-6 w-6 mb-2 text-estate-teal" />
                       <span>User Management</span>
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex flex-col">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col"
+                  >
                     <Link to="/sales">
                       <DollarSign className="h-6 w-6 mb-2 text-estate-gold" />
                       <span>Sales Overview</span>
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" className="h-auto py-4 flex flex-col">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col"
+                  >
                     <Link to="/operations">
                       <Briefcase className="h-6 w-6 mb-2 text-estate-navy" />
                       <span>Operations</span>

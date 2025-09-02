@@ -26,26 +26,27 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
-  XCircle,
   CalendarDays,
   ClipboardList,
-  Building,
   TrendingUp,
-  BarChart2,
-  ArrowUpRight,
   ArrowRight,
   PlusCircle,
   Calendar,
   Truck,
   Users,
   Plus,
-  Workflow,
-  ListChecks,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AddConstructionTaskDialog from "@/components/operations/AddConstructionTaskDialog";
 import ConstructionTaskList from "@/components/operations/ConstructionTaskList";
 import ConstructionPhaseViewer from "@/components/operations/ConstructionPhaseViewer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Sample data for projects
 const constructionProjects = [
@@ -153,6 +154,9 @@ const OperationsWorkflow = () => {
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
+  // Track active tab
+  const [activeTab, setActiveTab] = useState("projects");
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "planning":
@@ -212,7 +216,7 @@ const OperationsWorkflow = () => {
   };
 
   return (
-    <>
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
@@ -229,8 +233,9 @@ const OperationsWorkflow = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="projects" className="w-full">
-          <TabsList className="mb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* Desktop Tabs */}
+          <TabsList className="mb-4 hidden md:block">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="tasks">Construction Tasks</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
@@ -238,6 +243,23 @@ const OperationsWorkflow = () => {
             <TabsTrigger value="resources">Resources</TabsTrigger>
           </TabsList>
 
+          {/* Mobile Select */}
+          <div className="md:hidden mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="projects">Projects</SelectItem>
+                <SelectItem value="tasks">Construction Tasks</SelectItem>
+                <SelectItem value="milestones">Milestones</SelectItem>
+                <SelectItem value="issues">Issues</SelectItem>
+                <SelectItem value="resources">Resources</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* --- Tab Contents --- */}
           <TabsContent value="projects">
             <div className="grid grid-cols-1 gap-6">
               {projects.map((project) => (
@@ -308,11 +330,11 @@ const OperationsWorkflow = () => {
                       </div>
                     </div>
 
-                    <div className="mt-6 flex justify-end">
+                    <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
                       <Button
                         variant="outline"
                         onClick={() => handleAddTask(project.id)}
-                        className="mr-2"
+                        className="sm:mr-2"
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         Add Construction Task
@@ -320,7 +342,7 @@ const OperationsWorkflow = () => {
                       <Button
                         variant="outline"
                         onClick={handleScheduleInspection}
-                        className="mr-2"
+                        className="sm:mr-2"
                       >
                         <Calendar className="mr-2 h-4 w-4" />
                         Schedule Inspection
@@ -484,7 +506,7 @@ const OperationsWorkflow = () => {
 
       {/* Construction phase viewer */}
       <ConstructionPhaseViewer />
-    </>
+    </MainLayout>
   );
 };
 

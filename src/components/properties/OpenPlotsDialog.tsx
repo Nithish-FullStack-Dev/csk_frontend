@@ -23,7 +23,7 @@ export function OpenPlotDialog({
 }: OpenPlotDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] w-[90vw] max-h-[90vh] overflow-auto rounded-xl">
         <DialogHeader>
           <DialogTitle>
             {openPlot ? "Edit Open Plot" : "Add New Open Plot"}

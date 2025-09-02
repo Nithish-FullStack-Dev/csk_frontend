@@ -50,11 +50,11 @@ const UserRoleAssignment = () => {
   const fetchAllUsers = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/getUsers`
+        `${import.meta.env.VITE_URL}/api/user/getUsers`,
+        { withCredentials: true }
       );
       setUsers(response.data.users);
       setIsLoading(false);
-      console.log(response.data.users);
     } catch (error) {
       console.log("error");
     }
@@ -115,7 +115,7 @@ const UserRoleAssignment = () => {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-            <CardTitle>User Directory</CardTitle>
+            <CardTitle className="text-lg md:text-xl">User Directory</CardTitle>
             <div className="relative w-full md:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
@@ -130,7 +130,8 @@ const UserRoleAssignment = () => {
         </CardHeader>
 
         <CardContent>
-          <div className="rounded-md border dark:border-gray-800">
+          {/* Desktop Table */}
+          <div className="hidden md:block rounded-md border dark:border-gray-800">
             <Table>
               <TableHeader>
                 <TableRow className="dark:border-gray-800">
@@ -220,14 +221,83 @@ const UserRoleAssignment = () => {
               </TableBody>
             </Table>
           </div>
+
+          {/* Mobile Card View */}
+          <div className="block md:hidden space-y-4">
+            {isLoading ? (
+              <p className="text-center py-6 text-gray-500 dark:text-gray-400">
+                Loading users...
+              </p>
+            ) : filteredUsers.length > 0 ? (
+              filteredUsers.map((user, index) => (
+                <div
+                  key={user.id}
+                  className="p-4 border rounded-lg bg-white dark:bg-gray-900 dark:border-gray-800 shadow-sm"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">{user.name}</h3>
+                    <Badge
+                      variant="default"
+                      className={`text-center ${getRoleBadgeColor(
+                        user.role
+                      )} cursor-pointer`}
+                    >
+                      {user.role.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {user.email}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Phone: {user.phone || "N/A"}
+                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(
+                        user.status
+                      )}`}
+                    >
+                      {user.status}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        aria-label="Edit User"
+                        onClick={() => {
+                          setShowAddUserDialog(true);
+                          handleEdit(user);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        aria-label="Delete User"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-center py-6 text-gray-500 dark:text-gray-400">
+                No users found matching your search.
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
       <div className="mt-4 md:mt-0">
         <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
-          <DialogContent>
+          <DialogContent className="w-full max-w-lg">
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg md:text-xl">
+                Edit User
+              </DialogTitle>
+              <DialogDescription className="text-sm md:text-base">
                 Update user information and role.
               </DialogDescription>
             </DialogHeader>
@@ -307,10 +377,11 @@ const UserRoleAssignment = () => {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowAddUserDialog(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -322,6 +393,7 @@ const UserRoleAssignment = () => {
                   !newUser.role ||
                   !newUser.phone
                 }
+                className="w-full sm:w-auto"
               >
                 Update User
               </Button>

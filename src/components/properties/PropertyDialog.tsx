@@ -1,5 +1,4 @@
-
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,17 +15,26 @@ interface PropertyDialogProps {
   onSubmit: (data: any) => void;
 }
 
-export function PropertyDialog({ open, onOpenChange, property, onSubmit }: PropertyDialogProps) {
+export function PropertyDialog({
+  open,
+  onOpenChange,
+  property,
+  onSubmit,
+}: PropertyDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
         <DialogHeader>
-          <DialogTitle>{property ? 'Edit Property' : 'Add New Property'}</DialogTitle>
+          <DialogTitle>
+            {property ? "Edit Property" : "Add New Property"}
+          </DialogTitle>
           <DialogDescription>
-            {property ? 'Update the property details below.' : 'Fill in the property details below to create a new property.'}
+            {property
+              ? "Update the property details below."
+              : "Fill in the property details below to create a new property."}
           </DialogDescription>
         </DialogHeader>
-        <PropertyForm 
+        <PropertyForm
           property={property}
           onSubmit={onSubmit}
           onCancel={() => onOpenChange(false)}

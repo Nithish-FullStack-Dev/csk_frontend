@@ -35,6 +35,13 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Sample data for charts
 const revenueData = [
@@ -83,166 +90,297 @@ const quarterlyRevenueData = [
 
 const Finances = () => {
   const [timeframe, setTimeframe] = useState("ytd");
+  const [activeTab, setActiveTab] = useState("revenue");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Financial Overview</h1>
-          <p className="text-muted-foreground">
-            Comprehensive financial performance and analysis
-          </p>
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div>
+            <h1 className="text-3xl font-md font-vidaloka">
+              Financial Overview
+            </h1>
+            <p className="text-muted-foreground">
+              Comprehensive financial performance and analysis
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 mt-4 md:mt-0">
+            <Badge
+              variant={timeframe === "mtd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("mtd")}
+            >
+              Month to Date
+            </Badge>
+            <Badge
+              variant={timeframe === "qtd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("qtd")}
+            >
+              Quarter to Date
+            </Badge>
+            <Badge
+              variant={timeframe === "ytd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("ytd")}
+            >
+              Year to Date
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center space-x-2 mt-4 md:mt-0">
-          <Badge
-            variant={timeframe === "mtd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("mtd")}
-          >
-            Month to Date
-          </Badge>
-          <Badge
-            variant={timeframe === "qtd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("qtd")}
-          >
-            Quarter to Date
-          </Badge>
-          <Badge
-            variant={timeframe === "ytd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("ytd")}
-          >
-            Year to Date
-          </Badge>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Revenue
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold">$29.6M</span>
+                  <div className="flex items-center mt-1 text-sm">
+                    <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+18%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold">$12.4M</span>
+                  <div className="flex items-center mt-1 text-sm">
+                    <ArrowUpRight className="h-4 w-4 text-amber-500 mr-1" />
+                    <span className="text-amber-500 font-medium">+11%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Receipt className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Net Profit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold">$17.2M</span>
+                  <div className="flex items-center mt-1 text-sm">
+                    <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+23%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Cash Flow
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold">$15.2M</span>
+                  <div className="flex items-center mt-1 text-sm">
+                    <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+16%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <BarChartIcon className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Revenue
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$29.6M</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+18%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4 hidden md:block">
+            <TabsTrigger value="revenue">Revenue & Expenses</TabsTrigger>
+            <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
+            <TabsTrigger value="profitability">Profitability</TabsTrigger>
+            <TabsTrigger value="budgets">Budgets</TabsTrigger>
+          </TabsList>
+
+          <div className="md:hidden mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="revenue">Revenue & Expenses</SelectItem>
+                <SelectItem value="cashflow">Cash Flow</SelectItem>
+                <SelectItem value="profitability">Profitability</SelectItem>
+                <SelectItem value="budgets">Budgets</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TabsContent value="revenue">
+            <div className="grid grid-cols-1 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <DollarSign className="mr-2 h-5 w-5 text-estate-navy" />
+                    Revenue vs Expenses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-96">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={revenueData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis
+                          tickFormatter={(value) =>
+                            `$${(value / 1000000).toFixed(1)}M`
+                          }
+                        />
+                        <Tooltip
+                          formatter={(value) => [
+                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                          ]}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#4338ca"
+                          fill="#4338ca"
+                          fillOpacity={0.2}
+                          name="Revenue"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="expenses"
+                          stroke="#ef4444"
+                          fill="#ef4444"
+                          fillOpacity={0.2}
+                          name="Expenses"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Expenses
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$12.4M</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-amber-500 mr-1" />
-                  <span className="text-amber-500 font-medium">+11%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-primary" />
-              </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <PieChart className="mr-2 h-5 w-5 text-estate-teal" />
+                    Expenses by Category
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {expensesByCategory.map((category) => (
+                      <div key={category.name} className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">
+                            {category.name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {category.value}%
+                          </span>
+                        </div>
+                        <Progress value={category.value} />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="mr-2 h-5 w-5 text-estate-gold" />
+                    Quarterly Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={quarterlyRevenueData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="quarter" />
+                        <YAxis
+                          tickFormatter={(value) =>
+                            `$${(value / 1000000).toFixed(1)}M`
+                          }
+                        />
+                        <Tooltip
+                          formatter={(value) => [
+                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                          ]}
+                        />
+                        <Bar dataKey="revenue" fill="#4338ca" name="Revenue" />
+                        <Bar dataKey="target" fill="#9ca3af" name="Target" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Net Profit
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$17.2M</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+23%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Cash Flow
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$15.2M</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+16%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <BarChartIcon className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="revenue" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="revenue">Revenue & Expenses</TabsTrigger>
-          <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
-          <TabsTrigger value="profitability">Profitability</TabsTrigger>
-          <TabsTrigger value="budgets">Budgets</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="revenue">
-          <div className="grid grid-cols-1 gap-6">
+          <TabsContent value="cashflow">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <DollarSign className="mr-2 h-5 w-5 text-estate-navy" />
-                  Revenue vs Expenses
+                  <BarChartIcon className="mr-2 h-5 w-5 text-estate-navy" />
+                  Cash Flow Analysis
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={revenueData}
+                    <LineChart
+                      data={cashFlowData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
@@ -257,170 +395,58 @@ const Finances = () => {
                           `$${(Number(value) / 1000000).toFixed(2)}M`,
                         ]}
                       />
-                      <Area
+                      <Line
                         type="monotone"
-                        dataKey="revenue"
+                        dataKey="cashFlow"
                         stroke="#4338ca"
-                        fill="#4338ca"
-                        fillOpacity={0.2}
-                        name="Revenue"
+                        activeDot={{ r: 8 }}
+                        strokeWidth={2}
+                        name="Cash Flow"
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="expenses"
-                        stroke="#ef4444"
-                        fill="#ef4444"
-                        fillOpacity={0.2}
-                        name="Expenses"
-                      />
-                    </AreaChart>
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <TabsContent value="profitability">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <PieChart className="mr-2 h-5 w-5 text-estate-teal" />
-                  Expenses by Category
-                </CardTitle>
+                <CardTitle>Profitability Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {expensesByCategory.map((category) => (
-                    <div key={category.name} className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">
-                          {category.name}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {category.value}%
-                        </span>
-                      </div>
-                      <Progress value={category.value} />
-                    </div>
-                  ))}
+                <p className="text-muted-foreground mb-6">
+                  Detailed profitability analysis tools will be available here,
+                  including profit margins, ROI, and performance metrics by
+                  project.
+                </p>
+                <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
+                  <TrendingUp className="w-16 h-16 text-muted/50" />
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="budgets">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calendar className="mr-2 h-5 w-5 text-estate-gold" />
-                  Quarterly Performance
-                </CardTitle>
+                <CardTitle>Budget Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={quarterlyRevenueData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="quarter" />
-                      <YAxis
-                        tickFormatter={(value) =>
-                          `$${(value / 1000000).toFixed(1)}M`
-                        }
-                      />
-                      <Tooltip
-                        formatter={(value) => [
-                          `$${(Number(value) / 1000000).toFixed(2)}M`,
-                        ]}
-                      />
-                      <Bar dataKey="revenue" fill="#4338ca" name="Revenue" />
-                      <Bar dataKey="target" fill="#9ca3af" name="Target" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <p className="text-muted-foreground mb-6">
+                  Budget management tools will be available here, including
+                  expense tracking, budget allocation, and variance analysis.
+                </p>
+                <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
+                  <FileText className="w-16 h-16 text-muted/50" />
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="cashflow">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChartIcon className="mr-2 h-5 w-5 text-estate-navy" />
-                Cash Flow Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={cashFlowData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis
-                      tickFormatter={(value) =>
-                        `$${(value / 1000000).toFixed(1)}M`
-                      }
-                    />
-                    <Tooltip
-                      formatter={(value) => [
-                        `$${(Number(value) / 1000000).toFixed(2)}M`,
-                      ]}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cashFlow"
-                      stroke="#4338ca"
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                      name="Cash Flow"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="profitability">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profitability Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6">
-                Detailed profitability analysis tools will be available here,
-                including profit margins, ROI, and performance metrics by
-                project.
-              </p>
-              <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
-                <TrendingUp className="w-16 h-16 text-muted/50" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="budgets">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6">
-                Budget management tools will be available here, including
-                expense tracking, budget allocation, and variance analysis.
-              </p>
-              <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
-                <FileText className="w-16 h-16 text-muted/50" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
   );
 };
 
