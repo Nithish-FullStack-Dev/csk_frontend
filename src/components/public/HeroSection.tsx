@@ -205,30 +205,36 @@ const HeroSection = () => {
       </div>
 
       {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        aria-label="Previous slide"
+      <div
         className="
-          absolute left-4 top-1/2 transform -translate-y-1/2 z-20
-          bg-white/10 backdrop-blur-md text-white p-3 md:p-4 rounded-full
-          hover:bg-white/20 transition-all duration-300
-          focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2
-        "
+    absolute z-20 flex gap-3
+    bottom-6 right-6
+  "
       >
-        <ChevronLeft className="h-7 w-7 md:h-8 md:w-8" /> {/* Larger icons */}
-      </button>
-      <button
-        onClick={nextSlide}
-        aria-label="Next slide"
-        className="
-          absolute right-4 top-1/2 transform -translate-y-1/2 z-20
-          bg-white/10 backdrop-blur-md text-white p-3 md:p-4 rounded-full
-          hover:bg-white/20 transition-all duration-300
-          focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2
-        "
-      >
-        <ChevronRight className="h-7 w-7 md:h-8 md:w-8" /> {/* Larger icons */}
-      </button>
+        <button
+          onClick={prevSlide}
+          aria-label="Previous slide"
+          className="
+      bg-white/10 backdrop-blur-md text-white p-3 md:p-4 rounded-full
+      hover:bg-white/20 transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2
+    "
+        >
+          <ChevronLeft className="h-6 w-6 md:h-8 md:w-8" />
+        </button>
+
+        <button
+          onClick={nextSlide}
+          aria-label="Next slide"
+          className="
+      bg-white/10 backdrop-blur-md text-white p-3 md:p-4 rounded-full
+      hover:bg-white/20 transition-all duration-300
+      focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2
+    "
+        >
+          <ChevronRight className="h-6 w-6 md:h-8 md:w-8" />
+        </button>
+      </div>
 
       {/* Slide Indicators (Dots) */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex gap-3">

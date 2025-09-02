@@ -136,7 +136,7 @@ const CompletedProjectsPage = () => {
                 and <strong>customer satisfaction</strong>.
               </p>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {stats.map((stat, index) => (
                 <motion.div
                   key={index}
@@ -206,79 +206,81 @@ const CompletedProjectsPage = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {completedProjects.map((project) => (
-                  <CardContainer key={project.id} className="inter-var">
-                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
-                      {/* Title */}
-                      <CardItem
-                        translateZ={30}
-                        className="text-xl font-bold text-neutral-900 dark:text-white mb-2"
-                      >
-                        {project.title}
-                      </CardItem>
+              <div className="px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-10 gap-5">
+                  {completedProjects.map((project) => (
+                    <CardContainer key={project.id} className="inter-var">
+                      <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                        {/* Title */}
+                        <CardItem
+                          translateZ={30}
+                          className="text-xl font-bold text-neutral-900 dark:text-white mb-2"
+                        >
+                          {project.title}
+                        </CardItem>
 
-                      {/* Image */}
-                      <CardItem
-                        translateZ={80}
-                        className="w-full mt-4 rounded-xl overflow-hidden"
-                      >
-                        <img
-                          src={project.image}
-                          alt={project.title}
-                          className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
-                        />
-                      </CardItem>
+                        {/* Image */}
+                        <CardItem
+                          translateZ={80}
+                          className="w-full mt-4 rounded-xl overflow-hidden"
+                        >
+                          <img
+                            src={project.image}
+                            alt={project.title}
+                            className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
+                          />
+                        </CardItem>
 
-                      {/* Location */}
-                      <CardItem
-                        translateZ={20}
-                        className="mt-3 flex items-center text-sm text-gray-600 dark:text-gray-300"
-                      >
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {project.location}
-                      </CardItem>
+                        {/* Location */}
+                        <CardItem
+                          translateZ={20}
+                          className="mt-3 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                        >
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {project.location}
+                        </CardItem>
 
-                      {/* Description */}
-                      <CardItem
-                        translateZ={20}
-                        className="text-sm text-gray-600 mt-2 line-clamp-2"
-                      >
-                        Category: {project.category}
-                      </CardItem>
+                        {/* Description */}
+                        <CardItem
+                          translateZ={20}
+                          className="text-sm text-gray-600 mt-2 line-clamp-2"
+                        >
+                          Category: {project.category}
+                        </CardItem>
 
-                      {/* Price */}
-                      <CardItem
-                        translateZ={30}
-                        className="text-lg font-bold text-indigo-700 mt-3"
-                      >
-                        ₹{project.price} Lakhs onwards
-                      </CardItem>
+                        {/* Price */}
+                        <CardItem
+                          translateZ={30}
+                          className="text-lg font-bold text-indigo-700 mt-3"
+                        >
+                          ₹{project.price} Lakhs onwards
+                        </CardItem>
 
-                      {/* Button */}
-                      <div className="mt-1 space-y-2">
-                        <Link to={`/public/project/${project.id}`}>
+                        {/* Button */}
+                        <div className="mt-1 space-y-2">
+                          <Link to={`/public/project/${project.id}`}>
+                            <CardItem
+                              translateZ={40}
+                              as="button"
+                              className="w-full px-4 py-2 rounded-full text-sm font-medium text-estate-navy/90 border border-estate-navy/80 hover:bg-estate-navy/30 transition-colors"
+                            >
+                              View Details
+                            </CardItem>
+                          </Link>
+
                           <CardItem
                             translateZ={40}
                             as="button"
-                            className="w-full px-4 py-2 rounded-full text-sm font-medium text-estate-navy/90 border border-estate-navy/80 hover:bg-estate-navy/30 transition-colors"
+                            className="w-full px-4 py-2 rounded-full text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
                           >
-                            View Details
+                            Schedule Site Visit
+                            <Calendar className="ml-2 h-4 w-4" />
                           </CardItem>
-                        </Link>
-
-                        <CardItem
-                          translateZ={40}
-                          as="button"
-                          className="w-full px-4 py-2 rounded-full text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
-                        >
-                          Schedule Site Visit
-                          <Calendar className="ml-2 h-4 w-4" />
-                        </CardItem>
-                      </div>
-                    </CardBody>
-                  </CardContainer>
-                ))}
+                        </div>
+                      </CardBody>
+                    </CardContainer>
+                  ))}
+                </div>
               </div>
             )}
           </div>
