@@ -50,7 +50,7 @@ const UserRoleAssignment = () => {
   const fetchAllUsers = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/user/getUsers"
+        `${import.meta.env.VITE_URL}/api/user/getUsers`
       );
       setUsers(response.data.users);
       setIsLoading(false);

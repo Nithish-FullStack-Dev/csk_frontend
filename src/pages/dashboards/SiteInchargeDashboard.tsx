@@ -32,7 +32,7 @@ const SiteInchargeDashboard = () => {
   const fetchProjects = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/project/projects`,
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         {
           withCredentials: true,
         }
@@ -52,7 +52,7 @@ const SiteInchargeDashboard = () => {
   const fetchQualityIssues = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/quality-issue/issues",
+        `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
         { withCredentials: true }
       );
       setQualityIssues(res.data.issues); // Ensure backend sends an array
@@ -69,9 +69,12 @@ const SiteInchargeDashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/project/tasks", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
+        {
+          withCredentials: true,
+        }
+      );
       setTasks(res.data);
       const pending = res.data.filter(
         (t) => t.status === "pending verification"
@@ -103,7 +106,7 @@ const SiteInchargeDashboard = () => {
   const fetchAppointments = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/user-schedule/schedules",
+        `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
         { withCredentials: true }
       );
 
@@ -226,17 +229,18 @@ const SiteInchargeDashboard = () => {
                       </div>
                       {task.priority && (
                         <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          task.priority === "priority"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {task.priority === "priority"
-                          ? "Priority"
-                          : task.priority.charAt(0).toUpperCase() +
-                            task.priority.slice(1)}
-                      </span>)}
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            task.priority === "priority"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {task.priority === "priority"
+                            ? "Priority"
+                            : task.priority.charAt(0).toUpperCase() +
+                              task.priority.slice(1)}
+                        </span>
+                      )}
                     </div>
                   ))}
 

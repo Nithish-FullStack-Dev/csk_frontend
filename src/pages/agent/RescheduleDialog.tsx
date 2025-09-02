@@ -51,7 +51,9 @@ export function RescheduleDialog({
       };
 
       await axios.put(
-        `http://localhost:3000/api/user-schedule/schedule/${schedule._id}`,
+        `${import.meta.env.VITE_URL}/api/user-schedule/schedule/${
+          schedule._id
+        }`,
         payload,
         {
           withCredentials: true,

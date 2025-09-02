@@ -70,7 +70,7 @@ export interface Customer {
 
 const fetchCustomers = async (): Promise<Customer[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/customer/getAllCustomers",
+    `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
     {
       withCredentials: true,
     }
@@ -81,7 +81,7 @@ const fetchCustomers = async (): Promise<Customer[]> => {
 // Updated fetchProperties to return Property[] directly
 const fetchProperties = async (): Promise<Property[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/properties/available",
+    `${import.meta.env.VITE_URL}/api/properties/available`,
     {
       withCredentials: true,
     }
@@ -91,7 +91,7 @@ const fetchProperties = async (): Promise<Property[]> => {
 
 const fetchAgents = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllAgents",
+    `${import.meta.env.VITE_URL}/api/user/getAllAgents`,
     {
       withCredentials: true,
     }
@@ -102,7 +102,7 @@ const fetchAgents = async (): Promise<User[]> => {
 // New API call to fetch users who can be selected as customers
 const fetchAllCustomer_purchased = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllcustomer_purchased",
+    `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`,
     {
       withCredentials: true,
     }
@@ -189,7 +189,7 @@ const CustomerManagement: React.FC = () => {
       })[]; // Array of property details
     }) => {
       const { data } = await axios.post(
-        "http://localhost:3000/api/customer/addCustomer",
+        `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
         newCustomerData,
         { withCredentials: true }
       );
@@ -227,7 +227,7 @@ const CustomerManagement: React.FC = () => {
     }) => {
       const { data } = await axios.put(
         // Changed from patch to put as per your schema update
-        `http://localhost:3000/api/customer/updateCustomer/${customerId}`,
+        `${import.meta.env.VITE_URL}/api/customer/updateCustomer/${customerId}`,
         updatedCustomerData,
         { withCredentials: true }
       );

@@ -289,7 +289,7 @@ export function OpenPlotForm({
       };
 
       // Determine endpoint (same for create/update if backend handles both)
-      const endpoint = "http://localhost:3000/api/openPlot/saveOpenPlot";
+      const endpoint = `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`;
 
       // Make request
       const response = await axios.post(endpoint, payload, config);

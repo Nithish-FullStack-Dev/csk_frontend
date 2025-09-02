@@ -30,7 +30,7 @@ const ProfileForm = () => {
       };
       console.log(updatedUser);
       const response = await axios.post(
-        "http://localhost:3000/api/user/updateUser",
+        `${import.meta.env.VITE_URL}/api/user/updateUser`,
         {
           updatedUser,
         }

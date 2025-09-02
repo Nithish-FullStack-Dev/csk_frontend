@@ -106,9 +106,12 @@ const ContractorLabor = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/labor", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/labor  `,
+        {
+          withCredentials: true,
+        }
+      );
       setTeams(response.data);
     } catch (error: any) {
       console.error("Failed to fetch labor teams:", error);
@@ -123,7 +126,7 @@ const ContractorLabor = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -134,24 +137,27 @@ const ContractorLabor = () => {
   };
 
   const handleSaveAttendance = async () => {
-  try {
-    const payload = {
-      date: attendanceDate,
-      present,
-      absent,
-    };
+    try {
+      const payload = {
+        date: attendanceDate,
+        present,
+        absent,
+      };
 
-    await axios.post(`http://localhost:3000/api/labor/${selectedTeam._id}/attendance`, payload,{withCredentials:true});
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam._id}/attendance`,
+        payload,
+        { withCredentials: true }
+      );
 
-    toast.success("Attendance recorded successfully");
-    fetchTeams();
-    setAttendanceDialogOpen(false);
-  } catch (error) {
-    console.error("Failed to save attendance", error);
-    toast.error("Failed to record attendance");
-  }
-};
-
+      toast.success("Attendance recorded successfully");
+      fetchTeams();
+      setAttendanceDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to save attendance", error);
+      toast.error("Failed to record attendance");
+    }
+  };
 
   useEffect(() => {
     fetchTeams();
@@ -170,9 +176,13 @@ const ContractorLabor = () => {
 
   const handleSubmit = async (data: LaborTeamFormValues) => {
     try {
-      const res = await axios.post("http://localhost:3000/api/labor", data, {
-        withCredentials: true,
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/labor`,
+        data,
+        {
+          withCredentials: true,
+        }
+      );
 
       // Assuming response returns the newly created team
       const newTeam = res.data;
@@ -623,7 +633,9 @@ const ContractorLabor = () => {
                   <h4 className="text-sm font-medium text-muted-foreground">
                     Average Attendance
                   </h4>
-                  <p className="text-base">{selectedTeam.attendancePercentage}%</p>
+                  <p className="text-base">
+                    {selectedTeam.attendancePercentage}%
+                  </p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">
@@ -715,7 +727,16 @@ const ContractorLabor = () => {
 
                         return (
                           <TableRow key={record._id}>
-                            <TableCell>{new Date(record.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
+                            <TableCell>
+                              {new Date(record.date).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }
+                              )}
+                            </TableCell>
                             <TableCell>{record.present}</TableCell>
                             <TableCell>{record.absent}</TableCell>
                             <TableCell>

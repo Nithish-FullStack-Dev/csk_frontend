@@ -70,9 +70,12 @@ const ContractorPhotoEvidencePage = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/project/tasks", {
-          withCredentials: true,
-        }); // Adjust path if needed
+        const res = await axios.get(
+          `${import.meta.env.VITE_URL}/api/project/tasks`,
+          {
+            withCredentials: true,
+          }
+        ); // Adjust path if needed
         const tasks = res.data || [];
 
         const transformed = tasks

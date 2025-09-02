@@ -221,7 +221,9 @@ const QualityControl = () => {
       };
 
       const res = await axios.post(
-        "http://localhost:3000/api/project/site-incharge/assign-task-to-contractor",
+        `${
+          import.meta.env.VITE_URL
+        }/api/project/site-incharge/assign-task-to-contractor`,
         payload,
         { withCredentials: true }
       );
@@ -259,7 +261,7 @@ const QualityControl = () => {
   const fetchQualityIssues = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/quality-issue/issues",
+        `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
         { withCredentials: true }
       );
       setQualityIssues(res.data.issues); // Ensure backend sends an array
@@ -281,7 +283,7 @@ const QualityControl = () => {
 
         try {
           const res = await axios.post(
-            "http://localhost:3000/api/uploads/upload",
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
@@ -298,7 +300,7 @@ const QualityControl = () => {
         evidenceImages: uploadedImageUrls,
       };
       const res = await axios.post(
-        "http://localhost:3000/api/quality-issue/create-quality-issue",
+        `${import.meta.env.VITE_URL}/api/quality-issue/create-quality-issue`,
         payload,
         { withCredentials: true }
       );
@@ -333,11 +335,11 @@ const QualityControl = () => {
   const fetchDropdownData = async () => {
     try {
       const clientsRes = await axios.get(
-        "http://localhost:3000/api/user/contractors",
+        `${import.meta.env.VITE_URL}/api/user/contractors`,
         { withCredentials: true }
       ); // Replace with your actual route
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -935,7 +937,11 @@ const QualityControl = () => {
                       onClick={async () => {
                         try {
                           await axios.patch(
-                            `http://localhost:3000/api/quality-issue/issues/${selectedIssue._id}/status`,
+                            `${
+                              import.meta.env.VITE_URL
+                            }/api/quality-issue/issues/${
+                              selectedIssue._id
+                            }/status`,
                             {
                               status: newStatus,
                             }

@@ -179,7 +179,7 @@ const ContractorMaterials = () => {
 
   const [activeTab, setActiveTab] = useState("all");
   const [materials, setMaterials] = useState<Material[]>([]);
-const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
+  const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
@@ -230,18 +230,22 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   ];
 
   const handleSubmit = async (data: any) => {
-  try {
-    const res = await axios.post("http://localhost:3000/api/materials", data,{withCredentials:true});
-    toast.success("Material added successfully");
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/materials`,
+        data,
+        { withCredentials: true }
+      );
+      toast.success("Material added successfully");
 
-    // Optionally refresh your material list
-    setAddDialogOpen(false);
-    fetchMaterials();
-  } catch (error: any) {
-    console.error("Failed to add material", error);
-    toast.error(error?.response?.data?.message || "Failed to add material");
-  }
-};
+      // Optionally refresh your material list
+      setAddDialogOpen(false);
+      fetchMaterials();
+    } catch (error: any) {
+      console.error("Failed to add material", error);
+      toast.error(error?.response?.data?.message || "Failed to add material");
+    }
+  };
 
   const viewMaterial = (material: Material) => {
     setSelectedMaterial(material);
@@ -251,7 +255,7 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -263,7 +267,9 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
   const fetchMaterials = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/materials",{withCredentials:true}); // or your full backend URL
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/materials`, {
+        withCredentials: true,
+      }); // or your full backend URL
       setMaterials(res.data);
       setFilteredMaterials(res.data); // apply filters later if needed
     } catch (error) {
@@ -277,26 +283,31 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   }, []);
 
   const markAsDelivered = async () => {
-  try {
-    const res = await axios.patch(`http://localhost:3000/api/materials/${selectedMaterial._id}/status`, {
-      status: "Delivered",
-    });
+    try {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/materials/${
+          selectedMaterial._id
+        }/status`,
+        {
+          status: "Delivered",
+        }
+      );
 
-    // Update state locally
-    const updatedMaterials = materials.map((material) =>
-      material.id === selectedMaterial.id
-        ? { ...material, status: "Delivered" }
-        : material
-    );
-    setMaterials(updatedMaterials);
-    setSelectedMaterial({ ...selectedMaterial, status: "Delivered" });
-    fetchMaterials();
-    toast.success("Material marked as delivered");
-  } catch (error) {
-    console.error("Failed to update status:", error);
-    toast.error("Failed to mark as delivered");
-  }
-};
+      // Update state locally
+      const updatedMaterials = materials.map((material) =>
+        material.id === selectedMaterial.id
+          ? { ...material, status: "Delivered" }
+          : material
+      );
+      setMaterials(updatedMaterials);
+      setSelectedMaterial({ ...selectedMaterial, status: "Delivered" });
+      fetchMaterials();
+      toast.success("Material marked as delivered");
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast.error("Failed to mark as delivered");
+    }
+  };
 
   // Filter materials based on search and active tab
   const filteredMaterials2 = materials.filter((material) => {
@@ -826,13 +837,20 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Project:</p>
-                  <p>{selectedMaterial.project.projectId.basicInfo.projectName}</p>
+                  <p>
+                    {selectedMaterial.project.projectId.basicInfo.projectName}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Delivery Date:
                   </p>
-                  <p>{new Date(selectedMaterial.deliveryDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  <p>
+                    {new Date(selectedMaterial.deliveryDate).toLocaleDateString(
+                      "en-IN",
+                      { day: "numeric", month: "short", year: "numeric" }
+                    )}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PO Number:</p>
@@ -889,7 +907,6 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
           </DialogContent>
         </Dialog>
       )}
-
     </div>
   );
 };

@@ -28,7 +28,7 @@ const CompletedProjectsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/completed-properties"
+        `${import.meta.env.VITE_URL}/api/properties/completed-properties`
       );
       const completedProjectsFromDB: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};

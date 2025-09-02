@@ -207,7 +207,6 @@ const ContractorDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [completedTasks, setCompletedTasks] = useState([]);
-  
 
   const mapStatus = (status: string): Task["status"] => {
     switch (status.toLowerCase()) {
@@ -240,7 +239,7 @@ const ContractorDashboard = () => {
   const fetchTasks = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/project/tasks",
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
         { withCredentials: true }
       );
       const mapped = response.data.map((task: any, index: number) => ({
@@ -294,9 +293,12 @@ const ContractorDashboard = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/api/invoices", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/invoices`,
+        {
+          withCredentials: true,
+        }
+      );
       setInvoices(response.data);
       setError("");
     } catch (err) {
@@ -346,7 +348,7 @@ const ContractorDashboard = () => {
 
       // API call using axios
       const response = await axios.post(
-        "http://localhost:3000/api/invoices",
+        `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
         { withCredentials: true }
       );
@@ -380,25 +382,25 @@ const ContractorDashboard = () => {
   };
 
   useEffect(() => {
-      const fetchCompletedTasks = async () => {
-        try {
-          const res = await axios.get(
-            "http://localhost:3000/api/invoices/completed/tasks",
-            { withCredentials: true }
-          );
-          setCompletedTasks(res.data.tasks);
-        } catch (err) {
-          console.error("Error fetching completed tasks:", err);
-        }
-      };
-  
-      fetchCompletedTasks();
-    }, []);
+    const fetchCompletedTasks = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
+          { withCredentials: true }
+        );
+        setCompletedTasks(res.data.tasks);
+      } catch (err) {
+        console.error("Error fetching completed tasks:", err);
+      }
+    };
+
+    fetchCompletedTasks();
+  }, []);
 
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -413,17 +415,16 @@ const ContractorDashboard = () => {
   }, []);
 
   useEffect(() => {
-  const found = projects.find((proj) => proj._id === watchProject);
+    const found = projects.find((proj) => proj._id === watchProject);
 
-  // Only update if value actually changes
-  if (
-    (found && selectedProject && found._id !== selectedProject._id) ||
-    (!found && selectedProject !== null)
-  ) {
-    setSelectedProject(found || null);
-  }
-}, [watchProject, projects]);
-
+    // Only update if value actually changes
+    if (
+      (found && selectedProject && found._id !== selectedProject._id) ||
+      (!found && selectedProject !== null)
+    ) {
+      setSelectedProject(found || null);
+    }
+  }, [watchProject, projects]);
 
   const addInvoiceItem = (
     data: InvoiceItemFormValues,
@@ -486,7 +487,9 @@ const ContractorDashboard = () => {
 
         <Button
           className="bg-green-600 hover:bg-green-700"
-          onClick={()=>{setCreateDialogOpen(true)}}
+          onClick={() => {
+            setCreateDialogOpen(true);
+          }}
         >
           <Receipt className="mr-2 h-4 w-4" />
           Create Invoice
@@ -503,8 +506,9 @@ const ContractorDashboard = () => {
         </Dialog>
       </div>
 
-      {tasks && projects && 
-      <ContractorDashboardStats tasks={tasks} projects={projects} />}
+      {tasks && projects && (
+        <ContractorDashboardStats tasks={tasks} projects={projects} />
+      )}
 
       <Tabs
         value={selectedTab}

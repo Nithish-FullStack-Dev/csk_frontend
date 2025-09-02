@@ -143,7 +143,7 @@ const ContractorProjects = () => {
   const fetchProjects = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/project/projects`,
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         {
           withCredentials: true,
         }

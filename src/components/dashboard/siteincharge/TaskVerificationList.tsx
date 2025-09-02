@@ -78,7 +78,7 @@ const statusColors: Record<string, string> = {
 const TaskVerificationList = ({
   setApprovedCount,
   setReworkCount,
-  setPendingCount
+  setPendingCount,
 }) => {
   const [tasks, setTasks] = useState<VerificationTask[]>([]);
   const [filter, setFilter] = useState("all");
@@ -87,10 +87,10 @@ const TaskVerificationList = ({
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isUpdating,setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<
-    "approved" | "rejected" | "rework" 
+    "approved" | "rejected" | "rework"
   >("approved");
   const [notes, setNotes] = useState("");
   const [quality, setQuality] = useState<
@@ -101,9 +101,12 @@ const TaskVerificationList = ({
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/project/tasks", {
-        withCredentials: true,
-      }); // Update this to your actual API endpoint
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
+        {
+          withCredentials: true,
+        }
+      ); // Update this to your actual API endpoint
       const formattedTasks: VerificationTask[] = res.data.map(
         (task: any, index: number) => ({
           _id: task._id,
@@ -120,20 +123,24 @@ const TaskVerificationList = ({
         })
       );
       setTasks(formattedTasks);
-      const pending = tasks.filter(t => t.status === "pending verification").length;
-  const approved = tasks.filter(t => {
-    return (
-      t.status === "approved" &&
-      t.submittedBySiteInchargeOn &&
-      new Date(t.submittedBySiteInchargeOn).getMonth() === new Date().getMonth() &&
-      new Date(t.submittedBySiteInchargeOn).getFullYear() === new Date().getFullYear()
-    );
-  }).length;
-  const rework = tasks.filter(t => t.status === "rework").length;
+      const pending = tasks.filter(
+        (t) => t.status === "pending verification"
+      ).length;
+      const approved = tasks.filter((t) => {
+        return (
+          t.status === "approved" &&
+          t.submittedBySiteInchargeOn &&
+          new Date(t.submittedBySiteInchargeOn).getMonth() ===
+            new Date().getMonth() &&
+          new Date(t.submittedBySiteInchargeOn).getFullYear() ===
+            new Date().getFullYear()
+        );
+      }).length;
+      const rework = tasks.filter((t) => t.status === "rework").length;
 
-  setPendingCount(pending);
-  setApprovedCount(approved);
-  setReworkCount(rework);
+      setPendingCount(pending);
+      setApprovedCount(approved);
+      setReworkCount(rework);
     } catch (err) {
       console.error("Error fetching tasks:", err);
       setError("Failed to load tasks.");
@@ -153,7 +160,7 @@ const TaskVerificationList = ({
 
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/uploads/upload",
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -176,7 +183,9 @@ const TaskVerificationList = ({
     // 3. Send task data to backend
     try {
       await axios.patch(
-        `http://localhost:3000/api/project/site-incharge/${selectedTask.projectId}/${selectedTask._id}/task`,
+        `${import.meta.env.VITE_URL}/api/project/site-incharge/${
+          selectedTask.projectId
+        }/${selectedTask._id}/task`,
         newTask,
         { withCredentials: true }
       );
@@ -705,7 +714,7 @@ const TaskVerificationList = ({
                     : "destructive"
                 }
               >
-                {isUpdating?"Updating...":"Submit Verification"}
+                {isUpdating ? "Updating..." : "Submit Verification"}
               </Button>
             </DialogFooter>
           </form>

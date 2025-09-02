@@ -176,7 +176,7 @@ const Payments = () => {
   const handleMarkAsPaid = async (invoiceId: any, paymentMethod: any) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/api/invoices/${invoiceId}/mark-paid`,
+        `${import.meta.env.VITE_URL}/api/invoices/${invoiceId}/mark-paid`,
         { paymentMethod }, // no body, just params
         { withCredentials: true } // if you're using cookies/auth
       );
@@ -214,9 +214,12 @@ const Payments = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/api/invoices", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/invoices`,
+        {
+          withCredentials: true,
+        }
+      );
       setInvoices(response.data.filter((invoice) => invoice.status !== "paid"));
       setError("");
     } catch (err) {
@@ -230,7 +233,7 @@ const Payments = () => {
   const fetchPayments = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/payments/accountant",
+        `${import.meta.env.VITE_URL}/api/payments/accountant`,
         {
           withCredentials: true, // if using cookies/auth
         }
@@ -992,7 +995,9 @@ const Payments = () => {
                   onClick={async () => {
                     try {
                       await axios.put(
-                        `http://localhost:3000/api/invoices/${selectedPayment.invoice._id}/mark-paid?reconcile=true`,
+                        `${import.meta.env.VITE_URL}/api/invoices/${
+                          selectedPayment.invoice._id
+                        }/mark-paid?reconcile=true`,
                         {
                           paymentMethod: isPaid ? paymentMethod : null,
                           reconciliationAmount:

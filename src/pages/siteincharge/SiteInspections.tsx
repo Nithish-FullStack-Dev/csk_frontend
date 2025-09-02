@@ -180,7 +180,7 @@ const SiteInspections = () => {
   const fetchInspections = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/site-inspection/inspections",
+        `${import.meta.env.VITE_URL}/api/site-inspection/inspections`,
         { withCredentials: true }
       );
       setSiteInspections(response.data.inspections || []);
@@ -192,7 +192,7 @@ const SiteInspections = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/project`,
         { withCredentials: true }
       );
 
@@ -269,7 +269,7 @@ const SiteInspections = () => {
 
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/uploads/upload",
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -296,7 +296,7 @@ const SiteInspections = () => {
     // 3. Send inspection data to backend
     try {
       await axios.post(
-        "http://localhost:3000/api/site-inspection/inspection/create",
+        `${import.meta.env.VITE_URL}/api/site-inspection/inspection/create`,
         inspectionData,
         { withCredentials: true }
       );
@@ -838,7 +838,11 @@ const SiteInspections = () => {
                     onClick={async () => {
                       try {
                         await axios.patch(
-                          `http://localhost:3000/api/site-inspection/inspection/${selectedInspection._id}/status`,
+                          `${
+                            import.meta.env.VITE_URL
+                          }/api/site-inspection/inspection/${
+                            selectedInspection._id
+                          }/status`,
                           {
                             status: newStatus,
                           },
@@ -915,7 +919,7 @@ const SiteInspections = () => {
 
                       try {
                         const res = await axios.post(
-                          "http://localhost:3000/api/uploads/upload",
+                          `${import.meta.env.VITE_URL}/api/uploads/upload`,
                           formData,
                           {
                             headers: {
@@ -932,7 +936,11 @@ const SiteInspections = () => {
                     // Now call your backend to update the inspection
                     try {
                       await axios.patch(
-                        `http://localhost:3000/api/site-inspection/add-photos/${selectedInspectionForPhotos._id}`,
+                        `${
+                          import.meta.env.VITE_URL
+                        }/api/site-inspection/add-photos/${
+                          selectedInspectionForPhotos._id
+                        }`,
                         { photos: uploadedImageUrls },
                         { withCredentials: true }
                       );

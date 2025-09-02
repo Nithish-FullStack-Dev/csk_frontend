@@ -63,7 +63,7 @@ const sampleProjects: Project[] = [
   },
 ];
 
-const AddTaskDialog = ({ onOpenChange,fetchTasks }: AddTaskDialogProps) => {
+const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -80,7 +80,7 @@ const AddTaskDialog = ({ onOpenChange,fetchTasks }: AddTaskDialogProps) => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -108,49 +108,52 @@ const AddTaskDialog = ({ onOpenChange,fetchTasks }: AddTaskDialogProps) => {
   }, [projectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!title || !description || !projectId || !unit || !phase || !deadline) {
-    toast.error("Please fill all required fields");
-    return;
-  }
-
-  try {
-    const response = await axios.post("http://localhost:3000/api/project/tasks/create", {
-      title,
-      description,
-      projectId,
-      unit,
-      phase,
-      priority,
-      deadline,
-    },{withCredentials:true});
-
-    if (response.data.success) {
-      toast.success("Task created successfully", {
-        description: `${title} has been added to your task list`,
-      });
-
-      fetchTasks();
-
-      setTitle("");
-      setDescription("");
-      setProjectId("");
-      setUnit("");
-      setPhase("");
-      setPriority("medium");
-      setDeadline(new Date());
-
-      onOpenChange(false);
-    } else {
-      toast.error("Failed to create task");
+    if (!title || !description || !projectId || !unit || !phase || !deadline) {
+      toast.error("Please fill all required fields");
+      return;
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Server error while creating task");
-  }
-};
 
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_URL}/api/project/tasks/create`,
+        {
+          title,
+          description,
+          projectId,
+          unit,
+          phase,
+          priority,
+          deadline,
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success("Task created successfully", {
+          description: `${title} has been added to your task list`,
+        });
+
+        fetchTasks();
+
+        setTitle("");
+        setDescription("");
+        setProjectId("");
+        setUnit("");
+        setPhase("");
+        setPriority("medium");
+        setDeadline(new Date());
+
+        onOpenChange(false);
+      } else {
+        toast.error("Failed to create task");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error while creating task");
+    }
+  };
 
   return (
     <DialogContent className="sm:max-w-[550px]">

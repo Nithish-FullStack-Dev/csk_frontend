@@ -15,9 +15,12 @@ const TaskVerifications = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/project/tasks", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
+        {
+          withCredentials: true,
+        }
+      );
       setTasks(res.data);
       const pending = res.data.filter(
         (t) => t.status === "pending verification"

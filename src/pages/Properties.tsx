@@ -86,13 +86,13 @@ const Properties = () => {
 
       if (isCustomer) {
         const { data: customer } = await axios.get(
-          "http://localhost:3000/api/customer/getCustomerByUser",
+          `${import.meta.env.VITE_URL}/api/customer/getCustomerByUser`,
           { withCredentials: true }
         );
         data = customer.properties.map((p: any) => p.property);
       } else {
         const { data: properties } = await axios.get(
-          "http://localhost:3000/api/properties/getProperties",
+          `${import.meta.env.VITE_URL}/api/properties/getProperties`,
           { withCredentials: true }
         );
         data = properties;
@@ -154,7 +154,7 @@ const Properties = () => {
   const fetchAllOpenPlots = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/openPlot/getAllOpenPlot"
+        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
       );
       // console.log(data);
       setOpenPlots(data.plots);
@@ -264,7 +264,9 @@ const Properties = () => {
 
     try {
       await axios.delete(
-        `http://localhost:3000/api/properties/deleteProperty/${selectedProperty.id}`
+        `${import.meta.env.VITE_URL}/api/properties/deleteProperty/${
+          selectedProperty.id
+        }`
       );
       const updatedProperties = properties.filter(
         (property) => property.id !== selectedProperty.id

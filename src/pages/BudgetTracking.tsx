@@ -139,7 +139,7 @@ const BudgetTracking = () => {
   const fetchExpenses = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/budget/expenses/all",
+        `${import.meta.env.VITE_URL}/api/budget/expenses/all`,
         {
           withCredentials: true,
         }
@@ -157,9 +157,12 @@ const BudgetTracking = () => {
 
   const fetchBudgetData = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/budget", {
-        withCredentials: true, // required for cookies/JWT auth
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/budget`,
+        {
+          withCredentials: true, // required for cookies/JWT auth
+        }
+      );
       return response.data;
     } catch (error) {
       console.error(
@@ -207,9 +210,12 @@ const BudgetTracking = () => {
 
   const fetchCashFlowData = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/budget/cashflow", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/budget/cashflow`,
+        {
+          withCredentials: true,
+        }
+      );
       return res.data; // array of { month, inflow, outflow, net }
     } catch (err) {
       console.error(
@@ -236,7 +242,7 @@ const BudgetTracking = () => {
 
         try {
           const uploadRes = await axios.post(
-            "http://localhost:3000/api/uploads/upload",
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
@@ -254,7 +260,7 @@ const BudgetTracking = () => {
         }
       }
       const response = await axios.post(
-        "http://localhost:3000/api/budget/expense",
+        `${import.meta.env.VITE_URL}/api/budget/expense`,
         {
           category: expense.category,
           amount: expense.amount,

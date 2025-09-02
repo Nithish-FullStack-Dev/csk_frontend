@@ -181,7 +181,7 @@ const ContractorsList = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -229,7 +229,7 @@ const ContractorsList = () => {
   const fetchContractors = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/project/site-incharge/myContractors",
+        `${import.meta.env.VITE_URL}/api/project/site-incharge/myContractors`,
         {
           withCredentials: true,
         }
@@ -519,7 +519,11 @@ const ContractorsList = () => {
                               setIsLoadingTasks(true);
                               try {
                                 const res = await axios.get(
-                                  `http://localhost:3000/api/project/site-incharge/${contractor._id}/contractor/tasks`,
+                                  `${
+                                    import.meta.env.VITE_URL
+                                  }/api/project/site-incharge/${
+                                    contractor._id
+                                  }/contractor/tasks`,
                                   { withCredentials: true }
                                 );
                                 setContractorTasks(res.data.tasks);
@@ -572,7 +576,9 @@ const ContractorsList = () => {
                   try {
                     console.log("ADDING........");
                     const res = await axios.post(
-                      "http://localhost:3000/api/project/site-incharge/assign-contractor",
+                      `${
+                        import.meta.env.VITE_URL
+                      }/api/project/site-incharge/assign-contractor`,
                       formData,
                       { withCredentials: true }
                     );
@@ -768,7 +774,9 @@ const ContractorsList = () => {
                     onClick={async () => {
                       try {
                         await axios.patch(
-                          `http://localhost:3000/api/user/${selectedContractor._id}/status`,
+                          `${import.meta.env.VITE_URL}/api/user/${
+                            selectedContractor._id
+                          }/status`,
                           {
                             status: newStatus,
                           },

@@ -41,9 +41,12 @@ interface AuthContextType {
 }
 
 export const getCsrfToken = async () => {
-  const response = await axios.get("http://localhost:3000/api/csrf-token", {
-    withCredentials: true,
-  });
+  const response = await axios.get(
+    `${import.meta.env.VITE_URL}/api/csrf-token`,
+    {
+      withCredentials: true,
+    }
+  );
   return response.data.csrfToken;
 };
 
@@ -67,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchLoggedInUser = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/user/getLoggedInUser",
+        `${import.meta.env.VITE_URL}/api/user/getLoggedInUser`,
         { withCredentials: true }
       );
       setUser(data);
@@ -91,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log(email, password);
       const { data } = await axios.post(
-        "http://localhost:3000/api/user/login",
+        `${import.meta.env.VITE_URL}/api/user/login`,
         {
           email,
           password,

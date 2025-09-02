@@ -31,7 +31,7 @@ const OpenPlotsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/openPlot/getAllOpenPlot"
+        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
       );
       setPlotProjects(data.plots);
       setIsError(false);

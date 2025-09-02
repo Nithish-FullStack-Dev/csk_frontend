@@ -81,7 +81,7 @@ const PropertiesCMS = () => {
   const fetchSlides = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/cms/cmsProperty/getAllCms"
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/getAllCms`
       );
       // console.log(res.data);
       setProperties(res.data.cmsProperties);
@@ -92,9 +92,12 @@ const PropertiesCMS = () => {
 
   const saveSlides = async () => {
     try {
-      await axios.post("http://localhost:3000/api/cms/cmsProperty/addAllCms", {
-        properties,
-      });
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/addAllCms`,
+        {
+          properties,
+        }
+      );
       console.log("Slides saved");
     } catch (error) {
       console.log("Save error", error);
@@ -127,7 +130,7 @@ const PropertiesCMS = () => {
     };
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/cms/cmsProperty/addPropCms",
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/addPropCms`,
         newProperty
       );
       const savedSlide = response.data.property;
@@ -140,7 +143,7 @@ const PropertiesCMS = () => {
   const removeProperty = async (id) => {
     try {
       await axios.delete(
-        `http://localhost:3000/api/cms/cmsProperty/deletePropCms/${id}`
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/deletePropCms/${id}`
       );
       setProperties(properties.filter((property) => property._id !== id));
       toast.success("Property deleted successfully");

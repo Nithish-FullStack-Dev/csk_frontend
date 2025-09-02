@@ -27,7 +27,7 @@ const ManageRoles = () => {
 
   const fetchRoles = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/role/roles");
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/role/roles`);
       setRoles(res.data);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
@@ -36,7 +36,9 @@ const ManageRoles = () => {
 
   const getAllUsers = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/user/getUsers`);
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/user/getUsers`
+      );
       console.log(res);
       setAllUsers(res.data.users || []);
     } catch (err) {
@@ -54,17 +56,23 @@ const ManageRoles = () => {
       setLoading(true);
       if (isEditMode) {
         // Update role
-        await axios.patch(`http://localhost:3000/api/role/${editingRoleId}`, {
-          description,
-          color: selectedColor,
-        });
+        await axios.patch(
+          `${import.meta.env.VITE_URL}/api/role/${editingRoleId}`,
+          {
+            description,
+            color: selectedColor,
+          }
+        );
       } else {
         // Create or set metadata
-        await axios.post("http://localhost:3000/api/role/updateUserRole", {
-          name: roleName,
-          description,
-          color: selectedColor,
-        });
+        await axios.post(
+          `${import.meta.env.VITE_URL}/api/role/updateUserRole`,
+          {
+            name: roleName,
+            description,
+            color: selectedColor,
+          }
+        );
       }
 
       setRoleName("");
@@ -83,7 +91,9 @@ const ManageRoles = () => {
     if (!confirm) return;
 
     try {
-      await axios.patch(`http://localhost:3000/api/role/${id}/clear-meta`);
+      await axios.patch(
+        `${import.meta.env.VITE_URL}/api/role/${id}/clear-meta`
+      );
       fetchRoles();
     } catch (err) {
       console.error("Failed to clear role metadata", err);

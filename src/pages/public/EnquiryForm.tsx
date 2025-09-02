@@ -116,7 +116,7 @@ const ModernEnquiryForm: React.FC = () => {
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/contact/contactInfo"
+        `${import.meta.env.VITE_URL}/api/contact/contactInfo`
       );
       setContact(data);
     } catch (error) {
@@ -180,7 +180,7 @@ const ModernEnquiryForm: React.FC = () => {
     }
 
     try {
-      await axios.post("http://localhost:3000/api/auth/send-otp", {
+      await axios.post(`${import.meta.env.VITE_URL}/api/auth/send-otp`, {
         email: formData.email,
       });
       setOtpSent(true);
@@ -212,7 +212,7 @@ const ModernEnquiryForm: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/api/auth/verify-otp",
+        `${import.meta.env.VITE_URL}/api/auth/verify-otp`,
         {
           email: formData.email,
           otp: formData.otp,
@@ -317,7 +317,7 @@ const ModernEnquiryForm: React.FC = () => {
       if (!isUndoClicked) {
         try {
           const response = await axios.post(
-            "http://localhost:3000/api/enquiryForm/saveForm",
+            `${import.meta.env.VITE_URL}/api/enquiryForm/saveForm`,
             submittedData
           );
           isSaved = true;

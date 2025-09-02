@@ -335,13 +335,15 @@ export function PropertyForm({
 
       if (isEditing) {
         response = await axios.put(
-          `http://localhost:3000/api/properties/updateProperty/${data.memNo}`,
+          `${import.meta.env.VITE_URL}/api/properties/updateProperty/${
+            data.memNo
+          }`,
           transformedPayload,
           config
         );
       } else {
         response = await axios.post(
-          "http://localhost:3000/api/properties/addProperty",
+          `${import.meta.env.VITE_URL}/api/properties/addProperty`,
           transformedPayload,
           config
         );
@@ -365,7 +367,7 @@ export function PropertyForm({
   const fetchCustomers = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/customer/getAllCustomers",
+        `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
         {
           withCredentials: true,
         }
@@ -379,7 +381,7 @@ export function PropertyForm({
   const fetchAllAgents = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/user/getAllAgents",
+        "${import.meta.env.VITE_URL}/api/user/getAllAgents",
         {
           withCredentials: true,
         }
@@ -393,7 +395,7 @@ export function PropertyForm({
   const fetchSiteIncharges = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/user/site-incharges",
+        `${import.meta.env.VITE_URL}/api/user/site-incharges`,
         {
           withCredentials: true,
         }

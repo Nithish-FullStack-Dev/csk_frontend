@@ -237,9 +237,12 @@ const TaxDocuments = () => {
   const fetchTaxDocuments = async () => {
     try {
       setLoadingDocs(true);
-      const res = await axios.get("http://localhost:3000/api/tax/documents", {
-        withCredentials: true,
-      });
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/tax/documents`,
+        {
+          withCredentials: true,
+        }
+      );
 
       const {
         gstDocuments = [],
@@ -333,7 +336,7 @@ const TaxDocuments = () => {
         fileForm.append("file", formData.file);
 
         const uploadRes = await axios.post(
-          "http://localhost:3000/api/uploads/upload",
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
           fileForm,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -393,9 +396,13 @@ const TaxDocuments = () => {
       }
 
       // 3. Submit tax document to backend
-      await axios.post("http://localhost:3000/api/tax/documents", payload, {
-        withCredentials: true,
-      });
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/tax/documents`,
+        payload,
+        {
+          withCredentials: true,
+        }
+      );
 
       toast.success("Tax document added successfully!");
       fetchTaxDocuments();
@@ -1301,7 +1308,9 @@ const TaxDocuments = () => {
                   onClick={async () => {
                     try {
                       await axios.put(
-                        `http://localhost:3000/api/tax/documents/updateStatus/${selectedDoc._id}`,
+                        `${
+                          import.meta.env.VITE_URL
+                        }/api/tax/documents/updateStatus/${selectedDoc._id}`,
                         {
                           status: newStatus,
                           auditorName:
@@ -1406,7 +1415,11 @@ const TaxDocuments = () => {
                   onClick={async () => {
                     try {
                       await axios.put(
-                        `http://localhost:3000/api/tax/documents/updateAuditStatus/${selectedAudit.id}`, // you must pass this key when constructing `auditDocuments`
+                        `${
+                          import.meta.env.VITE_URL
+                        }/api/tax/documents/updateAuditStatus/${
+                          selectedAudit.id
+                        }`, // you must pass this key when constructing `auditDocuments`
                         {
                           auditStatus,
                           type: selectedAudit.type,

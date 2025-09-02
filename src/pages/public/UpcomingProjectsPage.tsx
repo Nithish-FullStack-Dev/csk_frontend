@@ -23,7 +23,7 @@ const UpcomingProjectsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/upcoming-properties"
+        `${import.meta.env.VITE_URL}/api/properties/upcoming-properties`
       );
       const upcomingProjectsFromDB: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};

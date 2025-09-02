@@ -20,7 +20,7 @@ import { db } from "@/config/firebaseConfig";
 import { toast } from "react-toastify";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:3000"); // Replace with your backend URL
+const socket = io(`${import.meta.env.VITE_URL}`); // Replace with your backend URL
 
 const TopBar = () => {
   const { user, logout } = useAuth();
@@ -60,7 +60,7 @@ const TopBar = () => {
   const fetchUnreadNotificationCount = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/notifications/${userId}/unread-count`
+        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread-count`
       );
       setUnreadNotificationCount(res.data.unreadCount || 0);
     } catch (err) {
@@ -71,7 +71,7 @@ const TopBar = () => {
   const fetchUnreadNotifications = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/notifications/${userId}/unread`
+        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread`
       );
       setNotifications(res.data.notifications || []);
     } catch (err) {
@@ -81,7 +81,9 @@ const TopBar = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/user/getUsers", { withCredentials: true })
+      .get(`${import.meta.env.VITE_URL}/api/user/getUsers`, {
+        withCredentials: true,
+      })
       .then((res) => setAllUsers(res.data.users))
       .catch(console.error);
   }, []);

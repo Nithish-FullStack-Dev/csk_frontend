@@ -32,7 +32,7 @@ const OngoingProjectsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/ongoing-properties"
+        `${import.meta.env.VITE_URL}/api/properties/ongoing-properties`
       );
       const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};

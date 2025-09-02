@@ -83,7 +83,6 @@ interface InvoiceItem {
   taxRate: number;
 }
 
-
 // Form schema
 export const invoiceSchema = z.object({
   project: z.string().min(2, "Project is required"),
@@ -135,14 +134,16 @@ const ContractorInvoices = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/api/invoices", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/invoices`,
+        {
+          withCredentials: true,
+        }
+      );
       setInvoices(response.data);
       setError("");
     } catch (err) {
@@ -184,7 +185,6 @@ const ContractorInvoices = () => {
     mode: "onChange",
   });
 
-
   const handleSubmit = async (data: InvoiceFormValues) => {
     try {
       console.log("Submitting..........");
@@ -215,12 +215,12 @@ const ContractorInvoices = () => {
         notes: data.notes || "",
         subtotal,
         total: totalAmount,
-        unit: data.unit
+        unit: data.unit,
       };
 
       // API call using axios
       const response = await axios.post(
-        "http://localhost:3000/api/invoices",
+        `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
         { withCredentials: true }
       );
@@ -331,7 +331,7 @@ const ContractorInvoices = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -348,7 +348,7 @@ const ContractorInvoices = () => {
     const fetchCompletedTasks = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:3000/api/invoices/completed/tasks",
+          `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
           { withCredentials: true }
         );
         setCompletedTasks(res.data.tasks);
@@ -488,19 +488,23 @@ const ContractorInvoices = () => {
                   <TableCell className="font-medium">
                     {invoice.invoiceNumber}
                   </TableCell>
-                  <TableCell>{invoice.project.projectId.basicInfo.projectName+" / "+(invoice.unit || "-")}</TableCell>
+                  <TableCell>
+                    {invoice.project.projectId.basicInfo.projectName +
+                      " / " +
+                      (invoice.unit || "-")}
+                  </TableCell>
                   <TableCell>
                     {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "2-digit",
-                      year: "2-digit", 
+                      year: "2-digit",
                     })}
                   </TableCell>
                   <TableCell>
                     {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "2-digit",
-                      year: "2-digit", 
+                      year: "2-digit",
                     })}
                   </TableCell>
                   <TableCell>
@@ -1086,7 +1090,9 @@ const ContractorInvoices = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-xl">INVOICE</h3>
-                  <p className="text-muted-foreground">{selectedInvoice.invoiceNumber}</p>
+                  <p className="text-muted-foreground">
+                    {selectedInvoice.invoiceNumber}
+                  </p>
                 </div>
                 <Badge
                   className={`${
@@ -1112,23 +1118,36 @@ const ContractorInvoices = () => {
                 <div className="space-y-1">
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Issue Date:</p>
-                    <p>{new Date(selectedInvoice.issueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}</p>
+                    <p>
+                      {new Date(selectedInvoice.issueDate).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                        }
+                      )}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Due Date:</p>
-                    <p>{new Date(selectedInvoice.issueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}</p>
+                    <p>
+                      {new Date(selectedInvoice.issueDate).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                        }
+                      )}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Project:</p>
-                    <p>{selectedInvoice.project.projectId.basicInfo.projectName || "-"}</p>
+                    <p>
+                      {selectedInvoice.project.projectId.basicInfo
+                        .projectName || "-"}
+                    </p>
                   </div>
                   {selectedInvoice.paymentDate && (
                     <div className="grid grid-cols-2">
@@ -1204,10 +1223,7 @@ const ContractorInvoices = () => {
 
                   <div className="flex justify-between font-bold">
                     <span>Total Amount:</span>
-                    <span>
-                      ₹
-                      {selectedInvoice.total.toLocaleString()}
-                    </span>
+                    <span>₹{selectedInvoice.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

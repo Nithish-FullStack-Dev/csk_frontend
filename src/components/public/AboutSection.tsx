@@ -111,7 +111,7 @@ const AboutSection = () => {
   const fetchAboutDetails = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/aboutSection/getAboutSec"
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
       );
       setAboutContent(data);
       setStats(data.stats);

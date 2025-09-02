@@ -79,7 +79,7 @@ const OpenPlotsDetails = () => {
     try {
       console.log(id);
       const response = await axios.get(
-        `http://localhost:3000/api/openPlot/getOpenPlotById/${id}`
+        `${import.meta.env.VITE_URL}/api/openPlot/getOpenPlotById/${id}`
       );
       if (response.data) {
         setOpenPlot(response.data);

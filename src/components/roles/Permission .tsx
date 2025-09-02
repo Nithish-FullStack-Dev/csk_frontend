@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,7 @@ export default function Permission() {
     };
 
     try {
-      await axios.post("http://localhost:3000/api/role/addRole", payload);
+      await axios.post(`${import.meta.env.VITE_URL}/api/role/addRole`, payload);
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
@@ -122,33 +122,33 @@ export default function Permission() {
   };
 
   const fetchRolePermissions = async (role: UserRole) => {
-  try {
-    const res = await axios.get(
-      `http://localhost:3000/api/role/getRole/${role}`
-    );
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/role/getRole/${role}`
+      );
 
-    const roleData = res.data;
-    const matrix: Record<string, boolean> = {};
+      const roleData = res.data;
+      const matrix: Record<string, boolean> = {};
 
-    roleData.permissions.forEach((perm: any) => {
-      const { module, submodule, actions } = perm;
-      for (const [action, isEnabled] of Object.entries(actions)) {
-        const key = `${role}-${module}-${submodule}-${action}`;
-        matrix[key] = isEnabled;
-      }
-    });
+      roleData.permissions.forEach((perm: any) => {
+        const { module, submodule, actions } = perm;
+        for (const [action, isEnabled] of Object.entries(actions)) {
+          const key = `${role}-${module}-${submodule}-${action}`;
+          matrix[key] = isEnabled;
+        }
+      });
 
-    setAccessMatrix(matrix);
-  } catch (error) {
-    console.error("Failed to fetch role permissions", error);
-    toast.error("Failed to load permissions for this role");
-  }
-};
+      setAccessMatrix(matrix);
+    } catch (error) {
+      console.error("Failed to fetch role permissions", error);
+      toast.error("Failed to load permissions for this role");
+    }
+  };
 
-// Call when component loads or role changes
-useEffect(() => {
-  fetchRolePermissions(selectedRole);
-}, [selectedRole]);
+  // Call when component loads or role changes
+  useEffect(() => {
+    fetchRolePermissions(selectedRole);
+  }, [selectedRole]);
 
   return (
     <div className="p-2 space-y-6">

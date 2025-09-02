@@ -135,7 +135,7 @@ const EnquiryManagement = () => {
   const fetchEnquiryDetails = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/enquiryForm/getAllEnquirys"
+        `${import.meta.env.VITE_URL}/api/enquiryForm/getAllEnquirys`
       );
 
       let filteredData = data;
@@ -161,7 +161,7 @@ const EnquiryManagement = () => {
   const fetchSalespersons = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/user/getAllSales"
+        `${import.meta.env.VITE_URL}/api/user/getAllSales`
       );
       setSalespersons(data);
     } catch (error) {
@@ -216,7 +216,9 @@ const EnquiryManagement = () => {
       };
 
       const { data } = await axios.patch(
-        `http://localhost:3000/api/enquiryForm/updateEnquiry/${selectedEnquiry._id}`,
+        `${import.meta.env.VITE_URL}/api/enquiryForm/updateEnquiry/${
+          selectedEnquiry._id
+        }`,
         payload,
         {
           headers: {
@@ -259,7 +261,9 @@ const EnquiryManagement = () => {
     try {
       const csrfToken = await getCsrfToken();
       const { data } = await axios.patch(
-        `http://localhost:3000/api/enquiryForm/updateEnquiry/${selectedEnquiry._id}`,
+        `${import.meta.env.VITE_URL}/api/enquiryForm/updateEnquiry/${
+          selectedEnquiry._id
+        }`,
         payload,
         {
           headers: {
@@ -326,7 +330,9 @@ const EnquiryManagement = () => {
       };
 
       const { data } = await axios.patch(
-        `http://localhost:3000/api/enquiryForm/updateEnquiry/${selectedEnquiry._id}`,
+        `${import.meta.env.VITE_URL}/api/enquiryForm/updateEnquiry/${
+          selectedEnquiry._id
+        }`,
         payload,
         {
           headers: {
@@ -364,7 +370,7 @@ const EnquiryManagement = () => {
     try {
       const csrfToken = await getCsrfToken();
       const { data } = await axios.patch(
-        `http://localhost:3000/api/enquiryForm/updateEnquiry/${id}`,
+        `${import.meta.env.VITE_URL}/api/enquiryForm/updateEnquiry/${id}`,
         { status: newStatus },
         {
           headers: { "X-CSRF-Token": csrfToken },
