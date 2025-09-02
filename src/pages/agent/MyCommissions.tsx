@@ -891,7 +891,7 @@ const MyCommissions = () => {
             open={!!selectedCommission}
             onOpenChange={() => setSelectedCommission(null)}
           >
-            <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Commission Details</DialogTitle>
                 <DialogDescription>
@@ -1054,7 +1054,7 @@ const MyCommissions = () => {
           open={isAddEditDialogOpen}
           onOpenChange={setIsAddEditDialogOpen}
         >
-          <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>
                 {isEditing ? "Edit Commission" : "Add New Commission"}

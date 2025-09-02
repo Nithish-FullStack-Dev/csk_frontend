@@ -487,7 +487,7 @@ const CarAllocation = () => {
                   Add Vehicle
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                 <DialogHeader>
                   <DialogTitle>Add New Vehicle</DialogTitle>
                 </DialogHeader>
@@ -613,7 +613,7 @@ const CarAllocation = () => {
 
         <div className="flex space-x-2 ">
           <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
-            <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Edit Vehicle</DialogTitle>
               </DialogHeader>
@@ -915,7 +915,7 @@ const CarAllocation = () => {
                             Assign
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+                        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                           <DialogHeader>
                             <DialogTitle>Assign Vehicle</DialogTitle>
                           </DialogHeader>
