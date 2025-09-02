@@ -82,6 +82,7 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
   const [selectedContractor, setSelectedContractor] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
+
   const handleAssign = async (e) => {
     e.preventDefault();
     if (!selectedUnit || !selectedContractor) return;
@@ -214,7 +215,7 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
         ))}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Assign Contractor to Unit</DialogTitle>
           </DialogHeader>

@@ -126,7 +126,6 @@ const TeamManagement = () => {
       `${import.meta.env.VITE_URL}/api/team/getAllTeam/${user._id}`,
       { withCredentials: true }
     );
-    console.log(data);
     return data || [];
   };
 
