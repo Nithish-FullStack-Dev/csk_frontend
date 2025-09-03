@@ -995,7 +995,7 @@ const AgentDocuments = () => {
         {/* Document Edit Dialog */}
         {editingDocument && (
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className="max-w-[90vw] max-h-[80vh] rounded-xl ">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
               <DialogHeader>
                 <DialogTitle>Edit Document</DialogTitle>
                 <DialogDescription>

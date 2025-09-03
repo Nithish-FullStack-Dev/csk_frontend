@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { UserPlus, Search, Filter, Edit, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserRole } from "@/contexts/AuthContext";
+import { getCsrfToken, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
 
@@ -57,9 +57,10 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await axios.get(
         `${import.meta.env.VITE_URL}/api/user/getUsers`,
-        { withCredentials: true }
+        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
       );
       setUsers(response.data.users);
     } catch (error) {
@@ -90,9 +91,11 @@ const UserManagement = () => {
       roleName: newUser.role,
     };
     try {
+      const csrfToken = await getCsrfToken();
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/addUser`,
-        createdUser
+        createdUser,
+        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
       );
       if (response.status === 201) {
         toast.success("User added successfully", {

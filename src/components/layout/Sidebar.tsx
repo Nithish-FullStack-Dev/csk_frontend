@@ -20,10 +20,12 @@ const Sidebar = () => {
     <>
       {/* Mobile toggle button */}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 bg-estate-blue text-white p-2 rounded-lg shadow-lg"
+        className={`md:hidden fixed top-4 left-4 z-50 ${
+          !mobileOpen && "bg-estate-blue text-white"
+        } p-2 rounded-lg shadow-lg`}
         onClick={toggleMobile}
       >
-        {mobileOpen ? <X color="#fff" /> : <Menu />}
+        {mobileOpen ? null : <Menu />}
       </button>
 
       {/* Sidebar */}

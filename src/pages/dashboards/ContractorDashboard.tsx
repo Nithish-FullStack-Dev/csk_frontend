@@ -1119,7 +1119,7 @@ const ContractorDashboard = () => {
                           />
                         </div>
 
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end space-x-2 mt-5">
                           <Button
                             type="button"
                             variant="outline"

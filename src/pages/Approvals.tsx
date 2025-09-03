@@ -357,7 +357,7 @@ const Approvals = () => {
                             </Button>
                           </DialogTrigger>
                           {selectedRequest && ( // Only render dialog content if a request is selected
-                            <DialogContent className="max-w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
+                            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
                               <DialogHeader>
                                 <DialogTitle>Site Visit Request</DialogTitle>
                                 <DialogDescription>

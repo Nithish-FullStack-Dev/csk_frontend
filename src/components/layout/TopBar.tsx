@@ -24,6 +24,11 @@ const TopBar = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // Renamed for clarity
 
+  const handleLogout = async () => {
+    await logout(); // clear cookie + state
+    navigate("/login", { replace: true }); // smooth redirect
+  };
+
   // --- NEW STATES FOR MESSAGES ---
   const [aggregatedLatestMessages, setAggregatedLatestMessages] = useState<
     Record<string, any>
@@ -413,7 +418,10 @@ const TopBar = () => {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-estate-error">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-estate-error"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

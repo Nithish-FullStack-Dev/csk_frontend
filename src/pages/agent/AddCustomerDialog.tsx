@@ -216,7 +216,7 @@ export function AddCustomerDialog({
               <SelectContent>
                 {usersPurchased?.map((purchased) => (
                   <SelectItem key={purchased._id} value={purchased._id}>
-                    {purchased.name} {purchased.email}
+                    {purchased.name} - {purchased.email}
                   </SelectItem>
                 ))}
               </SelectContent>

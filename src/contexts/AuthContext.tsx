@@ -55,7 +55,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: false,
   login: async () => {},
-  logout: () => {},
+  logout: async () => {}, // Make async
   isAuthenticated: false,
 });
 
@@ -90,20 +90,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-
     try {
       console.log(email, password);
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/login`,
-        {
-          email,
-          password,
-        },
+        { email, password },
         { withCredentials: true }
       );
-
-      localStorage.setItem("token", data.token); // ⬅️ store JWT
-      // localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}`);
     } catch (error: any) {
@@ -117,10 +110,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    toast.info("You have been logged out");
+  const logout = async () => {
+    // Make async
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/user/logout`,
+        {},
+        { withCredentials: true }
+      );
+      setUser(null);
+      toast.info("You have been logged out");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+    }
   };
 
   return (

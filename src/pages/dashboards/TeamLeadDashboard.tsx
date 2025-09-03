@@ -13,11 +13,13 @@ import { TeamMember } from "../TeamManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
+import { useNavigate } from "react-router-dom";
 
 const TeamLeadDashboard = () => {
   const [noOfVehicles, setNoOfVehicles] = useState(0);
   const [noOfTeamMem, setNoOfTeamMem] = useState(0);
   const { user } = useAuth();
+  const naviagate = useNavigate();
 
   // Fetch vehicles
   const {
@@ -171,14 +173,9 @@ const TeamLeadDashboard = () => {
                           size="sm"
                           variant="outline"
                           className="text-estate-error"
+                          onClick={() => naviagate("/approvals")}
                         >
-                          Deny
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-estate-navy hover:bg-estate-navy/90"
-                        >
-                          Approve
+                          View Details
                         </Button>
                       </div>
                     </div>

@@ -160,7 +160,12 @@ const ContractorProjects = () => {
     fetchProjects();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <MainLayout>
+        <div>Loading...</div>
+      </MainLayout>
+    );
   return (
     <>
       <MainLayout>
