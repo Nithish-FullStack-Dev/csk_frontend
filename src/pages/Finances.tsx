@@ -233,7 +233,7 @@ const Finances = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 hidden md:block">
+          <TabsList className="mb-4 hidden md:inline-block">
             <TabsTrigger value="revenue">Revenue & Expenses</TabsTrigger>
             <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
             <TabsTrigger value="profitability">Profitability</TabsTrigger>

@@ -119,7 +119,6 @@ const updateDocument = async ({
   id: string;
   formData: FormData;
 }) => {
-  console.log(id);
   const { data } = await axios.put(
     `${import.meta.env.VITE_URL}/api/document/updateDocument/${id}`,
     formData,
@@ -154,7 +153,9 @@ const AgentDocuments = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all_docs");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // New state for edit dialog
-  const [editingDocument, setEditingDocument] = useState<Document | null>(null); // New state for document being edited
+  const [editingDocument, setEditingDocument] = useState<
+    null | (Document & { file: File | null })
+  >(null); // Updated type to include file
   const [newDocument, setNewDocument] = useState({
     name: "",
     type: "",
@@ -236,7 +237,10 @@ const AgentDocuments = () => {
 
   const handleEditFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setEditingDocument({ ...editingDocument!, file: e.target.files[0] });
+      setEditingDocument({
+        ...editingDocument!,
+        file: e.target.files[0] || null,
+      });
     }
   };
 
@@ -289,7 +293,7 @@ const AgentDocuments = () => {
       formData.append("file", editingDocument.file);
     }
     // uploadedBy should not change during edit, but if your backend requires it
-    // formData.append("uploadedBy", editingDocument.uploadedBy._id);
+    formData.append("uploadedBy", editingDocument.uploadedBy._id);
 
     updateMutation.mutate({ id: editingDocument._id, formData });
   };
@@ -675,7 +679,10 @@ const AgentDocuments = () => {
                                     variant="outline"
                                     size="icon"
                                     onClick={() => {
-                                      setEditingDocument(doc);
+                                      setEditingDocument({
+                                        ...doc,
+                                        file: null,
+                                      });
                                       setIsEditDialogOpen(true);
                                     }}
                                   >
@@ -775,7 +782,7 @@ const AgentDocuments = () => {
                               variant="outline"
                               size="icon"
                               onClick={() => {
-                                setEditingDocument(doc);
+                                setEditingDocument({ ...doc, file: null });
                                 setIsEditDialogOpen(true);
                               }}
                             >
@@ -881,7 +888,10 @@ const AgentDocuments = () => {
                                     variant="outline"
                                     size="icon"
                                     onClick={() => {
-                                      setEditingDocument(doc);
+                                      setEditingDocument({
+                                        ...doc,
+                                        file: null,
+                                      });
                                       setIsEditDialogOpen(true);
                                     }}
                                   >
@@ -1102,17 +1112,47 @@ const AgentDocuments = () => {
                   <Label htmlFor="editFile">
                     Replace Document File (Optional)
                   </Label>
+
+                  {/* File input stays visible */}
                   <Input
                     id="editFile"
                     type="file"
                     onChange={handleEditFileUpload}
                   />
-                  {editingDocument.filePath && (
-                    <p className="text-sm text-muted-foreground">
-                      Current file: {editingDocument.filePath.split("/").pop()}
-                    </p>
-                  )}
+
+                  {/* Show preview or current file below the input */}
+                  {editingDocument.file ? (
+                    <>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        New file selected: {editingDocument.file.name}
+                      </p>
+                      <iframe
+                        key={editingDocument.file.name}
+                        src={URL.createObjectURL(editingDocument.file)}
+                        className="w-full h-64 rounded-md border"
+                        title="Preview"
+                      >
+                        Your browser does not support iframes.
+                      </iframe>
+                    </>
+                  ) : editingDocument.filePath ? (
+                    <>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Current file:{" "}
+                        {editingDocument.filePath.split("/").pop()}
+                      </p>
+                      <iframe
+                        key={editingDocument.filePath}
+                        src={editingDocument.filePath}
+                        className="w-full h-64 rounded-md border"
+                        title="Current document"
+                      >
+                        Your browser does not support iframes.
+                      </iframe>
+                    </>
+                  ) : null}
                 </div>
+
                 <DialogFooter>
                   <Button type="submit" disabled={updateMutation.isPending}>
                     {updateMutation.isPending ? "Saving..." : "Save Changes"}

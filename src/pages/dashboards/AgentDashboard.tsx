@@ -246,7 +246,7 @@ const AgentDashboard = () => {
                               className="bg-estate-navy hover:bg-estate-navy/90"
                               onClick={() => navigate("/leads")}
                             >
-                              <Calendar className="h-4 w-4 mr-1" /> view Details
+                              <Calendar className="h-4 w-4 mr-1" /> View Details
                             </Button>
                           </div>
                         </td>

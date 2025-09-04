@@ -452,7 +452,6 @@ const LeadManagement = () => {
         console.error(err);
       },
     });
-    console.log(payload);
   };
 
   return (
@@ -809,12 +808,23 @@ const LeadManagement = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <PhoneCall className="mr-2 h-4 w-4" /> Call
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Mail className="mr-2 h-4 w-4" /> Email
-                                </DropdownMenuItem>
+                                <a href={`tel:${user.phone}`}>
+                                  <DropdownMenuItem>
+                                    <PhoneCall className="mr-2 h-4 w-4" /> Call
+                                  </DropdownMenuItem>
+                                </a>
+                                <a
+                                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                    user.email
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1"
+                                >
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" /> Email
+                                  </DropdownMenuItem>
+                                </a>
                                 {!isSalesManager && (
                                   <DropdownMenuItem
                                     onClick={() => navigate("/visits")}

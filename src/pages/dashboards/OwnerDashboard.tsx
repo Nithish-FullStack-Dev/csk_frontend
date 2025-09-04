@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MainLayout from "@/components/layout/MainLayout";
 
 // Sample data
 const recentActivities = [
@@ -138,127 +139,129 @@ const OwnerDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Executive Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's your business summary
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link to="/analytics" className="block">
-          <StatCard
-            title="Total Properties"
-            value="24"
-            icon={<Building className="h-6 w-6 text-estate-navy" />}
-            trend={{ value: 12.5, isPositive: true }}
-          />
-        </Link>
-        <Link to="/sales" className="block">
-          <StatCard
-            title="Total Sales Value"
-            value="₹214.3M"
-            icon={<DollarSign className="h-6 w-6 text-estate-teal" />}
-            trend={{ value: 8.2, isPositive: true }}
-          />
-        </Link>
-        <Link to="/users" className="block">
-          <StatCard
-            title="Active Leads"
-            value="147"
-            icon={<Users className="h-6 w-6 text-estate-gold" />}
-            trend={{ value: 4.1, isPositive: true }}
-          />
-        </Link>
-        <Link to="/operations" className="block">
-          <StatCard
-            title="Site Visits"
-            value="38"
-            icon={<Calendar className="h-6 w-6 text-estate-navy" />}
-            trend={{ value: 2.3, isPositive: false }}
-          />
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center">
-                <BarChart className="mr-2 h-5 w-5 text-estate-navy" />
-                Performance Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <div className="flex flex-col space-y-4">
-                <div className="h-64 flex items-center justify-center bg-muted/50 rounded-md">
-                  <BarChart3 className="h-16 w-16 text-estate-navy/20" />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-4 flex flex-col"
-                  >
-                    <Link to="/analytics">
-                      <BarChart className="h-6 w-6 mb-2 text-estate-navy" />
-                      <span>Business Analytics</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-4 flex flex-col"
-                  >
-                    <Link to="/users">
-                      <Users className="h-6 w-6 mb-2 text-estate-teal" />
-                      <span>User Management</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-4 flex flex-col"
-                  >
-                    <Link to="/sales">
-                      <DollarSign className="h-6 w-6 mb-2 text-estate-gold" />
-                      <span>Sales Overview</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-auto py-4 flex flex-col"
-                  >
-                    <Link to="/operations">
-                      <Briefcase className="h-6 w-6 mb-2 text-estate-navy" />
-                      <span>Operations</span>
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <ActivityFeed activities={recentActivities} />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Featured Properties</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} {...property} />
-            ))}
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Executive Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's your business summary
+            </p>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link to="/analytics" className="block">
+            <StatCard
+              title="Total Properties"
+              value="24"
+              icon={<Building className="h-6 w-6 text-estate-navy" />}
+              trend={{ value: 12.5, isPositive: true }}
+            />
+          </Link>
+          <Link to="/sales" className="block">
+            <StatCard
+              title="Total Sales Value"
+              value="₹214.3M"
+              icon={<DollarSign className="h-6 w-6 text-estate-teal" />}
+              trend={{ value: 8.2, isPositive: true }}
+            />
+          </Link>
+          <Link to="/users" className="block">
+            <StatCard
+              title="Active Leads"
+              value="147"
+              icon={<Users className="h-6 w-6 text-estate-gold" />}
+              trend={{ value: 4.1, isPositive: true }}
+            />
+          </Link>
+          <Link to="/operations" className="block">
+            <StatCard
+              title="Site Visits"
+              value="38"
+              icon={<Calendar className="h-6 w-6 text-estate-navy" />}
+              trend={{ value: 2.3, isPositive: false }}
+            />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center">
+                  <BarChart className="mr-2 h-5 w-5 text-estate-navy" />
+                  Performance Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <div className="flex flex-col space-y-4">
+                  <div className="h-64 flex items-center justify-center bg-muted/50 rounded-md">
+                    <BarChart3 className="h-16 w-16 text-estate-navy/20" />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col"
+                    >
+                      <Link to="/analytics">
+                        <BarChart className="h-6 w-6 mb-2 text-estate-navy" />
+                        <span>Business Analytics</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col"
+                    >
+                      <Link to="/users">
+                        <Users className="h-6 w-6 mb-2 text-estate-teal" />
+                        <span>User Management</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col"
+                    >
+                      <Link to="/sales">
+                        <DollarSign className="h-6 w-6 mb-2 text-estate-gold" />
+                        <span>Sales Overview</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="h-auto py-4 flex flex-col"
+                    >
+                      <Link to="/operations">
+                        <Briefcase className="h-6 w-6 mb-2 text-estate-navy" />
+                        <span>Operations</span>
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <ActivityFeed activities={recentActivities} />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Featured Properties</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {properties.map((property) => (
+                <PropertyCard key={property.id} {...property} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 };
 

@@ -540,18 +540,25 @@ const TeamManagement = () => {
                   </div>
 
                   <div className="flex space-x-2">
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Phone className="mr-2 h-3 w-3" />
-                      Call
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Mail className="mr-2 h-3 w-3" />
-                      Email
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <BarChart3 className="mr-2 h-3 w-3" />
-                      Report
-                    </Button>
+                    <a href={`tel:${user.phone}`}>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Phone className="mr-2 h-3 w-3" />
+                        Call
+                      </Button>
+                    </a>
+                    <a
+                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                        user.email
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1"
+                    >
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Mail className="mr-2 h-3 w-3" />
+                        Email
+                      </Button>
+                    </a>
                   </div>
                 </CardContent>
               </Card>

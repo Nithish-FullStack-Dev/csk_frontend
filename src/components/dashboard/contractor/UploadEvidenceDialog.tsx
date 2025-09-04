@@ -100,12 +100,6 @@ const UploadEvidenceDialog = ({
     }
   }, [selectedTask, availableTasks, setSelectedPhase]);
 
-  // Debugging
-  useEffect(() => {
-    console.log("SelectedTask composite key:", selectedTask);
-    console.log("Matched task:", selectedTaskObj);
-  }, [selectedTask, selectedTaskObj]);
-
   // Update units when project changes
   useEffect(() => {
     if (selectedProject) {

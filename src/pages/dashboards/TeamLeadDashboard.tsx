@@ -172,7 +172,7 @@ const TeamLeadDashboard = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-estate-error"
+                          className="text-estate-navy"
                           onClick={() => naviagate("/approvals")}
                         >
                           View Details

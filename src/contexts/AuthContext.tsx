@@ -75,7 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       setUser(data);
     } catch (error) {
-      console.log("failed to load logged in user ", error);
+      if (error.response?.status === 401) {
+        setUser(null);
+      } else {
+        console.log("failed to load logged in user ", error);
+      }
     } finally {
       setIsLoading(false);
     }
