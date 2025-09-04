@@ -1,89 +1,146 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Edit,
-  Save,
-  Eye,
-  Upload,
-  Building,
-  Users,
-  Award,
-  Clock,
-} from "lucide-react";
+import { Edit, Save, Eye, Upload } from "lucide-react";
+import axios from "axios";
+
+interface AboutContent {
+  _id: string;
+  mainTitle: string;
+  paragraph1: string;
+  paragraph2: string;
+  image: string;
+}
+
+interface Stat {
+  _id: string;
+  label: string;
+  value: number;
+}
+
+interface Value {
+  _id: string;
+  title: string;
+  description: string;
+}
 
 const AboutSectionCMS = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const [aboutContent, setAboutContent] = useState({
-    mainTitle: "About CSK Realtors",
-    paragraph1:
-      "With over 15 years of experience in real estate development, CSK Realtors has been at the forefront of creating exceptional residential and commercial spaces. Our commitment to quality, innovation, and customer satisfaction has made us a trusted name in the industry.",
-    paragraph2:
-      "We believe in building not just structures, but communities where families can thrive and businesses can prosper. Every project we undertake reflects our dedication to excellence and our vision of creating lasting value.",
-    image:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    valuesTitle: "Our Core Values",
+  const [uploading, setUploading] = useState(false);
+
+  const [aboutContent, setAboutContent] = useState<AboutContent>({
+    _id: "",
+    mainTitle: "",
+    paragraph1: "",
+    paragraph2: "",
+    image: "",
   });
 
-  const [stats, setStats] = useState([
-    { icon: "Building", label: "Projects Completed", value: "150+" },
-    { icon: "Users", label: "Happy Families", value: "2000+" },
-    { icon: "Award", label: "Awards Won", value: "25+" },
-    { icon: "Clock", label: "Years Experience", value: "15+" },
+  const [stats, setStats] = useState<Stat[]>([
+    { _id: "", label: "", value: 0 },
+  ]);
+  const [values, setValues] = useState<Value[]>([
+    { _id: "", title: "", description: "" },
   ]);
 
-  const [values, setValues] = useState([
-    {
-      id: 1,
-      icon: "Award",
-      title: "Quality Excellence",
-      description:
-        "We never compromise on quality, ensuring every project meets the highest standards.",
-      color: "estate-gold",
-    },
-    {
-      id: 2,
-      icon: "Users",
-      title: "Customer First",
-      description:
-        "Our customers are at the heart of everything we do, driving our commitment to service.",
-      color: "estate-navy",
-    },
-    {
-      id: 3,
-      icon: "Building",
-      title: "Innovation",
-      description:
-        "We embrace new technologies and methods to create better living experiences.",
-      color: "estate-teal",
-    },
-  ]);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    console.log("Saving about content:", { aboutContent, stats, values });
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/uploads/upload`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      const uploadedUrl = res.data?.url;
+      if (uploadedUrl) {
+        setAboutContent((prev) => ({
+          ...prev,
+          image: `${uploadedUrl}?v=${Date.now()}`,
+        }));
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      e.target.value = "";
+      setUploading(false);
+    }
   };
 
-  const updateStat = (index, field, value) => {
+  const fetchAboutInfo = async () => {
+    try {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
+      );
+      setAboutContent({
+        _id: data._id || "",
+        mainTitle: data.mainTitle || "",
+        paragraph1: data.paragraph1 || "",
+        paragraph2: data.paragraph2 || "",
+        image: data.image || "",
+      });
+      setStats(data.stats || []);
+      setValues(data.values || []);
+    } catch (error) {
+      console.error("Failed to fetch about section:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAboutInfo();
+  }, []);
+
+  const handleSave = async () => {
+    setIsEditing(false);
+    try {
+      const payload = {
+        mainTitle: aboutContent.mainTitle,
+        paragraph1: aboutContent.paragraph1,
+        paragraph2: aboutContent.paragraph2,
+        image: aboutContent.image,
+        stats,
+        values,
+      };
+
+      await axios.put(
+        `${import.meta.env.VITE_URL}/api/aboutSection/updateAboutSec/${
+          aboutContent._id
+        }`,
+        payload
+      );
+
+      await fetchAboutInfo();
+    } catch (error) {
+      console.log("error occurred while saving about section", error);
+    }
+  };
+
+  const updateStat = (index: number, field: string, value: any) => {
     const updatedStats = [...stats];
     updatedStats[index] = { ...updatedStats[index], [field]: value };
     setStats(updatedStats);
   };
 
-  const updateValue = (id, field, value) => {
+  const updateValue = (id: string, field: string, value: any) => {
     setValues(
-      values.map((val) => (val.id === id ? { ...val, [field]: value } : val))
+      values.map((val) => (val._id === id ? { ...val, [field]: value } : val))
     );
   };
 
   return (
     <div className="space-y-6">
+      {/* About Section */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
           <div>
             <CardTitle>About Section Management</CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
@@ -91,10 +148,6 @@ const AboutSectionCMS = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
             {isEditing ? (
               <Button onClick={handleSave} size="sm">
                 <Save className="h-4 w-4 mr-2" />
@@ -108,9 +161,11 @@ const AboutSectionCMS = () => {
             )}
           </div>
         </CardHeader>
+
         <CardContent className="space-y-6">
           {isEditing ? (
             <div className="space-y-4">
+              {/* Title & Paragraphs */}
               <div>
                 <Label htmlFor="mainTitle">Main Title</Label>
                 <Input
@@ -155,21 +210,35 @@ const AboutSectionCMS = () => {
                 />
               </div>
 
+              {/* Image Upload */}
               <div>
-                <Label htmlFor="aboutImage">About Image URL</Label>
-                <div className="flex gap-2">
-                  <Input
+                <Label htmlFor="aboutImage">About Image</Label>
+                <div className="flex flex-col sm:flex-row items-start gap-4 mt-2">
+                  {uploading ? (
+                    <p className="text-sm text-gray-500 mt-4">Uploading...</p>
+                  ) : (
+                    <img
+                      src={aboutContent.image}
+                      alt="About Preview"
+                      className="w-full sm:w-40 h-auto rounded border shadow object-cover"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
                     id="aboutImage"
-                    value={aboutContent.image}
-                    onChange={(e) =>
-                      setAboutContent({
-                        ...aboutContent,
-                        image: e.target.value,
-                      })
-                    }
+                    className="hidden"
+                    onChange={handleFileChange}
                   />
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      document.getElementById("aboutImage")?.click()
+                    }
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Image
                   </Button>
                 </div>
               </div>
@@ -181,7 +250,7 @@ const AboutSectionCMS = () => {
               </h3>
               <p className="text-muted-foreground">{aboutContent.paragraph1}</p>
               <p className="text-muted-foreground">{aboutContent.paragraph2}</p>
-              <div className="w-48 h-32 bg-gray-200 rounded overflow-hidden">
+              <div className="w-full sm:w-48 h-40 bg-gray-200 rounded overflow-hidden">
                 <img
                   src={aboutContent.image}
                   alt="About us"
@@ -193,13 +262,13 @@ const AboutSectionCMS = () => {
         </CardContent>
       </Card>
 
-      {/* Stats Management */}
+      {/* Stats Section */}
       <Card>
         <CardHeader>
           <CardTitle>Company Statistics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map((stat, index) => (
               <Card key={index} className="p-4">
                 {isEditing ? (
@@ -233,28 +302,28 @@ const AboutSectionCMS = () => {
         </CardContent>
       </Card>
 
-      {/* Values Management */}
+      {/* Values Section */}
       <Card>
         <CardHeader>
           <CardTitle>Core Values</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {values.map((value) => (
-              <Card key={value.id} className="p-4">
+              <Card key={value._id} className="p-4">
                 {isEditing ? (
                   <div className="space-y-3">
                     <Input
                       value={value.title}
                       onChange={(e) =>
-                        updateValue(value.id, "title", e.target.value)
+                        updateValue(value._id, "title", e.target.value)
                       }
                       placeholder="Title"
                     />
                     <Textarea
                       value={value.description}
                       onChange={(e) =>
-                        updateValue(value.id, "description", e.target.value)
+                        updateValue(value._id, "description", e.target.value)
                       }
                       placeholder="Description"
                       rows={2}

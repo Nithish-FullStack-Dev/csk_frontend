@@ -32,7 +32,7 @@ const HomePage = () => {
         <FeaturedProperties />
 
         {/* Call to Action Section */}
-        <section className="py-16 bg-estate-navy text-white">
+        <section className="py-16 bg-estate-navy text-white ">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl text-estate-gold font-md font-vidaloka mb-4">
               Ready to Find Your Dream Property?
@@ -40,7 +40,7 @@ const HomePage = () => {
             <p className="text-xl mb-8 opacity-90">
               Get in touch with our expert team for personalized assistance
             </p>
-            <div className="flex justify-center gap-4">
+            <div className="flex justify-center gap-4 sm:flex-row flex-col sm:w-full w-[80%] mx-auto">
               <Button size="lg" variant="secondary" asChild>
                 <Link to="/public/upcoming-projects">
                   View upcoming Properties
@@ -62,7 +62,7 @@ const HomePage = () => {
         {/* Quick Enquiry Form */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
-            <div className="max-w-[80%] mx-auto">
+            <div className="md:max-w-[80%] mx-w-[90%] mx-auto">
               <div className="text-center mb-5">
                 <h2 className="text-3xl font-md font-vidaloka mb-4">
                   Quick Enquiry

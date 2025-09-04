@@ -186,236 +186,382 @@ const ConstructionProgress = () => {
     projectsProgress.length;
 
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Construction Progress
-        </h1>
-        <p className="text-muted-foreground">
-          Track and manage construction progress across all projects
-        </p>
-      </div>
+    <MainLayout>
+      <div className="space-y-6 md:p-8 p-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Construction Progress
+          </h1>
+          <p className="text-muted-foreground">
+            Track and manage construction progress across all projects
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Overall Progress
-            </CardTitle>
-            <Gauge className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold">
-                  {Math.round(overallProgress)}%
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Across all projects
-                </div>
-              </div>
-              <Progress value={overallProgress} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              At Risk Projects
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {projectsProgress.filter((p) => p.status === "at_risk").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Require attention</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Delayed Projects
-            </CardTitle>
-            <Clock className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {projectsProgress.filter((p) => p.status === "delayed").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Behind schedule</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <CardTitle>Project Progress Chart</CardTitle>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-[200px] mt-2 md:mt-0">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="riverside_tower">Riverside Tower</SelectItem>
-                <SelectItem value="valley_heights">Valley Heights</SelectItem>
-                <SelectItem value="green_villa">Green Villa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={progressData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="phase" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar name="Planned %" dataKey="planned" fill="#8884d8" />
-                <Bar name="Actual %" dataKey="actual" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="all-projects" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all-projects">All Projects</TabsTrigger>
-          <TabsTrigger value="on-track">On Track</TabsTrigger>
-          <TabsTrigger value="at-risk">At Risk</TabsTrigger>
-          <TabsTrigger value="delayed">Delayed</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all-projects" className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Project Status</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      <div className="flex items-center">
-                        Project
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead>Phase</TableHead>
-                    <TableHead>Contractor</TableHead>
-                    <TableHead>Expected Completion</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projectsProgress.map((project) => (
-                    <TableRow key={project.id}>
-                      <TableCell className="font-medium">
-                        {project.name}
-                      </TableCell>
-                      <TableCell>{project.phase}</TableCell>
-                      <TableCell>{project.contractor}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                          {new Date(
-                            project.expectedCompletion
-                          ).toLocaleDateString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="text-xs">
-                            {project.progress}% Complete
-                          </div>
-                          <Progress
-                            value={project.progress}
-                            className={`h-2 ${progressColorClass(
-                              project.progress
-                            )}`}
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusColors[project.status]}
-                        >
-                          {project.status === "on_track"
-                            ? "On Track"
-                            : project.status === "at_risk"
-                            ? "At Risk"
-                            : "Delayed"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Update Progress</DropdownMenuItem>
-                            <DropdownMenuItem>
-                              Schedule Inspection
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              Contact Contractor
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Generate Report</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="on-track" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Projects On Track</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Overall Progress
+              </CardTitle>
+              <Gauge className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Phase</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Expected Completion</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {Math.round(overallProgress)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Across all projects
+                  </div>
+                </div>
+                <Progress value={overallProgress} className="h-2" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                At Risk Projects
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {projectsProgress.filter((p) => p.status === "at_risk").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Require attention</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Delayed Projects
+              </CardTitle>
+              <Clock className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {projectsProgress.filter((p) => p.status === "delayed").length}
+              </div>
+              <p className="text-xs text-muted-foreground">Behind schedule</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-center justify-between">
+              <CardTitle>Project Progress Chart</CardTitle>
+              <Select
+                value={selectedProject}
+                onValueChange={setSelectedProject}
+              >
+                <SelectTrigger className="w-[200px] mt-2 md:mt-0">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="riverside_tower">
+                    Riverside Tower
+                  </SelectItem>
+                  <SelectItem value="valley_heights">Valley Heights</SelectItem>
+                  <SelectItem value="green_villa">Green Villa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={progressData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="phase" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar name="Planned %" dataKey="planned" fill="#8884d8" />
+                  <Bar name="Actual %" dataKey="actual" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="all-projects" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="all-projects">All Projects</TabsTrigger>
+            <TabsTrigger value="on-track">On Track</TabsTrigger>
+            <TabsTrigger value="at-risk">At Risk</TabsTrigger>
+            <TabsTrigger value="delayed">Delayed</TabsTrigger>
+          </TabsList>
+          <TabsContent value="all-projects" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Project Status</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {/* Desktop Table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <div className="flex items-center">
+                            Project
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead>Phase</TableHead>
+                        <TableHead>Contractor</TableHead>
+                        <TableHead>Expected Completion</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projectsProgress.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="font-medium">
+                            {project.name}
+                          </TableCell>
+                          <TableCell>{project.phase}</TableCell>
+                          <TableCell>{project.contractor}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {new Date(
+                                project.expectedCompletion
+                              ).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                {project.progress}% Complete
+                              </div>
+                              <Progress
+                                value={project.progress}
+                                className={`h-2 ${progressColorClass(
+                                  project.progress
+                                )}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusColors[project.status]}
+                            >
+                              {project.status === "on_track"
+                                ? "On Track"
+                                : project.status === "at_risk"
+                                ? "At Risk"
+                                : "Delayed"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Update Progress
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Schedule Inspection
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Contact Contractor
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Generate Report
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="block md:hidden">
+                  <div className="grid gap-4 p-2">
+                    {projectsProgress.map((project) => (
+                      <Card
+                        key={project.id}
+                        className="rounded-xl border shadow-sm p-4"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">{project.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {project.contractor}
+                            </p>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem>View Details</DropdownMenuItem>
+                              <DropdownMenuItem>
+                                Update Progress
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                Schedule Inspection
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                Contact Contractor
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                Generate Report
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        <div className="mt-3 text-sm">
+                          <p>
+                            <span className="font-semibold">Phase: </span>
+                            {project.phase}
+                          </p>
+                          <p className="mt-1 flex items-center">
+                            <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                            <span className="font-semibold mr-1">
+                              Expected:{" "}
+                            </span>
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </p>
+                          <div className="mt-2">
+                            <span className="font-semibold">Progress: </span>
+                            <div className="text-xs">
+                              {project.progress}% Complete
+                            </div>
+                            <Progress
+                              value={project.progress}
+                              className={`h-2 mt-1 ${progressColorClass(
+                                project.progress
+                              )}`}
+                            />
+                          </div>
+                          <div className="mt-2">
+                            <span className="font-semibold">Status: </span>
+                            <Badge
+                              variant="outline"
+                              className={statusColors[project.status]}
+                            >
+                              {project.status === "on_track"
+                                ? "On Track"
+                                : project.status === "at_risk"
+                                ? "At Risk"
+                                : "Delayed"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="on-track" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects On Track</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Desktop Table */}
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Phase</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Expected Completion</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectsProgress
+                      .filter((project) => project.status === "on_track")
+                      .map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="font-medium">
+                            {project.name}
+                          </TableCell>
+                          <TableCell>{project.phase}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                {project.progress}% Complete
+                              </div>
+                              <Progress
+                                value={project.progress}
+                                className={`h-2 ${progressColorClass(
+                                  project.progress
+                                )}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">
+                              <Gauge className="h-4 w-4 mr-2" />
+                              Update Progress
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+
+                {/* Mobile Card Layout */}
+                <div className="grid gap-4 md:hidden">
                   {projectsProgress
                     .filter((project) => project.status === "on_track")
                     .map((project) => (
-                      <TableRow key={project.id}>
-                        <TableCell className="font-medium">
-                          {project.name}
-                        </TableCell>
-                        <TableCell>{project.phase}</TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-xs">
+                      <Card
+                        key={project.id}
+                        className="p-4 shadow-md rounded-xl"
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {project.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Phase: {project.phase}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="text-xs mb-1">
                               {project.progress}% Complete
                             </div>
                             <Progress
@@ -425,54 +571,109 @@ const ConstructionProgress = () => {
                               )}`}
                             />
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(
-                            project.expectedCompletion
-                          ).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Gauge className="h-4 w-4 mr-2" />
-                            Update Progress
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </div>
+                          <div className="pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                            >
+                              <Gauge className="h-4 w-4 mr-2" />
+                              Update Progress
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
                     ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="at-risk" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Projects At Risk</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Phase</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Expected Completion</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+          <TabsContent value="at-risk" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects At Risk</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Desktop Table */}
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Phase</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Expected Completion</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectsProgress
+                      .filter((project) => project.status === "at_risk")
+                      .map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="font-medium">
+                            {project.name}
+                          </TableCell>
+                          <TableCell>{project.phase}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                {project.progress}% Complete
+                              </div>
+                              <Progress
+                                value={project.progress}
+                                className={`h-2 ${progressColorClass(
+                                  project.progress
+                                )}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mr-2"
+                            >
+                              <Construction className="h-4 w-4 mr-2" />
+                              Schedule Inspection
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+
+                {/* Mobile Card Layout */}
+                <div className="grid gap-4 md:hidden">
                   {projectsProgress
                     .filter((project) => project.status === "at_risk")
                     .map((project) => (
-                      <TableRow key={project.id}>
-                        <TableCell className="font-medium">
-                          {project.name}
-                        </TableCell>
-                        <TableCell>{project.phase}</TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-xs">
+                      <Card
+                        key={project.id}
+                        className="p-4 shadow-md rounded-xl"
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {project.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Phase: {project.phase}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="text-xs mb-1">
                               {project.progress}% Complete
                             </div>
                             <Progress
@@ -482,54 +683,113 @@ const ConstructionProgress = () => {
                               )}`}
                             />
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(
-                            project.expectedCompletion
-                          ).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">
-                            <Construction className="h-4 w-4 mr-2" />
-                            Schedule Inspection
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </div>
+                          <div className="pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                            >
+                              <Construction className="h-4 w-4 mr-2" />
+                              Schedule Inspection
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
                     ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="delayed" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Delayed Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Phase</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Expected Completion</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+          <TabsContent value="delayed" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Delayed Projects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Desktop Table */}
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Phase</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Expected Completion</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {projectsProgress
+                      .filter((project) => project.status === "delayed")
+                      .map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell className="font-medium">
+                            {project.name}
+                          </TableCell>
+                          <TableCell>{project.phase}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-xs">
+                                {project.progress}% Complete
+                              </div>
+                              <Progress
+                                value={project.progress}
+                                className={`h-2 ${progressColorClass(
+                                  project.progress
+                                )}`}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mr-2"
+                            >
+                              <Hammer className="h-4 w-4 mr-2" />
+                              Issue Notice
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Revise Schedule
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+
+                {/* Mobile Card Layout */}
+                <div className="grid gap-4 md:hidden">
                   {projectsProgress
                     .filter((project) => project.status === "delayed")
                     .map((project) => (
-                      <TableRow key={project.id}>
-                        <TableCell className="font-medium">
-                          {project.name}
-                        </TableCell>
-                        <TableCell>{project.phase}</TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="text-xs">
+                      <Card
+                        key={project.id}
+                        className="p-4 shadow-md rounded-xl"
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {project.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Phase: {project.phase}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="text-xs mb-1">
                               {project.progress}% Complete
                             </div>
                             <Progress
@@ -539,31 +799,40 @@ const ConstructionProgress = () => {
                               )}`}
                             />
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(
-                            project.expectedCompletion
-                          ).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">
-                            <Hammer className="h-4 w-4 mr-2" />
-                            Issue Notice
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Revise Schedule
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            {new Date(
+                              project.expectedCompletion
+                            ).toLocaleDateString()}
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto"
+                            >
+                              <Hammer className="h-4 w-4 mr-2" />
+                              Issue Notice
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Revise Schedule
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
                     ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
   );
 };
 

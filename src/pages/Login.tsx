@@ -44,7 +44,7 @@ const Login = () => {
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-6">
               <img
-                src="/assets/images/CSK-LOGO.png"
+                src="/assets/images/logo.png"
                 alt="CSK Realtors Logo"
                 className="h-24 w-auto"
               />
@@ -104,18 +104,6 @@ const Login = () => {
                     )}
                   </button>
                 </div>
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                <p className="mb-2">Demo accounts (password: password):</p>
-                <ul className="space-y-1 list-disc pl-5">
-                  <li>user@gmail.com (Public User)</li>
-                  <li>owner@example.com</li>
-                  <li>admin@example.com</li>
-                  <li>salesmanager@example.com</li>
-                  <li>teamlead@example.com</li>
-                  <li>agent@example.com</li>
-                </ul>
               </div>
             </CardContent>
             <CardFooter>

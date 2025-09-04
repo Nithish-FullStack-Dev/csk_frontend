@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,23 +30,11 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  UserPlus,
-  Search,
-  Filter,
-  MoreVertical,
-  Edit,
-  Trash2,
-  User,
-  Mail,
-  Phone,
-  KeyRound,
-} from "lucide-react";
+import { UserPlus, Search, Filter, Edit, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserRole } from "@/contexts/AuthContext";
+import { getCsrfToken, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
-import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
-import { useMemo } from "react";
+import { formatDistanceToNowStrict } from "date-fns";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -69,9 +57,10 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
+      const csrfToken = await getCsrfToken();
       const response = await axios.get(
-        "http://localhost:3000/api/user/getUsers",
-        { withCredentials: true }
+        `${import.meta.env.VITE_URL}/api/user/getUsers`,
+        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
       );
       setUsers(response.data.users);
     } catch (error) {
@@ -81,7 +70,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchAllUsers();
-    if (userAdded) setUserAdded(false); // reset flag after fetch
+    if (userAdded) setUserAdded(false);
   }, [userAdded]);
 
   const filteredUsers = useMemo(() => {
@@ -99,26 +88,28 @@ const UserManagement = () => {
       email: newUser.email,
       phone: newUser.phone,
       password: newUser.password,
-      roleName: newUser.role, // matches Role collection name
+      roleName: newUser.role,
     };
     try {
+      const csrfToken = await getCsrfToken();
       const response = await axios.post(
-        "http://localhost:3000/api/user/addUser",
-        createdUser
+        `${import.meta.env.VITE_URL}/api/user/addUser`,
+        createdUser,
+        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
       );
       if (response.status === 201) {
         toast.success("User added successfully", {
           description: `${newUser.name} has been added as a ${newUser.role}`,
         });
-        setUserAdded(true); // trigger refetch
-        setShowAddUserDialog(false); // close dialog if any
+        setUserAdded(true);
+        setShowAddUserDialog(false);
         setNewUser({
           name: "",
           email: "",
           password: "",
           role: "agent",
           phone: "",
-        }); // reset form
+        });
       }
     } catch (error) {
       console.error("Error adding user:", error);
@@ -129,10 +120,9 @@ const UserManagement = () => {
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
     try {
-      const response = await axios.delete(
-        `http://localhost:3000/api/user/deleteUser/${selectedUser._id}`
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`
       );
-
       toast.success("User deleted successfully");
       setShowEditUserDialog(false);
     } catch (error) {
@@ -144,14 +134,11 @@ const UserManagement = () => {
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/user/updateUser",
-        { updatedUser: selectedUser }
-      );
-
+      await axios.post(`${import.meta.env.VITE_URL}/api/user/updateUser`, {
+        updatedUser: selectedUser,
+      });
       toast.success("User updated successfully");
       setShowEditUserDialog(false);
-      // Optionally refresh user list
     } catch (error) {
       console.error("Error updating user:", error);
       toast.error("Failed to update user");
@@ -160,7 +147,7 @@ const UserManagement = () => {
 
   const handleResetPassword = async () => {
     try {
-      await axios.post("http://localhost:3000/api/user/resetPassword", {
+      await axios.post(`${import.meta.env.VITE_URL}/api/user/resetPassword`, {
         id: selectedUser?._id,
         password: newPassword,
       });
@@ -176,6 +163,7 @@ const UserManagement = () => {
       toast.error("Failed to update password");
     }
   };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "owner":
@@ -219,285 +207,140 @@ const UserManagement = () => {
     "public_user",
   ];
 
-  const UserTable = ({ users }: { users: any[] }) => (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex flex-col md:flex-row justify-between md:items-center space-y-2 md:space-y-0">
-          <CardTitle>User Directory</CardTitle>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search users..."
-                className="pl-8 w-full md:w-[250px] bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" size="icon" title="Filter users">
-              <Filter className="h-4 w-4" />
-            </Button>
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div>
+            <h1 className="text-3xl font-md font-vidaloka">User Management</h1>
+            <p className="text-muted-foreground font-sans">
+              Manage users and their access levels
+            </p>
+          </div>
+          <div className="mt-4 md:mt-0">
+            <Dialog
+              open={showAddUserDialog}
+              onOpenChange={setShowAddUserDialog}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="md:w-full w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>
+                    Create a new user account with role-based access.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid items-center gap-2 font-sans">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      value={newUser.name}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, name: e.target.value })
+                      }
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div className="grid items-center gap-2 font-sans">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, email: e.target.value })
+                      }
+                      placeholder="john.doe@example.com"
+                    />
+                  </div>
+                  <div className="grid items-center gap-2 font-sans">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, password: e.target.value })
+                      }
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="grid items-center gap-2 font-sans">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={newUser.phone}
+                      onChange={(e) =>
+                        setNewUser({ ...newUser, phone: e.target.value })
+                      }
+                      placeholder="+1 555-123-4567"
+                    />
+                  </div>
+                  <div className="grid items-center gap-2 font-sans">
+                    <Label htmlFor="role">Role</Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(value) =>
+                        setNewUser({ ...newUser, role: value as UserRole })
+                      }
+                    >
+                      <SelectTrigger id="role">
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                        <SelectItem value="sales_manager">
+                          Sales Manager
+                        </SelectItem>
+                        <SelectItem value="team_lead">Team Lead</SelectItem>
+                        <SelectItem value="agent">Agent</SelectItem>
+                        <SelectItem value="site_incharge">
+                          Site Incharge
+                        </SelectItem>
+                        <SelectItem value="contractor">Contractor</SelectItem>
+                        <SelectItem value="accountant">Accountant</SelectItem>
+                        <SelectItem value="customer_purchased">
+                          Customer_Purchased
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddUserDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddUser}
+                    disabled={
+                      !newUser.name ||
+                      !newUser.email ||
+                      !newUser.role ||
+                      !newUser.phone
+                    }
+                  >
+                    Create User
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    No users found matching your search
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user._id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={getRoleBadgeColor(user.role)}
-                        variant="outline"
-                      >
-                        {user.role.replace("_", " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={getStatusBadgeColor(user.status)}
-                        variant="outline"
-                      >
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user?.lastLogin
-                        ? formatDistanceToNowStrict(new Date(user.lastLogin), {
-                            addSuffix: true,
-                          })
-                        : "Never logged in"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Edit user"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditUserDialog(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Reset Password"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowResetPasswordDialog(true);
-                          }}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          title="Delete user"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setshowResetDeleteDialog(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold font-sans">User Management</h1>
-          <p className="text-muted-foreground font-sans">
-            Manage users and their access levels
-          </p>
-        </div>
-        <div className="mt-4 md:mt-0">
-          <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>
-                  Create a new user account with role-based access.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid items-center gap-2 font-sans">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={newUser.name}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, name: e.target.value })
-                    }
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div className="grid items-center gap-2 font-sans">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, email: e.target.value })
-                    }
-                    placeholder="john.doe@example.com"
-                  />
-                </div>
-                <div className="grid items-center gap-2 font-sans">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, password: e.target.value })
-                    }
-                    placeholder=""
-                  />
-                </div>
-                <div className="grid items-center gap-2 font-sans">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={newUser.phone}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, phone: e.target.value })
-                    }
-                    placeholder="+1 555-123-4567"
-                  />
-                </div>
-                <div className="grid items-center gap-2 font-sans">
-                  <Label htmlFor="role">Role</Label>
-                  <Select
-                    value={newUser.role}
-                    onValueChange={(value) =>
-                      setNewUser({ ...newUser, role: value as UserRole })
-                    }
-                  >
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                      <SelectItem value="sales_manager">
-                        Sales Manager
-                      </SelectItem>
-                      <SelectItem value="team_lead">Team Lead</SelectItem>
-                      <SelectItem value="agent">Agent</SelectItem>
-                      <SelectItem value="site_incharge">
-                        Site Incharge
-                      </SelectItem>
-                      <SelectItem value="contractor">Contractor</SelectItem>
-                      <SelectItem value="accountant">Accountant</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddUserDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddUser}
-                  disabled={
-                    !newUser.name ||
-                    !newUser.email ||
-                    !newUser.role ||
-                    !newUser.phone
-                  }
-                >
-                  Create User
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <Tabs defaultValue="all-users" className="w-full font-sans">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all-users">All Users</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
-          <TabsTrigger value="sales">Sales Team</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all-users">
-          <UserTable users={filteredUsers} />
-        </TabsContent>
-
-        <TabsContent value="admins">
-          <UserTable
-            users={filteredUsers.filter((user) => user.role === "admin")}
-          />
-        </TabsContent>
-
-        <TabsContent value="sales">
-          <UserTable
-            users={filteredUsers.filter((user) =>
-              ["sales_manager", "team_lead", "agent"].includes(user.role)
-            )}
-          />
-        </TabsContent>
-
-        <TabsContent value="operations">
-          <UserTable
-            users={filteredUsers.filter((user) =>
-              ["site_incharge", "accountant", "contractor"].includes(user.role)
-            )}
-          />
-        </TabsContent>
-      </Tabs>
-
-      {/* <Card>
+        {/* Tabs */}
+        <Tabs defaultValue="all-users" className="w-full font-sans">
+          <Card>
             <CardHeader className="pb-2">
               <div className="flex flex-col md:flex-row justify-between md:items-center space-y-2 md:space-y-0">
                 <CardTitle>User Directory</CardTitle>
@@ -518,8 +361,10 @@ const UserManagement = () => {
                 </div>
               </div>
             </CardHeader>
+
             <CardContent>
-              <div className="rounded-md border">
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -576,7 +421,6 @@ const UserManagement = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              {/* Edit User Button 
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -588,8 +432,6 @@ const UserManagement = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-
-                              {/* Reset Password Button 
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -599,10 +441,8 @@ const UserManagement = () => {
                                   setShowResetPasswordDialog(true);
                                 }}
                               >
-                                <KeyRound className="h-4 w-4" />{" "}
+                                <KeyRound className="h-4 w-4" />
                               </Button>
-
-                              {/* Delete User Button 
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -622,199 +462,283 @@ const UserManagement = () => {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {filteredUsers.length === 0 ? (
+                  <p className="text-center py-4 text-muted-foreground">
+                    No users found matching your search
+                  </p>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <Card key={user._id} className="p-4 shadow-sm border">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold text-base">
+                            {user.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                        <Badge
+                          className={getRoleBadgeColor(user.role)}
+                          variant="outline"
+                        >
+                          {user.role.replace("_", " ")}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-3 flex justify-between items-center">
+                        <Badge
+                          className={getStatusBadgeColor(user.status)}
+                          variant="outline"
+                        >
+                          {user.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {user?.lastLogin
+                            ? formatDistanceToNowStrict(
+                                new Date(user.lastLogin),
+                                {
+                                  addSuffix: true,
+                                }
+                              )
+                            : "Never logged in"}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditUserDialog(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowResetPasswordDialog(true);
+                          }}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setshowResetDeleteDialog(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
             </CardContent>
-          </Card> */}
+          </Card>
+        </Tabs>
 
-      <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user information and role.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
+        <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+          <DialogContent className="md:w-full w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+              <DialogDescription>
+                Update user information and role.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="grid gap-4 py-4">
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={selectedUser.name}
+                    onChange={(e) =>
+                      setSelectedUser({ ...selectedUser, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    value={selectedUser.email}
+                    onChange={(e) =>
+                      setSelectedUser({
+                        ...selectedUser,
+                        email: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={selectedUser.phone}
+                    onChange={(e) =>
+                      setSelectedUser({
+                        ...selectedUser,
+                        phone: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={selectedUser.role}
+                    onValueChange={(value) =>
+                      setSelectedUser({ ...selectedUser, role: value })
+                    }
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid items-center gap-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={selectedUser.status}
+                    onValueChange={(value) =>
+                      setSelectedUser({ ...selectedUser, status: value })
+                    }
+                  >
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowEditUserDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await handleUpdateUser();
+                  setShowEditUserDialog(false);
+                  await fetchAllUsers();
+                }}
+              >
+                Update User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={showResetPasswordDialog}
+          onOpenChange={setShowResetPasswordDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for {selectedUser?.name}
+              </DialogDescription>
+            </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid items-center gap-2">
-                <Label htmlFor="name">Full Name</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="newPassword">New Password</Label>
                 <Input
-                  id="name"
-                  value={selectedUser.name}
-                  onChange={(e) =>
-                    setSelectedUser({ ...selectedUser, name: e.target.value })
-                  }
+                  id="newPassword"
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                 />
               </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="email">Email</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
-                  id="email"
-                  value={selectedUser.email}
-                  onChange={(e) =>
-                    setSelectedUser({
-                      ...selectedUser,
-                      email: e.target.value,
-                    })
-                  }
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={selectedUser.phone}
-                  onChange={(e) =>
-                    setSelectedUser({
-                      ...selectedUser,
-                      phone: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={selectedUser.role}
-                  onValueChange={(value) =>
-                    setSelectedUser({ ...selectedUser, role: value })
-                  }
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={selectedUser.status}
-                  onValueChange={(value) =>
-                    setSelectedUser({ ...selectedUser, status: value })
-                  }
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowEditUserDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                await handleUpdateUser();
-                setShowEditUserDialog(false);
-                await fetchAllUsers();
-              }}
-            >
-              Update User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showResetPasswordDialog}
-        onOpenChange={setShowResetPasswordDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
-              Set a new password for {selectedUser?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="Minimum 6 characters"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowResetPasswordDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleResetPassword}
-              disabled={
-                newPassword.length < 6 || newPassword !== confirmPassword
-              }
-            >
-              Reset Password
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={showResetDeleteDialog}
-        onOpenChange={setshowResetDeleteDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogDescription>
-              Do you want to delete user {selectedUser?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setshowResetDeleteDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                await handleDeleteUser();
-                await fetchAllUsers();
-                setshowResetDeleteDialog(false);
-              }}
-            >
-              Delete User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowResetPasswordDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleResetPassword}
+                disabled={
+                  newPassword.length < 6 || newPassword !== confirmPassword
+                }
+              >
+                Reset Password
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={showResetDeleteDialog}
+          onOpenChange={setshowResetDeleteDialog}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete User</DialogTitle>
+              <DialogDescription>
+                Do you want to delete user {selectedUser?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setshowResetDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  await handleDeleteUser();
+                  await fetchAllUsers();
+                  setshowResetDeleteDialog(false);
+                }}
+              >
+                Delete User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </MainLayout>
   );
 };
 

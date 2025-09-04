@@ -25,6 +25,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import MainLayout from "../layout/MainLayout";
 
 interface User {
   _id: string;
@@ -72,7 +73,9 @@ const ChatInterface = () => {
     if (!user?._id) return;
 
     axios
-      .get("http://localhost:3000/api/user/getUsers", { withCredentials: true })
+      .get(`${import.meta.env.VITE_URL}/api/user/getUsers`, {
+        withCredentials: true,
+      })
       .then((res) => setUsers(res.data.users))
       .catch((err) => console.error("Failed to fetch users:", err));
 
@@ -298,237 +301,241 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-4 h-[calc(100vh-80px)] gap-4">
-        <Card className="lg:col-span-1 flex flex-col">
-          <CardHeader className="p-4 border-b">
-            <CardTitle className="text-lg">Direct Messages</CardTitle>
-          </CardHeader>
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="flex flex-col flex-1"
-          >
-            <CardContent className="p-0 border-b">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="direct">Direct</TabsTrigger>
-                <TabsTrigger value="groups">Groups</TabsTrigger>
-              </TabsList>
-            </CardContent>
-            <TabsContent value="direct" className="h-full mt-0">
-              <ScrollArea className="h-[calc(100vh-220px)]">
-                {sortedUsers.length === 0 && (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No other users available.
-                  </div>
-                )}
-                {sortedUsers.map((u) => (
-                  <div
-                    key={u._id}
-                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
-                      selectedUser?._id === u._id ? "bg-muted" : ""
-                    }`}
-                    onClick={() => setSelectedUser(u)}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={
-                          u.avatar ||
-                          `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
-                        }
-                        alt={u.name}
-                      />
-                      <AvatarFallback>
-                        {u.name ? u.name[0] : "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-sm font-medium relative pr-8">
-                      {u.name}
-                      {latestMessages[u._id] ? (
-                        <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
-                          <span className="truncate max-w-[calc(100%-60px)]">
-                            {latestMessages[u._id].senderId === user?._id
-                              ? "You: "
-                              : ""}
-                            {latestMessages[u._id].content}
-                          </span>
-                          <span className="ml-2 text-right flex-shrink-0">
-                            {formatTimestamp(latestMessages[u._id].timestamp)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          No messages yet.
-                        </div>
-                      )}
-                      {unreadCounts[u._id] > 0 && (
-                        <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
-                          {unreadCounts[u._id]}
-                        </span>
-                      )}
+    <MainLayout>
+      <div className="p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 h-[calc(100vh-80px)] gap-4">
+          <Card className="lg:col-span-1 flex flex-col">
+            <CardHeader className="p-4 border-b">
+              <CardTitle className="text-lg">Direct Messages</CardTitle>
+            </CardHeader>
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex flex-col flex-1"
+            >
+              <CardContent className="p-0 border-b">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="direct">Direct</TabsTrigger>
+                  <TabsTrigger value="groups">Groups</TabsTrigger>
+                </TabsList>
+              </CardContent>
+              <TabsContent value="direct" className="h-full mt-0">
+                <ScrollArea className="h-[calc(100vh-220px)]">
+                  {sortedUsers.length === 0 && (
+                    <div className="p-4 text-center text-muted-foreground">
+                      No other users available.
                     </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="groups" className="h-full mt-0">
-              <div className="p-4 text-muted-foreground text-center">
-                Group chat functionality not yet implemented.
-              </div>
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        <Card className="lg:col-span-3 flex flex-col">
-          <CardHeader className="p-4 border-b">
-            <CardTitle className="text-lg">
-              {selectedUser
-                ? `Chat with ${selectedUser.name}`
-                : "Select a user to chat"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto space-y-2 p-4 pt-0">
-            {!selectedUser ? (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <h1 className="text-center text-lg font-medium">
-                  Select a user to start chatting
-                </h1>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <h1 className="text-center text-lg font-medium">
-                  Start a conversation with {selectedUser.name}!
-                </h1>
-              </div>
-            ) : (
-              <>
-                {messages.map((msg, index) => {
-                  const messageDate = new Date(msg.timestamp);
-                  const prevMessageDate =
-                    index > 0 ? new Date(messages[index - 1].timestamp) : null;
-                  const showDateDivider =
-                    !prevMessageDate ||
-                    messageDate.toDateString() !==
-                      prevMessageDate.toDateString();
-
-                  const isMyMessage = msg.senderId === user?._id;
-
-                  return (
-                    <div key={msg.id}>
-                      {showDateDivider && (
-                        <div className="relative my-4 text-center">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-gray-300" />
+                  )}
+                  {sortedUsers.map((u) => (
+                    <div
+                      key={u._id}
+                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
+                        selectedUser?._id === u._id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => setSelectedUser(u)}
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={
+                            u.avatar ||
+                            `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
+                          }
+                          alt={u.name}
+                        />
+                        <AvatarFallback>
+                          {u.name ? u.name[0] : "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-sm font-medium relative pr-8">
+                        {u.name}
+                        {latestMessages[u._id] ? (
+                          <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
+                            <span className="truncate max-w-[calc(100%-60px)]">
+                              {latestMessages[u._id].senderId === user?._id
+                                ? "You: "
+                                : ""}
+                              {latestMessages[u._id].content}
+                            </span>
+                            <span className="ml-2 text-right flex-shrink-0">
+                              {formatTimestamp(latestMessages[u._id].timestamp)}
+                            </span>
                           </div>
-                          <div className="relative inline-flex px-3 text-sm text-gray-600 bg-white rounded-full shadow-sm">
-                            {formatDateDivider(msg.timestamp)}
+                        ) : (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            No messages yet.
                           </div>
-                        </div>
-                      )}
-                      <div
-                        className={`group relative flex items-start ${
-                          isMyMessage ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs p-2 rounded-lg text-sm relative pr-8 ${
-                            isMyMessage
-                              ? "bg-estate-navy text-white"
-                              : "bg-gray-100 text-gray-900"
-                          }`}
-                        >
-                          <div>
-                            {msg.content}{" "}
-                            {msg.edited && (
-                              <em
-                                className={`text-xs ${
-                                  isMyMessage
-                                    ? "text-blue-200"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                (edited)
-                              </em>
-                            )}
-                          </div>
-                          <div
-                            className={`text-xs text-right mt-1 ${
-                              isMyMessage
-                                ? "text-blue-200"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                          {isMyMessage && (
-                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 p-0 text-white"
-                                  >
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent side="left">
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditMsg(msg)}
-                                  >
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteMsg(msg)}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          )}
-                        </div>
+                        )}
+                        {unreadCounts[u._id] > 0 && (
+                          <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
+                            {unreadCounts[u._id]}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </CardContent>
-          {selectedUser && (
-            <div className="flex items-center gap-2 p-4 border-t bg-white shadow-sm">
-              <Input
-                className="flex-1 rounded-full px-4 py-2 border-gray-300 focus:ring-2 focus:ring-blue-500"
-                placeholder="Type your message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-              />
-              {editingMessage && (
-                <Button
-                  variant="outline"
-                  className="text-sm px-3"
-                  onClick={cancelEdit}
-                >
-                  Cancel
-                </Button>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="groups" className="h-full mt-0">
+                <div className="p-4 text-muted-foreground text-center">
+                  Group chat functionality not yet implemented.
+                </div>
+              </TabsContent>
+            </Tabs>
+          </Card>
+
+          <Card className="lg:col-span-3 flex flex-col">
+            <CardHeader className="p-4 border-b">
+              <CardTitle className="text-lg">
+                {selectedUser
+                  ? `Chat with ${selectedUser.name}`
+                  : "Select a user to chat"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto space-y-2 p-4 pt-0">
+              {!selectedUser ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <h1 className="text-center text-lg font-medium">
+                    Select a user to start chatting
+                  </h1>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <h1 className="text-center text-lg font-medium">
+                    Start a conversation with {selectedUser.name}!
+                  </h1>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg, index) => {
+                    const messageDate = new Date(msg.timestamp);
+                    const prevMessageDate =
+                      index > 0
+                        ? new Date(messages[index - 1].timestamp)
+                        : null;
+                    const showDateDivider =
+                      !prevMessageDate ||
+                      messageDate.toDateString() !==
+                        prevMessageDate.toDateString();
+
+                    const isMyMessage = msg.senderId === user?._id;
+
+                    return (
+                      <div key={msg.id}>
+                        {showDateDivider && (
+                          <div className="relative my-4 text-center">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t border-gray-300" />
+                            </div>
+                            <div className="relative inline-flex px-3 text-sm text-gray-600 bg-white rounded-full shadow-sm">
+                              {formatDateDivider(msg.timestamp)}
+                            </div>
+                          </div>
+                        )}
+                        <div
+                          className={`group relative flex items-start ${
+                            isMyMessage ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={`max-w-xs p-2 rounded-lg text-sm relative pr-8 ${
+                              isMyMessage
+                                ? "bg-estate-navy text-white"
+                                : "bg-gray-100 text-gray-900"
+                            }`}
+                          >
+                            <div>
+                              {msg.content}{" "}
+                              {msg.edited && (
+                                <em
+                                  className={`text-xs ${
+                                    isMyMessage
+                                      ? "text-blue-200"
+                                      : "text-gray-500"
+                                  }`}
+                                >
+                                  (edited)
+                                </em>
+                              )}
+                            </div>
+                            <div
+                              className={`text-xs text-right mt-1 ${
+                                isMyMessage
+                                  ? "text-blue-200"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {new Date(msg.timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                            {isMyMessage && (
+                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-5 w-5 p-0 text-white"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent side="left">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditMsg(msg)}
+                                    >
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteMsg(msg)}
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
               )}
-              <Button
-                onClick={handleSendMessage}
-                className="flex gap-1 px-4 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Send className="h-4 w-4" />
-                {editingMessage ? "Update" : "Send"}
-              </Button>
-            </div>
-          )}
-        </Card>
+            </CardContent>
+            {selectedUser && (
+              <div className="flex items-center gap-2 p-4 border-t bg-white shadow-sm">
+                <Input
+                  className="flex-1 rounded-full px-4 py-2 border-gray-300 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Type your message..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                />
+                {editingMessage && (
+                  <Button
+                    variant="outline"
+                    className="text-sm px-3"
+                    onClick={cancelEdit}
+                  >
+                    Cancel
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSendMessage}
+                  className="flex gap-1 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Send className="h-4 w-4" />
+                  {editingMessage ? "Update" : "Send"}
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

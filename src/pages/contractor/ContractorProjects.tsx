@@ -143,7 +143,7 @@ const ContractorProjects = () => {
   const fetchProjects = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/project/projects`,
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         {
           withCredentials: true,
         }
@@ -160,159 +160,165 @@ const ContractorProjects = () => {
     fetchProjects();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading)
+    return (
+      <MainLayout>
+        <div>Loading...</div>
+      </MainLayout>
+    );
   return (
     <>
-      <div className="space-y-6 p-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">My Projects</h1>
-            <p className="text-muted-foreground">
-              Manage and track your construction projects
-            </p>
-          </div>
-          {/* <Button onClick={() => setDialogOpen(true)}>
+      <MainLayout>
+        <div className="space-y-6 md:p-8 p-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">My Projects</h1>
+              <p className="text-muted-foreground">
+                Manage and track your construction projects
+              </p>
+            </div>
+            {/* <Button onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add New Project
           </Button> */}
-        </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Active Projects
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {Array.isArray(projects) ? projects.length : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {Array.isArray(projects)
+                    ? projects.filter((p) => p.status === "In Progress").length
+                    : 0}{" "}
+                  in progress,{" "}
+                  {Array.isArray(projects)
+                    ? projects.filter((p) => p.status === "New").length
+                    : 0}{" "}
+                  new
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Total Budget
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-2xl font-bold">
+                  <BadgeIndianRupee className="mr-1 h-4 w-4 text-muted-foreground" />
+                  {Array.isArray(projects)
+                    ? projects
+                        .reduce((acc, curr) => acc + curr.estimatedBudget, 0)
+                        .toLocaleString()
+                    : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Across {projects ? projects.length : "0"} projects
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  Team Members
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-2xl font-bold">
+                  <Users className="mr-1 h-4 w-4 text-muted-foreground" />
+                  {Array.isArray(projects)
+                    ? projects
+                        .reduce((acc, curr) => acc + (curr.teamSize || 0), 0)
+                        .toLocaleString()
+                    : 0}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Working across all projects
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">
-                Active Projects
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Projects Overview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Array.isArray(projects) ? projects.length : 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {Array.isArray(projects)
-                  ? projects.filter((p) => p.status === "In Progress").length
-                  : 0}{" "}
-                in progress,{" "}
-                {Array.isArray(projects)
-                  ? projects.filter((p) => p.status === "New").length
-                  : 0}{" "}
-                new
-              </p>
+              <ContractorProjectsOverview projects={projects} />
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">
-                Total Budget
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-2xl font-bold">
-                <BadgeIndianRupee className="mr-1 h-4 w-4 text-muted-foreground" />
-                {Array.isArray(projects)
-                  ? projects
-                      .reduce((acc, curr) => acc + curr.estimatedBudget, 0)
-                      .toLocaleString()
-                  : 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Across {projects ? projects.length : "0"} projects
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">
-                Team Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-2xl font-bold">
-                <Users className="mr-1 h-4 w-4 text-muted-foreground" />
-                {Array.isArray(projects)
-                  ? projects
-                      .reduce((acc, curr) => acc + (curr.teamSize || 0), 0)
-                      .toLocaleString()
-                  : 0}
-              </div>
 
-              <p className="text-xs text-muted-foreground">
-                Working across all projects
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Projects Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ContractorProjectsOverview projects={projects} />
-          </CardContent>
-        </Card>
-
-        <h2 className="text-2xl font-semibold">Project List</h2>
-        <div className="space-y-4">
-          {Array.isArray(projects) ? (
-            projects.map((project, i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-xl font-semibold">
-                          {project.projectTitle || "Untitled Project"}
-                        </h3>
-                        <Badge
-                          variant={
-                            project.status === "In Progress"
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {project.status || "Unknown"}
-                        </Badge>
-                      </div>
-                      {/* <div className="flex items-center text-sm text-muted-foreground mb-1">
+          <h2 className="text-2xl font-semibold">Project List</h2>
+          <div className="space-y-4">
+            {Array.isArray(projects) ? (
+              projects.map((project, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-xl font-semibold">
+                            {project.projectTitle || "Untitled Project"}
+                          </h3>
+                          <Badge
+                            variant={
+                              project.status === "In Progress"
+                                ? "default"
+                                : "outline"
+                            }
+                          >
+                            {project.status || "Unknown"}
+                          </Badge>
+                        </div>
+                        {/* <div className="flex items-center text-sm text-muted-foreground mb-1">
                         <Building className="mr-1 h-4 w-4" />
                         <span>{project.location || "Not specified"}</span>
                       </div> */}
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-1 h-4 w-4" />
-                        <span>
-                          {project.startDate
-                            ? new Date(project.startDate).toLocaleDateString()
-                            : "?"}
-                        </span>
-                        <ArrowRight className="mx-1 h-3 w-3" />
-                        <span>
-                          {project.endDate
-                            ? new Date(project.endDate).toLocaleDateString()
-                            : "?"}
-                        </span>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="mr-1 h-4 w-4" />
+                          <span>
+                            {project.startDate
+                              ? new Date(project.startDate).toLocaleDateString()
+                              : "?"}
+                          </span>
+                          <ArrowRight className="mx-1 h-3 w-3" />
+                          <span>
+                            {project.endDate
+                              ? new Date(project.endDate).toLocaleDateString()
+                              : "?"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end">
+                          <BadgeIndianRupee className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold">
+                            {project.estimatedBudget?.toLocaleString() || "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
+                          <Clock className="mr-1 h-4 w-4" />
+                          <span>{project.completion || 0}% completed</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end">
-                        <BadgeIndianRupee className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">
-                          {project.estimatedBudget?.toLocaleString() || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
-                        <Clock className="mr-1 h-4 w-4" />
-                        <span>{project.completion || 0}% completed</span>
-                      </div>
+
+                    <Separator className="my-4" />
+                    <div className="text-sm text-muted-foreground">
+                      {project.description || "No description available"}
                     </div>
-                  </div>
 
-                  <Separator className="my-4" />
-                  <div className="text-sm text-muted-foreground">
-                    {project.description || "No description available"}
-                  </div>
-
-                  {/* <div className="flex justify-end mt-4 space-x-2">
+                    {/* <div className="flex justify-end mt-4 space-x-2">
                     <Button variant="outline" size="sm" asChild>
                       <a
                         href={`/contractor/timeline/${
@@ -330,15 +336,15 @@ const ContractorProjects = () => {
                       </a>
                     </Button>
                   </div> */}
-                </div>
-              </Card>
-            ))
-          ) : (
-            <p>No projects found.</p>
-          )}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <p>No projects found.</p>
+            )}
+          </div>
         </div>
-      </div>
-
+      </MainLayout>
       {/* Add Project Dialog */}
       {/* <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">

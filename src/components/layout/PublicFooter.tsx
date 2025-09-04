@@ -30,7 +30,7 @@ const PublicFooter = () => {
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/contact/contactInfo"
+        `${import.meta.env.VITE_URL}/api/contact/contactInfo`
       );
       setContact(data.socialMedia);
     } catch (error) {
@@ -52,7 +52,7 @@ const PublicFooter = () => {
               <img
                 src="/assets/images/logo.png"
                 alt="EstateCorp Logo"
-                className="w-full h-auto object-contain"
+                className="w-[60%] h-full object-contain"
               />
             </div>
             <p className="text-gray-300 leading-relaxed mb-6 text-sm">

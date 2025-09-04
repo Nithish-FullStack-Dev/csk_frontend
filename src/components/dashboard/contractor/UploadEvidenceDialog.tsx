@@ -100,12 +100,6 @@ const UploadEvidenceDialog = ({
     }
   }, [selectedTask, availableTasks, setSelectedPhase]);
 
-  // Debugging
-  useEffect(() => {
-    console.log("SelectedTask composite key:", selectedTask);
-    console.log("Matched task:", selectedTaskObj);
-  }, [selectedTask, selectedTaskObj]);
-
   // Update units when project changes
   useEffect(() => {
     if (selectedProject) {
@@ -217,7 +211,7 @@ const UploadEvidenceDialog = ({
   };
 
   return (
-    <DialogContent className="sm:max-w-[650px]">
+    <DialogContent className="md:w-[650px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
       <DialogHeader>
         <DialogTitle>Upload Task Evidence</DialogTitle>
         <DialogDescription>

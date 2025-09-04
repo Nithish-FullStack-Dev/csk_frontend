@@ -221,9 +221,12 @@ const ContractorInvoices = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/api/invoices", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/invoices`,
+        {
+          withCredentials: true,
+        }
+      );
       setInvoices(response.data);
       setError("");
     } catch (err) {
@@ -300,7 +303,7 @@ const ContractorInvoices = () => {
 
       // API call using axios
       const response = await axios.post(
-        "http://localhost:3000/api/invoices",
+        `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
         { withCredentials: true }
       );
@@ -423,7 +426,7 @@ const ContractorInvoices = () => {
   const handleMarkAsPaid = async (invoice: any, paymentMethod: any) => {
     try {
       const response = await axios.put(
-        `http://localhost:3000/api/invoices/${invoice._id}/mark-paid`,
+        `${import.meta.env.VITE_URL}/api/invoices/${invoice._id}/mark-paid`,
         { paymentMethod }, // no body, just params
         { withCredentials: true } // if you're using cookies/auth
       );
@@ -478,7 +481,7 @@ const ContractorInvoices = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -495,7 +498,7 @@ const ContractorInvoices = () => {
     const fetchCompletedTasks = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:3000/api/invoices/completed/tasks",
+          `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
           { withCredentials: true }
         );
         setCompletedTasks(res.data.tasks);
@@ -518,7 +521,9 @@ const ContractorInvoices = () => {
       setIsUpdating(true); // show "Updating..."
 
       const response = await axios.put(
-        `http://localhost:3000/api/invoices/${selectedInvoice._id}/accountant-verify`,
+        `${import.meta.env.VITE_URL}/api/invoices/${
+          selectedInvoice._id
+        }/accountant-verify`,
         {
           status: verificationStatus,
           notes,

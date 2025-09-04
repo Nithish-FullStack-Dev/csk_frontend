@@ -78,7 +78,7 @@ const statusColors: Record<string, string> = {
 const TaskVerificationList = ({
   setApprovedCount,
   setReworkCount,
-  setPendingCount
+  setPendingCount,
 }) => {
   const [tasks, setTasks] = useState<VerificationTask[]>([]);
   const [filter, setFilter] = useState("all");
@@ -87,10 +87,10 @@ const TaskVerificationList = ({
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isUpdating,setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<
-    "approved" | "rejected" | "rework" 
+    "approved" | "rejected" | "rework"
   >("approved");
   const [notes, setNotes] = useState("");
   const [quality, setQuality] = useState<
@@ -101,9 +101,12 @@ const TaskVerificationList = ({
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/project/tasks", {
-        withCredentials: true,
-      }); // Update this to your actual API endpoint
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
+        {
+          withCredentials: true,
+        }
+      ); // Update this to your actual API endpoint
       const formattedTasks: VerificationTask[] = res.data.map(
         (task: any, index: number) => ({
           _id: task._id,
@@ -120,20 +123,24 @@ const TaskVerificationList = ({
         })
       );
       setTasks(formattedTasks);
-      const pending = tasks.filter(t => t.status === "pending verification").length;
-  const approved = tasks.filter(t => {
-    return (
-      t.status === "approved" &&
-      t.submittedBySiteInchargeOn &&
-      new Date(t.submittedBySiteInchargeOn).getMonth() === new Date().getMonth() &&
-      new Date(t.submittedBySiteInchargeOn).getFullYear() === new Date().getFullYear()
-    );
-  }).length;
-  const rework = tasks.filter(t => t.status === "rework").length;
+      const pending = tasks.filter(
+        (t) => t.status === "pending verification"
+      ).length;
+      const approved = tasks.filter((t) => {
+        return (
+          t.status === "approved" &&
+          t.submittedBySiteInchargeOn &&
+          new Date(t.submittedBySiteInchargeOn).getMonth() ===
+            new Date().getMonth() &&
+          new Date(t.submittedBySiteInchargeOn).getFullYear() ===
+            new Date().getFullYear()
+        );
+      }).length;
+      const rework = tasks.filter((t) => t.status === "rework").length;
 
-  setPendingCount(pending);
-  setApprovedCount(approved);
-  setReworkCount(rework);
+      setPendingCount(pending);
+      setApprovedCount(approved);
+      setReworkCount(rework);
     } catch (err) {
       console.error("Error fetching tasks:", err);
       setError("Failed to load tasks.");
@@ -153,7 +160,7 @@ const TaskVerificationList = ({
 
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/uploads/upload",
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -176,7 +183,9 @@ const TaskVerificationList = ({
     // 3. Send task data to backend
     try {
       await axios.patch(
-        `http://localhost:3000/api/project/site-incharge/${selectedTask.projectId}/${selectedTask._id}/task`,
+        `${import.meta.env.VITE_URL}/api/project/site-incharge/${
+          selectedTask.projectId
+        }/${selectedTask._id}/task`,
         newTask,
         { withCredentials: true }
       );
@@ -326,152 +335,262 @@ const TaskVerificationList = ({
       </div>
 
       <Tabs defaultValue="all" onValueChange={setFilter}>
-        <TabsList>
+        <TabsList className="hidden md:block">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending_verification">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rework">Rework</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
+        <div className="block md:hidden">
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="pending_verification">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rework">Rework</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </Tabs>
 
       <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Task</TableHead>
-              <TableHead>Project / Unit</TableHead>
-              <TableHead>Contractor</TableHead>
-              <TableHead>Submitted</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+        {/* Desktop Table */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-6 text-muted-foreground"
-                >
-                  Loading tasks...
-                </TableCell>
+                <TableHead>Task</TableHead>
+                <TableHead>Project / Unit</TableHead>
+                <TableHead>Contractor</TableHead>
+                <TableHead>Submitted</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-6 text-red-500"
-                >
-                  {error}
-                </TableCell>
-              </TableRow>
-            ) : filteredTasks.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-6 text-muted-foreground"
-                >
-                  No tasks found matching your filters
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredTasks.map((task) => (
-                <TableRow key={task._id}>
-                  <TableCell className="font-medium">
-                    {task.taskTitle}
-                  </TableCell>
-                  <TableCell>
-                    {task.projectName} / {task.unit}
-                  </TableCell>
-                  <TableCell>{task.contractorName}</TableCell>
-                  <TableCell>
-                    {new Date(
-                      task.submittedByContractorOn
-                    ).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={statusColors[task.status]}
-                    >
-                      {task.status === "pending verification"
-                        ? "Pending Verification"
-                        : task.status.charAt(0).toUpperCase() +
-                          task.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={priorityColors[task.priority]}
-                    >
-                      {task.priority.charAt(0).toUpperCase() +
-                        task.priority.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end space-x-1">
-                      {task.status === "pending verification" && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-green-600 hover:text-green-800 hover:bg-green-100"
-                            title="Approve"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-amber-600 hover:text-amber-800 hover:bg-amber-100"
-                            title="Request Rework"
-                          >
-                            <AlertCircle className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                            title="Reject"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTask(task);
-                          console.log("SELECTED TASK : ", task);
-                          setVerificationDialogOpen(true);
-                        }}
-                      >
-                        <Camera className="h-4 w-4 mr-1" />
-                        {task.status === "pending verification"
-                          ? "Verify"
-                          : "View"}
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-6 text-muted-foreground"
+                  >
+                    Loading tasks...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : error ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-6 text-red-500"
+                  >
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : filteredTasks.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-6 text-muted-foreground"
+                  >
+                    No tasks found matching your filters
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTasks.map((task) => (
+                  <TableRow key={task._id}>
+                    <TableCell className="font-medium">
+                      {task.taskTitle}
+                    </TableCell>
+                    <TableCell>
+                      {task.projectName} / {task.unit}
+                    </TableCell>
+                    <TableCell>{task.contractorName}</TableCell>
+                    <TableCell>
+                      {new Date(
+                        task.submittedByContractorOn
+                      ).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={statusColors[task.status]}
+                      >
+                        {task.status === "pending verification"
+                          ? "Pending Verification"
+                          : task.status.charAt(0).toUpperCase() +
+                            task.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={priorityColors[task.priority]}
+                      >
+                        {task.priority.charAt(0).toUpperCase() +
+                          task.priority.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end space-x-1">
+                        {task.status === "pending verification" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-green-600 hover:text-green-800 hover:bg-green-100"
+                              title="Approve"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+                              title="Request Rework"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                              title="Reject"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            console.log("SELECTED TASK : ", task);
+                            setVerificationDialogOpen(true);
+                          }}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          {task.status === "pending verification"
+                            ? "Verify"
+                            : "View"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="block md:hidden">
+          {loading ? (
+            <div className="p-4 text-center text-muted-foreground">
+              Loading tasks...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center text-red-500">{error}</div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              No tasks found matching your filters
+            </div>
+          ) : (
+            filteredTasks.map((task) => (
+              <div
+                key={task._id}
+                className="border rounded-lg p-4 mb-3 shadow-sm bg-white"
+              >
+                <div className="font-medium text-lg mb-2">{task.taskTitle}</div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  <span className="font-semibold">Project / Unit: </span>
+                  {task.projectName} / {task.unit}
+                </div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  <span className="font-semibold">Contractor: </span>
+                  {task.contractorName}
+                </div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  <span className="font-semibold">Submitted: </span>
+                  {new Date(task.submittedByContractorOn).toLocaleDateString()}
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <Badge
+                    variant="outline"
+                    className={statusColors[task.status]}
+                  >
+                    {task.status === "pending verification"
+                      ? "Pending Verification"
+                      : task.status.charAt(0).toUpperCase() +
+                        task.status.slice(1)}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={priorityColors[task.priority]}
+                  >
+                    {task.priority.charAt(0).toUpperCase() +
+                      task.priority.slice(1)}
+                  </Badge>
+                </div>
+                <div className="flex justify-end space-x-2 mt-3">
+                  {task.status === "pending verification" && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-green-600 hover:text-green-800 hover:bg-green-100"
+                        title="Approve"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-amber-600 hover:text-amber-800 hover:bg-amber-100"
+                        title="Request Rework"
+                      >
+                        <AlertCircle className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-600 hover:text-red-800 hover:bg-red-100"
+                        title="Reject"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedTask(task);
+                      console.log("SELECTED TASK : ", task);
+                      setVerificationDialogOpen(true);
+                    }}
+                  >
+                    <Camera className="h-4 w-4 mr-1" />
+                    {task.status === "pending verification" ? "Verify" : "View"}
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       <Dialog
         open={verificationDialogOpen}
         onOpenChange={setVerificationDialogOpen}
       >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Verify Task Completion</DialogTitle>
             <DialogDescription>
@@ -504,7 +623,7 @@ const TaskVerificationList = ({
             </div>
 
             <Tabs defaultValue="contractor" className="w-full">
-              <TabsList className="w-full">
+              <TabsList className="w-full flex  sm:flex-row">
                 <TabsTrigger value="contractor" className="flex-1">
                   Contractor Photos
                 </TabsTrigger>
@@ -513,7 +632,7 @@ const TaskVerificationList = ({
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="contractor" className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {selectedTask &&
                     selectedTask.contractorUploadedPhotos?.map(
                       (photo, index) => (
@@ -534,7 +653,7 @@ const TaskVerificationList = ({
               <TabsContent value="verification" className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label>Upload Verification Photos</Label>
-                  <div className="grid grid-cols-2 gap-4 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
                     {photos.map((photo, index) => (
                       <div
                         key={index}
@@ -558,7 +677,7 @@ const TaskVerificationList = ({
                     ))}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -610,7 +729,7 @@ const TaskVerificationList = ({
               <RadioGroup
                 value={quality}
                 onValueChange={setQuality as any}
-                className="flex space-x-4"
+                className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="excellent" id="excellent" />
@@ -638,7 +757,7 @@ const TaskVerificationList = ({
                 onValueChange={setVerificationStatus as any}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -680,10 +799,11 @@ const TaskVerificationList = ({
               />
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setVerificationDialogOpen(false);
                   setNotes("");
@@ -697,6 +817,7 @@ const TaskVerificationList = ({
               </Button>
               <Button
                 type="submit"
+                className="w-full sm:w-auto"
                 variant={
                   verificationStatus === "approved"
                     ? "default"
@@ -705,7 +826,7 @@ const TaskVerificationList = ({
                     : "destructive"
                 }
               >
-                {isUpdating?"Updating...":"Submit Verification"}
+                {isUpdating ? "Updating..." : "Submit Verification"}
               </Button>
             </DialogFooter>
           </form>

@@ -22,9 +22,9 @@ import UserManagement from "./pages/UserManagement";
 import SalesOverview from "./pages/SalesOverview";
 import OperationsWorkflow from "./pages/OperationsWorkflow";
 import Finances from "./pages/Finances";
-import ExpenseManagementPage from "./pages/expenseManagement";
 
 // Sales Manager specific pages
+import SalesPipeline from "./pages/SalesPipeline";
 import TeamManagement from "./pages/TeamManagement";
 
 // Team Lead specific pages
@@ -47,16 +47,12 @@ import ContractorLabor from "./pages/contractor/ContractorLabor";
 import ContractorInvoices from "./pages/contractor/ContractorInvoices";
 import ContractorPhotoEvidence from "./pages/contractor/ContractorPhotoEvidence";
 
-// Accountant specific pages
-import InvoiceAccountant from "./pages/InvoiceAccountant";
-
 // Site Incharge specific pages
 import TaskVerifications from "./pages/siteincharge/TaskVerifications";
 import QualityControl from "./pages/siteincharge/QualityControl";
 import SiteInspections from "./pages/siteincharge/SiteInspections";
 import ContractorsList from "./pages/siteincharge/ContractorsList";
 import ConstructionProgress from "./pages/siteincharge/ConstructionProgress";
-import SiteInchargeProjects from "./pages/siteincharge/SiteInchargeProjects";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
@@ -70,6 +66,7 @@ import ContactPage from "./pages/public/ContactPage";
 import ContentManagement from "./pages/ContentManagement";
 import RoleManagement from "./pages/RoleManagement";
 import Profile from "./pages/Profile";
+import ScrollToTop from "./ScrollToTop";
 import BudgetTracking from "./pages/BudgetTracking";
 import TaxDocuments from "./pages/TaxDocuments";
 import ProjectDetailsPage from "./pages/public/ProjectDetailsPage";
@@ -77,7 +74,8 @@ import OpenPlotsDetails from "./pages/public/OpenPlotsDetails";
 import Enquiry from "./pages/Enquiry";
 import ProtectedRoute from "./config/ProtectedRoute";
 import TeamLeadManagement from "./pages/TeamLeadManagement";
-import MainLayout from "./components/layout/MainLayout";
+import CustomerManagement from "./pages/CustomerManagement";
+import ChatInterface from "./components/communication/ChatInterface";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +91,14 @@ const ALL_ROLES = [
   "customer_purchased",
 ];
 
-const PROPERTIES = ["admin", "owner", "agent", "sales_manager", "team_lead"];
+const PROPERTIES = [
+  "admin",
+  "owner",
+  "agent",
+  "sales_manager",
+  "team_lead",
+  "customer_purchased",
+];
 const OWNER_ADMIN = ["admin", "owner"];
 const ADMIN_SALES = ["admin", "sales_manager"];
 const ADMIN = ["admin"];
@@ -104,60 +109,60 @@ const SALES = ["sales_manager"];
 const SITE = ["site_incharge"];
 const CONTRACTOR = ["contractor"];
 const ACCOUNTANT = ["accountant"];
-const CUSTOMER_PUR = ["customer_purchased"];
+const CUSTOMER_PURCHASED = ["customer_purchased"];
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/public" element={<HomePage />} />
-            <Route path="/public/about" element={<PublicAboutPage />} />
-            <Route
-              path="/public/properties"
-              element={<PublicPropertiesPage />}
-            />
-            <Route
-              path="/public/completed-projects"
-              element={<CompletedProjectsPage />}
-            />
-            <Route
-              path="/public/ongoing-projects"
-              element={<OngoingProjectsPage />}
-            />
-            <Route
-              path="/public/upcoming-projects"
-              element={<UpcomingProjectsPage />}
-            />
-            <Route path="/public/open-plots" element={<OpenPlotsPage />} />
-            <Route path="/public/contact" element={<ContactPage />} />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            {/* <ScrollToTop /> */}
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/public" element={<HomePage />} />
+              <Route path="/public/about" element={<PublicAboutPage />} />
+              <Route
+                path="/public/properties"
+                element={<PublicPropertiesPage />}
+              />
+              <Route
+                path="/public/completed-projects"
+                element={<CompletedProjectsPage />}
+              />
+              <Route
+                path="/public/ongoing-projects"
+                element={<OngoingProjectsPage />}
+              />
+              <Route
+                path="/public/upcoming-projects"
+                element={<UpcomingProjectsPage />}
+              />
+              <Route path="/public/open-plots" element={<OpenPlotsPage />} />
+              <Route path="/public/contact" element={<ContactPage />} />
 
-            {/* Admin Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route element={<MainLayout />}>
+              {/* Admin Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/" element={<Dashboard />} />
-            </Route>
-
-            <Route
-              path="/public/project/:id"
-              element={<ProjectDetailsPage />}
-            />
-            <Route path="/public/openPlot/:id" element={<OpenPlotsDetails />} />
-
-            {/* Public User Route - Redirects to public homepage */}
-            <Route
-              path="/public-user"
-              element={<Navigate to="/public" replace />}
-            />
-
-            {/* Property Routes */}
-            <Route element={<MainLayout />}>
-              <Route path="/messaging" element={<MessagingPage />} />
+              <Route
+                path="/messaging"
+                element={
+                  <ProtectedRoute allowedRoles={ALL_ROLES}>
+                    <ChatInterface />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/public/project/:id"
+                element={<ProjectDetailsPage />}
+              />
+              <Route
+                path="/public/openPlot/:id"
+                element={<OpenPlotsDetails />}
+              />
               <Route
                 path="/enquiry"
                 element={
@@ -166,9 +171,24 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route path="/properties" element={<Properties />} />
+
+              {/* Public User Route - Redirects to public homepage */}
               <Route
-                path="/properties/:propertyId"
+                path="/public-user"
+                element={<Navigate to="/public" replace />}
+              />
+
+              {/* Property Routes */}
+              <Route
+                path="/properties"
+                element={
+                  <ProtectedRoute allowedRoles={PROPERTIES}>
+                    <Properties />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/property/:propertyId"
                 element={<PropertyDetails />}
               />
 
@@ -183,7 +203,6 @@ const App = () => (
               />
 
               {/* Owner & Admin Routes */}
-
               <Route
                 path="/analytics"
                 element={
@@ -208,7 +227,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/sales"
                 element={
@@ -241,7 +259,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/profile"
                 element={
@@ -251,33 +268,24 @@ const App = () => (
                 }
               />
 
-              <Route
-                path="/expenditure"
-                element={
-                  <ProtectedRoute allowedRoles={ALL_ROLES}>
-                    <ExpenseManagementPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* site incharge project */}
-              <Route
-                path="/site-incharge/projects"
-                element={
-                  <ProtectedRoute allowedRoles={[...SITE]}>
-                    <SiteInchargeProjects />
-                  </ProtectedRoute>
-                }
-              />
               {/* Sales Manager Routes */}
+              <Route
+                path="/customer"
+                element={
+                  <ProtectedRoute allowedRoles={SALES}>
+                    <CustomerManagement />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/team"
                 element={
-                  <ProtectedRoute allowedRoles={[...SALES, ...LEAD]}>
+                  <ProtectedRoute allowedRoles={LEAD}>
                     <TeamManagement />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/teamLead"
                 element={
@@ -434,7 +442,9 @@ const App = () => (
               <Route
                 path="/progress"
                 element={
-                  <ProtectedRoute allowedRoles={[...SITE, ...CUSTOMER_PUR]}>
+                  <ProtectedRoute
+                    allowedRoles={[...SITE, ...CUSTOMER_PURCHASED]}
+                  >
                     <ConstructionProgress />
                   </ProtectedRoute>
                 }
@@ -443,23 +453,41 @@ const App = () => (
               {/* Accountant Routes */}
               <Route path="/payments" element={<Payments />} />
               <Route
-                path="/invoices/accountant"
-                element={<InvoiceAccountant />}
+                path="/reports"
+                element={
+                  <ProtectedRoute allowedRoles={[...SALES, ...ACCOUNTANT]}>
+                    <Reports />
+                  </ProtectedRoute>
+                }
               />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/budgets" element={<BudgetTracking />} />
-              <Route path="/taxes" element={<TaxDocuments />} />
-            </Route>
-            {/* Redirect index to dashboard */}
-            <Route path="/index" element={<Navigate to="/" replace />} />
+              <Route
+                path="/budgets"
+                element={
+                  <ProtectedRoute allowedRoles={ACCOUNTANT}>
+                    <BudgetTracking />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/taxes"
+                element={
+                  <ProtectedRoute allowedRoles={ACCOUNTANT}>
+                    <TaxDocuments />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Catch-all route for 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+              {/* Redirect index to dashboard */}
+              <Route path="/index" element={<Navigate to="/" replace />} />
+
+              {/* Catch-all route for 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

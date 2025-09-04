@@ -23,7 +23,7 @@ const UpcomingProjectsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/upcoming-properties"
+        `${import.meta.env.VITE_URL}/api/properties/upcoming-properties`
       );
       const upcomingProjectsFromDB: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};
@@ -214,15 +214,15 @@ const UpcomingProjectsPage = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                 {upcomingProjects.map((project) => (
                   <CardContainer key={project.id} className="inter-var">
-                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[30rem] md:min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
                       {/* Pre-Booking Badge */}
                       {project.preBooking ? (
                         <CardItem
                           translateZ={30}
-                          className="absolute top-4 right-4 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm z-10"
+                          className="absolute md:top-4 top-20 right-4 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm z-10"
                         >
                           Pre-Booking Open
                         </CardItem>
@@ -238,7 +238,7 @@ const UpcomingProjectsPage = () => {
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
                       >
                         {project.title}
                       </CardItem>
@@ -246,19 +246,19 @@ const UpcomingProjectsPage = () => {
                       {/* Image */}
                       <CardItem
                         translateZ={80}
-                        className="w-full mt-4 rounded-xl overflow-hidden"
+                        className="w-full mt-3 rounded-xl overflow-hidden"
                       >
                         <img
                           src={project.image}
                           alt={project.title}
-                          className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
+                          className="h-48 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                         />
                       </CardItem>
 
                       {/* Location */}
                       <CardItem
                         translateZ={20}
-                        className="mt-3 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                        className="mt-2 flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                       >
                         <MapPin className="h-4 w-4 mr-1" />
                         {project.location}
@@ -267,7 +267,7 @@ const UpcomingProjectsPage = () => {
                       {/* Launch Date */}
                       <CardItem
                         translateZ={20}
-                        className="mt-2 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                        className="mt-1 flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                       >
                         <Calendar className="h-4 w-4 mr-2 text-blue-600" />
                         Launch: {project.launchDate}
@@ -276,7 +276,7 @@ const UpcomingProjectsPage = () => {
                       {/* Description */}
                       <CardItem
                         translateZ={20}
-                        className="text-sm text-gray-600 mt-2 line-clamp-2"
+                        className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2"
                       >
                         Category: {project.category}
                       </CardItem>
@@ -284,17 +284,17 @@ const UpcomingProjectsPage = () => {
                       {/* Price */}
                       <CardItem
                         translateZ={30}
-                        className="text-lg font-bold text-indigo-700 mt-3"
+                        className="text-base sm:text-lg font-bold text-indigo-700 mt-2"
                       >
                         ₹{project.price} Lakhs onwards
                       </CardItem>
 
                       {/* Button */}
-                      <div className="mt-4">
+                      <div className="mt-3">
                         <CardItem
                           translateZ={40}
                           as="button"
-                          className={`w-full px-4 py-2 rounded-full text-sm font-medium ${
+                          className={`w-full px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${
                             project.preBooking
                               ? "bg-blue-600 text-white hover:bg-blue-700"
                               : "text-blue-600 border border-blue-600 hover:bg-blue-100"

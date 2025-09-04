@@ -68,7 +68,7 @@ const ContactPage: React.FC = () => {
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/contact/contactInfo"
+        `${import.meta.env.VITE_URL}/api/contact/contactInfo`
       );
       setContact(data);
     } catch (error) {

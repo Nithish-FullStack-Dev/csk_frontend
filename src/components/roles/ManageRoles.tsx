@@ -27,7 +27,7 @@ const ManageRoles = () => {
 
   const fetchRoles = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/role/roles");
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/role/roles`);
       setRoles(res.data);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
@@ -36,8 +36,12 @@ const ManageRoles = () => {
 
   const getAllUsers = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/user/getUsers`);
-      console.log(res);
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/user/getUsers`,
+        {
+          withCredentials: true,
+        }
+      );
       setAllUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
@@ -54,17 +58,23 @@ const ManageRoles = () => {
       setLoading(true);
       if (isEditMode) {
         // Update role
-        await axios.patch(`http://localhost:3000/api/role/${editingRoleId}`, {
-          description,
-          color: selectedColor,
-        });
+        await axios.patch(
+          `${import.meta.env.VITE_URL}/api/role/${editingRoleId}`,
+          {
+            description,
+            color: selectedColor,
+          }
+        );
       } else {
         // Create or set metadata
-        await axios.post("http://localhost:3000/api/role/updateUserRole", {
-          name: roleName,
-          description,
-          color: selectedColor,
-        });
+        await axios.post(
+          `${import.meta.env.VITE_URL}/api/role/updateUserRole`,
+          {
+            name: roleName,
+            description,
+            color: selectedColor,
+          }
+        );
       }
 
       setRoleName("");
@@ -83,7 +93,9 @@ const ManageRoles = () => {
     if (!confirm) return;
 
     try {
-      await axios.patch(`http://localhost:3000/api/role/${id}/clear-meta`);
+      await axios.patch(
+        `${import.meta.env.VITE_URL}/api/role/${id}/clear-meta`
+      );
       fetchRoles();
     } catch (err) {
       console.error("Failed to clear role metadata", err);
@@ -105,11 +117,11 @@ const ManageRoles = () => {
   }, [allUsers]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 px-4 sm:px-6">
       {/* Left: Create Role */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Plus className="w-4 h-4" /> Create / Update Role
           </CardTitle>
         </CardHeader>
@@ -117,7 +129,7 @@ const ManageRoles = () => {
           <div>
             <label className="block text-sm font-medium">Role Name</label>
             <input
-              className="w-full mt-1 p-2 border rounded"
+              className="w-full mt-1 p-2 border rounded text-sm sm:text-base"
               placeholder="e.g., Project Manager"
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
@@ -127,7 +139,7 @@ const ManageRoles = () => {
           <div>
             <label className="block text-sm font-medium">Description</label>
             <textarea
-              className="w-full mt-1 p-2 border rounded"
+              className="w-full mt-1 p-2 border rounded text-sm sm:text-base"
               placeholder="Describe the role responsibilities..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -136,7 +148,7 @@ const ManageRoles = () => {
 
           <div>
             <label className="block text-sm font-medium mb-1">Role Color</label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {colors.map((color) => (
                 <div
                   key={color}
@@ -155,15 +167,15 @@ const ManageRoles = () => {
 
           <div>
             <label className="block text-sm font-medium mb-1">Preview</label>
-            <div className="flex items-start gap-2 border p-3 rounded bg-gray-50">
-              <Shield className="mt-1" />
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 border p-3 rounded bg-gray-50">
+              <Shield className="mt-1 shrink-0" />
               <div>
                 <span
-                  className={`text-white px-2 py-1 rounded text-xs font-semibold ${selectedColor}`}
+                  className={`text-white px-2 py-1 rounded text-xs sm:text-sm font-semibold ${selectedColor}`}
                 >
                   {roleName || "Role Name"}
                 </span>
-                <p className="text-sm mt-1 text-gray-700">
+                <p className="text-xs sm:text-sm mt-1 text-gray-700">
                   {description || "Role description will appear here..."}
                 </p>
               </div>
@@ -171,7 +183,7 @@ const ManageRoles = () => {
           </div>
 
           <Button
-            className="w-full mt-4"
+            className="w-full mt-4 text-sm sm:text-base"
             onClick={handleCreateOrUpdate}
             disabled={loading}
           >
@@ -185,7 +197,7 @@ const ManageRoles = () => {
           {isEditMode && (
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full text-sm sm:text-base"
               onClick={() => {
                 setIsEditMode(false);
                 setEditingRoleId(null);
@@ -201,9 +213,9 @@ const ManageRoles = () => {
       </Card>
 
       {/* Right: Existing Roles */}
-      <Card>
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Shield className="w-4 h-4" /> Existing Roles
           </CardTitle>
         </CardHeader>
@@ -214,23 +226,23 @@ const ManageRoles = () => {
           {roles.map((role, index) => (
             <div
               key={index}
-              className="flex justify-between items-center border p-3 rounded"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center border p-3 rounded gap-2"
             >
-              <div className="flex items-start gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2">
                 <div
-                  className={`px-2 py-1 rounded text-white text-xs font-semibold ${role.color}`}
+                  className={`px-2 py-1 rounded text-white text-xs font-semibold md:w-auto w-[50%] ${role.color}`}
                 >
                   {role.name}
                 </div>
                 <div>
-                  <p className="text-sm">{role.description}</p>
+                  <p className="text-xs sm:text-sm">{role.description}</p>
                   <div className="flex items-center text-xs text-gray-600 mt-1 gap-1">
                     <User className="w-4 h-4" />
                     {getUserCount(role.name) || 0} users
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Edit
                   className="w-4 h-4 cursor-pointer text-gray-600"
                   onClick={() => {

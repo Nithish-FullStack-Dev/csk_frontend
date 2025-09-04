@@ -31,7 +31,7 @@ const OpenPlotsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/openPlot/getAllOpenPlot"
+        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
       );
       setPlotProjects(data.plots);
       setIsError(false);
@@ -250,59 +250,73 @@ const OpenPlotsPage = () => {
               >
                 {plotProjects.map((plot) => (
                   <CardContainer key={plot.id} className="inter-var">
-                    <CardBody className="bg-white dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] rounded-2xl w-[25rem] h-[30rem] p-6 group/card shadow-xl flex flex-col justify-between transition-all duration-300">
+                    <CardBody
+                      className="
+      bg-white dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2]
+      rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem]
+      h-auto min-h-[26rem] md:min-h-[30rem]
+      p-6 group/card shadow-xl flex flex-col justify-between relative transition-all duration-300
+    "
+                    >
                       {/* Badge */}
                       <CardItem
                         translateZ={30}
-                        className="absolute top-6 right-4 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                        className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
                       >
                         Open Plots
                       </CardItem>
+
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
                       >
                         {plot.projectName}
                       </CardItem>
 
-                      <CardItem translateZ={80} className="w-full mt-4">
+                      {/* Image */}
+                      <CardItem translateZ={80} className="w-full mt-3">
                         <img
                           src={plot.thumbnailUrl}
                           alt={plot.title}
-                          className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
+                          className="h-44 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
                         />
                       </CardItem>
 
-                      <div className="mt-4 space-y-1">
+                      {/* Info */}
+                      <div className="mt-3 space-y-1">
                         <CardItem
                           translateZ={20}
-                          className="text-sm text-gray-600 dark:text-gray-300"
+                          className="text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                         >
                           📍 {plot.location || "-"}
                         </CardItem>
 
                         <CardItem
                           translateZ={20}
-                          className="text-sm text-gray-600 dark:text-gray-300"
+                          className="text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                         >
                           Plot Type: {plot.plotType || "-"}
                         </CardItem>
 
                         <CardItem
                           translateZ={20}
-                          className="text-base font-semibold text-blue-700 dark:text-blue-400"
+                          className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400"
                         >
                           ₹{plot.totalAmount.toLocaleString()}
                         </CardItem>
                       </div>
 
-                      <div className="mt-6 flex justify-end">
-                        <Link to={`/public/openPlot/${plot._id}`}>
+                      {/* Button */}
+                      <div className="mt-4 flex justify-end">
+                        <Link
+                          to={`/public/openPlot/${plot._id}`}
+                          className="w-full"
+                        >
                           <CardItem
                             translateZ={30}
                             as="button"
-                            className="px-5 py-2 rounded-lg bg-black dark:bg-white text-white dark:text-black text-sm font-medium"
+                            className="w-full px-4 py-2 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs sm:text-sm font-medium transition-colors hover:opacity-90"
                           >
                             View Details
                           </CardItem>

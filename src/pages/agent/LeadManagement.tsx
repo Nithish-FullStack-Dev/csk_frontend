@@ -91,7 +91,7 @@ export interface Lead {
 
 export const fetchLeads = async () => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/leads/getLeadsById",
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsById`,
     { withCredentials: true }
   );
   return data || [];
@@ -99,7 +99,7 @@ export const fetchLeads = async () => {
 
 export const fetchAllLeads = async () => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/leads/getAllLeads",
+    `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
     { withCredentials: true }
   );
   return data.leads || [];
@@ -120,7 +120,7 @@ const saveLead = async (
   };
 
   const { data } = await axios.post(
-    "http://localhost:3000/api/leads/saveLead",
+    `${import.meta.env.VITE_URL}/api/leads/saveLead`,
     dataToSend,
     { withCredentials: true }
   );
@@ -129,7 +129,7 @@ const saveLead = async (
 
 const saveCustomer = async (payload: CustomerPayload) => {
   const { data } = await axios.post(
-    "http://localhost:3000/api/customer/addCustomer",
+    `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
     payload,
     { withCredentials: true }
   );
@@ -147,7 +147,7 @@ const updateLead = async (payload: Lead) => {
   };
 
   const { data } = await axios.put(
-    `http://localhost:3000/api/leads/updateLead/${_id}`,
+    `${import.meta.env.VITE_URL}/api/leads/updateLead/${_id}`,
     dataToSend,
     { withCredentials: true }
   );
@@ -156,21 +156,21 @@ const updateLead = async (payload: Lead) => {
 
 const fetchAllcustomers = async () => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/customer/getAllCustomers"
+    `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`
   );
   return data;
 };
 
 const fetchAllAgents = async () => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllAgents"
+    `${import.meta.env.VITE_URL}/api/user/getAllAgents`
   );
   return data;
 };
 
 const fetchAllCustomer_purchased = async () => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllcustomer_purchased"
+    `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`
   );
   return data;
 };
@@ -275,7 +275,9 @@ const LeadManagement = () => {
   const { data: properties = [] } = useQuery<Property[]>({
     queryKey: ["available-properties"],
     queryFn: async () => {
-      const res = await fetch("http://localhost:3000/api/leads/getLeadProp");
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/leads/getLeadProp`
+      );
       const json = await res.json();
       return json.properties;
     },
@@ -450,97 +452,725 @@ const LeadManagement = () => {
         console.error(err);
       },
     });
-    console.log(payload);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Lead Management</h1>
-          <p className="text-muted-foreground">
-            Track and manage your sales leads
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          {isSalesManager && (
-            <AddCustomerDialog
-              isSalesManager={isSalesManager}
-              isAddCustomerDialogOpen={isAddCustomerDialogOpen}
-              setIsAddCustomerDialogOpen={setIsAddCustomerDialogOpen}
-              bookingDate={bookingDate}
-              setBookingDate={setBookingDate}
-              finalPrice={finalPrice}
-              setFinalPrice={setFinalPrice}
-              paymentPlan={paymentPlan}
-              setPaymentPlan={setPaymentPlan}
-              paymentStatus={paymentStatus}
-              setPaymentStatus={setPaymentStatus}
-              selectedProperty={selectedProperty}
-              setSelectedProperty={setSelectedProperty}
-              purchasedFromAgent={purchasedFromAgent}
-              setPurchasedFromAgent={setPurchasedFromAgent}
-              availableProperties={availableProperties}
-              availableAgents={availableAgents}
-              selectedUser={selectedUser}
-              setSelectedUser={setSelectedUser}
-              usersPurchased={availableCustomer}
-              handleSaveCustomer={handleSaveCustomer}
-            />
-          )}
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Lead Management</h1>
+            <p className="text-muted-foreground">
+              Track and manage your sales leads
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {isSalesManager && (
+              <AddCustomerDialog
+                isSalesManager={isSalesManager}
+                isAddCustomerDialogOpen={isAddCustomerDialogOpen}
+                setIsAddCustomerDialogOpen={setIsAddCustomerDialogOpen}
+                bookingDate={bookingDate}
+                setBookingDate={setBookingDate}
+                finalPrice={finalPrice}
+                setFinalPrice={setFinalPrice}
+                paymentPlan={paymentPlan}
+                setPaymentPlan={setPaymentPlan}
+                paymentStatus={paymentStatus}
+                setPaymentStatus={setPaymentStatus}
+                selectedProperty={selectedProperty}
+                setSelectedProperty={setSelectedProperty}
+                purchasedFromAgent={purchasedFromAgent}
+                setPurchasedFromAgent={setPurchasedFromAgent}
+                availableProperties={availableProperties}
+                availableAgents={availableAgents}
+                selectedUser={selectedUser}
+                setSelectedUser={setSelectedUser}
+                usersPurchased={availableCustomer}
+                handleSaveCustomer={handleSaveCustomer}
+              />
+            )}
 
-          {/* Add New Lead Dialog */}
-          <Dialog
-            onOpenChange={setIsAddLeadDialogOpen}
-            open={isAddLeadDialogOpen}
-          >
-            <DialogTrigger asChild>
-              {!isSalesManager && (
-                <Button
-                  onClick={() => {
-                    setLeadToEdit(null); // Ensure no lead is in edit mode when adding
-                    // Clear form states for new lead
-                    setName("");
-                    setEmail("");
-                    setPhone("");
-                    setSource("");
-                    setProperty("");
-                    setStatus("");
-                    setNote("");
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add New Lead
-                </Button>
+            {/* Add New Lead Dialog */}
+            <Dialog
+              onOpenChange={setIsAddLeadDialogOpen}
+              open={isAddLeadDialogOpen}
+            >
+              <DialogTrigger asChild>
+                {!isSalesManager && (
+                  <Button
+                    onClick={() => {
+                      setLeadToEdit(null); // Ensure no lead is in edit mode when adding
+                      // Clear form states for new lead
+                      setName("");
+                      setEmail("");
+                      setPhone("");
+                      setSource("");
+                      setProperty("");
+                      setStatus("");
+                      setNote("");
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New Lead
+                  </Button>
+                )}
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[525px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Lead</DialogTitle>
+                  <DialogDescription>
+                    Enter the details of the new lead. All fields marked with *
+                    are required.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="text-sm font-medium">
+                        Name *
+                      </label>
+                      <Input
+                        id="name"
+                        placeholder="Full name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium">
+                        Email *
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Email address"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="phone" className="text-sm font-medium">
+                        Phone *
+                      </label>
+                      <Input
+                        id="phone"
+                        placeholder="Phone number"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="source" className="text-sm font-medium">
+                        Source *
+                      </label>
+                      <Input
+                        id="source"
+                        placeholder="Lead source"
+                        onChange={(e) => setSource(e.target.value)}
+                        value={source}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="property" className="text-sm font-medium">
+                      Property Interest
+                    </label>
+                    <Select
+                      onValueChange={(value) => setProperty(value)}
+                      value={property} // Value will be the string ID
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableProperties.map((prop) => (
+                          <SelectItem key={prop._id} value={prop._id}>
+                            {prop.basicInfo.projectName} -{" "}
+                            {prop.basicInfo.plotNumber}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="status" className="text-sm font-medium">
+                      Status
+                    </label>
+                    <Select
+                      value={status}
+                      onValueChange={(value) =>
+                        setStatus(value as "hot" | "warm" | "cold" | "")
+                      }
+                    >
+                      <SelectTrigger
+                        id="status"
+                        className="w-[150px] border px-3 py-2 rounded-md"
+                      >
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="hot">Hot</SelectItem>
+                        <SelectItem value="warm">Warm</SelectItem>
+                        <SelectItem value="cold">Cold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="notes" className="text-sm font-medium">
+                      Notes
+                    </label>
+                    <Input
+                      id="notes"
+                      placeholder="Additional notes"
+                      onChange={(e) => setNote(e.target.value)}
+                      value={notes}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddLeadDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveLead}>Save Lead</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search leads..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <Card>
+          <CardHeader className="p-4 pb-0">
+            <Tabs defaultValue="all" onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all">All Leads</TabsTrigger>
+                <TabsTrigger value="hot">Hot</TabsTrigger>
+                <TabsTrigger value="warm">Warm</TabsTrigger>
+                <TabsTrigger value="cold">Cold</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent className="p-0">
+            {/* Desktop Table */}
+            <Table className="hidden sm:table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Property
+                  </TableHead>
+                  <TableHead>Property Status</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Last Contact
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeads.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <div className="text-center py-12 text-gray-500">
+                        <div className="text-4xl mb-2">😕</div>
+                        <h1 className="text-lg font-semibold">
+                          No Leads Found
+                        </h1>
+                        <p className="text-sm text-gray-400">
+                          Try changing your filters or add a new lead.
+                        </p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredLeads.map((lead) => {
+                    const statusColors = {
+                      hot: "bg-estate-error/20 text-estate-error",
+                      warm: "bg-estate-gold/20 text-estate-gold",
+                      cold: "bg-estate-teal/20 text-estate-teal",
+                    };
+                    const propertyStatusColors: Record<string, string> = {
+                      New: "bg-blue-100 text-blue-800",
+                      Enquiry: "bg-yellow-100 text-yellow-800",
+                      Assigned: "bg-purple-100 text-purple-800",
+                      "Follow up": "bg-orange-100 text-orange-800",
+                      "In Progress": "bg-indigo-100 text-indigo-800",
+                      Closed: "bg-green-100 text-green-800",
+                      Rejected: "bg-red-100 text-red-800",
+                    };
+
+                    // Determine property name
+                    const leadPropertyId =
+                      typeof lead.property === "object"
+                        ? lead.property._id
+                        : lead.property;
+                    const interestedProperty = availableProperties.find(
+                      (prop) => prop._id === leadPropertyId
+                    );
+                    let propertyDisplayName = "N/A";
+                    if (interestedProperty) {
+                      propertyDisplayName = `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
+                    } else if (
+                      typeof lead.property === "object" &&
+                      "basicInfo" in lead.property
+                    ) {
+                      propertyDisplayName = `${lead.property.basicInfo.projectName} - ${lead.property.basicInfo.plotNumber}`;
+                    } else if (
+                      typeof lead.property === "string" &&
+                      lead.property
+                    ) {
+                      propertyDisplayName = lead.property;
+                    }
+
+                    return (
+                      <TableRow key={lead._id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage
+                                src={`https://ui-avatars.com/api/?name=${lead.name.replace(
+                                  " ",
+                                  "+"
+                                )}&background=1A365D&color=fff`}
+                              />
+                              <AvatarFallback>{lead.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{lead.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {lead.email}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              statusColors[
+                                lead?.status as keyof typeof statusColors
+                              ]
+                            }
+                          >
+                            {lead.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {propertyDisplayName}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              propertyStatusColors[
+                                lead?.propertyStatus as keyof typeof propertyStatusColors
+                              ]
+                            }
+                          >
+                            {lead.propertyStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {lead?.lastContact
+                            ? formatDistanceToNow(new Date(lead.lastContact), {
+                                addSuffix: true,
+                              })
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setSelectedLead(lead)}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <a href={`tel:${user.phone}`}>
+                                  <DropdownMenuItem>
+                                    <PhoneCall className="mr-2 h-4 w-4" /> Call
+                                  </DropdownMenuItem>
+                                </a>
+                                <a
+                                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                    user.email
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1"
+                                >
+                                  <DropdownMenuItem>
+                                    <Mail className="mr-2 h-4 w-4" /> Email
+                                  </DropdownMenuItem>
+                                </a>
+                                {!isSalesManager && (
+                                  <DropdownMenuItem
+                                    onClick={() => navigate("/visits")}
+                                  >
+                                    <Calendar className="mr-2 h-4 w-4" />{" "}
+                                    Schedule Visit
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setLeadToEdit(lead)}
+                                >
+                                  <FileText className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Mobile Cards */}
+            <div className="sm:hidden space-y-4 p-4">
+              {filteredLeads.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <div className="text-4xl mb-2">😕</div>
+                  <h1 className="text-lg font-semibold">No Leads Found</h1>
+                  <p className="text-sm text-gray-400">
+                    Try changing your filters or add a new lead.
+                  </p>
+                </div>
+              ) : (
+                filteredLeads.map((lead) => {
+                  const statusColors = {
+                    hot: "bg-estate-error/20 text-estate-error",
+                    warm: "bg-estate-gold/20 text-estate-gold",
+                    cold: "bg-estate-teal/20 text-estate-teal",
+                  };
+                  const propertyStatusColors: Record<string, string> = {
+                    New: "bg-blue-100 text-blue-800",
+                    Enquiry: "bg-yellow-100 text-yellow-800",
+                    Assigned: "bg-purple-100 text-purple-800",
+                    "Follow up": "bg-orange-100 text-orange-800",
+                    "In Progress": "bg-indigo-100 text-indigo-800",
+                    Closed: "bg-green-100 text-green-800",
+                    Rejected: "bg-red-100 text-red-800",
+                  };
+
+                  const leadPropertyId =
+                    typeof lead.property === "object"
+                      ? lead.property._id
+                      : lead.property;
+                  const interestedProperty = availableProperties.find(
+                    (prop) => prop._id === leadPropertyId
+                  );
+                  let propertyDisplayName = "N/A";
+                  if (interestedProperty) {
+                    propertyDisplayName = `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
+                  } else if (
+                    typeof lead.property === "object" &&
+                    "basicInfo" in lead.property
+                  ) {
+                    propertyDisplayName = `${lead.property.basicInfo.projectName} - ${lead.property.basicInfo.plotNumber}`;
+                  } else if (
+                    typeof lead.property === "string" &&
+                    lead.property
+                  ) {
+                    propertyDisplayName = lead.property;
+                  }
+
+                  return (
+                    <div
+                      key={lead._id}
+                      className="bg-white border rounded-lg shadow p-4 space-y-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={`https://ui-avatars.com/api/?name=${lead.name.replace(
+                              " ",
+                              "+"
+                            )}&background=1A365D&color=fff`}
+                          />
+                          <AvatarFallback>{lead.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{lead.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {lead.email}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Status:</span>
+                        <Badge
+                          className={
+                            statusColors[
+                              lead?.status as keyof typeof statusColors
+                            ]
+                          }
+                        >
+                          {lead.status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Property:</span>
+                        <span>{propertyDisplayName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Property Status:</span>
+                        <Badge
+                          className={
+                            propertyStatusColors[
+                              lead?.propertyStatus as keyof typeof propertyStatusColors
+                            ]
+                          }
+                        >
+                          {lead.propertyStatus}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Last Contact:</span>
+                        <span>
+                          {lead?.lastContact
+                            ? formatDistanceToNow(new Date(lead.lastContact), {
+                                addSuffix: true,
+                              })
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 flex items-center justify-center"
+                          onClick={() => setSelectedLead(lead)}
+                        >
+                          <ChevronRight className="h-4 w-4 mr-1" /> View
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 flex items-center justify-center"
+                            >
+                              <MoreHorizontal className="h-4 w-4 mr-1" />{" "}
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <PhoneCall className="mr-2 h-4 w-4" /> Call
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Mail className="mr-2 h-4 w-4" /> Email
+                            </DropdownMenuItem>
+                            {!isSalesManager && (
+                              <DropdownMenuItem
+                                onClick={() => navigate("/visits")}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" /> Schedule
+                                Visit
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setLeadToEdit(lead)}
+                            >
+                              <FileText className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })
               )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between p-4">
+            <div className="text-sm text-muted-foreground">
+              Showing <strong>{filteredLeads.length}</strong> of{" "}
+              <strong>{leadData?.length || 0}</strong> leads
+            </div>
+          </CardFooter>
+        </Card>
+
+        {/* Lead Detail Dialog */}
+        {selectedLead && (
+          <Dialog
+            open={!!selectedLead}
+            onOpenChange={() => setSelectedLead(null)}
+          >
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
-                <DialogTitle>Add New Lead</DialogTitle>
+                <DialogTitle>Lead Details</DialogTitle>
                 <DialogDescription>
-                  Enter the details of the new lead. All fields marked with *
-                  are required.
+                  You can see the lead details below
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14">
+                    <AvatarImage
+                      src={`https://ui-avatars.com/api/?name=${selectedLead.name.replace(
+                        " ",
+                        "+"
+                      )}&background=1A365D&color=fff&size=60`}
+                    />
+                    <AvatarFallback>{selectedLead.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-medium">{selectedLead.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedLead.source} • Added on{" "}
+                      {format(new Date(selectedLead.lastContact), "PPP")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Contact Information</p>
+                    <div className="text-sm flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{selectedLead.email}</span>
+                    </div>
+                    <div className="text-sm flex items-center gap-2">
+                      <PhoneCall className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{selectedLead.phone}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Property Interest</p>
+                    <div className="text-sm flex items-center gap-2">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>
+                        {(() => {
+                          // Determine the ID, handling if selectedLead.property is already an object
+                          const propertyId =
+                            typeof selectedLead.property === "object"
+                              ? selectedLead.property._id
+                              : selectedLead.property;
+
+                          const interestedProperty = availableProperties.find(
+                            (prop) => prop._id === propertyId
+                          );
+
+                          if (interestedProperty) {
+                            return `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
+                          } else if (
+                            typeof selectedLead.property === "object" &&
+                            selectedLead.property !== null &&
+                            "basicInfo" in selectedLead.property
+                          ) {
+                            // If selectedLead.property is already the full object, use its basicInfo
+                            return `${selectedLead.property.basicInfo.projectName} - ${selectedLead.property.basicInfo.plotNumber}`;
+                          }
+                          return "N/A"; // Fallback
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {isSalesManager && (
+                  <div>
+                    <p className="text-sm font-medium mb-1">Lead Added By</p>
+                    <p className="text-sm">
+                      Name: {selectedLead?.addedBy?.name}
+                    </p>
+                    <p className="text-sm">
+                      Email: {selectedLead?.addedBy?.email}
+                    </p>
+                    <p className="text-sm">
+                      Added on:{" "}
+                      {new Date(selectedLead?.createdAt).toLocaleDateString(
+                        "en-IN",
+                        {
+                          day: "2-digit",
+                          year: "numeric",
+                          month: "short",
+                        }
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-sm font-medium mb-1">Notes</p>
+                  <p className="text-sm">{selectedLead.notes}</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedLead(null)}>
+                  Close
+                </Button>
+                {!isSalesManager && (
+                  <Button onClick={() => navigate("/visits")}>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Schedule Site Visit
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* Edit Lead Dialog */}
+        {leadToEdit && (
+          <Dialog
+            open={isEditLeadDialogOpen}
+            onOpenChange={setIsEditLeadDialogOpen}
+          >
+            <DialogContent className="sm:max-w-[525px] max-h-[85vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Lead</DialogTitle>
+                <DialogDescription>
+                  Update the details for {leadToEdit.name}. All fields marked
+                  with * are required.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">
+                    <label htmlFor="editName" className="text-sm font-medium">
                       Name *
                     </label>
                     <Input
-                      id="name"
+                      id="editName"
                       placeholder="Full name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">
+                    <label htmlFor="editEmail" className="text-sm font-medium">
                       Email *
                     </label>
                     <Input
-                      id="email"
+                      id="editEmail"
                       type="email"
                       placeholder="Email address"
                       value={email}
@@ -550,22 +1180,22 @@ const LeadManagement = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="phone" className="text-sm font-medium">
+                    <label htmlFor="editPhone" className="text-sm font-medium">
                       Phone *
                     </label>
                     <Input
-                      id="phone"
+                      id="editPhone"
                       placeholder="Phone number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="source" className="text-sm font-medium">
+                    <label htmlFor="editSource" className="text-sm font-medium">
                       Source *
                     </label>
                     <Input
-                      id="source"
+                      id="editSource"
                       placeholder="Lead source"
                       onChange={(e) => setSource(e.target.value)}
                       value={source}
@@ -594,7 +1224,7 @@ const LeadManagement = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="status" className="text-sm font-medium">
+                  <label htmlFor="editStatus" className="text-sm font-medium">
                     Status
                   </label>
                   <Select
@@ -604,12 +1234,11 @@ const LeadManagement = () => {
                     }
                   >
                     <SelectTrigger
-                      id="status"
+                      id="editStatus"
                       className="w-[150px] border px-3 py-2 rounded-md"
                     >
                       <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
-
                     <SelectContent>
                       <SelectItem value="hot">Hot</SelectItem>
                       <SelectItem value="warm">Warm</SelectItem>
@@ -617,12 +1246,46 @@ const LeadManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {isSalesManager && (
+                  <div className="space-y-2">
+                    <label htmlFor="editStatus" className="text-sm font-medium">
+                      Property Status
+                    </label>
+                    <p className="text-sm text-muted-foreground">
+                      when this lead is{" "}
+                      <span className="font-medium">closed</span> — no further
+                      status updates allowed.
+                    </p>
+                    <Select
+                      disabled={leadToEdit?.propertyStatus === "Closed"}
+                      value={propertyStatus}
+                      onValueChange={(value: Lead["propertyStatus"]) =>
+                        setPropertyStatus(value)
+                      }
+                    >
+                      <SelectTrigger
+                        id="editStatus"
+                        className="w-[150px] border px-3 py-2 rounded-md"
+                      >
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Assigned">Assigned</SelectItem>
+                        <SelectItem value="Follow up">Follow up</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <label htmlFor="notes" className="text-sm font-medium">
+                  <label htmlFor="editNotes" className="text-sm font-medium">
                     Notes
                   </label>
                   <Input
-                    id="notes"
+                    id="editNotes"
                     placeholder="Additional notes"
                     onChange={(e) => setNote(e.target.value)}
                     value={notes}
@@ -632,528 +1295,20 @@ const LeadManagement = () => {
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => setIsAddLeadDialogOpen(false)}
+                  onClick={() => {
+                    setIsEditLeadDialogOpen(false);
+                    setLeadToEdit(null); // Clear the lead being edited
+                  }}
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleSaveLead}>Save Lead</Button>
+                <Button onClick={handleUpdateLead}>Save Changes</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-          {!isSalesManager && (
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
-          )}
-        </div>
+        )}
       </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search leads..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader className="p-4 pb-0">
-          <Tabs defaultValue="all" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All Leads</TabsTrigger>
-              <TabsTrigger value="hot">Hot</TabsTrigger>
-              <TabsTrigger value="warm">Warm</TabsTrigger>
-              <TabsTrigger value="cold">Cold</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Property</TableHead>
-                <TableHead>Property Status</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Last Contact
-                </TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLeads.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5}>
-                    <div className="text-center py-12 text-gray-500">
-                      <div className="text-4xl mb-2">😕</div>
-                      <h1 className="text-lg font-semibold">No Leads Found</h1>
-                      <p className="text-sm text-gray-400">
-                        Try changing your filters or add a new lead.
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredLeads.map((lead) => {
-                  const statusColors = {
-                    hot: "bg-estate-error/20 text-estate-error",
-                    warm: "bg-estate-gold/20 text-estate-gold",
-                    cold: "bg-estate-teal/20 text-estate-teal",
-                  };
-                  const propertyStatusColors: Record<string, string> = {
-                    New: "bg-blue-100 text-blue-800",
-                    Enquiry: "bg-yellow-100 text-yellow-800",
-                    Assigned: "bg-purple-100 text-purple-800",
-                    "Follow up": "bg-orange-100 text-orange-800",
-                    "In Progress": "bg-indigo-100 text-indigo-800",
-                    Closed: "bg-green-100 text-green-800",
-                    Rejected: "bg-red-100 text-red-800",
-                  };
-
-                  // Determine the ID, handling if lead.property is already an object
-                  const leadPropertyId =
-                    typeof lead.property === "object"
-                      ? lead.property._id
-                      : lead.property;
-
-                  const interestedProperty = availableProperties.find(
-                    (prop) => prop._id === leadPropertyId
-                  );
-
-                  let propertyDisplayName = "N/A"; // Default to N/A
-
-                  if (interestedProperty) {
-                    // Found in availableProperties
-                    propertyDisplayName = `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
-                  } else if (
-                    typeof lead.property === "object" &&
-                    lead.property !== null &&
-                    "basicInfo" in lead.property
-                  ) {
-                    // If lead.property is already the full object, use its basicInfo
-                    propertyDisplayName = `${lead.property.basicInfo.projectName} - ${lead.property.basicInfo.plotNumber}`;
-                  } else if (
-                    typeof lead.property === "string" &&
-                    lead.property
-                  ) {
-                    // If it's a string but not found in availableProperties, display the ID
-                    propertyDisplayName = lead.property;
-                  }
-
-                  return (
-                    <TableRow key={lead._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage
-                              src={`https://ui-avatars.com/api/?name=${lead.name.replace(
-                                " ",
-                                "+"
-                              )}&background=1A365D&color=fff`}
-                            />
-                            <AvatarFallback>{lead.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{lead.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {lead.email}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            statusColors[
-                              lead?.status as keyof typeof statusColors
-                            ]
-                          }
-                        >
-                          {lead.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {propertyDisplayName}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            propertyStatusColors[
-                              lead?.propertyStatus as keyof typeof propertyStatusColors
-                            ]
-                          }
-                        >
-                          {lead.propertyStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {lead?.lastContact
-                          ? formatDistanceToNow(new Date(lead.lastContact), {
-                              addSuffix: true,
-                            })
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setSelectedLead(lead)}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <a
-                                  href={`tel:${lead.phone}`}
-                                  className="flex items-center gap-3"
-                                >
-                                  <PhoneCall className="mr-2 h-4 w-4" /> Call
-                                </a>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <a
-                                  href={`mailto:${lead.email}`}
-                                  className="flex items-center gap-3"
-                                >
-                                  <Mail className="mr-2 h-4 w-4" /> Email
-                                </a>
-                              </DropdownMenuItem>
-                              {!isSalesManager && (
-                                <DropdownMenuItem
-                                  onClick={() => navigate("/visits")}
-                                >
-                                  <Calendar className="mr-2 h-4 w-4" /> Schedule
-                                  Visit
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setLeadToEdit(lead)} // Set the lead to be edited
-                              >
-                                <FileText className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <CardFooter className="flex justify-between p-4">
-          <div className="text-sm text-muted-foreground">
-            Showing <strong>{filteredLeads.length}</strong> of{" "}
-            <strong>{leadData?.length || 0}</strong> leads
-          </div>
-        </CardFooter>
-      </Card>
-
-      {/* Lead Detail Dialog */}
-      {selectedLead && (
-        <Dialog
-          open={!!selectedLead}
-          onOpenChange={() => setSelectedLead(null)}
-        >
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Lead Details</DialogTitle>
-              <DialogDescription>
-                You can see the lead details below
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarImage
-                    src={`https://ui-avatars.com/api/?name=${selectedLead.name.replace(
-                      " ",
-                      "+"
-                    )}&background=1A365D&color=fff&size=60`}
-                  />
-                  <AvatarFallback>{selectedLead.name[0]}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-medium">{selectedLead.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedLead.source} • Added on{" "}
-                    {format(new Date(selectedLead.lastContact), "PPP")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Contact Information</p>
-                  <div className="text-sm flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{selectedLead.email}</span>
-                  </div>
-                  <div className="text-sm flex items-center gap-2">
-                    <PhoneCall className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{selectedLead.phone}</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Property Interest</p>
-                  <div className="text-sm flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>
-                      {(() => {
-                        // Determine the ID, handling if selectedLead.property is already an object
-                        const propertyId =
-                          typeof selectedLead.property === "object"
-                            ? selectedLead.property._id
-                            : selectedLead.property;
-
-                        const interestedProperty = availableProperties.find(
-                          (prop) => prop._id === propertyId
-                        );
-
-                        if (interestedProperty) {
-                          return `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
-                        } else if (
-                          typeof selectedLead.property === "object" &&
-                          selectedLead.property !== null &&
-                          "basicInfo" in selectedLead.property
-                        ) {
-                          // If selectedLead.property is already the full object, use its basicInfo
-                          return `${selectedLead.property.basicInfo.projectName} - ${selectedLead.property.basicInfo.plotNumber}`;
-                        }
-                        return "N/A"; // Fallback
-                      })()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {isSalesManager && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Lead Added By</p>
-                  <p className="text-sm">Name: {selectedLead?.addedBy?.name}</p>
-                  <p className="text-sm">
-                    Email: {selectedLead?.addedBy?.email}
-                  </p>
-                  <p className="text-sm">
-                    Added on:{" "}
-                    {new Date(selectedLead?.createdAt).toLocaleDateString(
-                      "en-IN",
-                      {
-                        day: "2-digit",
-                        year: "numeric",
-                        month: "short",
-                      }
-                    )}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-medium mb-1">Notes</p>
-                <p className="text-sm">{selectedLead.notes}</p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedLead(null)}>
-                Close
-              </Button>
-              {!isSalesManager && (
-                <Button onClick={() => navigate("/visits")}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Schedule Site Visit
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Edit Lead Dialog */}
-      {leadToEdit && (
-        <Dialog
-          open={isEditLeadDialogOpen}
-          onOpenChange={setIsEditLeadDialogOpen}
-        >
-          <DialogContent className="sm:max-w-[525px] max-h-[85vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Lead</DialogTitle>
-              <DialogDescription>
-                Update the details for {leadToEdit.name}. All fields marked with
-                * are required.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="editName" className="text-sm font-medium">
-                    Name *
-                  </label>
-                  <Input
-                    id="editName"
-                    placeholder="Full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="editEmail" className="text-sm font-medium">
-                    Email *
-                  </label>
-                  <Input
-                    id="editEmail"
-                    type="email"
-                    placeholder="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="editPhone" className="text-sm font-medium">
-                    Phone *
-                  </label>
-                  <Input
-                    id="editPhone"
-                    placeholder="Phone number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="editSource" className="text-sm font-medium">
-                    Source *
-                  </label>
-                  <Input
-                    id="editSource"
-                    placeholder="Lead source"
-                    onChange={(e) => setSource(e.target.value)}
-                    value={source}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="property" className="text-sm font-medium">
-                  Property Interest
-                </label>
-                <Select
-                  onValueChange={(value) => setProperty(value)}
-                  value={property} // Value will be the string ID
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Property" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableProperties.map((prop) => (
-                      <SelectItem key={prop._id} value={prop._id}>
-                        {prop.basicInfo.projectName} -{" "}
-                        {prop.basicInfo.plotNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="editStatus" className="text-sm font-medium">
-                  Status
-                </label>
-                <Select
-                  value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as "hot" | "warm" | "cold" | "")
-                  }
-                >
-                  <SelectTrigger
-                    id="editStatus"
-                    className="w-[150px] border px-3 py-2 rounded-md"
-                  >
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hot">Hot</SelectItem>
-                    <SelectItem value="warm">Warm</SelectItem>
-                    <SelectItem value="cold">Cold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {isSalesManager && (
-                <div className="space-y-2">
-                  <label htmlFor="editStatus" className="text-sm font-medium">
-                    Property Status
-                  </label>
-                  <p className="text-sm text-muted-foreground">
-                    when this lead is{" "}
-                    <span className="font-medium">closed</span> — no further
-                    status updates allowed.
-                  </p>
-                  <Select
-                    disabled={leadToEdit?.propertyStatus === "Closed"}
-                    value={propertyStatus}
-                    onValueChange={(value: Lead["propertyStatus"]) =>
-                      setPropertyStatus(value)
-                    }
-                  >
-                    <SelectTrigger
-                      id="editStatus"
-                      className="w-[150px] border px-3 py-2 rounded-md"
-                    >
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="Assigned">Assigned</SelectItem>
-                      <SelectItem value="Follow up">Follow up</SelectItem>
-                      <SelectItem value="In Progress">In Progress</SelectItem>
-                      <SelectItem value="Closed">Closed</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
-                <label htmlFor="editNotes" className="text-sm font-medium">
-                  Notes
-                </label>
-                <Input
-                  id="editNotes"
-                  placeholder="Additional notes"
-                  onChange={(e) => setNote(e.target.value)}
-                  value={notes}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditLeadDialogOpen(false);
-                  setLeadToEdit(null); // Clear the lead being edited
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleUpdateLead}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+    </MainLayout>
   );
 };
 

@@ -32,7 +32,7 @@ const OngoingProjectsPage = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        "http://localhost:3000/api/properties/ongoing-properties"
+        `${import.meta.env.VITE_URL}/api/properties/ongoing-properties`
       );
       const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
         const basic = item.basicInfo || {};
@@ -220,14 +220,14 @@ const OngoingProjectsPage = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10">
                 {ongoingProjects.map((project, index) => (
                   <CardContainer key={project.id} className="inter-var">
-                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[28rem] sm:min-h-[30rem] md:min-h-[32rem] lg:min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
                       >
                         {project.title}
                       </CardItem>
@@ -240,14 +240,14 @@ const OngoingProjectsPage = () => {
                         <img
                           src={project.image}
                           alt={project.title}
-                          className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
+                          className="h-48 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                         />
                       </CardItem>
 
                       {/* Location */}
                       <CardItem
                         translateZ={20}
-                        className="mt-1 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                        className="mt-1 flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                       >
                         <MapPin className="h-4 w-4 mr-1" />
                         {project.location}
@@ -256,18 +256,18 @@ const OngoingProjectsPage = () => {
                       {/* Price */}
                       <CardItem
                         translateZ={30}
-                        className="text-lg font-bold text-indigo-700 mt-1"
+                        className="text-base sm:text-lg font-bold text-indigo-700 mt-1"
                       >
                         ₹{project.price} Lakhs onwards
                       </CardItem>
 
                       {/* Buttons */}
-                      <div className="mt-1 space-y-2">
+                      <div className="mt-2 space-y-2">
                         <Link to={`/public/project/${project.id}`}>
                           <CardItem
                             translateZ={40}
                             as="button"
-                            className="w-full px-4 py-2 rounded-full text-sm font-medium text-estate-navy/90 border border-estate-navy/80 hover:bg-estate-navy/30 transition-colors"
+                            className="w-full px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-estate-navy/90 border border-estate-navy/80 hover:bg-estate-navy/30 transition-colors"
                           >
                             View Details
                           </CardItem>
@@ -276,7 +276,7 @@ const OngoingProjectsPage = () => {
                         <CardItem
                           translateZ={40}
                           as="button"
-                          className="w-full px-4 py-2 rounded-full text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
+                          className="w-full px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
                         >
                           Schedule Site Visit
                           <Calendar className="ml-2 h-4 w-4" />

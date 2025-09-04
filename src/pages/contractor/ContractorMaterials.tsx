@@ -4,25 +4,27 @@ import ContractorMaterials from "@/components/dashboard/contractor/ContractorMat
 
 const ContractorMaterialsPage = () => {
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Materials Management
-        </h1>
-        <p className="text-muted-foreground">
-          Track and manage construction materials across projects
-        </p>
-      </div>
+    <MainLayout>
+      <div className="space-y-6 md:p-8 p-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Materials Management
+          </h1>
+          <p className="text-muted-foreground">
+            Track and manage construction materials across projects
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Materials</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ContractorMaterials />
-        </CardContent>
-      </Card>
-    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Materials</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractorMaterials />
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 };
 

@@ -66,8 +66,6 @@ export function OpenPlotDetails({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
-  console.log(plot);
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -76,7 +74,7 @@ export function OpenPlotDetails({
           Back to All Open Plots
         </Button>
         {canEdit && (
-          <div className="space-x-2">
+          <div className="flex md:flex-row flex-col gap-3">
             <Button size="sm" onClick={onEdit}>
               <Edit className="mr-2 h-4 w-4" /> Edit
             </Button>

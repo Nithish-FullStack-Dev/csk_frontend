@@ -17,9 +17,8 @@ const ContactCMS = () => {
     const fetchContactInfo = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:3000/api/cms/getContactInfo"
+          `${import.meta.env.VITE_URL}/api/contact/contactInfo`
         );
-        console.log(response.data);
         setContactInfo(response.data);
       } catch (error) {
         console.error("Failed to fetch contact info:", error);
@@ -34,7 +33,7 @@ const ContactCMS = () => {
   const handleSave = async () => {
     try {
       await axios.post(
-        "http://localhost:3000/api/cms/updateContactInfo",
+        `${import.meta.env.VITE_URL}/api/contact/updateContactInfo`,
         contactInfo
       );
       setIsEditing(false);
@@ -58,31 +57,36 @@ const ContactCMS = () => {
     });
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!contactInfo) return <div>Failed to load contact info.</div>;
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (!contactInfo)
+    return <div className="p-4 text-center">Failed to load contact info.</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-center md:text-left">
             <CardTitle>Contact Information Management</CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
               Manage contact details, business hours, and company information
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
+          <div className="flex flex-wrap gap-2 justify-center md:justify-end">
             {isEditing ? (
-              <Button onClick={handleSave} size="sm">
+              <Button
+                onClick={handleSave}
+                size="sm"
+                className="w-full sm:w-auto"
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
             ) : (
-              <Button onClick={() => setIsEditing(true)} size="sm">
+              <Button
+                onClick={() => setIsEditing(true)}
+                size="sm"
+                className="w-full sm:w-auto"
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
@@ -164,7 +168,9 @@ const ContactCMS = () => {
                   </div>
                   <div>
                     <p className="font-medium">Phone</p>
-                    <p className="text-muted-foreground">{contactInfo.phone}</p>
+                    <p className="text-muted-foreground break-words">
+                      {contactInfo.phone}
+                    </p>
                   </div>
                 </div>
 
@@ -174,34 +180,37 @@ const ContactCMS = () => {
                   </div>
                   <div>
                     <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">{contactInfo.email}</p>
+                    <p className="text-muted-foreground break-words">
+                      {contactInfo.email}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-estate-navy rounded-full flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Address</p>
-                    <p className="text-muted-foreground">
-                      {contactInfo.address}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3">
+                {/* Icon wrapper */}
+                <div className="flex-shrink-0 w-10 h-10 bg-estate-navy rounded-full flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-white" />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-estate-navy rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Working Hours</p>
-                    <p className="text-muted-foreground">
-                      {contactInfo.workingHours}
-                    </p>
-                  </div>
+                {/* Text wrapper */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">Address</p>
+                  <p className="text-muted-foreground break-words">
+                    {contactInfo.address}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-estate-navy rounded-full flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium">Working Hours</p>
+                  <p className="text-muted-foreground break-words">
+                    {contactInfo.workingHours}
+                  </p>
                 </div>
               </div>
             </div>
@@ -216,7 +225,7 @@ const ContactCMS = () => {
         </CardHeader>
         <CardContent>
           {isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="facebook">Facebook URL</Label>
                 <Input
@@ -257,26 +266,26 @@ const ContactCMS = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 border rounded-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 border rounded-lg break-words">
                 <p className="font-medium">Facebook</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {contactInfo.socialMedia.facebook}
                 </p>
               </div>
-              <div className="text-center p-4 border rounded-lg">
+              <div className="text-center p-4 border rounded-lg break-words">
                 <p className="font-medium">Twitter</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {contactInfo.socialMedia.twitter}
                 </p>
               </div>
-              <div className="text-center p-4 border rounded-lg">
+              <div className="text-center p-4 border rounded-lg break-words">
                 <p className="font-medium">LinkedIn</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {contactInfo.socialMedia.linkedin}
                 </p>
               </div>
-              <div className="text-center p-4 border rounded-lg">
+              <div className="text-center p-4 border rounded-lg break-words">
                 <p className="font-medium">Instagram</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {contactInfo.socialMedia.instagram}

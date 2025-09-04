@@ -221,7 +221,9 @@ const QualityControl = () => {
       };
 
       const res = await axios.post(
-        "http://localhost:3000/api/project/site-incharge/assign-task-to-contractor",
+        `${
+          import.meta.env.VITE_URL
+        }/api/project/site-incharge/assign-task-to-contractor`,
         payload,
         { withCredentials: true }
       );
@@ -259,7 +261,7 @@ const QualityControl = () => {
   const fetchQualityIssues = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:3000/api/quality-issue/issues",
+        `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
         { withCredentials: true }
       );
       setQualityIssues(res.data.issues); // Ensure backend sends an array
@@ -281,7 +283,7 @@ const QualityControl = () => {
 
         try {
           const res = await axios.post(
-            "http://localhost:3000/api/uploads/upload",
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
@@ -298,7 +300,7 @@ const QualityControl = () => {
         evidenceImages: uploadedImageUrls,
       };
       const res = await axios.post(
-        "http://localhost:3000/api/quality-issue/create-quality-issue",
+        `${import.meta.env.VITE_URL}/api/quality-issue/create-quality-issue`,
         payload,
         { withCredentials: true }
       );
@@ -333,16 +335,15 @@ const QualityControl = () => {
   const fetchDropdownData = async () => {
     try {
       const clientsRes = await axios.get(
-        "http://localhost:3000/api/user/contractors",
+        `${import.meta.env.VITE_URL}/api/user/contractors`,
         { withCredentials: true }
       ); // Replace with your actual route
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
       setContractors(clientsRes.data.data);
-      console.log("CONTRACT : ", clientsRes);
       setProjects(projectsRes.data);
     } catch (error) {
       console.error("Error fetching dropdown data:", error);
@@ -391,415 +392,492 @@ const QualityControl = () => {
     });
 
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Quality Control</h1>
-        <p className="text-muted-foreground">
-          Manage and track quality issues across all construction projects
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
-            <AlertOctagon className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Array.isArray(qualityIssues) &&
-                qualityIssues.filter((issue) => issue.status === "open").length}
-            </div>
-            <p className="text-xs text-muted-foreground">Require attention</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Under Review</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Array.isArray(qualityIssues) &&
-                qualityIssues.filter((issue) => issue.status === "under_review")
-                  .length}
-            </div>
-            <p className="text-xs text-muted-foreground">In progress</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Array.isArray(qualityIssues) &&
-                qualityIssues.filter((issue) => issue.status === "resolved")
-                  .length}
-            </div>
-            <p className="text-xs text-muted-foreground">Last 30 days</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="all" onValueChange={setFilter}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="open">Open</TabsTrigger>
-          <TabsTrigger value="under_review">Under Review</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-        </TabsList>
-
-        <div className="flex flex-col md:flex-row justify-between my-4 gap-4">
-          <div className="flex flex-1 items-center space-x-2">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search issues..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-fit">
-                <div className="flex items-center">
-                  <Building className="h-4 w-4 mr-2" />
-                  <span>
-                    {projectFilter === "all-projects" || !projectFilter
-                      ? "All Projects"
-                      : projectFilter}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-projects">All Projects</SelectItem>
-                {projects.map((property) => (
-                  <SelectItem key={property._id} value={property._id}>
-                    {typeof property.projectTitle === "string"
-                      ? property.projectTitle
-                      : "Invalid title"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={severityFilter} onValueChange={setSeverityFilter}>
-              <SelectTrigger className="w-fit">
-                <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <span>
-                    {severityFilter === "all-severities" || !severityFilter
-                      ? "All Severities"
-                      : severityFilter.charAt(0).toUpperCase() +
-                        severityFilter.slice(1)}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-severities">All Severities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="major">Major</SelectItem>
-                <SelectItem value="minor">Minor</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <AlertOctagon className="h-4 w-4 mr-2" />
-                Report New Issue
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
-              <DialogHeader>
-                <h2 className="text-xl font-semibold">
-                  Report New Quality Issue
-                </h2>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Project</Label>
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={formData.project}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const project = projects.find(
-                        (p) => p._id === selectedId
-                      );
-                      setFormData({
-                        ...formData,
-                        project: selectedId,
-                        unit: "",
-                      }); // reset unit when project changes
-                      setSelectedProject(project);
-                    }}
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map((proj) => (
-                      <option key={proj._id} value={proj._id}>
-                        {proj.projectTitle || proj.name || "Unnamed Project"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Unit</Label>
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={formData.unit}
-                    onChange={(e) =>
-                      setFormData({ ...formData, unit: e.target.value })
-                    }
-                    disabled={!selectedProject}
-                  >
-                    <option value="">Select Unit</option>
-                    {selectedProject?.unitNames?.map((unitName) => (
-                      <option key={unitName} value={unitName}>
-                        {unitName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Contractor</Label>
-                  <Select
-                    value={formData.contractor}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, contractor: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Contractor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.isArray(contractors) &&
-                        contractors.map((c) => (
-                          <SelectItem key={c._id} value={c._id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Severity</Label>
-                  <Select
-                    value={formData.severity}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, severity: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Severity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="minor">Minor</SelectItem>
-                      <SelectItem value="major">Major</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Upload Photos</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
-                    {photos.map((photo, index) => (
-                      <div
-                        key={index}
-                        className="relative rounded-md overflow-hidden border border-border h-32"
-                      >
-                        <img
-                          src={URL.createObjectURL(photo)}
-                          alt={`Inspection ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-1 right-1 bg-black bg-opacity-60 hover:bg-opacity-80 rounded-full"
-                          onClick={() => removePhoto(index)}
-                        >
-                          <XCircle className="h-4 w-4 text-white" />
-                        </Button>
-                      </div>
-                    ))}
-
-                    {photos.length < 9 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-32 border-dashed flex flex-col"
-                        onClick={() =>
-                          document
-                            .getElementById("inspection-photo-upload")
-                            ?.click()
-                        }
-                      >
-                        <Upload className="mb-2 h-6 w-6" />
-                        <span>Add Photos</span>
-                      </Button>
-                    )}
-                  </div>
-                  <Input
-                    id="inspection-photo-upload"
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button onClick={handleSubmit} className="w-full">
-                  Submit
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+    <MainLayout>
+      <div className="space-y-6 md:p-8 p-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Quality Control</h1>
+          <p className="text-muted-foreground">
+            Manage and track quality issues across all construction projects
+          </p>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <div className="flex items-center">
-                      Issue
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
-                  <TableHead>Project / Unit</TableHead>
-                  <TableHead>Contractor</TableHead>
-                  <TableHead>Reported Date</TableHead>
-                  <TableHead>Severity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredIssues.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-6 text-muted-foreground"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
+              <AlertOctagon className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Array.isArray(qualityIssues) &&
+                  qualityIssues.filter((issue) => issue.status === "open")
+                    .length}
+              </div>
+              <p className="text-xs text-muted-foreground">Require attention</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Under Review
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Array.isArray(qualityIssues) &&
+                  qualityIssues.filter(
+                    (issue) => issue.status === "under_review"
+                  ).length}
+              </div>
+              <p className="text-xs text-muted-foreground">In progress</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {Array.isArray(qualityIssues) &&
+                  qualityIssues.filter((issue) => issue.status === "resolved")
+                    .length}
+              </div>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Tabs defaultValue="all" onValueChange={setFilter}>
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="open">Open</TabsTrigger>
+            <TabsTrigger value="under_review">Under Review</TabsTrigger>
+            <TabsTrigger value="resolved">Resolved</TabsTrigger>
+          </TabsList>
+
+          <div className="flex flex-col md:flex-row justify-between my-4 gap-4">
+            <div className="flex flex-1 items-center space-x-2 md:flex-row flex-col md:gap-0 gap-5">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search issues..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-fit">
+                  <div className="flex items-center">
+                    <Building className="h-4 w-4 mr-2" />
+                    <span>
+                      {projectFilter === "all-projects" || !projectFilter
+                        ? "All Projects"
+                        : projectFilter}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all-projects">All Projects</SelectItem>
+                  {projects.map((property) => (
+                    <SelectItem key={property._id} value={property._id}>
+                      {typeof property.projectTitle === "string"
+                        ? property.projectTitle
+                        : "Invalid title"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                <SelectTrigger className="w-fit">
+                  <div className="flex items-center">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <span>
+                      {severityFilter === "all-severities" || !severityFilter
+                        ? "All Severities"
+                        : severityFilter.charAt(0).toUpperCase() +
+                          severityFilter.slice(1)}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all-severities">All Severities</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="major">Major</SelectItem>
+                  <SelectItem value="minor">Minor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsDialogOpen(true)}>
+                  <AlertOctagon className="h-4 w-4 mr-2" />
+                  Report New Issue
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
+                <DialogHeader>
+                  <h2 className="text-xl font-semibold">
+                    Report New Quality Issue
+                  </h2>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Title</Label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Project</Label>
+                    <select
+                      className="w-full border p-2 rounded"
+                      value={formData.project}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const project = projects.find(
+                          (p) => p._id === selectedId
+                        );
+                        setFormData({
+                          ...formData,
+                          project: selectedId,
+                          unit: "",
+                        }); // reset unit when project changes
+                        setSelectedProject(project);
+                      }}
                     >
-                      No quality issues found matching your filters
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  Array.isArray(filteredIssues) &&
-                  filteredIssues.map((issue) => (
-                    <TableRow key={issue.taskId || issue.title}>
-                      {" "}
-                      {/* Ensure unique key */}
-                      <TableCell className="font-medium">
-                        <div>
-                          {issue.title}
-                          {issue.taskId && (
-                            <div className="text-xs text-muted-foreground">
-                              Task ID: {issue.taskId}
+                      <option value="">Select Project</option>
+                      {projects.map((proj) => (
+                        <option key={proj._id} value={proj._id}>
+                          {proj.projectTitle || proj.name || "Unnamed Project"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Unit</Label>
+                    <select
+                      className="w-full border p-2 rounded"
+                      value={formData.unit}
+                      onChange={(e) =>
+                        setFormData({ ...formData, unit: e.target.value })
+                      }
+                      disabled={!selectedProject}
+                    >
+                      <option value="">Select Unit</option>
+                      {selectedProject?.unitNames?.map((unitName) => (
+                        <option key={unitName} value={unitName}>
+                          {unitName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Contractor</Label>
+                    <Select
+                      value={formData.contractor}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, contractor: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(contractors) &&
+                          contractors.map((c) => (
+                            <SelectItem key={c._id} value={c._id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Severity</Label>
+                    <Select
+                      value={formData.severity}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, severity: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="minor">Minor</SelectItem>
+                        <SelectItem value="major">Major</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, status: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="under_review">
+                          Under Review
+                        </SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Upload Photos</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
+                      {photos.map((photo, index) => (
+                        <div
+                          key={index}
+                          className="relative rounded-md overflow-hidden border border-border h-32"
+                        >
+                          <img
+                            src={URL.createObjectURL(photo)}
+                            alt={`Inspection ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 bg-black bg-opacity-60 hover:bg-opacity-80 rounded-full"
+                            onClick={() => removePhoto(index)}
+                          >
+                            <XCircle className="h-4 w-4 text-white" />
+                          </Button>
+                        </div>
+                      ))}
+
+                      {photos.length < 9 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-32 border-dashed flex flex-col"
+                          onClick={() =>
+                            document
+                              .getElementById("inspection-photo-upload")
+                              ?.click()
+                          }
+                        >
+                          <Upload className="mb-2 h-6 w-6" />
+                          <span>Add Photos</span>
+                        </Button>
+                      )}
+                    </div>
+                    <Input
+                      id="inspection-photo-upload"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileChange}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button onClick={handleSubmit} className="w-full">
+                    Submit
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              {/* Desktop / Tablet Table View */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <div className="flex items-center">
+                          Issue
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </div>
+                      </TableHead>
+                      <TableHead>Project / Unit</TableHead>
+                      <TableHead>Contractor</TableHead>
+                      <TableHead>Reported Date</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredIssues.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-6 text-muted-foreground"
+                        >
+                          No quality issues found matching your filters
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      Array.isArray(filteredIssues) &&
+                      filteredIssues.map((issue) => (
+                        <TableRow key={issue.taskId || issue.title}>
+                          {/* Ensure unique key */}
+                          <TableCell className="font-medium">
+                            <div>
+                              {issue.title}
+                              {issue.taskId && (
+                                <div className="text-xs text-muted-foreground">
+                                  Task ID: {issue.taskId}
+                                </div>
+                              )}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            {issue?.project?.projectId?.basicInfo.projectName ||
+                              "Untitled Project"}{" "}
+                            / {issue?.unit || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {typeof issue.contractor === "object"
+                              ? issue.contractor?.name || "N/A"
+                              : issue.contractor || "Contractor"}
+                          </TableCell>
+                          <TableCell>
+                            {issue?.reported_date
+                              ? new Date(
+                                  issue.reported_date
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={severityColors[issue.severity]}
+                            >
+                              {issue?.severity.charAt(0).toUpperCase() +
+                                issue?.severity.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusColors[issue.status]}
+                            >
+                              {issue.status === "under_review"
+                                ? "Under Review"
+                                : issue?.status.charAt(0).toUpperCase() +
+                                  issue?.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => handleViewDetails(issue)}
+                                >
+                                  View Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleUpdateStatus(issue)}
+                                >
+                                  Update Status
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedIssue(issue);
+                                    setAssignDiaog(true);
+                                  }}
+                                >
+                                  Assign Contractor
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedIssue(issue);
+                                    setEvidenceDialogOpen(true);
+                                  }}
+                                >
+                                  View Evidence
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="block sm:hidden space-y-4 p-4">
+                {filteredIssues.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    No quality issues found matching your filters
+                  </div>
+                ) : (
+                  filteredIssues.map((issue) => (
+                    <div
+                      key={issue.taskId || issue.title}
+                      className="border rounded-xl p-4 shadow-sm bg-white"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-base">
+                            {issue.title}
+                          </h3>
+                          {issue.taskId && (
+                            <p className="text-xs text-muted-foreground">
+                              Task ID: {issue.taskId}
+                            </p>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {issue?.project?.projectId?.basicInfo.projectName ||
-                          "Untitled Project"}{" "}
-                        / {issue?.unit || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {typeof issue.contractor === "object"
-                          ? issue.contractor?.name || "N/A"
-                          : issue.contractor || "Contractor"}
-                      </TableCell>
-                      <TableCell>
-                        {issue?.reported_date
-                          ? new Date(issue.reported_date).toLocaleDateString()
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={severityColors[issue.severity]}
-                        >
-                          {issue?.severity.charAt(0).toUpperCase() +
-                            issue?.severity.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusColors[issue.status]}
-                        >
-                          {issue.status === "under_review"
-                            ? "Under Review"
-                            : issue?.status.charAt(0).toUpperCase() +
-                              issue?.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-5 w-5" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -832,314 +910,353 @@ const QualityControl = () => {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 text-sm">
+                        <p>
+                          <strong>Project:</strong>{" "}
+                          {issue?.project?.projectId?.basicInfo.projectName ||
+                            "Untitled Project"}{" "}
+                          / {issue?.unit || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Contractor:</strong>{" "}
+                          {typeof issue.contractor === "object"
+                            ? issue.contractor?.name
+                            : issue.contractor}
+                        </p>
+                        <p>
+                          <strong>Date:</strong>{" "}
+                          {issue?.reported_date
+                            ? new Date(issue.reported_date).toLocaleDateString()
+                            : "N/A"}
+                        </p>
+                        <p>
+                          <strong>Severity:</strong>{" "}
+                          <Badge
+                            variant="outline"
+                            className={severityColors[issue.severity]}
+                          >
+                            {issue?.severity.charAt(0).toUpperCase() +
+                              issue?.severity.slice(1)}
+                          </Badge>
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{" "}
+                          <Badge
+                            variant="outline"
+                            className={statusColors[issue.status]}
+                          >
+                            {issue.status === "under_review"
+                              ? "Under Review"
+                              : issue?.status.charAt(0).toUpperCase() +
+                                issue?.status.slice(1)}
+                          </Badge>
+                        </p>
+                      </div>
+                    </div>
                   ))
                 )}
-              </TableBody>
-            </Table>
+              </div>
 
-            {/* Dialog to display issue details */}
-            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-              <DialogContent className="max-w-xl">
-                <div className="flex justify-between items-start">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold">
-                      Issue Details
-                    </DialogTitle>
-                  </DialogHeader>
-                  {/* <DialogClose asChild>
-                      <Button variant="ghost" size="icon">
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </DialogClose> */}
-                </div>
-                {selectedIssue && (
-                  <div className="grid gap-4 mt-2 text-sm">
-                    <div>
-                      <strong>Title:</strong> {selectedIssue.title}
-                    </div>
-                    <div>
-                      <strong>Task ID:</strong> {selectedIssue.taskId || "N/A"}
-                    </div>
-                    <div>
-                      <strong>Project:</strong>{" "}
-                      {selectedIssue?.project?.projectId?.basicInfo
-                        .projectName || "N/A"}
-                    </div>
-                    <div>
-                      <strong>Unit:</strong> {selectedIssue.unit || "N/A"}
-                    </div>
-                    <div>
-                      <strong>Contractor:</strong>{" "}
-                      {typeof selectedIssue.contractor === "object"
-                        ? selectedIssue.contractor?.name
-                        : selectedIssue.contractor}
-                    </div>
-                    <div>
-                      <strong>Reported Date:</strong>{" "}
-                      {new Date(
-                        selectedIssue.reported_date
-                      ).toLocaleDateString()}
-                    </div>
-                    <div>
-                      <strong>Severity:</strong> {selectedIssue.severity}
-                    </div>
-                    <div>
-                      <strong>Status:</strong> {selectedIssue.status}
-                    </div>
-                    <div>
-                      <strong>Description:</strong>{" "}
-                      {selectedIssue.description || "No description provided."}
-                    </div>
+              {/* Dialog to display issue details */}
+              <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
+                  <div className="flex justify-between items-start">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-semibold">
+                        Issue Details
+                      </DialogTitle>
+                    </DialogHeader>
                   </div>
-                )}
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-              <DialogContent className="max-w-sm">
-                <div className="flex justify-between items-start">
-                  <DialogHeader>
-                    <DialogTitle>Update Status</DialogTitle>
-                  </DialogHeader>
-                  {/* <DialogClose asChild>
-                      <Button variant="ghost" size="icon">
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </DialogClose> */}
-                </div>
-
-                <div className="grid gap-4 mt-4">
-                  <div className="flex gap-2 justify-between">
-                    {["open", "under_review", "resolved"].map((status) => (
-                      <Button
-                        key={status}
-                        variant={newStatus === status ? "default" : "outline"}
-                        onClick={() => setNewStatus(status)}
-                        className="flex-1 capitalize"
-                      >
-                        {status.replace("_", " ")}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStatusDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        try {
-                          await axios.patch(
-                            `http://localhost:3000/api/quality-issue/issues/${selectedIssue._id}/status`,
-                            {
-                              status: newStatus,
-                            }
-                          );
-
-                          // // Update local data (example: using setFilteredIssues if you maintain state)
-                          // setFilteredIssues(prev =>
-                          //   prev.map((i) =>
-                          //     i._id === selectedIssue._id ? { ...i, status: newStatus } : i
-                          //   )
-                          // )
-
-                          setStatusDialogOpen(false);
-                          fetchQualityIssues();
-                        } catch (err) {
-                          console.error("Failed to update status", err);
-                          // Optionally show error toast
-                        }
-                      }}
-                    >
-                      Save Status
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog
-              open={evidenceDialogOpen}
-              onOpenChange={setEvidenceDialogOpen}
-            >
-              <DialogContent className="max-w-3xl w-full p-6 rounded-2xl shadow-xl transition-all duration-300">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5 text-blue-500" />
-                    Evidence Photos
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground">
-                    These are the photos submitted as evidence for the selected
-                    issue.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="mt-4">
-                  {selectedIssue && selectedIssue.evidenceImages.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {selectedIssue.evidenceImages.map((src, idx) => (
-                        <div
-                          key={idx}
-                          className="rounded-xl overflow-hidden shadow-md hover:scale-105 transition-transform duration-300 bg-white"
-                        >
-                          <img
-                            src={src}
-                            alt={`evidence-${idx}`}
-                            className="w-full h-48 object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground gap-2">
-                      <AlertCircle className="w-8 h-8 text-gray-400" />
-                      <p className="text-lg font-medium">
-                        No evidence uploaded
-                      </p>
-                      <p className="text-sm">
-                        This issue has no images attached yet.
-                      </p>
+                  {selectedIssue && (
+                    <div className="grid gap-4 mt-2 text-sm">
+                      <div>
+                        <strong>Title:</strong> {selectedIssue.title}
+                      </div>
+                      <div>
+                        <strong>Task ID:</strong>{" "}
+                        {selectedIssue.taskId || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Project:</strong>{" "}
+                        {selectedIssue?.project?.projectId?.basicInfo
+                          .projectName || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Unit:</strong> {selectedIssue.unit || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Contractor:</strong>{" "}
+                        {typeof selectedIssue.contractor === "object"
+                          ? selectedIssue.contractor?.name
+                          : selectedIssue.contractor}
+                      </div>
+                      <div>
+                        <strong>Reported Date:</strong>{" "}
+                        {new Date(
+                          selectedIssue.reported_date
+                        ).toLocaleDateString()}
+                      </div>
+                      <div>
+                        <strong>Severity:</strong> {selectedIssue.severity}
+                      </div>
+                      <div>
+                        <strong>Status:</strong> {selectedIssue.status}
+                      </div>
+                      <div>
+                        <strong>Description:</strong>{" "}
+                        {selectedIssue.description ||
+                          "No description provided."}
+                      </div>
                     </div>
                   )}
-                </div>
+                </DialogContent>
+              </Dialog>
 
-                <DialogFooter className="pt-6">
-                  <Button
-                    onClick={() => setEvidenceDialogOpen(false)}
-                    variant="outline"
-                  >
-                    Close
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
-      </Tabs>
+              <Dialog
+                open={statusDialogOpen}
+                onOpenChange={setStatusDialogOpen}
+              >
+                <DialogContent className="max-w-sm">
+                  <div className="flex justify-between items-start">
+                    <DialogHeader>
+                      <DialogTitle>Update Status</DialogTitle>
+                    </DialogHeader>
+                  </div>
 
-      <Dialog open={assignDialog} onOpenChange={setAssignDiaog}>
-        <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
-          <DialogHeader>
-            <DialogTitle>Assign the task to Contractor</DialogTitle>
-            <DialogDescription>
-              To assign the task fill in all the details below.
-            </DialogDescription>
-          </DialogHeader>
+                  <div className="grid gap-4 mt-4">
+                    <div className="flex gap-2 justify-between">
+                      {["open", "under_review", "resolved"].map((status) => (
+                        <Button
+                          key={status}
+                          variant={newStatus === status ? "default" : "outline"}
+                          onClick={() => setNewStatus(status)}
+                          className="flex-1 capitalize"
+                        >
+                          {status.replace("_", " ")}
+                        </Button>
+                      ))}
+                    </div>
 
-          <form className="space-y-4 pt-4" onSubmit={handleAssignContractor}>
-            <div className="space-y-2">
-              <Label htmlFor="title">Task Title</Label>
-              <p className="border p-2 rounded bg-gray-100 text-sm">
-                {selectedIssue?.title || "No title to this issue"}
-              </p>
-            </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setStatusDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            await axios.patch(
+                              `${
+                                import.meta.env.VITE_URL
+                              }/api/quality-issue/issues/${
+                                selectedIssue._id
+                              }/status`,
+                              {
+                                status: newStatus,
+                              }
+                            );
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the task details"
-                rows={3}
-                required
-              />
-            </div>
+                            setStatusDialogOpen(false);
+                            fetchQualityIssues();
+                          } catch (err) {
+                            console.error("Failed to update status", err);
+                          }
+                        }}
+                      >
+                        Save Status
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
-            <div className="grid gap-2">
-              <Label>Project</Label>
-              <p className="border p-2 rounded bg-gray-100 text-sm">
-                {selectedIssue?.project?.projectId?.basicInfo?.projectName ||
-                  "Untitled Project"}
-              </p>
-            </div>
+              <Dialog
+                open={evidenceDialogOpen}
+                onOpenChange={setEvidenceDialogOpen}
+              >
+                <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-2xl shadow-xl transition-all duration-300">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5 text-blue-500" />
+                      Evidence Photos
+                    </DialogTitle>
+                    <DialogDescription className="text-sm text-muted-foreground">
+                      These are the photos submitted as evidence for the
+                      selected issue.
+                    </DialogDescription>
+                  </DialogHeader>
 
-            <div className="grid gap-2">
-              <Label>Unit</Label>
-              <p className="border p-2 rounded bg-gray-100 text-sm">
-                {selectedIssue?.unit || "N/A"}
-              </p>
-            </div>
+                  <div className="mt-4">
+                    {selectedIssue &&
+                    selectedIssue.evidenceImages.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {selectedIssue.evidenceImages.map((src, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-xl overflow-hidden shadow-md hover:scale-105 transition-transform duration-300 bg-white"
+                          >
+                            <img
+                              src={src}
+                              alt={`evidence-${idx}`}
+                              className="w-full h-48 object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground gap-2">
+                        <AlertCircle className="w-8 h-8 text-gray-400" />
+                        <p className="text-lg font-medium">
+                          No evidence uploaded
+                        </p>
+                        <p className="text-sm">
+                          This issue has no images attached yet.
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-            <div className="grid gap-2">
-              <Label>Contractor</Label>
-              <Select onValueChange={(value) => setSelectedContractorId(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Contractor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(contractors) &&
-                    contractors.map((c) => (
-                      <SelectItem key={c._id} value={c._id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+                  <DialogFooter className="pt-6">
+                    <Button
+                      onClick={() => setEvidenceDialogOpen(false)}
+                      variant="outline"
+                    >
+                      Close
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        </Tabs>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Dialog open={assignDialog} onOpenChange={setAssignDiaog}>
+          <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
+            <DialogHeader>
+              <DialogTitle>Assign the task to Contractor</DialogTitle>
+              <DialogDescription>
+                To assign the task fill in all the details below.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form className="space-y-4 pt-4" onSubmit={handleAssignContractor}>
               <div className="space-y-2">
-                <Label htmlFor="phase">Construction Phase</Label>
-                <Select value={phase} onValueChange={setPhase} required>
-                  <SelectTrigger id="phase">
-                    <SelectValue placeholder="Select phase" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CONSTRUCTION_PHASES).map(([key, value]) => (
-                      <SelectItem key={key} value={key}>
-                        {value.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="title">Task Title</Label>
+                <p className="border p-2 rounded bg-gray-100 text-sm">
+                  {selectedIssue?.title || "No title to this issue"}
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger id="priority">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Deadline</Label>
-              <div className="border rounded-md p-2">
-                <DatePicker
-                  date={deadline}
-                  setDate={setDeadline}
-                  showMonthYearDropdowns
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe the task details"
+                  rows={3}
+                  required
                 />
               </div>
-            </div>
 
-            <DialogFooter className="pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAssignDiaog(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Confirm Assignment</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <div className="grid gap-2">
+                <Label>Project</Label>
+                <p className="border p-2 rounded bg-gray-100 text-sm">
+                  {selectedIssue?.project?.projectId?.basicInfo?.projectName ||
+                    "Untitled Project"}
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Unit</Label>
+                <p className="border p-2 rounded bg-gray-100 text-sm">
+                  {selectedIssue?.unit || "N/A"}
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Contractor</Label>
+                <Select
+                  onValueChange={(value) => setSelectedContractorId(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Contractor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.isArray(contractors) &&
+                      contractors.map((c) => (
+                        <SelectItem key={c._id} value={c._id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phase">Construction Phase</Label>
+                  <Select value={phase} onValueChange={setPhase} required>
+                    <SelectTrigger id="phase">
+                      <SelectValue placeholder="Select phase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CONSTRUCTION_PHASES).map(
+                        ([key, value]) => (
+                          <SelectItem key={key} value={key}>
+                            {value.title}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger id="priority">
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Deadline</Label>
+                <div className="border rounded-md p-2">
+                  <DatePicker
+                    date={deadline}
+                    setDate={setDeadline}
+                    showMonthYearDropdowns
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAssignDiaog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Confirm Assignment</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </MainLayout>
   );
 };
 

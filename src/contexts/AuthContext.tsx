@@ -41,9 +41,12 @@ interface AuthContextType {
 }
 
 export const getCsrfToken = async () => {
-  const response = await axios.get("http://localhost:3000/api/csrf-token", {
-    withCredentials: true,
-  });
+  const response = await axios.get(
+    `${import.meta.env.VITE_URL}/api/csrf-token`,
+    {
+      withCredentials: true,
+    }
+  );
   return response.data.csrfToken;
 };
 
@@ -52,7 +55,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: false,
   login: async () => {},
-  logout: () => {},
+  logout: async () => {}, // Make async
   isAuthenticated: false,
 });
 
@@ -67,12 +70,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const fetchLoggedInUser = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/user/getLoggedInUser",
+        `${import.meta.env.VITE_URL}/api/user/getLoggedInUser`,
         { withCredentials: true }
       );
       setUser(data);
     } catch (error) {
-      console.log("failed to load logged in user ", error);
+      if (error.response?.status === 401) {
+        setUser(null);
+      } else {
+        console.log("failed to load logged in user ", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -87,20 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-
     try {
       console.log(email, password);
       const { data } = await axios.post(
-        "http://localhost:3000/api/user/login",
-        {
-          email,
-          password,
-        },
+        `${import.meta.env.VITE_URL}/api/user/login`,
+        { email, password },
         { withCredentials: true }
       );
-
-      localStorage.setItem("token", data.token); // ⬅️ store JWT
-      // localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}`);
     } catch (error: any) {
@@ -114,10 +114,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    toast.info("You have been logged out");
+  const logout = async () => {
+    // Make async
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/user/logout`,
+        {},
+        { withCredentials: true }
+      );
+      setUser(null);
+      toast.info("You have been logged out");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+    }
   };
 
   return (

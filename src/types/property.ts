@@ -11,6 +11,7 @@ export type VillaFacing =
   | "South-West";
 
 export type CustomerStatus = "Purchased" | "Inquiry" | "Blocked" | "Open";
+export type ProjectStatus = "ongoing" | "upcoming" | "completed";
 
 export type PropertyStatus =
   | "Available"
@@ -35,10 +36,11 @@ export interface Property {
   villaFacing: VillaFacing;
   extent: number;
   propertyType: PropertyType;
-  customerId: User;
   customerName: string;
   customerStatus: CustomerStatus;
   status: PropertyStatus;
+  projectStatus: ProjectStatus;
+  preBooking?: boolean;
   contractor?: string;
   siteIncharge?: string;
   totalAmount: number;
@@ -46,7 +48,7 @@ export interface Property {
   deliveryDate: string;
   emiScheme: boolean;
   contactNo?: string;
-  agentId?: User;
+  agentName?: string;
   registrationStatus: RegistrationStatus;
   ratePlan?: string;
   amountReceived: number;

@@ -147,7 +147,7 @@ const ContractorTaskList = () => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
-        console.log(newLocations)
+        console.log(newLocations);
       } catch (err) {
         console.warn("GPS access denied or unavailable");
         newLocations.push({ latitude: 0, longitude: 0 }); // fallback or null
@@ -159,10 +159,9 @@ const ContractorTaskList = () => {
   };
 
   const removePhoto = (indexToRemove: number) => {
-  setPhotos((prev) => prev.filter((_, i) => i !== indexToRemove));
-  setPhotoLocations((prev) => prev.filter((_, i) => i !== indexToRemove));
-};
-
+    setPhotos((prev) => prev.filter((_, i) => i !== indexToRemove));
+    setPhotoLocations((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
 
   const mapStatus = (status: string): Task["status"] => {
     switch (status.toLowerCase()) {
@@ -195,7 +194,7 @@ const ContractorTaskList = () => {
   const fetchTasks = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3000/api/project/tasks",
+        `${import.meta.env.VITE_URL}/api/project/tasks`,
         { withCredentials: true }
       );
       const mapped = response.data.map((task: any, index: number) => ({
@@ -229,7 +228,7 @@ const ContractorTaskList = () => {
 
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/uploads/upload",
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -254,7 +253,9 @@ const ContractorTaskList = () => {
     // 3. Send inspection data to backend
     try {
       await axios.patch(
-        `http://localhost:3000/api/project/contractor/${selectedTask.projectId}/${selectedTask._id}/task`,
+        `${import.meta.env.VITE_URL}/api/project/contractor/${
+          selectedTask.projectId
+        }/${selectedTask._id}/task`,
         newTask,
         { withCredentials: true }
       );
@@ -277,7 +278,9 @@ const ContractorTaskList = () => {
   const handleEditTask = async () => {
     try {
       const res = await axios.put(
-        `http://localhost:3000/api/project/contractor/${selectedTask.projectId}/${selectedTask._id}/mini/task`,
+        `${import.meta.env.VITE_URL}/api/project/contractor/${
+          selectedTask.projectId
+        }/${selectedTask._id}/mini/task`,
         {
           phase: selectedPhase,
           progress: progress,
@@ -302,7 +305,7 @@ const ContractorTaskList = () => {
   };
 
   useEffect(() => {
-    fetchTasks()
+    fetchTasks();
   }, []);
 
   let filteredTasks = [];

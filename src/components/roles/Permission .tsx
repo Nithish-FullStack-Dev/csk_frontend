@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,7 @@ export default function Permission() {
     };
 
     try {
-      await axios.post("http://localhost:3000/api/role/addRole", payload);
+      await axios.post(`${import.meta.env.VITE_URL}/api/role/addRole`, payload);
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
@@ -121,50 +121,23 @@ export default function Permission() {
     setAccessMatrix({});
   };
 
-  const fetchRolePermissions = async (role: UserRole) => {
-  try {
-    const res = await axios.get(
-      `http://localhost:3000/api/role/getRole/${role}`
-    );
-
-    const roleData = res.data;
-    const matrix: Record<string, boolean> = {};
-
-    roleData.permissions.forEach((perm: any) => {
-      const { module, submodule, actions } = perm;
-      for (const [action, isEnabled] of Object.entries(actions)) {
-        const key = `${role}-${module}-${submodule}-${action}`;
-        matrix[key] = isEnabled;
-      }
-    });
-
-    setAccessMatrix(matrix);
-  } catch (error) {
-    console.error("Failed to fetch role permissions", error);
-    toast.error("Failed to load permissions for this role");
-  }
-};
-
-// Call when component loads or role changes
-useEffect(() => {
-  fetchRolePermissions(selectedRole);
-}, [selectedRole]);
-
   return (
     <div className="p-2 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Permission Matrix</CardTitle>
+          <CardTitle className="text-lg md:text-xl">
+            Permission Matrix
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex justify-between items-end">
-            <div className="flex flex-col gap-2 w-[50%]">
-              <Label>Select Role</Label>
+        <CardContent className="md:space-y-6 space-y-2">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+            <div className="flex flex-col gap-2 w-full md:w-[50%]">
+              <Label className="text-sm md:text-base">Select Role</Label>
               <Select
                 onValueChange={(val: UserRole) => setSelectedRole(val)}
                 value={selectedRole}
               >
-                <SelectTrigger className="w-[60%]">
+                <SelectTrigger className="w-full md:w-[60%]">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -178,68 +151,79 @@ useEffect(() => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap md:flex-nowrap">
               <Button
                 variant="outline"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 w-full md:w-auto"
                 onClick={handleReset}
               >
                 <RotateCcw className="w-4 h-4" /> Reset
               </Button>
-              <Button className="flex items-center gap-1" onClick={handleSave}>
+              <Button
+                className="flex items-center gap-1 w-full md:w-auto"
+                onClick={handleSave}
+              >
                 <Save className="w-4 h-4" /> Save Changes
               </Button>
             </div>
           </div>
 
           {Object.entries(moduleConfig).map(([module, submodules]) => (
-            <div key={module} className="border p-4 rounded-md  mb-6 space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <h5 className="text-[10px] font-medium  text-black-600 border rounded-full px-3 py-1 shadow-sm font-sans">
+            <div
+              key={module}
+              className="border p-4 rounded-md mb-6 space-y-4 overflow-x-auto"
+            >
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <h5 className="text-[10px] font-medium text-black-600 border rounded-full px-3 py-1 shadow-sm font-sans">
                   {module.split(" ")[0]}
                 </h5>
-                <h3 className="font-medium text-lg">{module}</h3>
+                <h3 className="font-medium text-base md:text-lg">{module}</h3>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px] text-left font-semibold">
-                      Module
-                    </TableHead>
-                    {permissions.map((perm) => (
-                      <TableHead
-                        key={perm}
-                        className="capitalize text-center w-[100px]"
-                      >
-                        {perm.replace("_", " ")}
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[150px] md:w-[200px] text-left font-semibold">
+                        Module
                       </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {submodules.map((sub) => (
-                    <TableRow key={sub}>
-                      <TableCell className="text-left font-medium">
-                        {sub}
-                      </TableCell>
-                      {permissions.map((perm) => {
-                        const key = `${selectedRole}-${module}-${sub}-${perm}`;
-                        const isActive = !!accessMatrix[key];
-                        return (
-                          <TableCell key={perm} className="text-center">
-                            <Switch
-                              checked={isActive}
-                              onCheckedChange={() =>
-                                togglePermission(module, sub, perm)
-                              }
-                            />
-                          </TableCell>
-                        );
-                      })}
+                      {permissions.map((perm) => (
+                        <TableHead
+                          key={perm}
+                          className="capitalize text-center min-w-[90px] md:w-[100px]"
+                        >
+                          {perm.replace("_", " ")}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {submodules.map((sub) => (
+                      <TableRow key={sub}>
+                        <TableCell className="text-left font-medium whitespace-nowrap">
+                          {sub}
+                        </TableCell>
+                        {permissions.map((perm) => {
+                          const key = `${selectedRole}-${module}-${sub}-${perm}`;
+                          const isActive = !!accessMatrix[key];
+                          return (
+                            <TableCell
+                              key={perm}
+                              className="text-center min-w-[90px]"
+                            >
+                              <Switch
+                                checked={isActive}
+                                onCheckedChange={() =>
+                                  togglePermission(module, sub, perm)
+                                }
+                              />
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ))}
         </CardContent>

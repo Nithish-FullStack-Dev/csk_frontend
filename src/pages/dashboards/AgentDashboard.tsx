@@ -31,8 +31,10 @@ import { toast } from "sonner";
 import axios from "axios";
 import { fetchLeads, Lead } from "../agent/LeadManagement";
 import { useAuth } from "@/contexts/AuthContext";
-import { SiteVisitData } from "../agent/SiteVisits";
+// import  from "../agent/SiteVisits";
 import Loader from "@/components/Loader";
+import { SiteVisitData } from "../agent/SiteVisits";
+import MainLayout from "@/components/layout/MainLayout";
 
 const AgentDashboard = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -41,7 +43,7 @@ const AgentDashboard = () => {
 
   const fetchSiteVisitsOfAgent = async () => {
     const { data } = await axios.get(
-      `http://localhost:3000/api/siteVisit/getSiteVisitById/${user?._id}`,
+      `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitById/${user?._id}`,
       { withCredentials: true }
     );
     return data;
@@ -49,7 +51,7 @@ const AgentDashboard = () => {
   const isAgent = user && user.role === "agent";
 
   const {
-    data: siteVisitOfAgent,
+    data: siteVisitOfAgent = [],
     isLoading: agentLoading,
     isError: agentError,
     error: agentErr,
@@ -60,6 +62,16 @@ const AgentDashboard = () => {
     staleTime: 0,
   });
 
+  const { data: leads = [] } = useQuery<Lead[]>({
+    queryKey: ["leads"],
+    queryFn: fetchLeads,
+  });
+
+  const handleBookingSiteVisit = () => {
+    toast.success("Site visit booking initiated. Please complete the form.");
+    setIsBookingOpen(true);
+  };
+
   if (agentLoading) {
     return <Loader />;
   }
@@ -67,18 +79,10 @@ const AgentDashboard = () => {
   if (agentError) {
     toast.error("Failed to fetch agent's site visits.");
     console.error("Fetch agent site visits error:", agentErr);
+  }
 
-    const handleBookingSiteVisit = () => {
-      toast.success("Site visit booking initiated. Please complete the form.");
-      setIsBookingOpen(true);
-    };
-
-    const { data: leads = [] } = useQuery<Lead[]>({
-      queryKey: ["leads"],
-      queryFn: fetchLeads,
-    });
-
-    return (
+  return (
+    <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -154,7 +158,7 @@ const AgentDashboard = () => {
           />
           <StatCard
             title="Scheduled Visits"
-            value={siteVisitOfAgent.length}
+            value={siteVisitOfAgent.length.toString()}
             icon={<Calendar className="h-6 w-6 text-estate-teal" />}
           />
           <StatCard
@@ -224,14 +228,16 @@ const AgentDashboard = () => {
                           {lead?.property?.basicInfo?.projectName || "NA"}
                         </td>
                         <td>
-                          {new Date(lead.lastContact).toLocaleDateString(
-                            "en-IN",
-                            {
-                              day: "2-digit",
-                              year: "numeric",
-                              month: "short",
-                            }
-                          ) || "N/A"}
+                          {lead.lastContact
+                            ? new Date(lead.lastContact).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  year: "numeric",
+                                  month: "short",
+                                }
+                              )
+                            : "N/A"}
                         </td>
                         <td>
                           <div className="flex space-x-2">
@@ -240,7 +246,7 @@ const AgentDashboard = () => {
                               className="bg-estate-navy hover:bg-estate-navy/90"
                               onClick={() => navigate("/leads")}
                             >
-                              <Calendar className="h-4 w-4 mr-1" /> view Details
+                              <Calendar className="h-4 w-4 mr-1" /> View Details
                             </Button>
                           </div>
                         </td>
@@ -254,7 +260,7 @@ const AgentDashboard = () => {
         </Card>
 
         <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Book a Site Visit</DialogTitle>
               <DialogDescription>
@@ -272,7 +278,7 @@ const AgentDashboard = () => {
                 redirected.
               </p>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex md:flex-row flex-col items-center md:gap-0 gap-5">
               <Button variant="outline" onClick={() => setIsBookingOpen(false)}>
                 Cancel
               </Button>
@@ -283,8 +289,8 @@ const AgentDashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    );
-  }
+    </MainLayout>
+  );
 };
 
 export default AgentDashboard;

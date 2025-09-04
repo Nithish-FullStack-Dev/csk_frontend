@@ -27,6 +27,7 @@ const PublicHeader = () => {
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const location = useLocation();
   const dropdownTimeoutRef = useRef<number | null>(null);
+  const currentPath = location.pathname;
 
   useEffect(() => {
     const handleScroll = () => setIsSticky(window.scrollY > 70);
@@ -97,7 +98,7 @@ const PublicHeader = () => {
             <Link to="/public" className="flex items-center flex-shrink-0">
               <div className="w-24 md:w-28 transition-transform duration-500 hover:scale-105">
                 <img
-                  src="/assets/images/logo.png"
+                  src={"/assets/images/logo.png"}
                   alt="CSK Realtors Logo"
                   className="h-full w-full object-contain"
                 />
@@ -142,19 +143,30 @@ const PublicHeader = () => {
                           transition={{ duration: 0.2, ease: "easeOut" }}
                           className="absolute left-1/2 -translate-x-1/2 mt-0.5 w-60 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-100 z-50 origin-top"
                         >
-                          {item.dropdown.map((subItem) => (
-                            <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              onClick={() => {
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                                setShowDropdown(false);
-                              }}
-                              className="block px-5 py-3 text-base text-gray-700 hover:bg-gray-50 hover:text-estate-gold transition-colors duration-200"
-                            >
-                              {subItem.name}
-                            </Link>
-                          ))}
+                          {item.dropdown.map((subItem) => {
+                            const isActive = currentPath === subItem.href;
+
+                            return (
+                              <Link
+                                key={subItem.name}
+                                to={subItem.href}
+                                onClick={() => {
+                                  window.scrollTo({
+                                    top: 0,
+                                    behavior: "smooth",
+                                  });
+                                  setShowDropdown(false);
+                                }}
+                                className={`block px-5 py-3 text-base transition-colors duration-200 ${
+                                  isActive
+                                    ? "text-estate-gold font-semibold bg-gray-50"
+                                    : "text-gray-700 hover:bg-gray-50 hover:text-estate-gold"
+                                }`}
+                              >
+                                {subItem.name}
+                              </Link>
+                            );
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>

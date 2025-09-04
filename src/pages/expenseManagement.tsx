@@ -74,7 +74,7 @@ const ExpenseManagementPage = () => {
 
   const fetchExpenses = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/expenses", {
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/expenses`, {
         withCredentials: true,
       });
       setExpenses(res.data || []);
@@ -86,7 +86,9 @@ const ExpenseManagementPage = () => {
   const handleExpenseApproval = async () => {
     try {
       await axios.put(
-        `http://localhost:3000/api/expenses/${selectedExpense._id}/owner-approval`,
+        `${import.meta.env.VITE_URL}/api/expenses/${
+          selectedExpense._id
+        }/owner-approval`,
         { status: approvalStatus, notes: ownerNotes },
         { withCredentials: true }
       );

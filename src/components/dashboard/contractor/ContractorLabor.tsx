@@ -106,9 +106,12 @@ const ContractorLabor = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/labor", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/labor  `,
+        {
+          withCredentials: true,
+        }
+      );
       setTeams(response.data);
     } catch (error: any) {
       console.error("Failed to fetch labor teams:", error);
@@ -123,7 +126,7 @@ const ContractorLabor = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -134,24 +137,27 @@ const ContractorLabor = () => {
   };
 
   const handleSaveAttendance = async () => {
-  try {
-    const payload = {
-      date: attendanceDate,
-      present,
-      absent,
-    };
+    try {
+      const payload = {
+        date: attendanceDate,
+        present,
+        absent,
+      };
 
-    await axios.post(`http://localhost:3000/api/labor/${selectedTeam._id}/attendance`, payload,{withCredentials:true});
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam._id}/attendance`,
+        payload,
+        { withCredentials: true }
+      );
 
-    toast.success("Attendance recorded successfully");
-    fetchTeams();
-    setAttendanceDialogOpen(false);
-  } catch (error) {
-    console.error("Failed to save attendance", error);
-    toast.error("Failed to record attendance");
-  }
-};
-
+      toast.success("Attendance recorded successfully");
+      fetchTeams();
+      setAttendanceDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to save attendance", error);
+      toast.error("Failed to record attendance");
+    }
+  };
 
   useEffect(() => {
     fetchTeams();
@@ -170,9 +176,13 @@ const ContractorLabor = () => {
 
   const handleSubmit = async (data: LaborTeamFormValues) => {
     try {
-      const res = await axios.post("http://localhost:3000/api/labor", data, {
-        withCredentials: true,
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/labor`,
+        data,
+        {
+          withCredentials: true,
+        }
+      );
 
       // Assuming response returns the newly created team
       const newTeam = res.data;
@@ -285,85 +295,154 @@ const ContractorLabor = () => {
         </Button>
       </div>
 
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Team Name</TableHead>
-              <TableHead>Supervisor</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Workers</TableHead>
-              <TableHead>Daily Wage (₹)</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTeams.length === 0 ? (
+      <div className="border rounded-md">
+        {/* Table for desktop */}
+        <div className="hidden md:block overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  No labor teams found.
-                </TableCell>
+                <TableHead>Team Name</TableHead>
+                <TableHead>Supervisor</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Workers</TableHead>
+                <TableHead>Daily Wage (₹)</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredTeams.map((team) => (
-                <TableRow key={team.id}>
-                  <TableCell className="font-medium">{team.name}</TableCell>
-                  <TableCell>{team.supervisor}</TableCell>
-                  <TableCell>{team.type}</TableCell>
-                  <TableCell>{team.members}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {team.wage}
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[150px] truncate"
-                    title={team.project}
-                  >
-                    {team.project.projectId.basicInfo.projectName}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        team.status === "Active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {team.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => viewTeam(team)}
-                      >
-                        Details
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => viewAttendance(team)}
-                      >
-                        Attendance
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {filteredTeams.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    No labor teams found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredTeams.map((team) => (
+                  <TableRow key={team.id}>
+                    <TableCell className="font-medium">{team.name}</TableCell>
+                    <TableCell>{team.supervisor}</TableCell>
+                    <TableCell>{team.type}</TableCell>
+                    <TableCell>{team.members}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {team.wage}
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[150px] truncate"
+                      title={team.project}
+                    >
+                      {team.project.projectId.basicInfo.projectName}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          team.status === "Active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {team.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => viewTeam(team)}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => viewAttendance(team)}
+                        >
+                          Attendance
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Card layout for mobile */}
+        <div className="md:hidden space-y-4 p-2">
+          {filteredTeams.length === 0 ? (
+            <div className="text-center py-4 text-sm text-gray-500">
+              No labor teams found.
+            </div>
+          ) : (
+            filteredTeams.map((team) => (
+              <div
+                key={team.id}
+                className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold">{team.name}</h3>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      team.status === "Active"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {team.status}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Supervisor:</span>{" "}
+                  {team.supervisor}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Type:</span> {team.type}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Workers:</span> {team.members}
+                </p>
+                <p className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Daily Wage:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {team.wage}
+                </p>
+                <p className="text-sm text-gray-600 truncate">
+                  <span className="font-medium">Project:</span>{" "}
+                  {team.project.projectId.basicInfo.projectName}
+                </p>
+
+                <div className="flex space-x-2 pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => viewTeam(team)}
+                  >
+                    Details
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => viewAttendance(team)}
+                  >
+                    Attendance
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Add Labor Team Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Labor Team</DialogTitle>
           </DialogHeader>
@@ -623,7 +702,9 @@ const ContractorLabor = () => {
                   <h4 className="text-sm font-medium text-muted-foreground">
                     Average Attendance
                   </h4>
-                  <p className="text-base">{selectedTeam.attendancePercentage}%</p>
+                  <p className="text-base">
+                    {selectedTeam.attendancePercentage}%
+                  </p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">
@@ -715,7 +796,16 @@ const ContractorLabor = () => {
 
                         return (
                           <TableRow key={record._id}>
-                            <TableCell>{new Date(record.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
+                            <TableCell>
+                              {new Date(record.date).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }
+                              )}
+                            </TableCell>
                             <TableCell>{record.present}</TableCell>
                             <TableCell>{record.absent}</TableCell>
                             <TableCell>

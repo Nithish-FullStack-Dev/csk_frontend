@@ -27,6 +27,13 @@ import {
   Target,
 } from "lucide-react";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Sample data for charts
 const monthlySalesData = [
@@ -69,336 +76,375 @@ const topPerformersData = [
 
 const SalesOverview = () => {
   const [timeframe, setTimeframe] = useState("ytd");
+  const [activeTab, setActiveTab] = useState("performance");
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Sales Overview</h1>
-          <p className="text-muted-foreground">
-            Analyzing sales performance and trends
-          </p>
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Sales Overview</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Analyzing sales performance and trends
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant={timeframe === "mtd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("mtd")}
+            >
+              Month to Date
+            </Badge>
+            <Badge
+              variant={timeframe === "qtd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("qtd")}
+            >
+              Quarter to Date
+            </Badge>
+            <Badge
+              variant={timeframe === "ytd" ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setTimeframe("ytd")}
+            >
+              Year to Date
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center space-x-2 mt-4 md:mt-0">
-          <Badge
-            variant={timeframe === "mtd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("mtd")}
-          >
-            Month to Date
-          </Badge>
-          <Badge
-            variant={timeframe === "qtd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("qtd")}
-          >
-            Quarter to Date
-          </Badge>
-          <Badge
-            variant={timeframe === "ytd" ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setTimeframe("ytd")}
-          >
-            Year to Date
-          </Badge>
-        </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Sales
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$31.5M</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+12%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Units Sold
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">248</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+8%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average Deal Size
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">$127K</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+5%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Target className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              New Clients
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">186</span>
-                <div className="flex items-center mt-1 text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  <span className="text-green-500 font-medium">+15%</span>
-                  <span className="text-muted-foreground ml-1">
-                    vs last year
-                  </span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="performance" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="breakdown">Sales Breakdown</TabsTrigger>
-          <TabsTrigger value="team">Team Performance</TabsTrigger>
-          <TabsTrigger value="forecasts">Forecasts</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="performance">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="mr-2 h-5 w-5 text-estate-navy" />
-                Monthly Sales Performance
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Sales
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlySalesData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis
-                      tickFormatter={(value) =>
-                        `$${(value / 1000000).toFixed(1)}M`
-                      }
-                    />
-                    <Tooltip
-                      formatter={(value) => [
-                        `$${(Number(value) / 1000000).toFixed(2)}M`,
-                      ]}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="#4338ca"
-                      activeDot={{ r: 8 }}
-                      strokeWidth={2}
-                      name="Actual Sales"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="target"
-                      stroke="#9ca3af"
-                      strokeDasharray="5 5"
-                      strokeWidth={2}
-                      name="Sales Target"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-bold">$31.5M</span>
+                  <div className="flex flex-wrap items-center mt-1 text-xs md:text-sm">
+                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+12%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="breakdown">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <PieChartIcon className="mr-2 h-5 w-5 text-estate-teal" />
-                  Sales by Property Category
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={salesByCategoryData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={120}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name} ${(percent * 100).toFixed(0)}%`
-                        }
-                      >
-                        {salesByCategoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => `${value}%`} />
-                    </PieChart>
-                  </ResponsiveContainer>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Units Sold
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-bold">248</span>
+                  <div className="flex flex-wrap items-center mt-1 text-xs md:text-sm">
+                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+8%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Average Deal Size
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-bold">$127K</span>
+                  <div className="flex flex-wrap items-center mt-1 text-xs md:text-sm">
+                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+5%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Target className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                New Clients
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-bold">186</span>
+                  <div className="flex flex-wrap items-center mt-1 text-xs md:text-sm">
+                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+                    <span className="text-green-500 font-medium">+15%</span>
+                    <span className="text-muted-foreground ml-1">
+                      vs last year
+                    </span>
+                  </div>
+                </div>
+                <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs Section */}
+        <Tabs
+          defaultValue="performance"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          {/* Mobile Select */}
+          <div className="block md:hidden mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full rounded-md border px-3 py-2 text-sm">
+                <SelectValue placeholder="Select Tab" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="performance">Performance</SelectItem>
+                <SelectItem value="breakdown">Sales Breakdown</SelectItem>
+                <SelectItem value="team">Team Performance</SelectItem>
+                <SelectItem value="forecasts">Forecasts</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop Tabs */}
+          <TabsList
+            className="
+              hidden md:inline-block md:overflow-x-auto mb-4
+            "
+          >
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="breakdown">Sales Breakdown</TabsTrigger>
+            <TabsTrigger value="team">Team Performance</TabsTrigger>
+            <TabsTrigger value="forecasts">Forecasts</TabsTrigger>
+          </TabsList>
+
+          {/* Performance Tab */}
+          <TabsContent value="performance">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <BarChart3 className="mr-2 h-5 w-5 text-estate-gold" />
-                  Sales by Location
+                  <Calendar className="mr-2 h-5 w-5 text-estate-navy" />
+                  Monthly Sales Performance
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80">
+                <div className="h-72 md:h-96">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={salesByLocationData}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    <LineChart
+                      data={monthlySalesData}
+                      margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        type="number"
+                      <XAxis dataKey="month" />
+                      <YAxis
                         tickFormatter={(value) =>
                           `$${(value / 1000000).toFixed(1)}M`
                         }
                       />
-                      <YAxis type="category" dataKey="location" />
                       <Tooltip
                         formatter={(value) => [
                           `$${(Number(value) / 1000000).toFixed(2)}M`,
-                          "Sales",
                         ]}
                       />
-                      <Bar dataKey="sales" fill="#4338ca" />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#4338ca"
+                        activeDot={{ r: 6 }}
+                        strokeWidth={2}
+                        name="Actual Sales"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="target"
+                        stroke="#9ca3af"
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                        name="Sales Target"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Breakdown Tab */}
+          <TabsContent value="breakdown">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <PieChartIcon className="mr-2 h-5 w-5 text-estate-teal" />
+                    Sales by Property Category
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-72 md:h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={salesByCategoryData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
+                        >
+                          {salesByCategoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => `${value}%`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="mr-2 h-5 w-5 text-estate-gold" />
+                    Sales by Location
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-72 md:h-80 overflow-x-auto">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={salesByLocationData}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          type="number"
+                          tickFormatter={(value) =>
+                            `$${(value / 1000000).toFixed(1)}M`
+                          }
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="location"
+                          width={100}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <Tooltip
+                          formatter={(value) => [
+                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            "Sales",
+                          ]}
+                        />
+                        <Bar dataKey="sales" fill="#4338ca" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Team Tab */}
+          <TabsContent value="team">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-estate-navy" />
+                  Top Performing Agents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72 md:h-96 overflow-x-auto">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={topPerformersData}
+                      margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis
+                        tickFormatter={(value) =>
+                          `$${(value / 1000000).toFixed(1)}M`
+                        }
+                      />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          if (name === "deals") return [value, "Deals Closed"];
+                          return [
+                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            name,
+                          ];
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="sales" fill="#4338ca" name="Sales Volume" />
+                      <Bar dataKey="target" fill="#9ca3af" name="Target" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="team">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="mr-2 h-5 w-5 text-estate-navy" />
-                Top Performing Agents
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={topPerformersData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis
-                      tickFormatter={(value) =>
-                        `$${(value / 1000000).toFixed(1)}M`
-                      }
-                    />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        if (name === "deals") return [value, "Deals Closed"];
-                        return [
-                          `$${(Number(value) / 1000000).toFixed(2)}M`,
-                          name,
-                        ];
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="sales" fill="#4338ca" name="Sales Volume" />
-                    <Bar dataKey="target" fill="#9ca3af" name="Target" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="forecasts">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Forecasts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-6">
-                Detailed sales forecasts and predictive analytics will be
-                available here, showing projected revenue and market trends.
-              </p>
-              <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
-                <TrendingUp className="w-16 h-16 text-muted/50" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          {/* Forecasts Tab */}
+          <TabsContent value="forecasts">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Forecasts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm md:text-base text-muted-foreground mb-6">
+                  Detailed sales forecasts and predictive analytics will be
+                  available here, showing projected revenue and market trends.
+                </p>
+                <div className="h-60 md:h-80 bg-muted/30 rounded-md flex items-center justify-center">
+                  <TrendingUp className="w-12 h-12 md:w-16 md:h-16 text-muted/50" />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
   );
 };
 

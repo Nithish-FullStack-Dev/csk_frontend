@@ -179,7 +179,7 @@ const ContractorMaterials = () => {
 
   const [activeTab, setActiveTab] = useState("all");
   const [materials, setMaterials] = useState<Material[]>([]);
-const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
+  const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
@@ -230,18 +230,22 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   ];
 
   const handleSubmit = async (data: any) => {
-  try {
-    const res = await axios.post("http://localhost:3000/api/materials", data,{withCredentials:true});
-    toast.success("Material added successfully");
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/materials`,
+        data,
+        { withCredentials: true }
+      );
+      toast.success("Material added successfully");
 
-    // Optionally refresh your material list
-    setAddDialogOpen(false);
-    fetchMaterials();
-  } catch (error: any) {
-    console.error("Failed to add material", error);
-    toast.error(error?.response?.data?.message || "Failed to add material");
-  }
-};
+      // Optionally refresh your material list
+      setAddDialogOpen(false);
+      fetchMaterials();
+    } catch (error: any) {
+      console.error("Failed to add material", error);
+      toast.error(error?.response?.data?.message || "Failed to add material");
+    }
+  };
 
   const viewMaterial = (material: Material) => {
     setSelectedMaterial(material);
@@ -251,7 +255,7 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -263,7 +267,9 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
   const fetchMaterials = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/materials",{withCredentials:true}); // or your full backend URL
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/materials`, {
+        withCredentials: true,
+      }); // or your full backend URL
       setMaterials(res.data);
       setFilteredMaterials(res.data); // apply filters later if needed
     } catch (error) {
@@ -277,26 +283,31 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   }, []);
 
   const markAsDelivered = async () => {
-  try {
-    const res = await axios.patch(`http://localhost:3000/api/materials/${selectedMaterial._id}/status`, {
-      status: "Delivered",
-    });
+    try {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/materials/${
+          selectedMaterial._id
+        }/status`,
+        {
+          status: "Delivered",
+        }
+      );
 
-    // Update state locally
-    const updatedMaterials = materials.map((material) =>
-      material.id === selectedMaterial.id
-        ? { ...material, status: "Delivered" }
-        : material
-    );
-    setMaterials(updatedMaterials);
-    setSelectedMaterial({ ...selectedMaterial, status: "Delivered" });
-    fetchMaterials();
-    toast.success("Material marked as delivered");
-  } catch (error) {
-    console.error("Failed to update status:", error);
-    toast.error("Failed to mark as delivered");
-  }
-};
+      // Update state locally
+      const updatedMaterials = materials.map((material) =>
+        material.id === selectedMaterial.id
+          ? { ...material, status: "Delivered" }
+          : material
+      );
+      setMaterials(updatedMaterials);
+      setSelectedMaterial({ ...selectedMaterial, status: "Delivered" });
+      fetchMaterials();
+      toast.success("Material marked as delivered");
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast.error("Failed to mark as delivered");
+    }
+  };
 
   // Filter materials based on search and active tab
   const filteredMaterials2 = materials.filter((material) => {
@@ -424,92 +435,162 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
       </Tabs>
 
       {/* Materials Table */}
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Material</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Rate (₹)</TableHead>
-              <TableHead>Total (₹)</TableHead>
-              <TableHead>Supplier</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredMaterials.length === 0 ? (
+      <div className="border rounded-md">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  No materials found.
-                </TableCell>
+                <TableHead>Material</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Quantity</TableHead>
+                <TableHead>Rate (₹)</TableHead>
+                <TableHead>Total (₹)</TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredMaterials.map((material) => (
-                <TableRow key={material._id}>
-                  <TableCell className="font-medium">{material.name}</TableCell>
-                  <TableCell>{material.type}</TableCell>
-                  <TableCell>
-                    {material.quantity} {material.unit}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {material.rate.toLocaleString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center font-medium">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {material.totalCost.toLocaleString()}
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[150px] truncate"
-                    title={material.supplier}
-                  >
-                    {material.supplier}
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[150px] truncate"
-                    title={material.project}
-                  >
-                    {material.project.projectId.basicInfo.projectName}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`${
-                        material.status === "Delivered"
-                          ? "bg-green-100 text-green-800"
-                          : material.status === "Pending"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {material.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => viewMaterial(material)}
-                    >
-                      View
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {filteredMaterials.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-24 text-center">
+                    No materials found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredMaterials.map((material) => (
+                  <TableRow key={material._id}>
+                    <TableCell className="font-medium">
+                      {material.name}
+                    </TableCell>
+                    <TableCell>{material.type}</TableCell>
+                    <TableCell>
+                      {material.quantity} {material.unit}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {material.rate.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center font-medium">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {material.totalCost.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[150px] truncate"
+                      title={material.supplier}
+                    >
+                      {material.supplier}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[150px] truncate"
+                      title={material.project}
+                    >
+                      {material.project.projectId.basicInfo.projectName}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${
+                          material.status === "Delivered"
+                            ? "bg-green-100 text-green-800"
+                            : material.status === "Pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {material.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => viewMaterial(material)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="block md:hidden p-2 space-y-4">
+          {filteredMaterials.length === 0 ? (
+            <div className="text-center py-6 text-sm text-gray-500">
+              No materials found.
+            </div>
+          ) : (
+            filteredMaterials.map((material) => (
+              <div
+                key={material._id}
+                className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
+              >
+                <div className="font-semibold text-lg">{material.name}</div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Type:</span> {material.type}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">Quantity:</span>{" "}
+                  {material.quantity} {material.unit}
+                </div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Rate:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {material.rate.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Total:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {material.totalCost.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600 truncate">
+                  <span className="font-medium">Supplier:</span>{" "}
+                  {material.supplier}
+                </div>
+                <div className="text-sm text-gray-600 truncate">
+                  <span className="font-medium">Project:</span>{" "}
+                  {material.project.projectId.basicInfo.projectName}
+                </div>
+                <div>
+                  <Badge
+                    className={`${
+                      material.status === "Delivered"
+                        ? "bg-green-100 text-green-800"
+                        : material.status === "Pending"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {material.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => viewMaterial(material)}
+                  >
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Add Material Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Material</DialogTitle>
           </DialogHeader>
@@ -826,13 +907,20 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Project:</p>
-                  <p>{selectedMaterial.project.projectId.basicInfo.projectName}</p>
+                  <p>
+                    {selectedMaterial.project.projectId.basicInfo.projectName}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Delivery Date:
                   </p>
-                  <p>{new Date(selectedMaterial.deliveryDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  <p>
+                    {new Date(selectedMaterial.deliveryDate).toLocaleDateString(
+                      "en-IN",
+                      { day: "numeric", month: "short", year: "numeric" }
+                    )}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PO Number:</p>
@@ -889,7 +977,6 @@ const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
           </DialogContent>
         </Dialog>
       )}
-
     </div>
   );
 };

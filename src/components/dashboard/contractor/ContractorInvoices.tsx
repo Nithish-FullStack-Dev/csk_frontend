@@ -83,7 +83,6 @@ interface InvoiceItem {
   taxRate: number;
 }
 
-
 // Form schema
 export const invoiceSchema = z.object({
   project: z.string().min(2, "Project is required"),
@@ -135,14 +134,16 @@ const ContractorInvoices = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
 
   const fetchInvoices = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/api/invoices", {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_URL}/api/invoices`,
+        {
+          withCredentials: true,
+        }
+      );
       setInvoices(response.data);
       setError("");
     } catch (err) {
@@ -184,7 +185,6 @@ const ContractorInvoices = () => {
     mode: "onChange",
   });
 
-
   const handleSubmit = async (data: InvoiceFormValues) => {
     try {
       console.log("Submitting..........");
@@ -215,12 +215,12 @@ const ContractorInvoices = () => {
         notes: data.notes || "",
         subtotal,
         total: totalAmount,
-        unit: data.unit
+        unit: data.unit,
       };
 
       // API call using axios
       const response = await axios.post(
-        "http://localhost:3000/api/invoices",
+        `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
         { withCredentials: true }
       );
@@ -331,7 +331,7 @@ const ContractorInvoices = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        "http://localhost:3000/api/project/projects",
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -348,7 +348,7 @@ const ContractorInvoices = () => {
     const fetchCompletedTasks = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:3000/api/invoices/completed/tasks",
+          `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
           { withCredentials: true }
         );
         setCompletedTasks(res.data.tasks);
@@ -462,87 +462,168 @@ const ContractorInvoices = () => {
       </Tabs>
 
       {/* Invoices Table */}
-      <div className="border rounded-md overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Invoice No.</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Amount (₹)</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredInvoices.length === 0 ? (
+      <div className="border rounded-md">
+        {/* Table for desktop */}
+        <div className="hidden md:block overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  No invoices found.
-                </TableCell>
+                <TableHead>Invoice No.</TableHead>
+                <TableHead>Project</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Amount (₹)</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">
-                    {invoice.invoiceNumber}
-                  </TableCell>
-                  <TableCell>{invoice.project.projectId.basicInfo.projectName+" / "+(invoice.unit || "-")}</TableCell>
-                  <TableCell>
-                    {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {invoice.total.toLocaleString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`${
-                        invoice.status === "Paid"
-                          ? "bg-green-100 text-green-800"
-                          : invoice.status === "Pending"
-                          ? "bg-blue-100 text-blue-800"
-                          : invoice.status === "Overdue"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {invoice.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => viewInvoice(invoice)}
-                    >
-                      View
-                    </Button>
+            </TableHeader>
+            <TableBody>
+              {filteredInvoices.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    No invoices found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">
+                      {invoice.invoiceNumber}
+                    </TableCell>
+                    <TableCell>
+                      {invoice.project.projectId.basicInfo.projectName +
+                        " / " +
+                        (invoice.unit || "-")}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "2-digit",
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {invoice.total.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${
+                          invoice.status === "Paid"
+                            ? "bg-green-100 text-green-800"
+                            : invoice.status === "Pending"
+                            ? "bg-blue-100 text-blue-800"
+                            : invoice.status === "Overdue"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {invoice.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => viewInvoice(invoice)}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Card layout for mobile */}
+        <div className="md:hidden space-y-4 p-2">
+          {filteredInvoices.length === 0 ? (
+            <div className="text-center py-4 text-sm text-gray-500">
+              No invoices found.
+            </div>
+          ) : (
+            filteredInvoices.map((invoice) => (
+              <div
+                key={invoice.id}
+                className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-semibold">#{invoice.invoiceNumber}</h3>
+                  <Badge
+                    className={`${
+                      invoice.status === "Paid"
+                        ? "bg-green-100 text-green-800"
+                        : invoice.status === "Pending"
+                        ? "bg-blue-100 text-blue-800"
+                        : invoice.status === "Overdue"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {invoice.status}
+                  </Badge>
+                </div>
+
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Project:</span>{" "}
+                  {invoice.project.projectId.basicInfo.projectName +
+                    " / " +
+                    (invoice.unit || "-")}
+                </p>
+
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Date:</span>{" "}
+                  {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                  })}
+                </p>
+
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Due Date:</span>{" "}
+                  {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                  })}
+                </p>
+
+                <p className="text-sm text-gray-600 flex items-center">
+                  <span className="font-medium mr-1">Amount:</span>
+                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                  {invoice.total.toLocaleString()}
+                </p>
+
+                <div className="pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => viewInvoice(invoice)}
+                  >
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Create Invoice Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>
@@ -952,7 +1033,7 @@ const ContractorInvoices = () => {
                         />
                       </div>
 
-                      <div className="flex justify-end space-x-2">
+                      <div className="flex justify-end space-x-2 mt-5">
                         <Button
                           type="button"
                           variant="outline"
@@ -1086,7 +1167,9 @@ const ContractorInvoices = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-xl">INVOICE</h3>
-                  <p className="text-muted-foreground">{selectedInvoice.invoiceNumber}</p>
+                  <p className="text-muted-foreground">
+                    {selectedInvoice.invoiceNumber}
+                  </p>
                 </div>
                 <Badge
                   className={`${
@@ -1112,23 +1195,36 @@ const ContractorInvoices = () => {
                 <div className="space-y-1">
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Issue Date:</p>
-                    <p>{new Date(selectedInvoice.issueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}</p>
+                    <p>
+                      {new Date(selectedInvoice.issueDate).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                        }
+                      )}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Due Date:</p>
-                    <p>{new Date(selectedInvoice.issueDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "2-digit", 
-                    })}</p>
+                    <p>
+                      {new Date(selectedInvoice.issueDate).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                        }
+                      )}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Project:</p>
-                    <p>{selectedInvoice.project.projectId.basicInfo.projectName || "-"}</p>
+                    <p>
+                      {selectedInvoice.project.projectId.basicInfo
+                        .projectName || "-"}
+                    </p>
                   </div>
                   {selectedInvoice.paymentDate && (
                     <div className="grid grid-cols-2">
@@ -1204,10 +1300,7 @@ const ContractorInvoices = () => {
 
                   <div className="flex justify-between font-bold">
                     <span>Total Amount:</span>
-                    <span>
-                      ₹
-                      {selectedInvoice.total.toLocaleString()}
-                    </span>
+                    <span>₹{selectedInvoice.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

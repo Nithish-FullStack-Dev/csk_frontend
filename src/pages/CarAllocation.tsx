@@ -76,7 +76,7 @@ interface RecentActivity {
 
 const fetchAllVehicles = async (): Promise<Vehicle[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/cars/getAllCars",
+    `${import.meta.env.VITE_URL}/api/cars/getAllCars`,
     {
       withCredentials: true,
     }
@@ -86,7 +86,7 @@ const fetchAllVehicles = async (): Promise<Vehicle[]> => {
 
 const updateVehicle = async (vehicle: Vehicle): Promise<Vehicle> => {
   const { data } = await axios.put(
-    `http://localhost:3000/api/cars/updateCarById/${vehicle._id}`,
+    `${import.meta.env.VITE_URL}/api/cars/updateCarById/${vehicle._id}`,
     vehicle,
     { withCredentials: true }
   );
@@ -97,7 +97,7 @@ const addVehicle = async (
   newVehicleData: Omit<Vehicle, "_id" | "createdAt" | "updatedAt">
 ): Promise<Vehicle> => {
   const { data } = await axios.post(
-    "http://localhost:3000/api/cars/saveCar",
+    `${import.meta.env.VITE_URL}/api/cars/saveCar`,
     newVehicleData,
     { withCredentials: true }
   );
@@ -148,7 +148,7 @@ const CarAllocation = () => {
 
   const fetchMyTeam = async () => {
     const { data } = await axios.get(
-      `http://localhost:3000/api/team/getAllTeam/${user._id}`,
+      `${import.meta.env.VITE_URL}/api/team/getAllTeam/${user._id}`,
       { withCredentials: true }
     );
     return data;
@@ -459,36 +459,163 @@ const CarAllocation = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Car Allocation</h1>
-          <p className="text-muted-foreground">
-            Manage vehicle assignments and availability
-          </p>
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Car Allocation</h1>
+            <p className="text-muted-foreground">
+              Manage vehicle assignments and availability
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 mt-4 md:mt-0">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filter Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Vehicles</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Vehicle
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Vehicle</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Vehicle Model</Label>
+                    <Input
+                      id="model"
+                      placeholder="e.g., Toyota Camry"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Vehicle Type</Label>
+                    <Select
+                      value={type}
+                      onValueChange={(value) => {
+                        setType(value as Vehicle["type"]);
+                      }}
+                    >
+                      <SelectTrigger id="type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HatchBack">HatchBack</SelectItem>
+                        <SelectItem value="Sedan">Sedan</SelectItem>
+                        <SelectItem value="SUV">SUV</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="capacity">Vehicle Capacity</Label>
+                    <Select
+                      value={capacity}
+                      onValueChange={(value) => {
+                        setCapacity(value as Vehicle["capacity"]);
+                      }}
+                    >
+                      <SelectTrigger id="capacity">
+                        <SelectValue placeholder="Select capacity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="4 persons">4 persons</SelectItem>
+                        <SelectItem value="5 persons">5 persons</SelectItem>
+                        <SelectItem value="7 persons">7 persons</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="license">License Plate</Label>
+                    <Input
+                      id="license"
+                      placeholder="e.g., ABC-123"
+                      value={licensePlate}
+                      onChange={(e) => setLicensePlate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mileage">Current Mileage</Label>
+                    <Input
+                      id="mileage"
+                      type="number"
+                      placeholder="e.g., 45000"
+                      value={mileage}
+                      onChange={(e) => setMileage(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fuelLevel">Current Fuel Level</Label>
+                    <Input
+                      id="fuelLevel"
+                      type="number"
+                      placeholder="e.g., 50%"
+                      value={fuelLevel}
+                      onChange={(e) => setFuelLevel(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Current Status</Label>
+                    <Select
+                      value={status}
+                      onValueChange={(value) =>
+                        setStatus(value as Vehicle["status"])
+                      }
+                    >
+                      <SelectTrigger id="status" className="w-full">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="assigned">Assigned</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="booked">Booked</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lastService">Last Service</Label>
+                    <DatePicker date={lastService} setDate={setLastService} />
+                  </div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    type="text"
+                    placeholder="e.g., Service Center"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={handleAddVehicle}
+                    disabled={isCreating}
+                  >
+                    {isCreating ? "Adding..." : "Add Vehicle"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        <div className="flex items-center space-x-2 mt-4 md:mt-0">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Filter Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Vehicles</SelectItem>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="maintenance">Maintenance</SelectItem>
-            </SelectContent>
-          </Select>
-          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Vehicle
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[80vh] overflow-y-auto">
+
+        <div className="flex space-x-2 ">
+          <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
-                <DialogTitle>Add New Vehicle</DialogTitle>
+                <DialogTitle>Edit Vehicle</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -599,425 +726,306 @@ const CarAllocation = () => {
                 />
                 <Button
                   className="w-full"
-                  onClick={handleAddVehicle}
-                  disabled={isCreating}
+                  onClick={handleEditVehicle}
+                  disabled={isPending}
                 >
-                  {isCreating ? "Adding..." : "Add Vehicle"}
+                  {isPending ? "Updating..." : "Update Vehicle"}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
-      <div className="flex space-x-2 ">
-        <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Vehicle</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="model">Vehicle Model</Label>
-                <Input
-                  id="model"
-                  placeholder="e.g., Toyota Camry"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Vehicles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">
+                  {vehicles?.length || 0}
+                </span>
+                <Car className="h-6 w-6 text-estate-navy" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">Vehicle Type</Label>
-                <Select
-                  value={type}
-                  onValueChange={(value) => {
-                    setType(value as Vehicle["type"]);
-                  }}
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HatchBack">HatchBack</SelectItem>
-                    <SelectItem value="Sedan">Sedan</SelectItem>
-                    <SelectItem value="SUV">SUV</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="capacity">Vehicle Capacity</Label>
-                <Select
-                  value={capacity}
-                  onValueChange={(value) => {
-                    setCapacity(value as Vehicle["capacity"]);
-                  }}
-                >
-                  <SelectTrigger id="capacity">
-                    <SelectValue placeholder="Select capacity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4 persons">4 persons</SelectItem>
-                    <SelectItem value="5 persons">5 persons</SelectItem>
-                    <SelectItem value="7 persons">7 persons</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="license">License Plate</Label>
-                <Input
-                  id="license"
-                  placeholder="e.g., ABC-123"
-                  value={licensePlate}
-                  onChange={(e) => setLicensePlate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mileage">Current Mileage</Label>
-                <Input
-                  id="mileage"
-                  type="number"
-                  placeholder="e.g., 45000"
-                  value={mileage}
-                  onChange={(e) => setMileage(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fuelLevel">Current Fuel Level</Label>
-                <Input
-                  id="fuelLevel"
-                  type="number"
-                  placeholder="e.g., 50%"
-                  value={fuelLevel}
-                  onChange={(e) => setFuelLevel(Number(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Current Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as Vehicle["status"])
-                  }
-                >
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="assigned">Assigned</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="booked">Booked</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastService">Last Service</Label>
-                <DatePicker date={lastService} setDate={setLastService} />
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Available
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">{availableVehicles}</span>
+                <Key className="h-6 w-6 text-green-600" />
               </div>
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                type="text"
-                placeholder="e.g., Service Center"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-              <Button
-                className="w-full"
-                onClick={handleEditVehicle}
-                disabled={isPending}
-              >
-                {isPending ? "Updating..." : "Update Vehicle"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </CardContent>
+          </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Vehicles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">
-                {vehicles?.length || 0}
-              </span>
-              <Car className="h-6 w-6 text-estate-navy" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Assigned
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">{assignedVehicles}</span>
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Available
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{availableVehicles}</span>
-              <Key className="h-6 w-6 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Maintenance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">
+                  {maintenanceVehicles}
+                </span>
+                <Settings className="h-6 w-6 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Assigned
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{assignedVehicles}</span>
-              <Users className="h-6 w-6 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Maintenance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{maintenanceVehicles}</span>
-              <Settings className="h-6 w-6 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {vehicles
-          ?.filter(
-            (vehicle) =>
-              filterStatus === "all" || vehicle.status === filterStatus
-          )
-          .map((vehicle) => (
-            <Card key={vehicle._id}>
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-12 w-12 rounded-full bg-estate-navy/10 flex items-center justify-center">
-                      <Car className="h-6 w-6 text-estate-navy" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {vehicles
+            ?.filter(
+              (vehicle) =>
+                filterStatus === "all" || vehicle.status === filterStatus
+            )
+            .map((vehicle) => (
+              <Card key={vehicle._id}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-12 w-12 rounded-full bg-estate-navy/10 flex items-center justify-center">
+                        <Car className="h-6 w-6 text-estate-navy" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{vehicle.model}</h3>
+                        <p className="text-sm text-muted-foreground my-1">
+                          {vehicle.licensePlate}
+                        </p>
+                        <p className="text-sm text-muted-foreground my-1">
+                          {vehicle?.type}
+                        </p>
+                        <Badge className={getStatusColor(vehicle.status)}>
+                          {vehicle.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{vehicle.model}</h3>
-                      <p className="text-sm text-muted-foreground my-1">
-                        {vehicle.licensePlate}
-                      </p>
-                      <p className="text-sm text-muted-foreground my-1">
-                        {vehicle?.type}
-                      </p>
-                      <Badge className={getStatusColor(vehicle.status)}>
-                        {vehicle.status}
-                      </Badge>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setDialogOpen(true);
+                        setSelectedVehicle(vehicle);
+                      }}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setDialogOpen(true);
-                      setSelectedVehicle(vehicle);
-                    }}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {vehicle.assignedTo && (
-                  <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={vehicle?.assignedTo?.agent?.avatar} />
-                      <AvatarFallback>
-                        {vehicle?.assignedTo?.agent?.name?.charAt(0) || "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {vehicle.assignedTo && (
+                    <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={vehicle?.assignedTo?.agent?.avatar} />
+                        <AvatarFallback>
+                          {vehicle?.assignedTo?.agent?.name?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {vehicle.assignedTo?.agent?.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Until:{" "}
+                          {vehicle?.assignedTo?.assignedUntil
+                            ? new Date(
+                                vehicle.assignedTo.assignedUntil
+                              ).toLocaleDateString("en-IN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-sm font-medium">
-                        {vehicle.assignedTo?.agent?.name}
+                      <p className="text-muted-foreground">Fuel Level</p>
+                      <p
+                        className={`font-semibold ${getFuelColor(
+                          vehicle.fuelLevel
+                        )}`}
+                      >
+                        {vehicle.fuelLevel}%
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Until:{" "}
-                        {vehicle?.assignedTo?.assignedUntil
-                          ? new Date(
-                              vehicle.assignedTo.assignedUntil
-                            ).toLocaleDateString("en-IN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Mileage</p>
+                      <p className="font-semibold">
+                        {vehicle.mileage.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Last Service</p>
+                      <p className="font-semibold">
+                        {vehicle?.lastService
+                          ? new Date(vehicle?.lastService).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
                           : "N/A"}
                       </p>
                     </div>
+                    <div>
+                      <p className="text-muted-foreground">Location</p>
+                      <p className="font-semibold text-xs">
+                        {vehicle.location}
+                      </p>
+                    </div>
                   </div>
-                )}
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Fuel Level</p>
-                    <p
-                      className={`font-semibold ${getFuelColor(
-                        vehicle.fuelLevel
-                      )}`}
-                    >
-                      {vehicle.fuelLevel}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Mileage</p>
-                    <p className="font-semibold">
-                      {vehicle.mileage.toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Last Service</p>
-                    <p className="font-semibold">
-                      {vehicle?.lastService
-                        ? new Date(vehicle?.lastService).toLocaleDateString(
-                            "en-IN",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )
-                        : "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Location</p>
-                    <p className="font-semibold text-xs">{vehicle.location}</p>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2">
-                  {vehicle.status === "available" && (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="flex-1">
-                          <Users className="mr-2 h-3 w-3" />
-                          Assign
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Assign Vehicle</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Select Team Member</Label>
-                            <Select
-                              value={assignedTo}
-                              onValueChange={setAssignedTo}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose team member" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {unassignedTeamMembers &&
-                                unassignedTeamMembers.length > 0 ? (
-                                  unassignedTeamMembers.map((member) => (
-                                    <SelectItem
-                                      key={member._id}
-                                      value={member._id}
-                                    >
-                                      {member.agentId.name} -{" "}
-                                      {member.agentId.role}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="" disabled>
-                                    No unassigned team members available
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="assignment-date">
-                              Assignment End Date
-                            </Label>
-                            <Input
-                              id="assignment-date"
-                              type="date"
-                              value={assignedUntil}
-                              onChange={(e) => setAssignedUntil(e.target.value)}
-                            />
-                          </div>
-                          <Button
-                            className="w-full"
-                            onClick={() => {
-                              handleAssign(vehicle);
-                            }}
-                          >
-                            Assign Vehicle
+                  <div className="flex space-x-2">
+                    {vehicle.status === "available" && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="flex-1">
+                            <Users className="mr-2 h-3 w-3" />
+                            Assign
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                  {vehicle.status === "assigned" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleUnassign(vehicle)}
-                    >
-                      <Key className="mr-2 h-3 w-3" />
-                      Unassign
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="mr-2 h-5 w-5 text-estate-navy" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentActivities.length > 0 ? (
-              recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-3 border-b last:border-b-0"
-                >
-                  <div className="flex items-center space-x-3">
-                    <activity.icon
-                      className={`h-4 w-4 ${activity.colorClass}`}
-                    />
-                    <span className="text-sm">{activity.description}</span>
+                        </DialogTrigger>
+                        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+                          <DialogHeader>
+                            <DialogTitle>Assign Vehicle</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Select Team Member</Label>
+                              <Select
+                                value={assignedTo}
+                                onValueChange={setAssignedTo}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose team member" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {unassignedTeamMembers &&
+                                  unassignedTeamMembers.length > 0 ? (
+                                    unassignedTeamMembers.map((member) => (
+                                      <SelectItem
+                                        key={member._id}
+                                        value={member._id}
+                                      >
+                                        {member.agentId.name} -{" "}
+                                        {member.agentId.role}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="" disabled>
+                                      No unassigned team members available
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="assignment-date">
+                                Assignment End Date
+                              </Label>
+                              <Input
+                                id="assignment-date"
+                                type="date"
+                                value={assignedUntil}
+                                onChange={(e) =>
+                                  setAssignedUntil(e.target.value)
+                                }
+                              />
+                            </div>
+                            <Button
+                              className="w-full"
+                              onClick={() => {
+                                handleAssign(vehicle);
+                              }}
+                            >
+                              Assign Vehicle
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {vehicle.status === "assigned" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleUnassign(vehicle)}
+                      >
+                        <Key className="mr-2 h-3 w-3" />
+                        Unassign
+                      </Button>
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {timeAgo(activity.timestamp)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground text-center">
-                No recent activities to display.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="mr-2 h-5 w-5 text-estate-navy" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentActivities.length > 0 ? (
+                recentActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-center justify-between p-3 border-b last:border-b-0"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <activity.icon
+                        className={`h-4 w-4 ${activity.colorClass}`}
+                      />
+                      <span className="text-sm">{activity.description}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {timeAgo(activity.timestamp)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center">
+                  No recent activities to display.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 };
 

@@ -16,7 +16,7 @@ import {
   Filter,
   Plus,
   MoreHorizontal,
-  Download ,
+  Download,
   Calendar,
   Camera,
   Upload,
@@ -258,203 +258,326 @@ const ContractorPhotoEvidence: React.FC<ContractorPhotoEvidenceProps> = ({
 
       {/* Main Content */}
       <div>
-        <Tabs defaultValue="all" onValueChange={setStatusFilter}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Photos</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-            <TabsTrigger value="pending_review">Pending Review</TabsTrigger>
-          </TabsList>
+        {/* Mobile: Select */}
+        <div className="block md:hidden mb-4">
+          <Select defaultValue="all" onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Photos</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="pending_review">Pending Review</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-            <div className="flex flex-1 items-center space-x-2">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search photo evidence..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+        {/* Desktop: Tabs */}
+        <div className="hidden md:block">
+          <Tabs defaultValue="all" onValueChange={setStatusFilter}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">All Photos</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+              <TabsTrigger value="pending_review">Pending Review</TabsTrigger>
+            </TabsList>
+
+            {/* Desktop Filters + Search */}
+            <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
+              <div className="flex flex-1 items-center space-x-2">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search photo evidence..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <Select value={projectFilter} onValueChange={setProjectFilter}>
+                  <SelectTrigger className="w-fit">
+                    <div className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <span>{projectFilter || "Project"}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Projects</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project} value={project}>
+                        {project}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
+                  <SelectTrigger className="w-fit">
+                    <div className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <span>
+                        {categoryFilter
+                          ? CONSTRUCTION_PHASES[
+                              categoryFilter as keyof typeof CONSTRUCTION_PHASES
+                            ]?.title || categoryFilter
+                          : "Category"}
+                      </span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {Object.entries(CONSTRUCTION_PHASES).map(([key, phase]) => (
+                      <SelectItem key={key} value={key}>
+                        {phase.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="w-fit">
-                  <div className="flex items-center">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <span>{projectFilter || "Project"}</span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project} value={project}>
-                      {project}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-fit">
-                  <div className="flex items-center">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <span>
-                      {categoryFilter
-                        ? CONSTRUCTION_PHASES[
-                            categoryFilter as keyof typeof CONSTRUCTION_PHASES
-                          ]?.title || categoryFilter
-                        : "Category"}
-                    </span>
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {Object.entries(CONSTRUCTION_PHASES).map(([key, phase]) => (
-                    <SelectItem key={key} value={key}>
-                      {phase.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Upload Photos
+                  </Button>
+                </DialogTrigger>
+                <UploadEvidenceDialog
+                  onOpenChange={setDialogOpen}
+                  projects={projectsData}
+                  tasks={tasksData}
+                  onSubmit={handlePhotoUpload}
+                />
+              </Dialog>
             </div>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Upload Photos
-                </Button>
-              </DialogTrigger>
-              <UploadEvidenceDialog
-                onOpenChange={setDialogOpen}
-                projects={projectsData}
-                tasks={tasksData}
-                onSubmit={handlePhotoUpload}
-              />
-            </Dialog>
-          </div>
-
-          {/* Photos Table */}
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title & Task</TableHead>
-                  <TableHead>Project / Unit</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Photos</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPhotos.length === 0 ? (
+            {/* Desktop Table */}
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-6 text-muted-foreground"
-                    >
-                      No photo evidence found matching your filters
-                    </TableCell>
+                    <TableHead>Title & Task</TableHead>
+                    <TableHead>Project / Unit</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Photos</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredPhotos.map((photo) => (
-                    <TableRow key={photo.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{photo.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {photo.task}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            <span className="font-medium">Category:</span>{" "}
-                            {CONSTRUCTION_PHASES[
-                              photo.category as keyof typeof CONSTRUCTION_PHASES
-                            ]?.title || photo.category}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div>{photo.project}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {photo.unit}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(photo.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusColors[photo.status]}
-                        >
-                          {photo.status
-                            .split("_")
-                            .map(
-                              (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                            )
-                            .join(" ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {photo.images.slice(0, 2).map((image, idx) => (
-                            <div
-                              key={idx}
-                              className="w-10 h-10 rounded overflow-hidden"
-                            >
-                              <img
-                                src={image.url}
-                                alt={image.caption}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ))}
-                          {photo.images.length > 2 && (
-                            <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xs font-medium">
-                              +{photo.images.length - 2}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => viewPhotoDetails(photo.id)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            {/* <DropdownMenuItem>Add More Photos</DropdownMenuItem>
-                            <DropdownMenuItem>Edit Details</DropdownMenuItem> */}
-                            <DropdownMenuItem
-                              onClick={() => downloadAllImages(photo)}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download All
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                </TableHeader>
+                <TableBody>
+                  {filteredPhotos.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-6 text-muted-foreground"
+                      >
+                        No photo evidence found matching your filters
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </Tabs>
+                  ) : (
+                    filteredPhotos.map((photo) => (
+                      <TableRow key={photo.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{photo.title}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {photo.task}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <span className="font-medium">Category:</span>{" "}
+                              {CONSTRUCTION_PHASES[
+                                photo.category as keyof typeof CONSTRUCTION_PHASES
+                              ]?.title || photo.category}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div>{photo.project}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {photo.unit}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(photo.date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={statusColors[photo.status]}
+                          >
+                            {photo.status
+                              .split("_")
+                              .map(
+                                (word) =>
+                                  word.charAt(0).toUpperCase() + word.slice(1)
+                              )
+                              .join(" ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {photo.images.slice(0, 2).map((image, idx) => (
+                              <div
+                                key={idx}
+                                className="w-10 h-10 rounded overflow-hidden"
+                              >
+                                <img
+                                  src={image.url}
+                                  alt={image.caption}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ))}
+                            {photo.images.length > 2 && (
+                              <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xs font-medium">
+                                +{photo.images.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => viewPhotoDetails(photo.id)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => downloadAllImages(photo)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download All
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </Tabs>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden grid grid-cols-1 gap-4">
+          {filteredPhotos.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              No photo evidence found matching your filters
+            </div>
+          ) : (
+            filteredPhotos.map((photo) => (
+              <div
+                key={photo.id}
+                className="border rounded-md p-4 space-y-3 bg-card text-card-foreground shadow-sm"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-semibold text-lg">{photo.title}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {photo.task}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      <span className="font-medium">Category:</span>{" "}
+                      {CONSTRUCTION_PHASES[
+                        photo.category as keyof typeof CONSTRUCTION_PHASES
+                      ]?.title || photo.category}
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => viewPhotoDetails(photo.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => downloadAllImages(photo)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download All
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <div>
+                    <div className="text-muted-foreground">Project / Unit:</div>
+                    <div>
+                      {photo.project} / {photo.unit}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground">Date:</div>
+                    <div>{new Date(photo.date).toLocaleDateString()}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-muted-foreground text-sm">Status:</div>
+                    <Badge
+                      variant="outline"
+                      className={statusColors[photo.status]}
+                    >
+                      {photo.status
+                        .split("_")
+                        .map(
+                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                        )
+                        .join(" ")}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {photo.images.slice(0, 2).map((image, idx) => (
+                      <div
+                        key={idx}
+                        className="w-12 h-12 rounded overflow-hidden"
+                      >
+                        <img
+                          src={image.url}
+                          alt={image.caption}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                    {photo.images.length > 2 && (
+                      <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center text-sm font-medium">
+                        +{photo.images.length - 2}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

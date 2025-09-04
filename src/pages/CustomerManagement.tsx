@@ -70,7 +70,7 @@ export interface Customer {
 
 const fetchCustomers = async (): Promise<Customer[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/customer/getAllCustomers",
+    `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
     {
       withCredentials: true,
     }
@@ -81,7 +81,7 @@ const fetchCustomers = async (): Promise<Customer[]> => {
 // Updated fetchProperties to return Property[] directly
 const fetchProperties = async (): Promise<Property[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/properties/available",
+    `${import.meta.env.VITE_URL}/api/properties/available`,
     {
       withCredentials: true,
     }
@@ -91,7 +91,7 @@ const fetchProperties = async (): Promise<Property[]> => {
 
 const fetchAgents = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllAgents",
+    `${import.meta.env.VITE_URL}/api/user/getAllAgents`,
     {
       withCredentials: true,
     }
@@ -102,7 +102,7 @@ const fetchAgents = async (): Promise<User[]> => {
 // New API call to fetch users who can be selected as customers
 const fetchAllCustomer_purchased = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/user/getAllcustomer_purchased",
+    `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`,
     {
       withCredentials: true,
     }
@@ -189,7 +189,7 @@ const CustomerManagement: React.FC = () => {
       })[]; // Array of property details
     }) => {
       const { data } = await axios.post(
-        "http://localhost:3000/api/customer/addCustomer",
+        `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
         newCustomerData,
         { withCredentials: true }
       );
@@ -227,7 +227,7 @@ const CustomerManagement: React.FC = () => {
     }) => {
       const { data } = await axios.put(
         // Changed from patch to put as per your schema update
-        `http://localhost:3000/api/customer/updateCustomer/${customerId}`,
+        `${import.meta.env.VITE_URL}/api/customer/updateCustomer/${customerId}`,
         updatedCustomerData,
         { withCredentials: true }
       );
@@ -404,7 +404,7 @@ const CustomerManagement: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 md:p-6 p-1">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Customer Management</h1>
@@ -427,115 +427,195 @@ const CustomerManagement: React.FC = () => {
         </div>
 
         {/* Customer Table */}
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[150px]">Customer Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Purchased From (Agent)</TableHead>
-                <TableHead className="min-w-[250px]">Properties</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers?.length === 0 ? (
+        <div className="rounded-md border">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    No customers found.
-                  </TableCell>
+                  <TableHead className="w-[150px]">Customer Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Purchased From (Agent)</TableHead>
+                  <TableHead className="min-w-[250px]">Properties</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : (
-                customers?.map((customer) => (
-                  <TableRow key={customer._id}>
-                    <TableCell className="font-medium">
-                      {customer.user?.name || "N/A"}
-                    </TableCell>
-                    <TableCell>{customer.user?.email || "N/A"}</TableCell>
-                    <TableCell>{customer.user?.phone || "N/A"}</TableCell>
-                    <TableCell>
-                      {customer.purchasedFrom?.name || "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        {customer.properties.map((prop, index) => (
-                          <Card
-                            key={prop._id || index}
-                            className="p-3 shadow-sm bg-gray-50"
-                          >
-                            <CardHeader className="p-0 pb-1">
-                              <CardTitle className="text-sm font-semibold flex items-center">
-                                <Building className="h-3 w-3 mr-1 text-blue-600" />
-                                {/* Access prop.property directly as it's a Property object */}
-                                {typeof prop.property === "object" &&
-                                prop.property?.basicInfo?.projectName
-                                  ? `${prop.property.basicInfo.projectName} - ${prop.property.basicInfo.plotNumber}`
-                                  : "Property N/A"}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0 text-xs text-muted-foreground">
-                              <p className="flex items-center">
-                                <CalendarDays className="h-3 w-3 mr-1" />{" "}
-                                Booking:{" "}
-                                {new Date(
-                                  prop.bookingDate
-                                ).toLocaleDateString()}
-                              </p>
-                              <p className="flex items-center">
-                                <DollarSign className="h-3 w-3 mr-1" /> Price: $
-                                {prop.finalPrice?.toLocaleString()}
-                              </p>
-                              <p className="flex items-center">
-                                <span className="mr-1">Plan:</span>{" "}
-                                <Badge
-                                  variant="secondary"
-                                  className="px-1 py-0.5 text-xs"
-                                >
-                                  {prop.paymentPlan}
-                                </Badge>
-                              </p>
-                              <p className="flex items-center">
-                                <span className="mr-1">Status:</span>{" "}
-                                <Badge
-                                  className={`px-1 py-0.5 text-xs ${
-                                    prop.paymentStatus === "Completed"
-                                      ? "bg-green-100 text-green-800"
-                                      : prop.paymentStatus === "In Progress"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  {prop.paymentStatus}
-                                </Badge>
-                              </p>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isSalesManager && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setIsCustomerFormDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
+              </TableHeader>
+              <TableBody>
+                {customers?.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No customers found.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  customers?.map((customer) => (
+                    <TableRow key={customer._id}>
+                      <TableCell className="font-medium">
+                        {customer.user?.name || "N/A"}
+                      </TableCell>
+                      <TableCell>{customer.user?.email || "N/A"}</TableCell>
+                      <TableCell>{customer.user?.phone || "N/A"}</TableCell>
+                      <TableCell>
+                        {customer.purchasedFrom?.name || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          {customer.properties.map((prop, index) => (
+                            <Card
+                              key={prop._id || index}
+                              className="p-3 shadow-sm bg-gray-50"
+                            >
+                              <CardHeader className="p-0 pb-1">
+                                <CardTitle className="text-sm font-semibold flex items-center">
+                                  <Building className="h-3 w-3 mr-1 text-blue-600" />
+                                  {typeof prop.property === "object" &&
+                                  prop.property?.basicInfo?.projectName
+                                    ? `${prop.property.basicInfo.projectName} - ${prop.property.basicInfo.plotNumber}`
+                                    : "Property N/A"}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="p-0 text-xs text-muted-foreground">
+                                <p className="flex items-center">
+                                  <CalendarDays className="h-3 w-3 mr-1" />{" "}
+                                  Booking:{" "}
+                                  {new Date(
+                                    prop.bookingDate
+                                  ).toLocaleDateString()}
+                                </p>
+                                <p className="flex items-center">
+                                  <DollarSign className="h-3 w-3 mr-1" /> Price:
+                                  ${prop.finalPrice?.toLocaleString()}
+                                </p>
+                                <p className="flex items-center">
+                                  <span className="mr-1">Plan:</span>{" "}
+                                  <Badge
+                                    variant="secondary"
+                                    className="px-1 py-0.5 text-xs"
+                                  >
+                                    {prop.paymentPlan}
+                                  </Badge>
+                                </p>
+                                <p className="flex items-center">
+                                  <span className="mr-1">Status:</span>{" "}
+                                  <Badge
+                                    className={`px-1 py-0.5 text-xs ${
+                                      prop.paymentStatus === "Completed"
+                                        ? "bg-green-100 text-green-800"
+                                        : prop.paymentStatus === "In Progress"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-red-100 text-red-800"
+                                    }`}
+                                  >
+                                    {prop.paymentStatus}
+                                  </Badge>
+                                </p>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isSalesManager && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setIsCustomerFormDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden space-y-4 p-2">
+            {customers?.length === 0 ? (
+              <p className="text-center text-muted-foreground">
+                No customers found.
+              </p>
+            ) : (
+              customers?.map((customer) => (
+                <Card key={customer._id} className="p-4 shadow-sm">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">
+                      {customer.user?.name || "N/A"}
+                    </h3>
+                    {isSalesManager && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setIsCustomerFormDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    📧 {customer.user?.email || "N/A"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    📱 {customer.user?.phone || "N/A"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    🧑‍💼 Agent: {customer.purchasedFrom?.name || "N/A"}
+                  </p>
+
+                  <div className="mt-3 space-y-2">
+                    {customer.properties.map((prop, index) => (
+                      <Card key={prop._id || index} className="p-2 bg-gray-50">
+                        <p className="font-medium text-sm">
+                          🏠{" "}
+                          {typeof prop.property === "object" &&
+                          prop.property?.basicInfo?.projectName
+                            ? `${prop.property.basicInfo.projectName} - ${prop.property.basicInfo.plotNumber}`
+                            : "Property N/A"}
+                        </p>
+                        <p className="text-xs">
+                          📅 {new Date(prop.bookingDate).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs">
+                          💰 ${prop.finalPrice?.toLocaleString()}
+                        </p>
+                        <p className="text-xs">
+                          Plan:{" "}
+                          <Badge variant="secondary">{prop.paymentPlan}</Badge>
+                        </p>
+                        <p className="text-xs">
+                          Status:{" "}
+                          <Badge
+                            className={`px-1 py-0.5 text-xs ${
+                              prop.paymentStatus === "Completed"
+                                ? "bg-green-100 text-green-800"
+                                : prop.paymentStatus === "In Progress"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {prop.paymentStatus}
+                          </Badge>
+                        </p>
+                      </Card>
+                    ))}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Add/Edit Customer Dialog */}
@@ -543,7 +623,7 @@ const CustomerManagement: React.FC = () => {
           open={isCustomerFormDialogOpen}
           onOpenChange={setIsCustomerFormDialogOpen}
         >
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>
                 {selectedCustomer ? "Edit Customer" : "Add New Customer"}

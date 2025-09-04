@@ -111,7 +111,7 @@ const AboutSection = () => {
   const fetchAboutDetails = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/aboutSection/getAboutSec"
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
       );
       setAboutContent(data);
       setStats(data.stats);
@@ -144,10 +144,10 @@ const AboutSection = () => {
               <span className="text-purple-700">About</span> CSK Realtors:
               Crafting Future Homes
             </h2>
-            <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+            <p className="text-lg text-gray-700 mb-6 md:leading-relaxed md:text-start text-justify">
               {aboutContent.paragraph1}
             </p>
-            <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+            <p className="text-lg text-gray-700 mb-8 md:leading-relaxed md:text-start text-justify">
               {aboutContent.paragraph2}
             </p>
             <div className="grid grid-cols-2 gap-y-8 gap-x-4 mt-10">
