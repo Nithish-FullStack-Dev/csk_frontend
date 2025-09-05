@@ -76,6 +76,7 @@ import ProtectedRoute from "./config/ProtectedRoute";
 import TeamLeadManagement from "./pages/TeamLeadManagement";
 import CustomerManagement from "./pages/CustomerManagement";
 import ChatInterface from "./components/communication/ChatInterface";
+import AuthRedirect from "./config/AuthRedirect";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AuthRedirect />
             {/* <ScrollToTop /> */}
             <Routes>
               {/* Public Routes */}
