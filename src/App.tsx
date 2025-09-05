@@ -77,6 +77,7 @@ import TeamLeadManagement from "./pages/TeamLeadManagement";
 import CustomerManagement from "./pages/CustomerManagement";
 import ChatInterface from "./components/communication/ChatInterface";
 import AuthRedirect from "./config/AuthRedirect";
+import AgentSchedule from "./pages/agent/AgentSchedule";
 
 const queryClient = new QueryClient();
 
@@ -327,8 +328,16 @@ const App = () => {
               <Route
                 path="/schedule"
                 element={
-                  <ProtectedRoute allowedRoles={[...AGENT, ...SITE]}>
+                  <ProtectedRoute allowedRoles={SITE}>
                     <MySchedule />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/myschedule"
+                element={
+                  <ProtectedRoute allowedRoles={AGENT}>
+                    <AgentSchedule />
                   </ProtectedRoute>
                 }
               />

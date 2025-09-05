@@ -101,7 +101,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log(email, password);
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/login`,
         { email, password },
