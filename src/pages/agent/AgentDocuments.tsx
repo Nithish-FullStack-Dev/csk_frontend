@@ -383,7 +383,7 @@ const AgentDocuments = () => {
                 Upload Document
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Upload New Document</DialogTitle>
                 <DialogDescription>
@@ -546,10 +546,6 @@ const AgentDocuments = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="md:w-auto w-full">
-            <Filter className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
         </div>
 
         <Tabs

@@ -162,7 +162,7 @@ const AgentSchedule = () => {
                 New Appointment
               </Button>
             </DialogTrigger>
-            <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[85vh] overflow-y-auto rounded-xl">
               <DialogHeader>
                 <DialogTitle>New Appointment</DialogTitle>
               </DialogHeader>

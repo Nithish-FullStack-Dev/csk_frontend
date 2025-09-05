@@ -178,7 +178,8 @@ const AgentDashboard = () => {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left border-b">
@@ -255,6 +256,81 @@ const AgentDashboard = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="space-y-4 md:hidden">
+              {leads.map((lead, index: number) => {
+                const statusColors = {
+                  hot: "bg-estate-error/20 text-estate-error",
+                  warm: "bg-estate-gold/20 text-estate-gold",
+                  cold: "bg-estate-teal/20 text-estate-teal",
+                };
+                return (
+                  <div
+                    key={index}
+                    className="p-4 border rounded-lg shadow-sm bg-white space-y-3"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar>
+                        <AvatarImage
+                          src={`https://ui-avatars.com/api/?name=${lead.name?.replace(
+                            " ",
+                            "+"
+                          )}&background=1A365D&color=fff`}
+                        />
+                        <AvatarFallback>{lead.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{lead.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lead.phone}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Status:</span>
+                      <Badge className={statusColors[lead.status]}>
+                        {lead.status}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Property:</span>
+                      <span className="text-sm">
+                        {lead?.property?.basicInfo?.projectName || "NA"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Last Contact:</span>
+                      <span className="text-sm">
+                        {lead.lastContact
+                          ? new Date(lead.lastContact).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                year: "numeric",
+                                month: "short",
+                              }
+                            )
+                          : "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        className="bg-estate-navy hover:bg-estate-navy/90"
+                        onClick={() => navigate("/leads")}
+                      >
+                        <Calendar className="h-4 w-4 mr-1" /> View Details
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

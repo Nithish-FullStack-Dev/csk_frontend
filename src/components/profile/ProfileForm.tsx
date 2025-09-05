@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,36 +7,66 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { User, Edit, Save, X } from "lucide-react";
+import { User, Edit, Save, X, Camera, Edit2 } from "lucide-react";
 import axios from "axios";
 
 const ProfileForm = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    user?.avatar || null
+  );
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
     department: user?.department || "",
-    joiningDate: "",
+    avatar: user?.avatar || "",
   });
 
   const handleSave = async () => {
     try {
+      setIsLoading(true);
+      // Upload avatar if changed
+      let avatarUrl = user?.avatar;
+
+      if (avatarFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", avatarFile);
+        const res = await axios.post(
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
+          formDataUpload,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        avatarUrl = res.data.url;
+      }
       const updatedUser = {
         ...user,
         ...formData,
+        avatar: avatarUrl,
       };
-      console.log(updatedUser);
-      await axios.post(`${import.meta.env.VITE_URL}/api/user/updateUser`, {
-        updatedUser,
-      });
+
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/user/updateUser`,
+        {
+          updatedUser,
+        }
+      );
+      setUser(data.user);
       toast.success("Profile updated successfully");
       setIsEditing(false);
     } catch (error) {
       console.error("Update failed:", error);
       toast.error("Failed to update profile");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,9 +77,28 @@ const ProfileForm = () => {
       phone: user?.phone || "",
       address: user?.address || "",
       department: user?.department || "",
-      joiningDate: "",
+      avatar: user?.avatar || "",
     });
     setIsEditing(false);
+  };
+
+  const handleAvatarClick = () => {
+    if (isEditing && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const getRoleColor = (role: string) => {
@@ -96,20 +145,39 @@ const ProfileForm = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row items-start gap-6">
-            <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback className="text-lg sm:text-xl">
-                {user.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex flex-col sm:flex-row items-start gap-6 ">
+            <div
+              className={`relative ${
+                isEditing ? "cursor-pointer hover:opacity-80" : "cursor-default"
+              } border border-1 border-gray-200 rounded-full`}
+              onClick={handleAvatarClick}
+            >
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+                <AvatarImage src={avatarPreview} />
+                <AvatarFallback className="text-lg sm:text-xl">
+                  {user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <div className="absolute bottom-0 right-0 bg-black bg-opacity-50 rounded-full p-1">
+                  <Edit2 className="text-white h-4 w-4" />
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleAvatarChange}
+              />
+            </div>
             <div className="flex-1 space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-semibold font-sans break-words">
-                  {user.name}
+                  {formData.name}
                 </h2>
                 <Badge
                   className={`${getRoleColor(
@@ -129,7 +197,6 @@ const ProfileForm = () => {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="bg-background font-sans"
                   />
                 </div>
                 <div className="space-y-2">
@@ -142,7 +209,6 @@ const ProfileForm = () => {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="bg-background font-sans"
                   />
                 </div>
                 <div className="space-y-2">
@@ -155,7 +221,6 @@ const ProfileForm = () => {
                     }
                     disabled={!isEditing}
                     placeholder="+91 XXXXX XXXXX"
-                    className="bg-background font-sans"
                   />
                 </div>
                 <div className="space-y-2">
@@ -167,7 +232,6 @@ const ProfileForm = () => {
                       setFormData({ ...formData, department: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="bg-background font-sans"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -179,15 +243,18 @@ const ProfileForm = () => {
                       setFormData({ ...formData, address: e.target.value })
                     }
                     disabled={!isEditing}
-                    className="bg-background font-sans"
                   />
                 </div>
               </div>
               {isEditing && (
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={handleSave} className="w-full sm:w-auto">
+                  <Button
+                    onClick={handleSave}
+                    className="w-full sm:w-auto"
+                    disabled={isLoading}
+                  >
                     <Save className="h-4 w-4 mr-2" />
-                    Save Changes
+                    {isLoading ? "Saving..." : "Save Changes"}
                   </Button>
                   <Button
                     variant="outline"

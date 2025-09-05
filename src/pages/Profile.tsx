@@ -164,7 +164,7 @@ const Profile = () => {
                   <span>
                     {user &&
                       user.lastLogin &&
-                      new Date(user.lastLogin).toLocaleString("en-IN", {
+                      new Date(user.lastLogin).toLocaleTimeString("en-IN", {
                         day: "2-digit",
                         month: "long",
                         year: "numeric",

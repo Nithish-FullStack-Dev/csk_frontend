@@ -76,7 +76,7 @@ export function RescheduleDialogAgent({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
         </DialogHeader>

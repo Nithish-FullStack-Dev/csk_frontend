@@ -34,6 +34,7 @@ export interface User {
 // Define the context structure
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User>>;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -55,6 +56,7 @@ export const getCsrfToken = async () => {
 // Create the context
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  setUser: () => {},
   isLoading: false,
   login: async () => {},
   logout: async () => {}, // Make async
@@ -139,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isLoading,
         login,
         logout,

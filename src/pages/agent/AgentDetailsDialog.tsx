@@ -8,7 +8,7 @@ import {
 const AgentDetailsDialog = ({ open, setOpen, schedule }) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+      <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
         <DialogHeader>
           <DialogTitle>Appointment Details</DialogTitle>
         </DialogHeader>
@@ -27,11 +27,21 @@ const AgentDetailsDialog = ({ open, setOpen, schedule }) => {
           </p>
           <p>
             <strong>Start Time:</strong>{" "}
-            {schedule.startTime?.toISOString().split("T")[1]?.slice(0, 5)}
+            {schedule.startTime &&
+              new Date(schedule.startTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}
           </p>
           <p>
             <strong>End Time:</strong>{" "}
-            {schedule.endTime?.toISOString().split("T")[1]?.slice(0, 5)}
+            {schedule.endTime &&
+              new Date(schedule?.endTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}
           </p>
           <p>
             <strong>Location:</strong> {schedule?.location}

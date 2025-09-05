@@ -147,7 +147,7 @@ const TeamLeadDashboard = () => {
                   pendingVisits.map((visit) => (
                     <div
                       key={visit._id}
-                      className="flex justify-between items-center p-4 border-b last:border-b-0 md:flex-row flex-col gap-5"
+                      className="flex justify-between items-center p-4 border-b last:border-b-0 sm:flex-row flex-col gap-5"
                     >
                       <div className="flex items-center space-x-4">
                         <Avatar>
