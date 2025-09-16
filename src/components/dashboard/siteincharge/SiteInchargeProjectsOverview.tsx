@@ -127,7 +127,7 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
     <div className="space-y-6">
       {projects &&
         projects.map((project) => (
-          <div key={project.id} className="border rounded-lg p-4">
+          <div key={project._id} className="border rounded-lg p-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-semibold text-lg">{project.projectTitle}</h3>
               <DropdownMenu>

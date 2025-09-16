@@ -27,12 +27,15 @@ export function RescheduleDialog({
   clients,
   properties,
 }) {
-  console.log(schedule);
+  // Ensure schedule is defined before using it
+  if (!schedule) return null;
+
   const { control, register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       ...schedule,
-      propertyId: schedule.propertyId,
-      clientId: schedule.clientId,
+      // Fix: extract _id from nested objects for select fields
+      propertyId: schedule.property?._id || "",
+      clientId: schedule.client?._id || "",
       date:
         typeof schedule.date === "string"
           ? schedule.date
@@ -44,8 +47,10 @@ export function RescheduleDialog({
 
   const onSubmit = async (formData) => {
     try {
+      // Map propertyId to property for API
       const payload = {
         ...formData,
+        property: formData.propertyId,
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
       };
@@ -55,15 +60,14 @@ export function RescheduleDialog({
           schedule._id
         }`,
         payload,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       toast({ title: "Success", description: "Appointment rescheduled." });
       setOpen(false);
       fetchAppointments();
     } catch (error) {
+      console.error("Reschedule Error:", error);
       toast({
         title: "Error",
         description: error?.response?.data?.error || "Failed to reschedule.",
@@ -80,8 +84,10 @@ export function RescheduleDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Title */}
           <Input {...register("title")} placeholder="Title" required />
 
+          {/* Client Selection */}
           <Controller
             name="clientId"
             control={control}
@@ -91,16 +97,18 @@ export function RescheduleDialog({
                   <SelectValue placeholder="Select Client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client._id} value={client._id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(clients) &&
+                    clients.map((client) => (
+                      <SelectItem key={client._id} value={client._id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             )}
           />
 
+          {/* Property Selection */}
           <Controller
             name="propertyId"
             control={control}
@@ -110,27 +118,36 @@ export function RescheduleDialog({
                   <SelectValue placeholder="Select Property" />
                 </SelectTrigger>
                 <SelectContent>
-                  {properties.map((property) => (
-                    <SelectItem key={property._id} value={property._id}>
-                      {property.basicInfo.projectName}
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(properties) &&
+                    properties.map((property) => (
+                      <SelectItem key={property._id} value={property._id}>
+                        {property.basicInfo?.projectName || "Unnamed Project"}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             )}
           />
 
+          {/* Date & Time */}
           <div className="grid grid-cols-2 gap-2">
-            <Input type="date" {...register("date")} />
-            <Input type="time" {...register("startTime")} />
-            <Input type="time" {...register("endTime")} />
+            <Input type="date" {...register("date")} required />
+            <Input type="time" {...register("startTime")} required />
+            <Input type="time" {...register("endTime")} required />
           </div>
 
+          {/* Location & Notes */}
           <Textarea {...register("location")} placeholder="Location" />
           <Textarea {...register("notes")} placeholder="Notes" />
 
           <DialogFooter className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpen(false);
+                reset(); // Optional: reset form on cancel
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit">Update</Button>

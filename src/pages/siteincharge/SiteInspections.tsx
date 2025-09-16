@@ -66,68 +66,6 @@ interface SiteInspection {
   photoCount: number;
 }
 
-const siteInspections: SiteInspection[] = [
-  {
-    id: "si1",
-    title: "Foundation completion inspection",
-    project: "Riverside Tower",
-    unit: "Block A",
-    type: "milestone",
-    inspectionDate: "2025-04-15",
-    status: "completed",
-    location: "Building Site 1",
-    notes:
-      "Foundation work completed as per specifications. Ready for next phase.",
-    photoCount: 8,
-  },
-  {
-    id: "si2",
-    title: "Structural frame inspection",
-    project: "Valley Heights",
-    unit: "Unit 3",
-    type: "routine",
-    inspectionDate: "2025-04-16",
-    status: "planned",
-    location: "Main Construction Area",
-    photoCount: 0,
-  },
-  {
-    id: "si3",
-    title: "Plumbing works inspection",
-    project: "Green Villa",
-    unit: "Villa 2",
-    type: "routine",
-    inspectionDate: "2025-04-18",
-    status: "planned",
-    location: "Interior Plumbing Zone",
-    photoCount: 0,
-  },
-  {
-    id: "si4",
-    title: "Wall crack investigation",
-    project: "Riverside Tower",
-    unit: "Block B",
-    type: "quality_issue",
-    inspectionDate: "2025-04-14",
-    status: "completed",
-    location: "3rd Floor, East Wing",
-    notes:
-      "Found hairline cracks in the wall. Documented for quality control team.",
-    photoCount: 6,
-  },
-  {
-    id: "si5",
-    title: "Roof installation inspection",
-    project: "Valley Heights",
-    unit: "Unit 7",
-    type: "milestone",
-    inspectionDate: "2025-04-20",
-    status: "planned",
-    location: "Rooftop Area",
-    photoCount: 0,
-  },
-];
-
 const typeColors: Record<string, string> = {
   routine: "bg-blue-100 text-blue-800",
   quality_issue: "bg-red-100 text-red-800",
@@ -148,7 +86,6 @@ const SiteInspections = () => {
   const [photos, setPhotos] = useState<File[]>([]);
   const [siteInspections, setSiteInspections] = useState([]);
   const [projects, setProjects] = useState([]);
-  ``;
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
@@ -165,6 +102,7 @@ const SiteInspections = () => {
     useState(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isInspection, setIsInspection] = useState(false);
 
   const handleUpdateStatus = (inspection) => {
     setSelectedInspection(inspection);
@@ -192,7 +130,7 @@ const SiteInspections = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/project`,
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -201,6 +139,7 @@ const SiteInspections = () => {
       console.error("Error fetching dropdown data:", error);
     }
   };
+
   useEffect(() => {
     fetchInspections();
     fetchDropdownData();
@@ -260,7 +199,7 @@ const SiteInspections = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setIsInspection(true);
     // 1. Upload photos one-by-one
     const uploadedImageUrls: string[] = [];
     for (const photo of photos) {
@@ -303,9 +242,18 @@ const SiteInspections = () => {
       toast.success("Inspection created successfully!");
       setNewInspectionOpen(false); // close modal
       fetchInspections();
+      setTitle("");
+      setDate("");
+      setSelectedProject("");
+      setUnit("");
+      setSelectedType("");
+      setLocation("");
+      setNotes("");
     } catch (error) {
       toast.error("Failed to create inspection.");
       console.error("Inspection error:", error);
+    } finally {
+      setIsInspection(false);
     }
   };
 
@@ -411,8 +359,8 @@ const SiteInspections = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-projects">All Projects</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project} value={project}>
+                {projects.map((project, idx) => (
+                  <SelectItem key={project._id || idx} value={project._id}>
                     {project.projectTitle}
                   </SelectItem>
                 ))}
@@ -508,8 +456,11 @@ const SiteInspections = () => {
                         <SelectValue placeholder="Select project" />
                       </SelectTrigger>
                       <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project._id} value={project._id}>
+                        {projects.map((project, idx) => (
+                          <SelectItem
+                            key={project._id || idx}
+                            value={project._id}
+                          >
                             {project.projectTitle}
                           </SelectItem>
                         ))}
@@ -631,8 +582,14 @@ const SiteInspections = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" onClick={handleSubmit}>
-                    Create Inspection
+                  <Button
+                    type="submit"
+                    onClick={handleSubmit}
+                    disabled={isInspection}
+                  >
+                    {isInspection
+                      ? "Creating Inspection..."
+                      : "Create Inspection"}
                   </Button>
                 </DialogFooter>
               </form>

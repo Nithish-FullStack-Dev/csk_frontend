@@ -14,9 +14,10 @@ import { toast } from "@/hooks/use-toast";
 
 interface ExpenseFormProps {
   onSubmit: (expense: any) => void;
+  isLoading: boolean;
 }
 
-const ExpenseForm = ({ onSubmit }: ExpenseFormProps) => {
+const ExpenseForm = ({ onSubmit, isLoading }: ExpenseFormProps) => {
   const [expense, setExpense] = useState({
     category: "",
     amount: "",
@@ -139,8 +140,8 @@ const ExpenseForm = ({ onSubmit }: ExpenseFormProps) => {
           placeholder="Expense description"
         />
       </div>
-      <Button onClick={handleSubmit} className="w-full">
-        Add Expense
+      <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>
+        {isLoading ? "Adding Expense..." : "Add Expense"}
       </Button>
     </div>
   );

@@ -133,6 +133,7 @@ const MySchedule = () => {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isRescheduleOpen, setRescheduleOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
   const [units, setUnits] = useState<string[]>([]);
@@ -141,11 +142,12 @@ const MySchedule = () => {
   // const { register, handleSubmit, reset} = useForm();
 
   const onSubmit = async (formData) => {
+    setIsSaving(true);
     try {
       const payload = {
         title: formData.title,
         clientId: formData.clientId,
-        property: formData.propertyId,
+        property: selectedProject?._id || null,
         type: formData.type,
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
@@ -154,6 +156,8 @@ const MySchedule = () => {
         date: formData.date,
         status: formData.status || "pending",
       };
+      console.log(payload);
+      console.log(selectedProject);
 
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user-schedule/schedule`,
@@ -165,7 +169,6 @@ const MySchedule = () => {
         title: "Success",
         description: "Appointment created successfully.",
       });
-
       setValue(); // Clear form
       setOpen(false); // Close dialog
       fetchAppointments();
@@ -179,6 +182,8 @@ const MySchedule = () => {
           "Something went wrong while saving appointment.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -266,101 +271,159 @@ const MySchedule = () => {
                 className="space-y-4 mt-4"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input {...register("title")} placeholder="Title" required />
+                  {/* Title */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Title</label>
+                    <Input
+                      {...register("title")}
+                      placeholder="Title"
+                      required
+                    />
+                  </div>
 
-                  <Select
-                    onValueChange={(value) => setValue("clientId", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Contractor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.isArray(clients) &&
-                        clients.map((client) => (
-                          <SelectItem key={client._id} value={client._id}>
-                            {client.name}
+                  {/* Contractor */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Contractor</label>
+                    <Select
+                      onValueChange={(value) => setValue("clientId", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(clients) &&
+                          clients.map((client) => (
+                            <SelectItem key={client._id} value={client._id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Project */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Project</label>
+                    <Select
+                      value={selectedProject?._id || ""}
+                      onValueChange={(selectedId) => {
+                        const project =
+                          projects.find((p) => p._id === selectedId) || null;
+
+                        setSelectedProject(project);
+                        setUnits(project?.unitNames || []);
+                        setSelectedUnit(""); // Reset unit
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((proj) => (
+                          <SelectItem key={proj._id} value={proj._id}>
+                            {proj.projectTitle ||
+                              proj.name ||
+                              "Unnamed Project"}
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  {/* Project Dropdown */}
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={selectedProject}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const project =
-                        projects.find((p) => p._id === selectedId) || null;
+                  {/* Unit */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Unit</label>
+                    <Select
+                      value={selectedUnit}
+                      onValueChange={(value) => setSelectedUnit(value)}
+                      disabled={!selectedProject}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((unitName) => (
+                          <SelectItem key={unitName} value={unitName}>
+                            {unitName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                      setSelectedProject(project);
-                      setUnits(project?.unitNames || []);
-                      setSelectedUnit(""); // Reset unit
-                    }}
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map((proj) => (
-                      <option key={proj._id} value={proj._id}>
-                        {proj.projectTitle || proj.name || "Unnamed Project"}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Date */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Date</label>
+                    <Input type="date" {...register("date")} required />
+                  </div>
 
-                  {/* Unit Dropdown */}
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={selectedUnit}
-                    onChange={(e) => setSelectedUnit(e.target.value)}
-                    disabled={!selectedProject}
-                  >
-                    <option value="">Select Unit</option>
-                    {units.map((unitName) => (
-                      <option key={unitName} value={unitName}>
-                        {unitName}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Start Time */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Start Time</label>
+                    <Input type="time" {...register("startTime")} required />
+                  </div>
 
-                  <Input type="date" {...register("date")} required />
-                  <Input type="time" {...register("startTime")} required />
-                  <Input type="time" {...register("endTime")} required />
-                  <Input {...register("location")} placeholder="Location" />
+                  {/* End Time */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">End Time</label>
+                    <Input type="time" {...register("endTime")} required />
+                  </div>
+
+                  {/* Location */}
+                  <div className="flex flex-col">
+                    <label className="mb-1 font-medium">Location</label>
+                    <Input {...register("location")} placeholder="Location" />
+                  </div>
                 </div>
 
-                <Select
-                  onValueChange={(value) => setValue("type", value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Mode of Engagement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="site_visit">Site Visit</SelectItem>
-                    <SelectItem value="consultation">Consultation</SelectItem>
-                    <SelectItem value="document">Document</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Type of Engagement */}
+                <div className="flex flex-col">
+                  <label className="mb-1 font-medium">Mode of Engagement</label>
+                  <Select
+                    onValueChange={(value) => setValue("type", value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Mode of Engagement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="site_visit">Site Visit</SelectItem>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                      <SelectItem value="document">Document</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                <Textarea
-                  {...register("notes")}
-                  placeholder="Notes or Description"
-                  className="min-h-[100px]"
-                />
+                {/* Notes */}
+                <div className="flex flex-col">
+                  <label className="mb-1 font-medium">
+                    Notes / Description
+                  </label>
+                  <Textarea
+                    {...register("notes")}
+                    placeholder="Notes or Description"
+                    className="min-h-[100px]"
+                  />
+                </div>
 
-                <Select
-                  onValueChange={(value) => setValue("status", value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Status */}
+                <div className="flex flex-col">
+                  <label className="mb-1 font-medium">Status</label>
+                  <Select
+                    onValueChange={(value) => setValue("status", value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <DialogFooter className="flex justify-end gap-2">
                   <Button
@@ -368,14 +431,15 @@ const MySchedule = () => {
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
-                      setUnit("");
                       setSelectedProject(null);
                       setSelectedUnit(null);
                     }}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -505,13 +569,17 @@ const MySchedule = () => {
                               <span className="text-sm">
                                 {appointment.client.name || "anonymous"}
                               </span>
-                              {appointment.property.basicInfo.projectName && (
+                              {appointment?.property?.basicInfo
+                                ?.projectName && (
                                 <>
                                   <span className="text-muted-foreground mx-1">
                                     •
                                   </span>
                                   <span className="text-sm">
-                                    {appointment.property.basicInfo.projectName}
+                                    {
+                                      appointment?.property?.basicInfo
+                                        ?.projectName
+                                    }
                                   </span>
                                 </>
                               )}
