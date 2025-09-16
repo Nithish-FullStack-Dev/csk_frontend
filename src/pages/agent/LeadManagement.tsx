@@ -516,7 +516,7 @@ const LeadManagement = () => {
                   </Button>
                 )}
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[525px]">
+              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                 <DialogHeader>
                   <DialogTitle>Add New Lead</DialogTitle>
                   <DialogDescription>
@@ -1144,7 +1144,7 @@ const LeadManagement = () => {
             open={isEditLeadDialogOpen}
             onOpenChange={setIsEditLeadDialogOpen}
           >
-            <DialogContent className="sm:max-w-[525px] max-h-[85vh] overflow-auto">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Edit Lead</DialogTitle>
                 <DialogDescription>

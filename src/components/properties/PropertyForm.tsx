@@ -236,7 +236,6 @@ export function PropertyForm({
       toast.error("You don't have permission to perform this action");
       return;
     }
-    console.log(data);
     setLoading(true);
     try {
       const csrfToken = await getCsrfToken();
@@ -325,8 +324,6 @@ export function PropertyForm({
         withCredentials: true,
       };
 
-      console.log(config);
-
       const response = isEditing
         ? await axios.put(
             `${import.meta.env.VITE_URL}/api/properties/updateProperty/${
@@ -346,7 +343,6 @@ export function PropertyForm({
           ? "Property updated successfully"
           : "Property added successfully"
       );
-      console.log(response.data);
     } catch (error) {
       console.error("Error submitting property form:", error);
       toast.error("Failed to save property");

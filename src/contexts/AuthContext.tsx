@@ -34,10 +34,13 @@ export interface User {
 // Define the context structure
 interface AuthContextType {
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User>>;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isUnauthorized: boolean;
+  setIsUnauthorized: React.Dispatch<React.SetStateAction<Boolean>>;
 }
 
 export const getCsrfToken = async () => {
@@ -53,10 +56,13 @@ export const getCsrfToken = async () => {
 // Create the context
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  setUser: () => {},
   isLoading: false,
   login: async () => {},
   logout: async () => {}, // Make async
   isAuthenticated: false,
+  isUnauthorized: false,
+  setIsUnauthorized: () => {},
 });
 
 // Create the provider component
@@ -65,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   // gets the logged in user
   const fetchLoggedInUser = async () => {
@@ -77,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       if (error.response?.status === 401) {
         setUser(null);
+        setIsUnauthorized(true);
       } else {
         console.log("failed to load logged in user ", error);
       }
@@ -95,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log(email, password);
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/login`,
         { email, password },
@@ -134,10 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isLoading,
         login,
         logout,
         isAuthenticated: !!user,
+        isUnauthorized,
+        setIsUnauthorized,
       }}
     >
       {children}
