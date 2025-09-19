@@ -227,11 +227,10 @@ const SiteInchargeDashboard = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="verification">Task Verification</TabsTrigger>
             <TabsTrigger value="quality">Quality Control</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div>
               <Card className="col-span-2">
                 <CardHeader>
                   <CardTitle>Projects Overview</CardTitle>
@@ -240,50 +239,8 @@ const SiteInchargeDashboard = () => {
                   <SiteInchargeProjectsOverview projects={projects} />
                 </CardContent>
               </Card>
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Pending Verifications</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {appointments.map((task, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="font-medium">{task.taskTitle}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {task.projectName}, {task.unit}
-                          </p>
-                        </div>
-                        {task.priority && (
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              task.priority === "priority"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {task.priority === "priority"
-                              ? "Priority"
-                              : task.priority.charAt(0).toUpperCase() +
-                                task.priority.slice(1)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-
-                    <div className="flex justify-center mt-4">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/verifications">View All Verifications</Link>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-1">
               <Card>
                 <CardHeader>
                   <CardTitle>Quality Issues</CardTitle>
@@ -369,22 +326,6 @@ const SiteInchargeDashboard = () => {
                 <div className="flex justify-center mt-4">
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/quality">Manage Quality Control</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="schedule" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Inspection Schedule</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SiteInchargeSchedule inspections={appointments} />
-                <div className="flex justify-center mt-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to="/schedule">View Full Schedule</Link>
                   </Button>
                 </div>
               </CardContent>

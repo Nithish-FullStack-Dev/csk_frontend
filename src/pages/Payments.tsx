@@ -91,55 +91,6 @@ const CustomDateInput = forwardRef<HTMLButtonElement, CustomInputProps>(
 
 CustomDateInput.displayName = "CustomDateInput"; // important for forwardRef
 
-// Sample payment data
-// const payments = [
-//   {
-//     id: "PMT-2023-001",
-//     reference: "INV-2023-001",
-//     property: "Skyline Towers",
-//     client: "John Cooper",
-//     amount: 5200,
-//     method: "Credit Card",
-//     date: "2023-10-15",
-//   },
-//   {
-//     id: "PMT-2023-002",
-//     reference: "INV-2023-004",
-//     property: "Riverside Apartments",
-//     client: "Sarah Johnson",
-//     amount: 4200,
-//     method: "Bank Transfer",
-//     date: "2023-10-05",
-//   },
-//   {
-//     id: "PMT-2023-003",
-//     reference: "INV-2023-006",
-//     property: "Parkview Residences",
-//     client: "David Thompson",
-//     amount: 6800,
-//     method: "Check",
-//     date: "2023-09-28",
-//   },
-//   {
-//     id: "PMT-2023-004",
-//     reference: "INV-2023-007",
-//     property: "Golden Heights Phase 1",
-//     client: "Emily Davis",
-//     amount: 3500,
-//     method: "Credit Card",
-//     date: "2023-10-20",
-//   },
-//   {
-//     id: "PMT-2023-005",
-//     reference: "INV-2023-009",
-//     property: "Evergreen Villas",
-//     client: "Robert Wilson",
-//     amount: 7200,
-//     method: "Bank Transfer",
-//     date: "2023-10-12",
-//   },
-// ];
-
 const Payments = () => {
   const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -327,13 +278,6 @@ const Payments = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-              <div className="relative w-full sm:w-auto">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search payments..."
-                  className="pl-8 w-full sm:w-[260px]"
-                />
-              </div>
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <DropdownMenu
                   open={showMethodDropdown}

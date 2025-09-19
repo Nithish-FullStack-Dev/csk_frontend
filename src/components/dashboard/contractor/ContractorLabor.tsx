@@ -43,6 +43,7 @@ import {
   BadgeIndianRupee,
   Users,
   CalendarClock,
+  Badge,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -145,7 +146,7 @@ const ContractorLabor = () => {
       };
 
       await axios.post(
-        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam._id}/attendance`,
+        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam?._id}/attendance`,
         payload,
         { withCredentials: true }
       );
@@ -335,7 +336,7 @@ const ContractorLabor = () => {
                       className="max-w-[150px] truncate"
                       title={team.project}
                     >
-                      {team.project.projectId.basicInfo.projectName}
+                      {team?.project?.projectId?.basicInfo?.projectName}
                     </TableCell>
                     <TableCell>
                       <span
@@ -415,7 +416,7 @@ const ContractorLabor = () => {
                 </p>
                 <p className="text-sm text-gray-600 truncate">
                   <span className="font-medium">Project:</span>{" "}
-                  {team.project.projectId.basicInfo.projectName}
+                  {team?.project?.projectId?.basicInfo?.projectName}
                 </p>
 
                 <div className="flex space-x-2 pt-2">
@@ -632,7 +633,7 @@ const ContractorLabor = () => {
       {/* View Team Dialog */}
       {selectedTeam && (
         <Dialog open={viewTeamDialogOpen} onOpenChange={setViewTeamDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Team Details</DialogTitle>
             </DialogHeader>
@@ -689,7 +690,7 @@ const ContractorLabor = () => {
                     Project
                   </h4>
                   <p className="text-base">
-                    {selectedTeam.project.projectId.basicInfo.projectName}
+                    {selectedTeam?.project?.projectId?.basicInfo?.projectName}
                   </p>
                 </div>
                 <div>
@@ -752,14 +753,17 @@ const ContractorLabor = () => {
           open={attendanceDialogOpen}
           onOpenChange={setAttendanceDialogOpen}
         >
-          <DialogContent className="sm:max-w-[700px]">
+          <DialogContent className="w-full sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-auto rounded-xl p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>Attendance Record - {selectedTeam.name}</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl font-semibold">
+                Attendance Record - {selectedTeam.name}
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <div>
+            <div className="space-y-4 mt-2">
+              {/* Team Info */}
+              <div className="flex flex-col sm:flex-row justify-between gap-2">
+                <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">
                     Supervisor: {selectedTeam.supervisor}
                   </p>
@@ -774,8 +778,10 @@ const ContractorLabor = () => {
                 </div>
               </div>
 
-              <div className="border rounded-md overflow-x-auto">
-                <Table>
+              {/* Attendance Records */}
+              {/* Desktop Table */}
+              <div className="hidden sm:block border rounded-md overflow-x-auto">
+                <Table className="min-w-[500px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
@@ -786,57 +792,104 @@ const ContractorLabor = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedTeam &&
-                      selectedTeam.attendanceRecords.map((record) => {
-                        const percentage = Math.round(
-                          (record.present / (record.present + record.absent)) *
-                            100
-                        );
-                        const dailyCost = record.present * selectedTeam.wage;
+                    {selectedTeam?.attendanceRecords.map((record) => {
+                      const percentage = Math.round(
+                        (record.present / (record.present + record.absent)) *
+                          100
+                      );
+                      const dailyCost = record.present * selectedTeam.wage;
 
-                        return (
-                          <TableRow key={record._id}>
-                            <TableCell>
-                              {new Date(record.date).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                }
-                              )}
-                            </TableCell>
-                            <TableCell>{record.present}</TableCell>
-                            <TableCell>{record.absent}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <div className="w-16 h-2 bg-gray-200 rounded-full mr-2">
-                                  <div
-                                    className="h-2 bg-green-500 rounded-full"
-                                    style={{ width: `${percentage}%` }}
-                                  />
-                                </div>
-                                {percentage}%
+                      return (
+                        <TableRow key={record._id}>
+                          <TableCell>
+                            {new Date(record.date).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </TableCell>
+                          <TableCell>{record.present}</TableCell>
+                          <TableCell>{record.absent}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <div className="w-16 h-2 bg-gray-200 rounded-full mr-2">
+                                <div
+                                  className="h-2 bg-green-500 rounded-full"
+                                  style={{ width: `${percentage}%` }}
+                                />
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                                {dailyCost.toLocaleString()}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                              {percentage}%
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                              {dailyCost.toLocaleString()}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
 
+              {/* Mobile Cards */}
+              <div className="sm:hidden space-y-3">
+                {selectedTeam?.attendanceRecords.map((record) => {
+                  const percentage = Math.round(
+                    (record.present / (record.present + record.absent)) * 100
+                  );
+                  const dailyCost = record.present * selectedTeam.wage;
+
+                  return (
+                    <div
+                      key={record._id}
+                      className="border rounded-md p-4 shadow-sm bg-white"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-sm">
+                          {new Date(record.date).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <Badge className="text-green-600">{percentage}%</Badge>
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                          <strong>Present:</strong> {record.present}
+                        </div>
+                        <div>
+                          <strong>Absent:</strong> {record.absent}
+                        </div>
+                        <div className="flex items-center">
+                          <strong className="mr-1">Progress:</strong>
+                          <div className="w-full h-2 bg-gray-200 rounded-full mr-2">
+                            <div
+                              className="h-2 bg-green-500 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span>{percentage}%</span>
+                        </div>
+                        <div className="flex items-center">
+                          <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                          <span>{dailyCost.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Record Attendance Form */}
               <div className="space-y-4 pt-2">
                 <h3 className="text-base font-medium">
                   Record Attendance for Today
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="attendance-date">Date</Label>
                     <Input
@@ -869,7 +922,8 @@ const ContractorLabor = () => {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2">
+
+                <div className="flex justify-end space-x-2 mt-2">
                   <Button
                     onClick={() => {
                       handleSaveAttendance();

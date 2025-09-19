@@ -208,7 +208,6 @@ const BudgetTracking = () => {
         setBudgetCategories(formattedCategories);
         setTotalSpent(totalSpentVal);
         setTotalBudget(totalBudgetVal);
-        console.log("Budget : ", budgetCategories);
       }
     } catch (error) {
       console.error("Failed to load budget info.");

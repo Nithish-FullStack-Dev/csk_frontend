@@ -99,8 +99,9 @@ export const navigationByRole: Record<
     { to: "/inspections", icon: Camera, label: "Site Inspections" },
     { to: "/schedule", icon: Calendar, label: "Inspection Schedule" },
     { to: "/contractors", icon: Users, label: "Contractors" },
-    { to: "/progress", icon: Gauge, label: "Construction Progress" },
+    // { to: "/progress", icon: Gauge, label: "Construction Progress" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
+    { to: "/profile", icon: User, label: "Profile" },
   ],
   contractor: [
     { to: "/", icon: LayoutDashboard, label: "Contractor Dashboard" },

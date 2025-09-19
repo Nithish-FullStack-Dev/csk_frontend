@@ -471,7 +471,7 @@ const TaskVerificationList = ({
                           size="sm"
                           onClick={() => {
                             setSelectedTask(task);
-                            console.log("SELECTED TASK : ", task);
+                            setPhotos([]); // or task.photos if applicable
                             setVerificationDialogOpen(true);
                           }}
                         >

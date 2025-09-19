@@ -156,8 +156,6 @@ const MySchedule = () => {
         date: formData.date,
         status: formData.status || "pending",
       };
-      console.log(payload);
-      console.log(selectedProject);
 
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user-schedule/schedule`,
@@ -201,8 +199,8 @@ const MySchedule = () => {
         date: new Date(appt.date),
         startTime: new Date(appt.startTime),
         endTime: new Date(appt.endTime),
+        property: projects.find((proj) => proj._id === appt.property) || null,
       }));
-
       setAppointments(processedSchedules);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -232,9 +230,16 @@ const MySchedule = () => {
     fetchDropdownData();
   }, []);
 
-  const todaysAppointments = appointments.filter((appointment) =>
-    date ? isSameDay(appointment.date, date) : false
-  );
+  const todaysAppointments = appointments
+    .map((appt) => ({
+      ...appt,
+      property: appt.property
+        ? JSON.parse(JSON.stringify(appt.property))
+        : null,
+    }))
+    .filter((appointment) =>
+      date ? isSameDay(appointment.date, date) : false
+    );
 
   const handlePreviousDay = () => {
     if (date) setDate(subDays(date, 1));
@@ -515,10 +520,9 @@ const MySchedule = () => {
                       pending: "bg-yellow-100 text-yellow-800",
                       cancelled: "bg-red-100 text-red-800",
                     };
-
                     return (
                       <div
-                        key={appointment.id}
+                        key={appointment._id}
                         className="flex gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex flex-col items-center justify-center w-16 text-center">
@@ -586,7 +590,7 @@ const MySchedule = () => {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mt-2 md:flex-row flex-col">
                             <Badge
                               variant="outline"
                               className={
@@ -609,7 +613,7 @@ const MySchedule = () => {
 
                             <div className="flex-1"></div>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 md:flex-row flex-col">
                               <Button
                                 variant="outline"
                                 size="sm"

@@ -670,6 +670,7 @@ const TaxDocuments = () => {
                           setNewTaxDoc({ ...newTaxDoc, amount: e.target.value })
                         }
                         placeholder="Enter amount"
+                        max={0}
                       />
                     </div>
                   </>
@@ -796,7 +797,7 @@ const TaxDocuments = () => {
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
-                                  {gstReturn.documentUrl && (
+                                  {/* {gstReturn.documentUrl && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -812,7 +813,7 @@ const TaxDocuments = () => {
                                     >
                                       <Download className="h-4 w-4" />
                                     </Button>
-                                  )}
+                                  )} */}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -867,7 +868,7 @@ const TaxDocuments = () => {
                           </div>
 
                           {/* Actions */}
-                          <div className="mt-3 flex gap-2">
+                          <div className="mt-3 flex gap-2 md:flex-row flex-col">
                             <Button
                               variant="outline"
                               size="sm"

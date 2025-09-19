@@ -181,10 +181,6 @@ const ContractorMaterials = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
-  useEffect(() => {
-    console.log(projects);
-  }, [projects]);
-
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
@@ -264,7 +260,6 @@ const ContractorMaterials = () => {
       );
 
       setProjects(projectsRes.data);
-      console.log(projectsRes.data);
     } catch (error) {
       console.error("Error fetching dropdown data:", error);
     }
@@ -857,7 +852,7 @@ const ContractorMaterials = () => {
           open={viewMaterialDialogOpen}
           onOpenChange={setViewMaterialDialogOpen}
         >
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Material Details</DialogTitle>
             </DialogHeader>

@@ -725,7 +725,7 @@ const ContractorsList = () => {
                       const res = await axios.post(
                         `${
                           import.meta.env.VITE_URL
-                        }/api/project/assign-contractor`,
+                        }/api/project/site-incharge/ass-contractor`,
                         formData,
                         { withCredentials: true }
                       );
