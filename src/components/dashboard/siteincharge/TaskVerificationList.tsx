@@ -316,22 +316,6 @@ const TaskVerificationList = ({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Projects" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all-projects">All Projects</SelectItem>
-            <SelectItem value="Riverside Tower">Riverside Tower</SelectItem>
-            <SelectItem value="Valley Heights">Valley Heights</SelectItem>
-            <SelectItem value="Green Villa">Green Villa</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button variant="outline" size="icon">
-          <RefreshCw className="h-4 w-4" />
-        </Button>
       </div>
 
       <Tabs defaultValue="all" onValueChange={setFilter}>

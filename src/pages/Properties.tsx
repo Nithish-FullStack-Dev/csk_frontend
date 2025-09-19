@@ -112,7 +112,7 @@ const Properties = () => {
         const construction = item.constructionDetails || {};
         const finance = item.financialDetails || {};
         const location = item.locationInfo || {};
-
+        console.log(customer);
         return {
           id: item._id,
           memNo: basic.membershipNumber || "",
@@ -148,6 +148,7 @@ const Properties = () => {
       });
 
       setProperties(sampleProperties);
+      console.log(data);
       if (isCustomer) {
       } else {
         setFilteredProperties(sampleProperties);

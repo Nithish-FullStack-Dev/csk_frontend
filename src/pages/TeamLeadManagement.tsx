@@ -350,7 +350,7 @@ const TeamLeadManagement = () => {
               Manage your sales team and track their performance
             </p>
           </div>
-          <div className="flex items-center space-x-2 mt-4 md:mt-0">
+          <div className="flex md:items-center space-x-2 mt-4 md:mt-0 md:flex-row flex-col items-start gap-5">
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Sort by" />
@@ -551,25 +551,27 @@ const TeamLeadManagement = () => {
                     </span>
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex md:flex-row flex-col gap-2 w-full">
                     <Button size="sm" variant="outline" className="flex-1">
-                      <Phone className="mr-2 h-3 w-3" />
-                      Call
+                      <Phone className="mr-2 h-3 w-3" /> Call
                     </Button>
                     <a
                       href={`mailto:${member.teamLeadId.email}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="flex-1"
                     >
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button size="sm" variant="outline" className="w-full">
                         <Mail className="mr-2 h-3 w-3" />
                         Email
                       </Button>
                     </a>
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <BarChart3 className="mr-2 h-3 w-3" />
-                      Report
-                    </Button>
+                    {/* <div className="flex-1">
+                      <Button size="sm" variant="outline" className="w-full">
+                        <BarChart3 className="mr-2 h-3 w-3" />
+                        Report
+                      </Button>
+                    </div> */}
                   </div>
                 </CardContent>
               </Card>
@@ -626,7 +628,7 @@ const TeamLeadManagement = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <h4 className="font-medium">Quick Actions</h4>
                 <div className="space-y-2">
                   <Button
@@ -654,13 +656,13 @@ const TeamLeadManagement = () => {
                     Set Team Goals
                   </Button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[425px] max-w-[90vw] max-h-[90vh] rounded-xl overflow-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedTeam ? "Edit Team Member" : "Add New Team Member"}

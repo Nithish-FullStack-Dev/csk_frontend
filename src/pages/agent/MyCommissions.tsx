@@ -511,7 +511,7 @@ const MyCommissions = () => {
               Track your earnings and payment history
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 md:flex-row flex-col">
             <Button variant="outline" onClick={handleAddCommissionClick}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Commission

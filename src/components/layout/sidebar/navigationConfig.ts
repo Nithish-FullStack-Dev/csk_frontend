@@ -63,10 +63,11 @@ export const navigationByRole: Record<
     { to: "/teamLead", icon: Users, label: "Team Management" },
     { to: "/commissions", icon: CreditCard, label: "Commissions" },
     { to: "/properties", icon: Building, label: "Properties" },
-    { to: "/reports", icon: FileText, label: "Sales Reports" },
+    // { to: "/reports", icon: FileText, label: "Sales Reports" },
     { to: "/customer", icon: BarChart3, label: "Customer Management" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
     { to: "/enquiry", icon: MessagesSquare, label: "Enquiry" },
+    { to: "/profile", icon: User, label: "Profile" },
   ],
   team_lead: [
     { to: "/", icon: LayoutDashboard, label: "Team Dashboard" },
@@ -76,7 +77,7 @@ export const navigationByRole: Record<
     { to: "/approvals", icon: CheckSquare, label: "Approvals" },
     { to: "/properties", icon: Building, label: "Properties" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
-    { to: "/settings", icon: Settings, label: "System Config" },
+    // { to: "/settings", icon: Settings, label: "System Config" },
     { to: "/profile", icon: User, label: "Profile" },
   ],
   agent: [
@@ -88,7 +89,7 @@ export const navigationByRole: Record<
     { to: "/commissions", icon: CreditCard, label: "My Commissions" },
     { to: "/properties", icon: Building, label: "Properties" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
-    { to: "/settings", icon: Settings, label: "System Config" },
+    // { to: "/settings", icon: Settings, label: "System Config" },
     { to: "/profile", icon: User, label: "Profile" },
   ],
   site_incharge: [
@@ -113,6 +114,7 @@ export const navigationByRole: Record<
     { to: "/invoices", icon: Receipt, label: "Invoices" },
     { to: "/evidence", icon: Camera, label: "Photo Evidence" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
+    { to: "/profile", icon: User, label: "Profile" },
   ],
   accountant: [
     { to: "/", icon: LayoutDashboard, label: "Finance Dashboard" },
@@ -122,7 +124,7 @@ export const navigationByRole: Record<
     { to: "/budgets", icon: ClipboardList, label: "Budget Tracking" },
     { to: "/taxes", icon: FileText, label: "Tax Documents" },
     { to: "/messaging", icon: MessageCircle, label: "Communications" },
-    { to: "/settings", icon: Settings, label: "System Config" },
+    // { to: "/settings", icon: Settings, label: "System Config" },
     { to: "/profile", icon: User, label: "Profile" },
   ],
   customer_purchased: [
@@ -133,6 +135,7 @@ export const navigationByRole: Record<
     { to: "/progress", icon: Building, label: "Construction Progress" },
     { to: "/support", icon: HelpCircle, label: "Support" },
     { to: "/messaging", icon: MessageCircle, label: "Messages" },
+    { to: "/profile", icon: User, label: "Profile" },
   ],
   customer_prospect: [
     { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -142,5 +145,6 @@ export const navigationByRole: Record<
     { to: "/documents", icon: FileText, label: "My Documents" },
     { to: "/status", icon: ClipboardList, label: "Application Status" },
     { to: "/support", icon: HelpCircle, label: "Support" },
+    { to: "/profile", icon: User, label: "Profile" },
   ],
 };

@@ -1693,6 +1693,7 @@ const TaxDocuments = () => {
                         !auditorName)
                     }
                     onClick={async () => {
+                      console.log(selectedDoc._id);
                       try {
                         await axios.put(
                           `${
@@ -1801,6 +1802,7 @@ const TaxDocuments = () => {
                     disabled={auditStatus === selectedAudit.status}
                     onClick={async () => {
                       try {
+                        console.log(selectedAudit.id);
                         await axios.put(
                           `${
                             import.meta.env.VITE_URL

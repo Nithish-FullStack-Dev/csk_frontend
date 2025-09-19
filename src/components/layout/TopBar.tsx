@@ -247,7 +247,7 @@ const TopBar = () => {
 
   return (
     <header className="border-b bg-white shadow-sm z-10">
-      <div className="flex h-16 items-center justify-between px-6">
+      <div className="flex h-16 items-center justify-between md:px-6 px-0">
         <div className="flex items-center" />
 
         <div className="flex items-center space-x-4">
@@ -413,10 +413,10 @@ const TopBar = () => {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings")}>
+              {/* <DropdownMenuItem onClick={() => navigate("/settings")}>
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}

@@ -454,7 +454,6 @@ const ContractorTaskList = () => {
           </TableHeader>
           <TableBody>
             {filteredTasks.map((task) => {
-              console.log(task);
               return (
                 <TableRow key={task.id}>
                   <TableCell className="font-medium">{task.title}</TableCell>
