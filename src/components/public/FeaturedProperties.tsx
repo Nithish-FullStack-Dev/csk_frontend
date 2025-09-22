@@ -10,6 +10,9 @@ const FeaturedProperties = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [carouselData, setCarouselData] = useState([]);
+  const [galleryTitle, setGalleryTitle] = useState<string>("");
+  const [galleryDes, setGalleryDes] = useState<string>("");
 
   const fetchProperties = async () => {
     if (loading) return;
@@ -28,35 +31,45 @@ const FeaturedProperties = () => {
     }
   };
 
+  const fetchCarouselData = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/aboutSection/getAboutSec"
+      );
+      setCarouselData(data.gallery || []);
+      setGalleryTitle(data.galleryTitle || "Featured Properties");
+      setGalleryDes(
+        data.galleryDes ||
+          "Discover our handpicked selection of premium properties designed for modern living"
+      );
+    } catch (error) {
+      console.error("Failed to fetch carousel data:", error);
+      setCarouselData([]);
+      setGalleryTitle("Featured Properties");
+      setGalleryDes(
+        "Discover our handpicked selection of premium properties designed for modern living"
+      );
+    }
+  };
+
   useEffect(() => {
     fetchProperties();
+    fetchCarouselData();
   }, []);
 
-  const carouselImages = [
-    "https://static.wixstatic.com/media/c837a6_e982b433c42b4d5291adf88278482a9c~mv2.jpg/v1/fit/w_1216,h_1164,q_90,enc_avif,quality_auto/c837a6_e982b433c42b4d5291adf88278482a9c~mv2.jpg",
-    "https://static.wixstatic.com/media/e7ecb3_0ba8b5881510408080fca1f099880fdf~mv2.jpg/v1/fit/w_1216,h_1164,q_90,enc_avif,quality_auto/e7ecb3_0ba8b5881510408080fca1f099880fdf~mv2.jpg",
-    "https://static.wixstatic.com/media/e7ecb3_b9ee7d9f80b34ced94dfe8966abc60ac~mv2.jpg/v1/fit/w_2252,h_1728,q_90,enc_avif,quality_auto/e7ecb3_b9ee7d9f80b34ced94dfe8966abc60ac~mv2.jpg",
-  ];
-
-  const titles = [
-    "Skyline Edge Residences",
-    "Tranquil Meadows Enclave",
-    "The Grand Horizon Estate",
-  ];
-
-  // Duplicate images for infinite scroll effect, crucial for seamless looping
-  const infiniteCarouselImages = [...carouselImages, ...carouselImages];
+  // Duplicate carousel data for infinite scroll effect
+  const infiniteCarouselData = [...carouselData, ...carouselData];
 
   const [isHovered, setIsHovered] = useState(false);
-  const carouselContainerRef = useRef<HTMLDivElement>(null);
-  const carouselTrackRef = useRef<HTMLDivElement>(null);
+  const carouselContainerRef = useRef(null);
+  const carouselTrackRef = useRef(null);
 
   useEffect(() => {
-    let animationFrameId: number;
-    let start: number | null = null;
-    const speed = 0.7; // Controls the scroll speed in pixels per frame (slower with lower values)
+    let animationFrameId;
+    let start = null;
+    const speed = 0.7; // Controls the scroll speed in pixels per frame
 
-    const animate = (timestamp: number) => {
+    const animate = (timestamp) => {
       if (!start) start = timestamp;
       const elapsed = timestamp - start;
 
@@ -66,16 +79,14 @@ const FeaturedProperties = () => {
             ?.replace("translateX(", "")
             .replace("px)", "") || "0"
         );
-        // Calculate new position based on elapsed time and desired speed
         const newTranslateX = currentTranslateX - speed;
 
         if (carouselContainerRef.current && carouselTrackRef.current) {
           const singleLoopWidth = carouselTrackRef.current.scrollWidth / 2;
 
-          // Reset position to create the infinite loop effect
           if (Math.abs(newTranslateX) >= singleLoopWidth) {
             carouselTrackRef.current.style.transform = `translateX(0px)`;
-            start = timestamp; // Reset start time to prevent a jump after loop reset
+            start = timestamp;
           } else {
             carouselTrackRef.current.style.transform = `translateX(${newTranslateX}px)`;
           }
@@ -115,11 +126,10 @@ const FeaturedProperties = () => {
         {/* Section Heading */}
         <div className="text-center mb-12">
           <h2 className="text-2xl font-md mb-4 text-black-300">
-            Featured Properties
+            {galleryTitle}
           </h2>
-          <p className="text-4xl text-gray-600 max-w-3xl mx-auto font-md font-vidaloka">
-            Discover our handpicked selection of premium properties designed for
-            modern living
+          <p className="md:text-4xl text-3xl text-gray-600 max-w-3xl mx-auto font-md font-vidaloka">
+            {galleryDes}
           </p>
         </div>
 
@@ -138,30 +148,38 @@ const FeaturedProperties = () => {
               willChange: "transform",
             }}
           >
-            {infiniteCarouselImages.map((image, index) => (
-              <div
-                key={index}
-                className="flex-shrink-0 w-[70vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw]"
-              >
-                <div className="w-full">
-                  {/* Image container with responsive aspect ratio */}
-                  <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg shadow-lg">
-                    <img
-                      src={image}
-                      alt="Project"
-                      className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                    />
-                  </div>
+            {infiniteCarouselData.length > 0 ? (
+              infiniteCarouselData.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex-shrink-0 w-[70vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw]"
+                >
+                  <div className="w-full">
+                    {/* Image container with responsive aspect ratio */}
+                    <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg shadow-lg">
+                      <img
+                        src={item.image}
+                        alt={item.title || `Project ${index + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
 
-                  {/* Text below the image aligned to the left */}
-                  <div className="mt-2 ml-1">
-                    <p className="text-left text-sm text-black font-vidaloka">
-                      {titles[index % titles.length]}
-                    </p>
+                    {/* Text below the image aligned to the left */}
+                    <div className="mt-2 ml-1">
+                      <p className="text-left text-sm text-black font-vidaloka">
+                        {item.title || `Project ${index + 1}`}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-lg text-gray-500">
+                  No carousel data available
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -240,7 +258,7 @@ const FeaturedProperties = () => {
                 </h3>
                 <p className="text-sm text-gray-600">{property.subtitle}</p>
                 <Link
-                  to={`/public/project/${1}`}
+                  to={`/public/project/${property._id}`}
                   className="btn transparent-btn mt-2 inline-block"
                 >
                   <div className="btn_m">
