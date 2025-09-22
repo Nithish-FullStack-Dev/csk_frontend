@@ -24,18 +24,12 @@ export function RescheduleDialog({
   setOpen,
   schedule,
   fetchAppointments,
-  clients,
-  properties,
 }) {
-  // Ensure schedule is defined before using it
-  if (!schedule) return null;
-
   const { control, register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       ...schedule,
-      // Fix: extract _id from nested objects for select fields
-      propertyId: schedule.property?._id || "",
-      clientId: schedule.client?._id || "",
+      propertyId: schedule.propertyId,
+      clientId: schedule.clientId,
       date:
         typeof schedule.date === "string"
           ? schedule.date
@@ -47,10 +41,8 @@ export function RescheduleDialog({
 
   const onSubmit = async (formData) => {
     try {
-      // Map propertyId to property for API
       const payload = {
         ...formData,
-        property: formData.propertyId,
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
       };
@@ -60,14 +52,15 @@ export function RescheduleDialog({
           schedule._id
         }`,
         payload,
-        { withCredentials: true }
+        {
+          withCredentials: true,
+        }
       );
 
       toast({ title: "Success", description: "Appointment rescheduled." });
       setOpen(false);
       fetchAppointments();
     } catch (error) {
-      console.error("Reschedule Error:", error);
       toast({
         title: "Error",
         description: error?.response?.data?.error || "Failed to reschedule.",
@@ -84,70 +77,47 @@ export function RescheduleDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Title */}
           <Input {...register("title")} placeholder="Title" required />
 
-          {/* Client Selection */}
           <Controller
             name="clientId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(clients) &&
-                    clients.map((client) => (
-                      <SelectItem key={client._id} value={client._id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={schedule?.client?.name || "Unknown Client"}
+                disabled
+                readOnly
+              />
             )}
           />
 
-          {/* Property Selection */}
           <Controller
             name="propertyId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Property" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(properties) &&
-                    properties.map((property) => (
-                      <SelectItem key={property._id} value={property._id}>
-                        {property.basicInfo?.projectName || "Unnamed Project"}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={
+                  schedule?.property?.projectId?.basicInfo?.projectName ||
+                  schedule?.property?.projectTitle ||
+                  "Unknown Property"
+                }
+                disabled
+                readOnly
+              />
             )}
           />
 
-          {/* Date & Time */}
           <div className="grid grid-cols-2 gap-2">
-            <Input type="date" {...register("date")} required />
-            <Input type="time" {...register("startTime")} required />
-            <Input type="time" {...register("endTime")} required />
+            <Input type="date" {...register("date")} />
+            <Input type="time" {...register("startTime")} />
+            <Input type="time" {...register("endTime")} />
           </div>
 
-          {/* Location & Notes */}
           <Textarea {...register("location")} placeholder="Location" />
           <Textarea {...register("notes")} placeholder="Notes" />
 
           <DialogFooter className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOpen(false);
-                reset(); // Optional: reset form on cancel
-              }}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button type="submit">Update</Button>

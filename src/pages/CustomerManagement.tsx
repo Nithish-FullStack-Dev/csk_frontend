@@ -772,9 +772,10 @@ const CustomerManagement: React.FC = () => {
                           handlePropertyChange(
                             index,
                             "finalPrice",
-                            e.target.value
+                            Math.max(0, Number(e.target.value))
                           )
                         }
+                        max={0}
                       />
                     </div>
                   </div>

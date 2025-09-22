@@ -80,7 +80,12 @@ const ExpenseForm = ({ onSubmit, isLoading }: ExpenseFormProps) => {
           type="number"
           value={expense.amount}
           min={0}
-          onChange={(e) => setExpense({ ...expense, amount: e.target.value })}
+          onChange={(e) =>
+            setExpense({
+              ...expense,
+              amount: Math.max(0, Number(e.target.value)).toString(),
+            })
+          }
           placeholder="Enter amount"
         />
       </div>

@@ -12,6 +12,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Property } from "@/types/property";
 import { toast } from "sonner";
+import ModernEnquiryForm from "./EnquiryForm";
 
 const UpcomingProjectsPage = () => {
   const [upcomingProjects, setUpcomingProjects] = useState([]);
@@ -325,7 +326,7 @@ const UpcomingProjectsPage = () => {
                 benefits.
               </p>
             </div>
-            <EnquiryForm />
+            <ModernEnquiryForm />
           </div>
         </section>
       </div>

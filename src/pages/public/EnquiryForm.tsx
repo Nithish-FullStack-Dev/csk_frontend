@@ -91,6 +91,7 @@ const ModernEnquiryForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [otpLoading, setOtpLoading] = useState<boolean>(false);
   const [isOtpVerified, setIsOtpVerified] = useState<boolean>(false);
   // State to store the email that was last successfully verified
   const [verifiedEmail, setVerifiedEmail] = useState<string>("");
@@ -178,6 +179,7 @@ const ModernEnquiryForm: React.FC = () => {
       });
       return;
     }
+    setOtpLoading(true);
 
     try {
       await axios.post(`${import.meta.env.VITE_URL}/api/auth/send-otp`, {
@@ -197,6 +199,8 @@ const ModernEnquiryForm: React.FC = () => {
           "Failed to send OTP. Please ensure your email is correct and try again.",
         variant: "destructive",
       });
+    } finally {
+      setOtpLoading(false);
     }
   };
 
@@ -453,12 +457,15 @@ const ModernEnquiryForm: React.FC = () => {
               disabled={
                 !formData.email || // Email must be present
                 (otpSent && formData.email === verifiedEmail) || // Already sent for this verified email
-                isSubmitting // Prevent sending during form submission
+                isSubmitting || // Prevent sending during form submission
+                otpLoading
               }
               className="whitespace-nowrap"
             >
               {otpSent && formData.email === verifiedEmail
                 ? "OTP Sent!"
+                : otpLoading
+                ? "Sending OTP..."
                 : "Send OTP"}
             </Button>
           )}

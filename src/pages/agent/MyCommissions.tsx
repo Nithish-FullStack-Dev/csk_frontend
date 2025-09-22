@@ -421,7 +421,7 @@ const MyCommissions = () => {
     const { id, value } = e.target;
     setCommissionFormData((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: Math.max(0, Number(value)),
     }));
   };
 
@@ -1124,6 +1124,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionAmount}
                     onChange={handleFormChange}
                     required
+                    max={0}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -1138,6 +1139,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionPercent}
                     onChange={handleFormChange}
                     required
+                    max={0}
                   />
                 </div>
               </div>

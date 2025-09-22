@@ -143,7 +143,10 @@ export function AddCustomerDialog({
                 type="number"
                 placeholder="e.g., 5000000"
                 value={finalPrice}
-                onChange={(e) => setFinalPrice(e.target.value)}
+                onChange={(e) =>
+                  setFinalPrice(Math.max(0, Number(e.target.value)))
+                }
+                max={0}
               />
             </div>
           </div>

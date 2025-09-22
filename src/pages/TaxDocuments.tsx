@@ -48,115 +48,6 @@ import { toast } from "sonner";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { Switch } from "@radix-ui/react-switch";
 
-// Sample data for Indian tax documents
-const gstReturns = [
-  {
-    id: "1",
-    period: "May 2024",
-    type: "GSTR-1",
-    status: "Filed",
-    dueDate: "2024-06-11",
-    amount: 125000,
-  },
-  {
-    id: "2",
-    period: "May 2024",
-    type: "GSTR-3B",
-    status: "Pending",
-    dueDate: "2024-06-20",
-    amount: 89000,
-  },
-  {
-    id: "3",
-    period: "April 2024",
-    type: "GSTR-1",
-    status: "Filed",
-    dueDate: "2024-05-11",
-    amount: 98000,
-  },
-  {
-    id: "4",
-    period: "April 2024",
-    type: "GSTR-3B",
-    status: "Filed",
-    dueDate: "2024-05-20",
-    amount: 76000,
-  },
-];
-
-const tdsRecords = [
-  {
-    id: "1",
-    quarter: "Q1 FY 2024-25",
-    section: "194C",
-    amount: 45000,
-    challan: "CH001234",
-    date: "2024-04-15",
-    status: "Paid",
-  },
-  {
-    id: "2",
-    quarter: "Q1 FY 2024-25",
-    section: "194I",
-    amount: 25000,
-    challan: "CH001235",
-    date: "2024-04-15",
-    status: "Paid",
-  },
-  {
-    id: "3",
-    quarter: "Q4 FY 2023-24",
-    section: "194C",
-    amount: 38000,
-    challan: "CH001236",
-    date: "2024-03-31",
-    status: "Paid",
-  },
-];
-
-const incomeTaxDocs = [
-  {
-    id: "1",
-    type: "Form 26AS",
-    period: "FY 2023-24",
-    status: "Downloaded",
-    date: "2024-05-15",
-  },
-  {
-    id: "2",
-    type: "ITR-4",
-    period: "FY 2023-24",
-    status: "Filed",
-    date: "2024-07-31",
-  },
-  {
-    id: "3",
-    type: "Form 16",
-    period: "FY 2023-24",
-    status: "Generated",
-    date: "2024-04-30",
-  },
-];
-
-const auditDocuments = [
-  {
-    id: "1",
-    type: "GST Audit",
-    period: "FY 2023-24",
-    status: "Completed",
-    auditor: "CA Rajesh Kumar",
-    date: "2024-03-31",
-  },
-  {
-    id: "2",
-    type: "Tax Audit",
-    period: "FY 2023-24",
-    status: "In Progress",
-    auditor: "CA Priya Sharma",
-    date: "2024-09-30",
-  },
-];
-
 const TaxDocuments = () => {
   const [activeTab, setActiveTab] = useState("gst");
   const [newTaxDoc, setNewTaxDoc] = useState<any>({
@@ -168,6 +59,7 @@ const TaxDocuments = () => {
   const [itrDocs, setItrDocs] = useState([]);
   const [form16Docs, setForm16Docs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [isloading, setIsLoading] = useState(false);
   const [viewGstDialogOpen, setViewGstDialogOpen] = useState(false);
   const [selectedGstDoc, setSelectedGstDoc] = useState(null);
   const [tdsDialogOpen, setTdsDialogOpen] = useState(false);
@@ -201,7 +93,7 @@ const TaxDocuments = () => {
       .filter((doc) => doc.status === "filed")
       .map((doc) => ({
         id: doc._id,
-        type: "GST Audit",
+        type: doc.type, // <-- MUST be "gstr1" or "gstr3b"
         period: doc.period,
         auditor: doc.auditorName || "—",
         status: doc.isApprovedByAuditor ? "Completed" : "Pending",
@@ -212,9 +104,9 @@ const TaxDocuments = () => {
       .filter((doc) => doc.status === "filed")
       .map((doc) => ({
         id: doc._id,
-        type: "Tax Audit",
+        type: "itr", // <-- backend expects exactly "itr"
         period: doc.financialYear,
-        auditor: doc.auditorName || "—", // Add auditorName to schema if missing
+        auditor: doc.auditorName || "—",
         status: doc.isApprovedByAuditor ? "Completed" : "Pending",
         date: doc.filingDate
           ? new Date(doc.filingDate).toLocaleDateString()
@@ -326,6 +218,7 @@ const TaxDocuments = () => {
   };
 
   const handleAddTaxDoc = async () => {
+    setIsLoading(true);
     try {
       const formData = { ...newTaxDoc };
       let fileUrl = "";
@@ -411,6 +304,8 @@ const TaxDocuments = () => {
     } catch (error) {
       console.error("Add Tax Doc Error:", error);
       toast.error("Error adding tax document");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -492,9 +387,13 @@ const TaxDocuments = () => {
                         type="number"
                         value={newTaxDoc.amount || ""}
                         onChange={(e) =>
-                          setNewTaxDoc({ ...newTaxDoc, amount: e.target.value })
+                          setNewTaxDoc({
+                            ...newTaxDoc,
+                            amount: Math.max(0, Number(e.target.value)),
+                          })
                         }
                         placeholder="Enter tax amount"
+                        min={0} // allows only positive numbers
                       />
                     </div>
                     <div>
@@ -574,10 +473,11 @@ const TaxDocuments = () => {
                         onChange={(e) =>
                           setNewTaxDoc({
                             ...newTaxDoc,
-                            amountDeducted: e.target.value,
+                            amountDeducted: Math.max(0, Number(e.target.value)),
                           })
                         }
                         placeholder="Enter deducted amount"
+                        max={0}
                       />
                     </div>
                     <div>
@@ -667,7 +567,10 @@ const TaxDocuments = () => {
                         type="number"
                         value={newTaxDoc.amount || ""}
                         onChange={(e) =>
-                          setNewTaxDoc({ ...newTaxDoc, amount: e.target.value })
+                          setNewTaxDoc({
+                            ...newTaxDoc,
+                            amount: Math.max(0, Number(e.target.value)),
+                          })
                         }
                         placeholder="Enter amount"
                         max={0}
@@ -676,8 +579,12 @@ const TaxDocuments = () => {
                   </>
                 )}
 
-                <Button onClick={handleAddTaxDoc} className="w-full">
-                  Add Document
+                <Button
+                  onClick={handleAddTaxDoc}
+                  className="w-full"
+                  disabled={isloading}
+                >
+                  {isloading ? "Adding Document" : "Add Document"}
                 </Button>
               </div>
             </DialogContent>
@@ -1693,7 +1600,6 @@ const TaxDocuments = () => {
                         !auditorName)
                     }
                     onClick={async () => {
-                      console.log(selectedDoc._id);
                       try {
                         await axios.put(
                           `${
@@ -1802,7 +1708,6 @@ const TaxDocuments = () => {
                     disabled={auditStatus === selectedAudit.status}
                     onClick={async () => {
                       try {
-                        console.log(selectedAudit.id);
                         await axios.put(
                           `${
                             import.meta.env.VITE_URL

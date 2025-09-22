@@ -15,7 +15,7 @@ import PublicLayout from "@/components/layout/PublicLayout";
 import HeroSection from "@/components/public/HeroSection";
 import AboutSection from "@/components/public/AboutSection";
 import FeaturedProperties from "@/components/public/FeaturedProperties";
-import EnquiryForm from "@/components/public/EnquiryForm";
+import ModernEnquiryForm from "./EnquiryForm";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ const HomePage = () => {
                   Leave your details and we'll get back to you within 24 hours
                 </p>
               </div>
-              <EnquiryForm />
+              <ModernEnquiryForm />
             </div>
           </div>
         </section>

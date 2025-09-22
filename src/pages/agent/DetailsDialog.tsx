@@ -21,7 +21,7 @@ export function DetailsDialog({ open, setOpen, schedule }) {
           </p>
           <p>
             <strong>Property:</strong>{" "}
-            {schedule?.property?.basicInfo?.projectName}
+            {schedule?.property?.projectId?.basicInfo?.projectName}
           </p>
           <p>
             <strong>Date:</strong>{" "}
