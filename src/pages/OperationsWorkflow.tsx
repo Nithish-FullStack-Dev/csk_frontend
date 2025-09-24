@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import MainLayout from "@/components/layout/MainLayout";
 import {
   Card,
@@ -21,7 +22,6 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { toast } from "sonner";
 import {
   CheckCircle2,
   Clock,
@@ -30,14 +30,10 @@ import {
   ClipboardList,
   TrendingUp,
   ArrowRight,
-  PlusCircle,
-  Calendar,
   Truck,
   Users,
-  Plus,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import AddConstructionTaskDialog from "@/components/operations/AddConstructionTaskDialog";
 import ConstructionTaskList from "@/components/operations/ConstructionTaskList";
 import ConstructionPhaseViewer from "@/components/operations/ConstructionPhaseViewer";
 import {
@@ -47,77 +43,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ErrorBoundary from "@/ErrorBoundary";
+import { useNavigate } from "react-router-dom";
 
-// Sample data for projects
-const constructionProjects = [
-  {
-    id: "1",
-    name: "Skyline Towers",
-    location: "Downtown, Metro City",
-    progress: 75,
-    status: "in-progress",
-    startDate: "2024-01-15",
-    endDate: "2025-03-30",
-    completedMilestones: 9,
-    totalMilestones: 12,
-    teamSize: 42,
-    contractorName: "BuildWell Construction Inc.",
-  },
-  {
-    id: "2",
-    name: "Parkview Residences",
-    location: "East Side, Metro City",
-    progress: 30,
-    status: "in-progress",
-    startDate: "2024-03-10",
-    endDate: "2025-06-15",
-    completedMilestones: 3,
-    totalMilestones: 10,
-    teamSize: 28,
-    contractorName: "Elite Builders Ltd.",
-  },
-  {
-    id: "3",
-    name: "Riverside Apartments",
-    location: "River District, Metro City",
-    progress: 95,
-    status: "near-completion",
-    startDate: "2023-08-20",
-    endDate: "2024-05-05",
-    completedMilestones: 14,
-    totalMilestones: 15,
-    teamSize: 35,
-    contractorName: "RiverEdge Contractors",
-  },
-  {
-    id: "4",
-    name: "Golden Heights Phase 2",
-    location: "North Hills, Metro City",
-    progress: 15,
-    status: "in-progress",
-    startDate: "2024-02-28",
-    endDate: "2025-08-10",
-    completedMilestones: 2,
-    totalMilestones: 14,
-    teamSize: 22,
-    contractorName: "Summit Construction Group",
-  },
-  {
-    id: "5",
-    name: "Evergreen Villas",
-    location: "West End, Metro City",
-    progress: 0,
-    status: "planning",
-    startDate: "2024-06-01",
-    endDate: "2025-11-30",
-    completedMilestones: 0,
-    totalMilestones: 12,
-    teamSize: 0,
-    contractorName: "GreenSpace Developers",
-  },
-];
-
-// Sample data for charts
+// Sample data for charts (kept static as no corresponding API)
 const monthlyProgressData = [
   { month: "Jan", planned: 12, actual: 10 },
   { month: "Feb", planned: 25, actual: 22 },
@@ -150,15 +79,63 @@ const issuesData = [
 ];
 
 const OperationsWorkflow = () => {
-  const [projects] = useState(constructionProjects);
-  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-
-  // Track active tab
+  const naviagte = useNavigate();
+  const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState("projects");
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_URL}/api/project/projects`,
+          { withCredentials: true }
+        );
+        const fetchedProjects = response.data;
+
+        // Extract tasks from projects
+        const extractedTasks = [];
+        fetchedProjects.forEach((project) => {
+          const projectName = project.projectTitle || "Unnamed Project";
+          const units = project.units || {};
+          Object.entries(units).forEach(([unitName, unitTasks]) => {
+            unitTasks.forEach((task) => {
+              extractedTasks.push({
+                _id: task._id,
+                taskTitle: task.title || "Untitled Task",
+                projectName,
+                unit: unitName,
+                constructionPhase: task.constructionPhase || "",
+                status: task.statusForContractor || "In progress",
+                deadline: task.deadline,
+                progress: task.progressPercentage || 0,
+                contractorId: task.contractor,
+                contractorName: task.contractorName || "Unknown Contractor", // Note: contractorName may need population
+              });
+            });
+          });
+        });
+
+        setProjects(fetchedProjects);
+        setTasks(extractedTasks);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  const getStatusBadge = (status, progress) => {
+    let computedStatus = status.toLowerCase();
+    if (progress === 0) {
+      computedStatus = "planning";
+    } else if (progress >= 95) {
+      computedStatus = "near-completion";
+    } else if (progress > 0) {
+      computedStatus = "in-progress";
+    }
+
+    switch (computedStatus) {
       case "planning":
         return (
           <Badge className="bg-blue-100 text-blue-800" variant="outline">
@@ -204,17 +181,6 @@ const OperationsWorkflow = () => {
     }
   };
 
-  const handleScheduleInspection = () => {
-    toast.success("Inspection scheduled successfully", {
-      description: "The site manager has been notified",
-    });
-  };
-
-  const handleAddTask = (projectId: string) => {
-    setSelectedProject(projectId);
-    setShowAddTaskDialog(true);
-  };
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -225,12 +191,6 @@ const OperationsWorkflow = () => {
               Monitor and manage construction projects and workflows
             </p>
           </div>
-          <div className="flex items-center space-x-2 mt-4 md:mt-0">
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Project
-            </Button>
-          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -239,8 +199,6 @@ const OperationsWorkflow = () => {
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="tasks">Construction Tasks</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
-            <TabsTrigger value="issues">Issues</TabsTrigger>
-            <TabsTrigger value="resources">Resources</TabsTrigger>
           </TabsList>
 
           {/* Mobile Select */}
@@ -253,8 +211,6 @@ const OperationsWorkflow = () => {
                 <SelectItem value="projects">Projects</SelectItem>
                 <SelectItem value="tasks">Construction Tasks</SelectItem>
                 <SelectItem value="milestones">Milestones</SelectItem>
-                <SelectItem value="issues">Issues</SelectItem>
-                <SelectItem value="resources">Resources</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -262,104 +218,104 @@ const OperationsWorkflow = () => {
           {/* --- Tab Contents --- */}
           <TabsContent value="projects">
             <div className="grid grid-cols-1 gap-6">
-              {projects.map((project) => (
-                <Card key={project.id} className="overflow-hidden">
-                  <CardHeader className="bg-muted/30">
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                      <div>
-                        <CardTitle>{project.name}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {project.location}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col md:items-end space-y-2 mt-2 md:mt-0">
-                        {getStatusBadge(project.status)}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-2">
-                        <span className="text-sm text-muted-foreground">
-                          Progress
-                        </span>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">
-                            {project.progress}%
-                          </span>
+              {projects.map((project) => {
+                const totalTasks = project.totalTasks || 0;
+                const tasksCompleted = project.tasksCompleted || 0;
+                const progress =
+                  totalTasks > 0
+                    ? Math.round((tasksCompleted / totalTasks) * 100)
+                    : 0;
+                return (
+                  <Card key={project._id} className="overflow-hidden">
+                    <CardHeader className="bg-muted/30">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                        <div>
+                          <CardTitle>{project.projectTitle}</CardTitle>
+                          <CardDescription className="mt-1">
+                            Metro City {/* Static location as no API field */}
+                          </CardDescription>
                         </div>
-                        <Progress value={project.progress} />
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-sm text-muted-foreground">
-                          Timeline
-                        </span>
-                        <div className="flex items-center mt-1">
-                          <CalendarDays className="h-4 w-4 text-muted-foreground mr-1" />
-                          <span className="text-sm">
-                            {new Date(project.startDate).toLocaleDateString()} -{" "}
-                            {new Date(project.endDate).toLocaleDateString()}
-                          </span>
+                        <div className="flex flex-col md:items-end space-y-2 mt-2 md:mt-0">
+                          {getStatusBadge(project.status, progress)}
                         </div>
                       </div>
-
-                      <div className="space-y-1">
-                        <span className="text-sm text-muted-foreground">
-                          Milestones
-                        </span>
-                        <div className="flex items-center mt-1">
-                          <ClipboardList className="h-4 w-4 text-muted-foreground mr-1" />
-                          <span className="text-sm">
-                            {project.completedMilestones} of{" "}
-                            {project.totalMilestones} completed
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="space-y-2">
+                          <span className="text-sm text-muted-foreground">
+                            Progress
                           </span>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">
+                              {progress}%
+                            </span>
+                          </div>
+                          <Progress value={progress} />
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">
+                            Timeline
+                          </span>
+                          <div className="flex items-center mt-1">
+                            <CalendarDays className="h-4 w-4 text-muted-foreground mr-1" />
+                            <span className="text-sm">
+                              {project.startDate
+                                ? new Date(
+                                    project.startDate
+                                  ).toLocaleDateString()
+                                : "N/A"}{" "}
+                              -{" "}
+                              {project.endDate
+                                ? new Date(project.endDate).toLocaleDateString()
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">
+                            Milestones
+                          </span>
+                          <div className="flex items-center mt-1">
+                            <ClipboardList className="h-4 w-4 text-muted-foreground mr-1" />
+                            <span className="text-sm">
+                              {tasksCompleted} of {totalTasks} completed
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-sm text-muted-foreground">
+                            Team
+                          </span>
+                          <div className="flex items-center mt-1">
+                            <Users className="h-4 w-4 text-muted-foreground mr-1" />
+                            <span className="text-sm">
+                              {project.teamSize || 0} members
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <span className="text-sm text-muted-foreground">
-                          Team
-                        </span>
-                        <div className="flex items-center mt-1">
-                          <Users className="h-4 w-4 text-muted-foreground mr-1" />
-                          <span className="text-sm">
-                            {project.teamSize} members
-                          </span>
-                        </div>
+                      <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+                        <Button onClick={() => naviagte("/properties")}>
+                          View Details
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-
-                    <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleAddTask(project.id)}
-                        className="sm:mr-2"
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Construction Task
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleScheduleInspection}
-                        className="sm:mr-2"
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Schedule Inspection
-                      </Button>
-                      <Button>
-                        View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
           <TabsContent value="tasks">
-            <ConstructionTaskList />
+            <ErrorBoundary>
+              <ConstructionTaskList tasks={tasks} />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="milestones">
@@ -439,72 +395,9 @@ const OperationsWorkflow = () => {
               </Card>
             </div>
           </TabsContent>
-
-          <TabsContent value="issues">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="mr-2 h-5 w-5 text-estate-gold" />
-                  Issue Tracking
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={issuesData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar
-                        dataKey="resolved"
-                        fill="#16a34a"
-                        name="Resolved Issues"
-                      />
-                      <Bar
-                        dataKey="pending"
-                        fill="#f59e0b"
-                        name="Pending Issues"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="resources">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resource Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-6">
-                  Resource allocation and management tools will be available
-                  here, including labor, equipment, and materials tracking.
-                </p>
-                <div className="h-80 bg-muted/30 rounded-md flex items-center justify-center">
-                  <Truck className="w-16 h-16 text-muted/50" />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Dialog for adding construction tasks */}
-      {showAddTaskDialog && (
-        <AddConstructionTaskDialog
-          open={showAddTaskDialog}
-          onOpenChange={setShowAddTaskDialog}
-          projectId={selectedProject}
-        />
-      )}
-
-      {/* Construction phase viewer */}
       <ConstructionPhaseViewer />
     </MainLayout>
   );

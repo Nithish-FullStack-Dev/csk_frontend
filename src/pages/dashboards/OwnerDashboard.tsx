@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { toast } from "sonner";
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import PropertyCard, {
@@ -19,9 +21,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainLayout from "@/components/layout/MainLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import Loader from "@/components/Loader";
 
-// Sample data
-const recentActivities = [
+// Static fallback data
+const fallbackActivities = [
   {
     id: "1",
     user: {
@@ -84,7 +88,7 @@ const recentActivities = [
   },
 ];
 
-const properties: PropertyCardProps[] = [
+const fallbackProperties: PropertyCardProps[] = [
   {
     id: "1",
     name: "Skyline Towers",
@@ -92,7 +96,7 @@ const properties: PropertyCardProps[] = [
     type: "Apartment Complex",
     units: 120,
     availableUnits: 45,
-    price: "₹250,000 - ₹450,000",
+    price: "₹25L - ₹45L",
     status: "listed",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
@@ -104,7 +108,7 @@ const properties: PropertyCardProps[] = [
     type: "Condominiums",
     units: 80,
     availableUnits: 12,
-    price: "₹320,000 - ₹550,000",
+    price: "₹32L - ₹55L",
     status: "under-construction",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1564013434775-f71db0030976?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
@@ -116,7 +120,7 @@ const properties: PropertyCardProps[] = [
     type: "Luxury Apartments",
     units: 60,
     availableUnits: 20,
-    price: "₹400,000 - ₹750,000",
+    price: "₹40L - ₹75L",
     status: "listed",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
@@ -128,7 +132,7 @@ const properties: PropertyCardProps[] = [
     type: "Villas",
     units: 40,
     availableUnits: 28,
-    price: "₹600,000 - $₹,200,000",
+    price: "₹60L - ₹120L",
     status: "under-construction",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
@@ -136,7 +140,200 @@ const properties: PropertyCardProps[] = [
 ];
 
 const OwnerDashboard = () => {
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [totalSales, setTotalSales] = useState(0);
+  const [activeLeads, setActiveLeads] = useState(0);
+  const [siteVisits, setSiteVisits] = useState(0);
+  const [activities, setActivities] = useState(fallbackActivities);
+  const [properties, setProperties] =
+    useState<PropertyCardProps[]>(fallbackProperties);
+
+  // Format currency in INR
+  const formatCurrency = (value: number) => {
+    if (value >= 10000000) {
+      return `₹${(value / 10000000).toFixed(1)}Cr`;
+    } else if (value >= 100000) {
+      return `₹${(value / 100000).toFixed(1)}L`;
+    }
+    return `₹${value.toFixed(2)}`;
+  };
+
+  // Format timestamp
+  const formatTimestamp = (date: Date) => {
+    const now = new Date();
+    const diff = (now.getTime() - new Date(date).getTime()) / 1000 / 60 / 60;
+    if (diff < 1) return `${Math.round(diff * 60)} minutes ago`;
+    if (diff < 24) return `${Math.round(diff)} hours ago`;
+    if (diff < 48) return "yesterday";
+    return new Date(date).toLocaleDateString();
+  };
+
+  // Fetch all data
+  const fetchData = async () => {
+    try {
+      // Fetch properties
+      const { data: propertiesData } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/properties/getProperties`,
+        { withCredentials: true }
+      );
+
+      // Total Properties
+      setTotalProperties(propertiesData.length || 0);
+
+      // Featured Properties
+      const featuredProperties = propertiesData
+        .filter((prop: any) =>
+          ["Available", "Under Construction"].includes(
+            prop.customerInfo?.propertyStatus
+          )
+        )
+        .slice(0, 4) // Limit to 4 like static data
+        .map((prop: any) => ({
+          id: prop._id,
+          name: prop.basicInfo?.projectName || "Unknown Property",
+          location: prop.basicInfo?.projectName || "Unknown Location", // Fallback, add city field if available
+          type: prop.basicInfo?.propertyType || "Unknown",
+          units: prop.basicInfo?.totalUnits || 0,
+          availableUnits:
+            prop.customerInfo?.propertyStatus === "Available"
+              ? prop.basicInfo?.totalUnits || 0
+              : 0,
+          price: `${formatCurrency(
+            prop.basicInfo?.plotCost || 0
+          )} - ${formatCurrency((prop.basicInfo?.plotCost || 0) * 1.5)}`,
+          status: prop.customerInfo?.propertyStatus?.toLowerCase() || "listed",
+          thumbnailUrl:
+            prop.photos?.[0]?.secure_url ||
+            "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        }));
+      setProperties(
+        featuredProperties.length ? featuredProperties : fallbackProperties
+      );
+
+      // Fetch customers for sales
+      const { data: customers } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
+        { withCredentials: true }
+      );
+
+      // Total Sales Value
+      const totalSalesValue = customers.data.reduce(
+        (sum: number, customer: any) => {
+          return (
+            sum +
+            customer.properties.reduce((propSum: number, prop: any) => {
+              if (prop.paymentStatus === "Completed") {
+                return propSum + (prop.finalPrice || 0);
+              }
+              return propSum;
+            }, 0)
+          );
+        },
+        0
+      );
+      setTotalSales(totalSalesValue);
+
+      // Fetch leads for active leads and activities
+      const { data: leadsData } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
+        { withCredentials: true }
+      );
+
+      // Active Leads
+      const activeLeadCount = leadsData.leads.filter(
+        (lead: any) => !["Closed", "Rejected"].includes(lead.propertyStatus)
+      ).length;
+      setActiveLeads(activeLeadCount);
+
+      // Site Visits (assuming "Follow up" or notes containing "site visit")
+      const siteVisitCount = leadsData.leads.filter(
+        (lead: any) =>
+          lead.propertyStatus === "Follow up" ||
+          (lead.notes && lead.notes.toLowerCase().includes("site visit"))
+      ).length;
+      setSiteVisits(siteVisitCount);
+
+      // Recent Activities
+      const recentActivities = leadsData.leads
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+        .slice(0, 5) // Limit to 5 like static data
+        .map((lead: any) => {
+          const status = lead.propertyStatus;
+          let action = "added a new lead for";
+          let type: "approval" | "lead" | "visit" | "document" = "lead";
+          if (status === "Closed") {
+            action = "approved";
+            type = "approval";
+          } else if (
+            status === "Follow up" ||
+            lead.notes.toLowerCase().includes("site visit")
+          ) {
+            action = "scheduled a site visit for";
+            type = "visit";
+          } else if (status === "In Progress") {
+            action = "updated progress for";
+            type = "document";
+          }
+          return {
+            id: lead._id,
+            user: {
+              name: lead.addedBy?.name || "Unknown User",
+              avatar:
+                lead.addedBy?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  lead.addedBy?.name || "Unknown"
+                )}&background=4299E1&color=fff`,
+            },
+            action,
+            target: lead.property?.basicInfo?.projectName || "Unknown Property",
+            timestamp: formatTimestamp(lead.createdAt || new Date()),
+            type,
+          };
+        });
+      setActivities(
+        recentActivities.length ? recentActivities : fallbackActivities
+      );
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Failed to load dashboard data");
+      // Fallback to static data
+      setTotalProperties(24);
+      setTotalSales(214300000); // ₹21.43Cr
+      setActiveLeads(147);
+      setSiteVisits(38);
+      setActivities(fallbackActivities);
+      setProperties(fallbackProperties);
+    }
+  };
+
+  // Fetch data on mount
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      fetchData();
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <MainLayout>
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
+          <p className="text-muted-foreground">
+            Please log in to view this page.
+          </p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -154,7 +351,7 @@ const OwnerDashboard = () => {
           <Link to="/analytics" className="block">
             <StatCard
               title="Total Properties"
-              value="24"
+              value={totalProperties.toString()}
               icon={<Building className="h-6 w-6 text-estate-navy" />}
               trend={{ value: 12.5, isPositive: true }}
             />
@@ -162,7 +359,7 @@ const OwnerDashboard = () => {
           <Link to="/sales" className="block">
             <StatCard
               title="Total Sales Value"
-              value="₹214.3M"
+              value={formatCurrency(totalSales)}
               icon={<DollarSign className="h-6 w-6 text-estate-teal" />}
               trend={{ value: 8.2, isPositive: true }}
             />
@@ -170,7 +367,7 @@ const OwnerDashboard = () => {
           <Link to="/users" className="block">
             <StatCard
               title="Active Leads"
-              value="147"
+              value={activeLeads.toString()}
               icon={<Users className="h-6 w-6 text-estate-gold" />}
               trend={{ value: 4.1, isPositive: true }}
             />
@@ -178,7 +375,7 @@ const OwnerDashboard = () => {
           <Link to="/operations" className="block">
             <StatCard
               title="Site Visits"
-              value="38"
+              value={siteVisits.toString()}
               icon={<Calendar className="h-6 w-6 text-estate-navy" />}
               trend={{ value: 2.3, isPositive: false }}
             />
@@ -245,7 +442,7 @@ const OwnerDashboard = () => {
               </CardContent>
             </Card>
           </div>
-          <ActivityFeed activities={recentActivities} />
+          <ActivityFeed activities={activities} />
         </div>
 
         <Card>

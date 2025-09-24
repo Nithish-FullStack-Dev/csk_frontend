@@ -721,14 +721,14 @@ const ContractorsList = () => {
                     e.preventDefault();
                     try {
                       console.log("ADDING........");
+                      console.log(formData);
                       const res = await axios.post(
                         `${
                           import.meta.env.VITE_URL
-                        }/api/project/site-incharge/assign-contractor`,
+                        }/api/project/site-incharge/ass-contractor`,
                         formData,
                         { withCredentials: true }
                       );
-
                       if (res) {
                         toast.success("Contractor assigned successfully");
                         setOpenDialog(false);

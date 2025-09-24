@@ -177,6 +177,7 @@ const QualityControl = () => {
   const [selectedContractorId, setSelectedContractorId] = useState(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
+  const [isUploading, setIsuploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -219,7 +220,7 @@ const QualityControl = () => {
         qualityIssueId: selectedIssue._id,
         description,
       };
-
+      console.log(payload);
       const res = await axios.post(
         `${
           import.meta.env.VITE_URL
@@ -274,6 +275,7 @@ const QualityControl = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsuploading(true);
     try {
       // 1. Upload photos one-by-one
       const uploadedImageUrls: string[] = [];
@@ -290,8 +292,11 @@ const QualityControl = () => {
             }
           );
           if (res.data.url) uploadedImageUrls.push(res.data.url);
+          console.log(res.data);
         } catch (err) {
           console.error("Upload failed", err);
+        } finally {
+          setIsuploading(false);
         }
       }
 
@@ -524,9 +529,9 @@ const QualityControl = () => {
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
                 <DialogHeader>
-                  <h2 className="text-xl font-semibold">
+                  <DialogTitle className="text-xl font-semibold">
                     Report New Quality Issue
-                  </h2>
+                  </DialogTitle>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
@@ -542,29 +547,33 @@ const QualityControl = () => {
 
                   <div className="grid gap-2">
                     <Label>Project</Label>
-                    <select
-                      className="w-full border p-2 rounded"
+                    <Select
                       value={formData.project}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
+                      onValueChange={(selectedId) => {
                         const project = projects.find(
                           (p) => p._id === selectedId
                         );
                         setFormData({
                           ...formData,
                           project: selectedId,
-                          unit: "",
-                        }); // reset unit when project changes
+                          unit: "", // reset unit when project changes
+                        });
                         setSelectedProject(project);
                       }}
                     >
-                      <option value="">Select Project</option>
-                      {projects.map((proj) => (
-                        <option key={proj._id} value={proj._id}>
-                          {proj.projectTitle || proj.name || "Unnamed Project"}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full border p-2 rounded">
+                        <SelectValue placeholder="Select Project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((proj) => (
+                          <SelectItem key={proj._id} value={proj._id}>
+                            {proj.projectTitle ||
+                              proj.name ||
+                              "Unnamed Project"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid gap-2">
@@ -578,8 +587,8 @@ const QualityControl = () => {
                       disabled={!selectedProject}
                     >
                       <option value="">Select Unit</option>
-                      {selectedProject?.unitNames?.map((unitName) => (
-                        <option key={unitName} value={unitName}>
+                      {selectedProject?.unitNames?.map((unitName, idx) => (
+                        <option key={idx} value={unitName}>
                           {unitName}
                         </option>
                       ))}
@@ -714,8 +723,12 @@ const QualityControl = () => {
                 </div>
 
                 <DialogFooter>
-                  <Button onClick={handleSubmit} className="w-full">
-                    Submit
+                  <Button
+                    onClick={handleSubmit}
+                    className="w-full"
+                    disabled={isUploading}
+                  >
+                    {isUploading ? "Submitting..." : "Submit"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

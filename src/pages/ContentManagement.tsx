@@ -8,6 +8,7 @@ import HeroSectionCMS from "@/components/cms/HeroSectionCMS";
 import AboutSectionCMS from "@/components/cms/AboutSectionCMS";
 import ContactCMS from "@/components/cms/ContactCMS";
 import MainLayout from "@/components/layout/MainLayout";
+import GalleryCms from "@/components/cms/GalleryCms";
 
 const tabItems = [
   { value: "hero", label: "Hero Section", icon: Home },
@@ -112,16 +113,7 @@ const ContentManagement = () => {
           </TabsContent>
 
           <TabsContent value="gallery">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gallery Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Gallery management coming soon...
-                </p>
-              </CardContent>
-            </Card>
+            <GalleryCms />
           </TabsContent>
 
           <TabsContent value="contact">

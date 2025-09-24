@@ -721,7 +721,10 @@ const TeamManagement = () => {
                       id={key}
                       value={performance[key as keyof typeof performance]}
                       onChange={(e) =>
-                        handlePerformanceChange(key, parseFloat(e.target.value))
+                        handlePerformanceChange(
+                          key,
+                          Math.max(0, Number(e.target.value))
+                        )
                       }
                       className="col-span-3"
                       min={0}

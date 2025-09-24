@@ -142,6 +142,7 @@ const BudgetTracking = () => {
   const [addExpenseOpen, setAddExpenseOpen] = useState(false);
   const [expenseTransactions, setExpenseTransactions] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchExpenses = async () => {
     try {
@@ -183,7 +184,6 @@ const BudgetTracking = () => {
   const getBudget = async () => {
     try {
       const budgets = await fetchBudgetData();
-      console.log("BUDGETS : ", budgets);
       if (budgets.length > 0) {
         const latest = budgets[budgets.length - 1];
 
@@ -208,7 +208,6 @@ const BudgetTracking = () => {
         setBudgetCategories(formattedCategories);
         setTotalSpent(totalSpentVal);
         setTotalBudget(totalBudgetVal);
-        console.log("Budget : ", budgetCategories);
       }
     } catch (error) {
       console.error("Failed to load budget info.");
@@ -239,6 +238,7 @@ const BudgetTracking = () => {
   };
 
   const handleAddExpense = async (expense: any) => {
+    setIsLoading(true);
     try {
       let proofUrl = "";
 
@@ -305,6 +305,7 @@ const BudgetTracking = () => {
       toast("Failed to add expense.");
     } finally {
       setAddExpenseOpen(false);
+      setIsLoading(false);
     }
   };
 
@@ -390,7 +391,10 @@ const BudgetTracking = () => {
                   <DialogHeader>
                     <DialogTitle>Add New Expense</DialogTitle>
                   </DialogHeader>
-                  <ExpenseForm onSubmit={handleAddExpense} />
+                  <ExpenseForm
+                    onSubmit={handleAddExpense}
+                    isLoading={isLoading}
+                  />
                 </DialogContent>
               </Dialog>
             </div>

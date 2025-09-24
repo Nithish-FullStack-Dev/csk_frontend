@@ -58,7 +58,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
 };
 
-const AboutSection = () => {
+const AboutSection = ({ data }) => {
   const controls = useAnimation();
   const sectionRef = useRef(null);
   const [showVideo, setShowVideo] = useState(false);
@@ -141,14 +141,20 @@ const AboutSection = () => {
         >
           <motion.div variants={itemVariants}>
             <h2 className="text-4xl md:text-5xl font-md font-vidaloka text-gray-800 mb-6 leading-tight">
-              <span className="text-purple-700">About</span> CSK Realtors:
-              Crafting Future Homes
+              {aboutContent?.mainTitle || (
+                <>
+                  <span className="text-purple-700">About</span> CSK Realtors:
+                  Crafting Future Homes
+                </>
+              )}
             </h2>
             <p className="text-lg text-gray-700 mb-6 md:leading-relaxed md:text-start text-justify">
-              {aboutContent.paragraph1}
+              {aboutContent.paragraph1 ||
+                "With over 15 years of dedicated experience in the real estate development landscape, CSK Realtors stands as a beacon of trust and innovation. We are committed to shaping not just properties, but vibrant communities where families flourish and businesses thrive."}
             </p>
             <p className="text-lg text-gray-700 mb-8 md:leading-relaxed md:text-start text-justify">
-              {aboutContent.paragraph2}
+              {aboutContent.paragraph2 ||
+                "Every project undertaken by CSK Realtors is a testament to our unwavering pursuit of excellence, from meticulous planning to timely delivery. Our vision extends beyond construction; we aim to create lasting value and harmonious living environments."}
             </p>
             <div className="grid grid-cols-2 gap-y-8 gap-x-4 mt-10">
               {stats.map((stat, index) => {
@@ -173,7 +179,10 @@ const AboutSection = () => {
             className="relative group overflow-hidden rounded-xl shadow-2xl transform hover:scale-102 transition-transform duration-500"
           >
             <img
-              src={aboutContent.image}
+              src={
+                aboutContent.image ||
+                "https://res.cloudinary.com/duqrxy27h/image/upload/v1750318737/vj4u0h5j6zx8r6kqvdzg.avif?v=1750318733743"
+              }
               alt="CSK Realtors - Building communities"
               className="w-full h-96 md:h-[500px] object-cover rounded-xl "
             />
@@ -204,7 +213,7 @@ const AboutSection = () => {
                 onClick={() => setShowVideo(true)}
               >
                 <img
-                  src={youtubeThumbnailUrl}
+                  src={data?.thumbnail || youtubeThumbnailUrl}
                   alt="Video Thumbnail"
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-80"
                 />
@@ -220,7 +229,10 @@ const AboutSection = () => {
                 className="w-full h-full"
               >
                 <iframe
-                  src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`}
+                  src={
+                    data?.videoUrl ||
+                    `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`
+                  }
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

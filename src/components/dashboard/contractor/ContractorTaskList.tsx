@@ -130,6 +130,15 @@ const ContractorTaskList = () => {
     { latitude: number; longitude: number }[]
   >([]);
 
+  useEffect(() => {
+    if (selectedTask) {
+      setEvidenceTitle(selectedTask.evidenceTitle || "");
+      setSelectedPhase(selectedTask.phase || "");
+      setProgress(selectedTask.progress || 0);
+      setStatus(selectedTask.status || "");
+    }
+  }, [selectedTask]);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const newPhotos: File[] = [];
@@ -341,7 +350,7 @@ const ContractorTaskList = () => {
       });
     } else {
       toast.success(`Task status updated`, {
-        description: `${task?.title} is now ${newStatus.replace("_", " ")}`,
+        description: `${task?.title} is now ${newStatus?.replace("_", " ")}`,
       });
     }
   };
@@ -357,7 +366,7 @@ const ContractorTaskList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 md:flex-row flex-col gap-4">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -382,10 +391,6 @@ const ContractorTaskList = () => {
               <DropdownMenuItem>Urban Square</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
         </div>
 
         <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
@@ -402,19 +407,39 @@ const ContractorTaskList = () => {
         </Dialog>
       </div>
 
-      <Tabs defaultValue="all" onValueChange={setFilter}>
-        <TabsList>
-          <TabsTrigger value="all">All Tasks</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="all" value={filter} onValueChange={setFilter}>
+        {/* Desktop Tabs */}
+        <div className="hidden lg:block">
+          <TabsList>
+            <TabsTrigger value="all">All Tasks</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="approved">Approved</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Mobile Select */}
+        <div className="block lg:hidden">
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tasks</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </Tabs>
 
       <div className="border rounded-md">
-        <Table>
+        <Table className="space-y-4 lg:block hidden">
           <TableHeader>
             <TableRow>
               <TableHead>Task</TableHead>
@@ -428,113 +453,220 @@ const ContractorTaskList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.map((task) => (
-              <TableRow key={task.id}>
-                <TableCell className="font-medium">{task.title}</TableCell>
-                <TableCell>
-                  {task.project} / {task.unit}
-                </TableCell>
-                <TableCell>{task.phase}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={statusColors[task.status]}
-                  >
-                    {task.status
-                      .replace("_", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {new Date(task.deadline).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  {task.progress !== undefined ? `${task.progress}%` : "-"}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={priorityColors[task.priority]}
-                  >
-                    {task.priority.charAt(0).toUpperCase() +
-                      task.priority.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setProgress(task.progress);
-                        //setStatus(task.status);
-                        handleUploadEvidence(task);
-                      }}
-                      className={
-                        task.hasEvidence
-                          ? "text-blue-600 hover:text-blue-800"
-                          : ""
-                      }
+            {filteredTasks.map((task) => {
+              return (
+                <TableRow key={task.id}>
+                  <TableCell className="font-medium">{task.title}</TableCell>
+                  <TableCell>
+                    {task.project} / {task.unit}
+                  </TableCell>
+                  <TableCell>{task.phase}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={statusColors[task.status]}
                     >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="max-h-[250px]"
-                        sideOffset={8}
+                      {task.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(task.deadline).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {task.progress !== undefined ? `${task.progress}%` : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={priorityColors[task.priority]}
+                    >
+                      {task.priority.charAt(0).toUpperCase() +
+                        task.priority.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setProgress(task.progress);
+                          //setStatus(task.status);
+                          handleUploadEvidence(task);
+                        }}
+                        className={
+                          task.hasEvidence
+                            ? "text-blue-600 hover:text-blue-800"
+                            : ""
+                        }
                       >
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setViewDetailsOpen(true);
-                          }}
+                        <Camera className="h-4 w-4" />
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="max-h-[250px]"
+                          sideOffset={8}
                         >
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setProgress(task.progress);
-                            setSelectedPhase(task.phase);
-                            setEditTaskOpen(true);
-                          }}
-                        >
-                          Edit Task
-                        </DropdownMenuItem>
-                        {task.status === "pending" && (
-                          <DropdownMenuItem>
-                            Mark as In Progress
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setViewDetailsOpen(true);
+                            }}
+                          >
+                            View Details
                           </DropdownMenuItem>
-                        )}
-                        {(task.status === "pending" ||
-                          task.status === "in_progress") && (
-                          <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
-                        )}
-                        {task.status === "rejected" && (
-                          <DropdownMenuItem>Resume Work</DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => {
-                            handleUploadEvidence(task);
-                          }}
-                        >
-                          Upload Photos
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setProgress(task.progress);
+                              setSelectedPhase(task.phase);
+                              setEditTaskOpen(true);
+                            }}
+                          >
+                            Edit Task
+                          </DropdownMenuItem>
+                          {task.status === "pending" && (
+                            <DropdownMenuItem>
+                              Mark as In Progress
+                            </DropdownMenuItem>
+                          )}
+                          {(task.status === "pending" ||
+                            task.status === "in_progress") && (
+                            <DropdownMenuItem>
+                              Mark as Completed
+                            </DropdownMenuItem>
+                          )}
+                          {task.status === "rejected" && (
+                            <DropdownMenuItem>Resume Work</DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => {
+                              handleUploadEvidence(task);
+                            }}
+                          >
+                            Upload Photos
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
+        <div className="space-y-4 lg:hidden block">
+          {filteredTasks.map((task) => (
+            <div
+              key={task.id}
+              className="border rounded-md p-4 shadow-sm bg-white"
+            >
+              {/* Task Title */}
+              <div className="flex justify-between items-start">
+                <h3 className="font-medium text-lg">{task.title}</h3>
+                <Badge variant="outline" className={statusColors[task.status]}>
+                  {task.status}
+                </Badge>
+              </div>
+
+              {/* Project / Unit */}
+              <p className="text-sm text-gray-500 mt-1">
+                {task.project} / {task.unit}
+              </p>
+
+              {/* Phase & Priority */}
+              <div className="flex justify-between mt-2">
+                <span className="text-sm text-gray-600">{task.phase}</span>
+                <Badge
+                  variant="outline"
+                  className={priorityColors[task.priority]}
+                >
+                  {task.priority.charAt(0).toUpperCase() +
+                    task.priority.slice(1)}
+                </Badge>
+              </div>
+
+              {/* Deadline & Progress */}
+              <div className="flex justify-between mt-2 text-sm text-gray-500">
+                <span>
+                  Deadline: {new Date(task.deadline).toLocaleDateString()}
+                </span>
+                <span>
+                  Progress:{" "}
+                  {task.progress !== undefined ? `${task.progress}%` : "-"}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-2 mt-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleUploadEvidence(task)}
+                  className={
+                    task.hasEvidence ? "text-blue-600 hover:text-blue-800" : ""
+                  }
+                >
+                  <Camera className="h-4 w-4" />
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="max-h-[250px]"
+                    sideOffset={8}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedTask(task);
+                        setViewDetailsOpen(true);
+                      }}
+                    >
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedTask(task);
+                        setProgress(task.progress);
+                        setSelectedPhase(task.phase);
+                        setEditTaskOpen(true);
+                      }}
+                    >
+                      Edit Task
+                    </DropdownMenuItem>
+                    {task.status === "pending" && (
+                      <DropdownMenuItem>Mark as In Progress</DropdownMenuItem>
+                    )}
+                    {(task.status === "pending" ||
+                      task.status === "in_progress") && (
+                      <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
+                    )}
+                    {task.status === "rejected" && (
+                      <DropdownMenuItem>Resume Work</DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      onClick={() => handleUploadEvidence(task)}
+                    >
+                      Upload Photos
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>
@@ -547,7 +679,7 @@ const ContractorTaskList = () => {
       </Dialog> */}
 
       <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Upload Evidence</DialogTitle>
             <DialogDescription>
@@ -592,8 +724,8 @@ const ContractorTaskList = () => {
                   {constructionPhases.map((phase) => (
                     <SelectItem key={phase} value={phase}>
                       {phase
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        ?.replace(/_/g, " ")
+                        ?.replace(/\b\w/g, (c) => c.toUpperCase())}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -752,7 +884,7 @@ const ContractorTaskList = () => {
       </Dialog>
 
       <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl p-6 shadow-2xl">
+        <DialogContent className="sm:max-w-[700px] max-w-[90vw] max-h-[90vh] overflow-y-auto rounded-2xl p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-semibold flex items-center gap-2">
               <ClipboardCheck className="w-5 h-5 text-blue-500" />
@@ -782,8 +914,8 @@ const ContractorTaskList = () => {
                 >
                   {(selectedTask &&
                     selectedTask?.status
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())) ||
+                      ?.replace(/_/g, " ")
+                      ?.replace(/\b\w/g, (l) => l.toUpperCase())) ||
                     "-"}
                 </Badge>
               )}
@@ -863,7 +995,7 @@ const ContractorTaskList = () => {
       </Dialog>
 
       <Dialog open={editTaskOpen} onOpenChange={setEditTaskOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[90vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Edit Your Task</DialogTitle>
             <DialogDescription>
@@ -898,8 +1030,8 @@ const ContractorTaskList = () => {
                   {constructionPhases.map((phase) => (
                     <SelectItem key={phase} value={phase}>
                       {phase
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        ?.replace(/_/g, " ")
+                        ?.replace(/\b\w/g, (c) => c.toUpperCase())}
                     </SelectItem>
                   ))}
                 </SelectContent>

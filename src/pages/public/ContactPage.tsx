@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { easeOut, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import axios from "axios";
+import { toast } from "sonner";
 
 // --- NEW: Define a sophisticated Color Palette ---
 const palette = {
@@ -64,6 +65,7 @@ const ContactPage: React.FC = () => {
     subject: "",
     message: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchContactInfo = async () => {
     try {
@@ -141,19 +143,24 @@ const ContactPage: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    console.log("Input changed:", name, value);
     setDetails((preVal) => ({ ...preVal, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("details", details);
-    setDetails({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    setIsLoading(true);
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/contact/send-email`,
+        details
+      );
+      toast("Your message has been sent!");
+      setDetails({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      toast("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -524,8 +531,9 @@ const ContactPage: React.FC = () => {
                     color: palette.textLight,
                     boxShadow: `0 4px 12px ${palette.hoverShadow}`,
                   }}
+                  disabled={isLoading}
                 >
-                  Send Message
+                  {isLoading ? "Sending Message..." : "Send Message"}
                 </button>
               </form>
             </motion.div>

@@ -24,10 +24,7 @@ export function RescheduleDialog({
   setOpen,
   schedule,
   fetchAppointments,
-  clients,
-  properties,
 }) {
-  console.log(schedule);
   const { control, register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       ...schedule,
@@ -86,18 +83,11 @@ export function RescheduleDialog({
             name="clientId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client._id} value={client._id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={schedule?.client?.name || "Unknown Client"}
+                disabled
+                readOnly
+              />
             )}
           />
 
@@ -105,18 +95,15 @@ export function RescheduleDialog({
             name="propertyId"
             control={control}
             render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Property" />
-                </SelectTrigger>
-                <SelectContent>
-                  {properties.map((property) => (
-                    <SelectItem key={property._id} value={property._id}>
-                      {property.basicInfo.projectName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={
+                  schedule?.property?.projectId?.basicInfo?.projectName ||
+                  schedule?.property?.projectTitle ||
+                  "Unknown Property"
+                }
+                disabled
+                readOnly
+              />
             )}
           />
 

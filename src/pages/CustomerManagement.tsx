@@ -68,7 +68,7 @@ export interface Customer {
 
 // --- API Calls ---
 
-const fetchCustomers = async (): Promise<Customer[]> => {
+export const fetchCustomers = async (): Promise<Customer[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
     {
@@ -89,7 +89,7 @@ const fetchProperties = async (): Promise<Property[]> => {
   return data.data || []; // Now expects data.data to be Property[]
 };
 
-const fetchAgents = async (): Promise<User[]> => {
+export const fetchAgents = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/user/getAllAgents`,
     {
@@ -772,9 +772,10 @@ const CustomerManagement: React.FC = () => {
                           handlePropertyChange(
                             index,
                             "finalPrice",
-                            e.target.value
+                            Math.max(0, Number(e.target.value))
                           )
                         }
+                        max={0}
                       />
                     </div>
                   </div>

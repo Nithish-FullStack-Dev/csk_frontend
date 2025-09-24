@@ -104,7 +104,7 @@ const PhotoDetailsDialog = ({
   };
 
   return (
-    <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
+    <DialogContent className="max-h-[90vh] sm:max-w-[600px] max-w-[90vw] w-full overflow-y-auto p-6 rounded-xl">
       <DialogHeader>
         <DialogTitle>{photoEvidence.title}</DialogTitle>
       </DialogHeader>

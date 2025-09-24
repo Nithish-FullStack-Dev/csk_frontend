@@ -1,3 +1,6 @@
+import { User } from "@/contexts/AuthContext";
+import { Customer } from "@/pages/CustomerManagement";
+
 export type PlotFacing =
   | "North"
   | "East"
@@ -53,9 +56,9 @@ export interface OpenPlot {
   isCornerPlot: boolean;
   isGatedCommunity: boolean;
   availabilityStatus: PlotStatus;
-  customerName?: string;
+  customerId?: Customer;
   customerContact?: string;
-  agentName?: string;
+  agentId?: User;
   registrationStatus: RegistrationStatus;
   emiScheme: boolean;
   remarks?: string;

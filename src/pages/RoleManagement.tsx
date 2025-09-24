@@ -32,13 +32,13 @@ interface TabItem {
 }
 
 const tabItems: TabItem[] = [
-  { value: "permission", label: "Permission Matrix", icon: Grid },
+  // { value: "permission", label: "Permission Matrix", icon: Grid },
   { value: "manage", label: "Manage Roles", icon: Shield },
   { value: "system", label: "System Settings", icon: Settings },
 ];
 
 const RoleManagement = () => {
-  const [activeTab, setActiveTab] = useState("permission");
+  const [activeTab, setActiveTab] = useState("manage");
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
@@ -121,9 +121,9 @@ const RoleManagement = () => {
         </div>
 
         {/* Tab contents */}
-        <TabsContent value="permission">
+        {/* <TabsContent value="permission">
           <Permission />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="manage">
           <ManageRoles />

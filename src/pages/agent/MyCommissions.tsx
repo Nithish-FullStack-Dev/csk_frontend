@@ -421,7 +421,7 @@ const MyCommissions = () => {
     const { id, value } = e.target;
     setCommissionFormData((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: Math.max(0, Number(value)),
     }));
   };
 
@@ -511,7 +511,7 @@ const MyCommissions = () => {
               Track your earnings and payment history
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 md:flex-row flex-col">
             <Button variant="outline" onClick={handleAddCommissionClick}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Commission
@@ -1124,6 +1124,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionAmount}
                     onChange={handleFormChange}
                     required
+                    max={0}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -1138,6 +1139,7 @@ const MyCommissions = () => {
                     value={commissionFormData.commissionPercent}
                     onChange={handleFormChange}
                     required
+                    max={0}
                   />
                 </div>
               </div>

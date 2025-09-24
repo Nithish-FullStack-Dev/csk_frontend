@@ -80,7 +80,9 @@ export default function AddBudgetForm({ onClose }) {
           type="number"
           min={0}
           value={monthlyBudget}
-          onChange={(e) => setMonthlyBudget(e.target.value)}
+          onChange={(e) =>
+            setMonthlyBudget(Math.max(0, Number(e.target.value)))
+          }
           placeholder="Enter monthly budget"
           required
         />
@@ -95,7 +97,10 @@ export default function AddBudgetForm({ onClose }) {
               type="number"
               value={phaseBudgets[phase]}
               onChange={(e) =>
-                setPhaseBudgets({ ...phaseBudgets, [phase]: e.target.value })
+                setPhaseBudgets({
+                  ...phaseBudgets,
+                  [phase]: Math.max(0, Number(e.target.value)),
+                })
               }
               placeholder={`Enter ${phase.toLowerCase()} budget`}
               required

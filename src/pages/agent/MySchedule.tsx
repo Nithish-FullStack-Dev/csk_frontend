@@ -41,84 +41,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Sample appointment data
-const appointments = [
-  {
-    id: "1",
-    title: "Site visit with Patricia Garcia",
-    type: "site_visit",
-    client: {
-      name: "Patricia Garcia",
-      avatar:
-        "https://ui-avatars.com/api/?name=Patricia+Garcia&background=718096&color=fff",
-    },
-    property: "Skyline Towers",
-    startTime: new Date(2025, 3, 10, 10, 30),
-    endTime: new Date(2025, 3, 10, 12, 0),
-    location: "123 Main Street, City Center",
-    notes: "Client interested in 2BHK units on higher floors",
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    title: "Client consultation with Michael Johnson",
-    type: "consultation",
-    client: {
-      name: "Michael Johnson",
-      avatar:
-        "https://ui-avatars.com/api/?name=Michael+Johnson&background=38A169&color=fff",
-    },
-    property: "Parkview Residences",
-    startTime: new Date(2025, 3, 10, 14, 0),
-    endTime: new Date(2025, 3, 10, 15, 0),
-    location: "Office",
-    notes: "Initial discussion about requirements and budget",
-    status: "confirmed",
-  },
-  {
-    id: "3",
-    title: "Document signing with Susan Rodriguez",
-    type: "document",
-    client: {
-      name: "Susan Rodriguez",
-      avatar:
-        "https://ui-avatars.com/api/?name=Susan+Rodriguez&background=4299E1&color=fff",
-    },
-    property: "Riverside Apartments",
-    startTime: new Date(2025, 3, 11, 11, 0),
-    endTime: new Date(2025, 3, 11, 12, 30),
-    location: "Office",
-    notes: "Sales agreement signing",
-    status: "pending",
-  },
-  {
-    id: "4",
-    title: "Site visit with James Miller",
-    type: "site_visit",
-    client: {
-      name: "James Miller",
-      avatar:
-        "https://ui-avatars.com/api/?name=James+Miller&background=1A365D&color=fff",
-    },
-    property: "Golden Heights Phase 2",
-    startTime: new Date(2025, 3, 12, 9, 0),
-    endTime: new Date(2025, 3, 12, 11, 0),
-    location: "456 Park Avenue, Suburb",
-    notes: "Client specifically interested in corner units",
-    status: "confirmed",
-  },
-  {
-    id: "5",
-    title: "Team meeting",
-    type: "meeting",
-    startTime: new Date(2025, 3, 12, 15, 0),
-    endTime: new Date(2025, 3, 12, 16, 0),
-    location: "Conference Room",
-    notes: "Weekly sales team catch-up",
-    status: "confirmed",
-  },
-];
-
 const MySchedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date()); // Using April 10, 2025
   const [view, setView] = useState<"day" | "calendar">("day");
@@ -137,7 +59,7 @@ const MySchedule = () => {
   const [selectedUnit, setSelectedUnit] = useState("");
   const [units, setUnits] = useState<string[]>([]);
 
-  const { register, handleSubmit, setValue } = useForm();
+  const { register, handleSubmit, setValue, reset } = useForm();
   // const { register, handleSubmit, reset} = useForm();
 
   const onSubmit = async (formData) => {
@@ -166,7 +88,7 @@ const MySchedule = () => {
         description: "Appointment created successfully.",
       });
 
-      setValue(); // Clear form
+      reset(); // Clear form
       setOpen(false); // Close dialog
       fetchAppointments();
       // Optionally refetch your appointment list
@@ -197,7 +119,7 @@ const MySchedule = () => {
         startTime: new Date(appt.startTime),
         endTime: new Date(appt.endTime),
       }));
-
+      console.log(processedSchedules);
       setAppointments(processedSchedules);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -287,15 +209,18 @@ const MySchedule = () => {
                   {/* Project Dropdown */}
                   <select
                     className="w-full border p-2 rounded"
-                    value={selectedProject}
+                    value={selectedProjectId}
                     onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const project =
-                        projects.find((p) => p._id === selectedId) || null;
+                      const projectId = e.target.value;
+                      setSelectedProjectId(projectId);
 
-                      setSelectedProject(project);
+                      const project =
+                        projects.find((p) => p._id === projectId) || null;
                       setUnits(project?.unitNames || []);
-                      setSelectedUnit(""); // Reset unit
+                      setSelectedUnit(""); // reset unit on project change
+
+                      // update form value for backend
+                      setValue("propertyId", projectId);
                     }}
                   >
                     <option value="">Select Project</option>
@@ -310,8 +235,11 @@ const MySchedule = () => {
                   <select
                     className="w-full border p-2 rounded"
                     value={selectedUnit}
-                    onChange={(e) => setSelectedUnit(e.target.value)}
-                    disabled={!selectedProject}
+                    onChange={(e) => {
+                      setSelectedUnit(e.target.value);
+                      setValue("unit", e.target.value); // update form field
+                    }}
+                    disabled={!selectedProjectId}
                   >
                     <option value="">Select Unit</option>
                     {units.map((unitName) => (
@@ -505,13 +433,17 @@ const MySchedule = () => {
                               <span className="text-sm">
                                 {appointment.client.name || "anonymous"}
                               </span>
-                              {appointment.property.basicInfo.projectName && (
+                              {appointment?.property?.projectId?.basicInfo
+                                ?.projectName && (
                                 <>
                                   <span className="text-muted-foreground mx-1">
                                     •
                                   </span>
                                   <span className="text-sm">
-                                    {appointment.property.basicInfo.projectName}
+                                    {
+                                      appointment?.property?.projectId
+                                        ?.basicInfo?.projectName
+                                    }
                                   </span>
                                 </>
                               )}
@@ -545,7 +477,7 @@ const MySchedule = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={async () => {
+                                onClick={() => {
                                   setSelectedSchedule(appointment); // pass the full appointment object
                                   setRescheduleOpen(true);
                                 }}
@@ -575,8 +507,6 @@ const MySchedule = () => {
                       setOpen={setRescheduleOpen}
                       schedule={selectedSchedule}
                       fetchAppointments={fetchAppointments}
-                      clients={clients}
-                      properties={properties}
                     />
                   )}
 

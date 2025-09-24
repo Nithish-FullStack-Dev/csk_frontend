@@ -63,91 +63,19 @@ interface Material {
   rate: number;
   totalCost: number;
   deliveryDate: string;
-  project: string;
+  project: {
+    _id: string;
+    projectId: {
+      basicInfo: {
+        projectName: string;
+      };
+    };
+  };
   status: string;
   poNumber: string;
   invoiceNumber: string;
   remarks?: string;
 }
-
-// Sample materials data
-const initialMaterials: Material[] = [
-  {
-    id: "1",
-    name: "Cement OPC 43 Grade",
-    type: "Cement",
-    quantity: 500,
-    unit: "Bags",
-    supplier: "Dalmia Cement",
-    rate: 420,
-    totalCost: 210000,
-    deliveryDate: "2023-06-15",
-    project: "Skyline Towers Construction",
-    status: "Delivered",
-    poNumber: "PO-2023-001",
-    invoiceNumber: "INV-DAL-789",
-  },
-  {
-    id: "2",
-    name: "TMT Steel Bars 16mm",
-    type: "Steel",
-    quantity: 2500,
-    unit: "Kg",
-    supplier: "JSW Steel",
-    rate: 75,
-    totalCost: 187500,
-    deliveryDate: "2023-06-18",
-    project: "Skyline Towers Construction",
-    status: "Delivered",
-    poNumber: "PO-2023-002",
-    invoiceNumber: "INV-JSW-456",
-  },
-  {
-    id: "3",
-    name: "Sand Fine",
-    type: "Sand",
-    quantity: 40,
-    unit: "Cubic Meters",
-    supplier: "Krishna Suppliers",
-    rate: 3800,
-    totalCost: 152000,
-    deliveryDate: "2023-06-20",
-    project: "Green Valley Villas Phase 1",
-    status: "Delivered",
-    poNumber: "PO-2023-003",
-    invoiceNumber: "INV-KS-321",
-  },
-  {
-    id: "4",
-    name: "Bricks Red Clay",
-    type: "Bricks",
-    quantity: 15000,
-    unit: "Pieces",
-    supplier: "Lakshmi Brick Industry",
-    rate: 8,
-    totalCost: 120000,
-    deliveryDate: "2023-06-25",
-    project: "Green Valley Villas Phase 1",
-    status: "Pending",
-    poNumber: "PO-2023-004",
-    invoiceNumber: "",
-  },
-  {
-    id: "5",
-    name: "Electrical Wiring Bundle",
-    type: "Electrical",
-    quantity: 15,
-    unit: "Rolls",
-    supplier: "Havells",
-    rate: 8500,
-    totalCost: 127500,
-    deliveryDate: "2023-07-05",
-    project: "Skyline Towers Construction",
-    status: "Ordered",
-    poNumber: "PO-2023-005",
-    invoiceNumber: "",
-  },
-];
 
 // Form schema
 const materialSchema = z.object({
@@ -168,15 +96,13 @@ type MaterialFormValues = z.infer<typeof materialSchema>;
 
 const ContractorMaterials = () => {
   const { user } = useAuth();
-  //const [materials, setMaterials] = useState<Material[]>(initialMaterials);
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewMaterialDialogOpen, setViewMaterialDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(
     null
   );
-  const [projects, setProjects] = useState([]);
-
+  const [projects, setProjects] = useState<any[]>([]); // Using any[] for now, but you should use a specific type
   const [activeTab, setActiveTab] = useState("all");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
@@ -186,7 +112,7 @@ const ContractorMaterials = () => {
     defaultValues: {
       type: "Cement",
       unit: "Bags",
-      project: "Skyline Towers Construction",
+      project: "", // This should be an empty string, not a hardcoded name
       deliveryDate: new Date().toISOString().split("T")[0],
     },
   });
@@ -237,8 +163,6 @@ const ContractorMaterials = () => {
         { withCredentials: true }
       );
       toast.success("Material added successfully");
-
-      // Optionally refresh your material list
       setAddDialogOpen(false);
       fetchMaterials();
     } catch (error: any) {
@@ -258,7 +182,6 @@ const ContractorMaterials = () => {
         `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
-
       setProjects(projectsRes.data);
     } catch (error) {
       console.error("Error fetching dropdown data:", error);
@@ -269,9 +192,10 @@ const ContractorMaterials = () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_URL}/api/materials`, {
         withCredentials: true,
-      }); // or your full backend URL
+      });
+      // Assuming your backend returns an array of materials with a 'status' field.
+      // And the project is a nested object.
       setMaterials(res.data);
-      setFilteredMaterials(res.data); // apply filters later if needed
     } catch (error) {
       console.error("Failed to fetch materials", error);
     }
@@ -282,51 +206,70 @@ const ContractorMaterials = () => {
     fetchDropdownData();
   }, []);
 
+  // Use a new useEffect to apply filters whenever 'materials', 'activeTab', or 'searchQuery' changes
+  useEffect(() => {
+    const applyFilters = () => {
+      let tempMaterials = [...materials];
+
+      // Filter by search query
+      tempMaterials = tempMaterials.filter((material) => {
+        const materialName = material.name?.toLowerCase() || "";
+        const materialType = material.type?.toLowerCase() || "";
+        const supplier = material.supplier?.toLowerCase() || "";
+        const projectName =
+          material.project?.projectId?.basicInfo?.projectName?.toLowerCase() ||
+          "";
+        const query = searchQuery.toLowerCase();
+
+        return (
+          materialName.includes(query) ||
+          materialType.includes(query) ||
+          supplier.includes(query) ||
+          projectName.includes(query)
+        );
+      });
+
+      // Filter by active tab
+      if (activeTab === "delivered") {
+        tempMaterials = tempMaterials.filter(
+          (material) => material.status === "Delivered"
+        );
+      } else if (activeTab === "pending") {
+        tempMaterials = tempMaterials.filter(
+          (material) => material.status === "Pending"
+        );
+      } else if (activeTab === "ordered") {
+        tempMaterials = tempMaterials.filter(
+          (material) => material.status === "Ordered"
+        );
+      }
+
+      setFilteredMaterials(tempMaterials);
+    };
+
+    applyFilters();
+  }, [materials, activeTab, searchQuery]);
+
   const markAsDelivered = async () => {
     try {
-      const res = await axios.patch(
+      if (!selectedMaterial) return;
+      await axios.patch(
         `${import.meta.env.VITE_URL}/api/materials/${
-          selectedMaterial._id
+          selectedMaterial.id
         }/status`,
         {
           status: "Delivered",
         }
       );
 
-      // Update state locally
-      const updatedMaterials = materials.map((material) =>
-        material.id === selectedMaterial.id
-          ? { ...material, status: "Delivered" }
-          : material
-      );
-      setMaterials(updatedMaterials);
-      setSelectedMaterial({ ...selectedMaterial, status: "Delivered" });
-      fetchMaterials();
       toast.success("Material marked as delivered");
+      setViewMaterialDialogOpen(false);
+      fetchMaterials(); // Re-fetch to get the latest data
     } catch (error) {
       console.error("Failed to update status:", error);
       toast.error("Failed to mark as delivered");
     }
   };
-
-  // Filter materials based on search and active tab
-  const filteredMaterials2 = materials.filter((material) => {
-    const matchesSearch =
-      material.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.supplier.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.project.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (activeTab === "all") return matchesSearch;
-    if (activeTab === "delivered")
-      return matchesSearch && material.status === "Delivered";
-    if (activeTab === "pending")
-      return matchesSearch && material.status === "Pending";
-    if (activeTab === "ordered")
-      return matchesSearch && material.status === "Ordered";
-
-    return matchesSearch;
-  });
 
   // Calculate statistics
   const totalMaterialCost = materials.reduce(
@@ -395,12 +338,14 @@ const ContractorMaterials = () => {
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {Math.round((pendingMaterialsCost / totalMaterialCost) * 100) ||
-                0}
+                0}{" "}
               % of total cost
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* --- */}
 
       {/* Search and Actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -418,6 +363,8 @@ const ContractorMaterials = () => {
         </Button>
       </div>
 
+      {/* --- */}
+
       {/* Tabs for filtering */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 w-full">
@@ -433,6 +380,8 @@ const ContractorMaterials = () => {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* --- */}
 
       {/* Materials Table */}
       <div className="border rounded-md">
@@ -489,9 +438,11 @@ const ContractorMaterials = () => {
                     </TableCell>
                     <TableCell
                       className="max-w-[150px] truncate"
-                      title={material.project}
+                      title={
+                        material.project?.projectId?.basicInfo?.projectName
+                      }
                     >
-                      {material.project.projectId.basicInfo.projectName}
+                      {material.project?.projectId?.basicInfo?.projectName}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -522,6 +473,8 @@ const ContractorMaterials = () => {
           </Table>
         </div>
 
+        {/* --- */}
+
         {/* Mobile Cards */}
         <div className="block md:hidden p-2 space-y-4">
           {filteredMaterials.length === 0 ? (
@@ -531,7 +484,7 @@ const ContractorMaterials = () => {
           ) : (
             filteredMaterials.map((material) => (
               <div
-                key={material._id}
+                key={material.id}
                 className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
               >
                 <div className="font-semibold text-lg">{material.name}</div>
@@ -558,7 +511,7 @@ const ContractorMaterials = () => {
                 </div>
                 <div className="text-sm text-gray-600 truncate">
                   <span className="font-medium">Project:</span>{" "}
-                  {material.project.projectId.basicInfo.projectName}
+                  {material.project?.projectId?.basicInfo?.projectName}
                 </div>
                 <div>
                   <Badge
@@ -587,6 +540,8 @@ const ContractorMaterials = () => {
           )}
         </div>
       </div>
+
+      {/* --- */}
 
       {/* Add Material Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -846,13 +801,15 @@ const ContractorMaterials = () => {
         </DialogContent>
       </Dialog>
 
+      {/* --- */}
+
       {/* View Material Dialog */}
       {selectedMaterial && (
         <Dialog
           open={viewMaterialDialogOpen}
           onOpenChange={setViewMaterialDialogOpen}
         >
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
             <DialogHeader>
               <DialogTitle>Material Details</DialogTitle>
             </DialogHeader>
@@ -908,7 +865,10 @@ const ContractorMaterials = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Project:</p>
                   <p>
-                    {selectedMaterial.project.projectId.basicInfo.projectName}
+                    {
+                      selectedMaterial.project?.projectId?.basicInfo
+                        ?.projectName
+                    }
                   </p>
                 </div>
                 <div>
@@ -952,25 +912,7 @@ const ContractorMaterials = () => {
                   Close
                 </Button>
                 {selectedMaterial.status !== "Delivered" && (
-                  <Button
-                    onClick={() => {
-                      // Mark material as delivered
-                      const updatedMaterials = materials.map((material) =>
-                        material.id === selectedMaterial.id
-                          ? { ...material, status: "Delivered" }
-                          : material
-                      );
-                      setMaterials(updatedMaterials);
-                      setSelectedMaterial({
-                        ...selectedMaterial,
-                        status: "Delivered",
-                      });
-                      toast.success("Material marked as delivered");
-                      markAsDelivered();
-                    }}
-                  >
-                    Mark as Delivered
-                  </Button>
+                  <Button onClick={markAsDelivered}>Mark as Delivered</Button>
                 )}
               </div>
             </div>

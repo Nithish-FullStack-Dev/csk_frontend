@@ -72,7 +72,6 @@ export function PropertyDetails({
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
-
   // Format the date string to a readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -183,7 +182,7 @@ export function PropertyDetails({
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Customer Name</p>
                   <p className="font-medium">
-                    {property.customerName || "N/A"}
+                    {property.customerId?.user?.name || "N/A"}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -203,7 +202,9 @@ export function PropertyDetails({
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Agent Name</p>
-                  <p className="font-medium">{property.agentName || "N/A"}</p>
+                  <p className="font-medium">
+                    {property?.agentId?.name || "N/A"}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -281,12 +282,14 @@ export function PropertyDetails({
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Contractor</p>
-                  <p className="font-medium">{property.contractor || "N/A"}</p>
+                  <p className="font-medium">
+                    {property.contractor?.name || "N/A"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Site Incharge</p>
                   <p className="font-medium">
-                    {property.siteIncharge || "N/A"}
+                    {property.siteIncharge?.name || "N/A"}
                   </p>
                 </div>
                 <div className="space-y-1">

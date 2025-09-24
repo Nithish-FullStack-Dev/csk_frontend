@@ -553,7 +553,10 @@ const CarAllocation = () => {
                       type="number"
                       placeholder="e.g., 45000"
                       value={mileage}
-                      onChange={(e) => setMileage(Number(e.target.value))}
+                      onChange={(e) =>
+                        setMileage(Math.max(0, Number(e.target.value)))
+                      }
+                      max={0}
                     />
                   </div>
                   <div className="space-y-2">
@@ -563,7 +566,10 @@ const CarAllocation = () => {
                       type="number"
                       placeholder="e.g., 50%"
                       value={fuelLevel}
-                      onChange={(e) => setFuelLevel(Number(e.target.value))}
+                      onChange={(e) =>
+                        setFuelLevel(Math.max(0, Number(e.target.value)))
+                      }
+                      max={0}
                     />
                   </div>
                   <div className="space-y-2">
@@ -679,7 +685,10 @@ const CarAllocation = () => {
                     type="number"
                     placeholder="e.g., 45000"
                     value={mileage}
-                    onChange={(e) => setMileage(Number(e.target.value))}
+                    onChange={(e) =>
+                      setMileage(Math.max(0, Number(e.target.value)))
+                    }
+                    max={0}
                   />
                 </div>
                 <div className="space-y-2">
@@ -689,7 +698,10 @@ const CarAllocation = () => {
                     type="number"
                     placeholder="e.g., 50%"
                     value={fuelLevel}
-                    onChange={(e) => setFuelLevel(Number(e.target.value))}
+                    onChange={(e) =>
+                      setFuelLevel(Math.max(0, Number(e.target.value)))
+                    }
+                    max={0}
                   />
                 </div>
                 <div className="space-y-2">

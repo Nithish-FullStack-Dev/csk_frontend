@@ -66,68 +66,6 @@ interface SiteInspection {
   photoCount: number;
 }
 
-const siteInspections: SiteInspection[] = [
-  {
-    id: "si1",
-    title: "Foundation completion inspection",
-    project: "Riverside Tower",
-    unit: "Block A",
-    type: "milestone",
-    inspectionDate: "2025-04-15",
-    status: "completed",
-    location: "Building Site 1",
-    notes:
-      "Foundation work completed as per specifications. Ready for next phase.",
-    photoCount: 8,
-  },
-  {
-    id: "si2",
-    title: "Structural frame inspection",
-    project: "Valley Heights",
-    unit: "Unit 3",
-    type: "routine",
-    inspectionDate: "2025-04-16",
-    status: "planned",
-    location: "Main Construction Area",
-    photoCount: 0,
-  },
-  {
-    id: "si3",
-    title: "Plumbing works inspection",
-    project: "Green Villa",
-    unit: "Villa 2",
-    type: "routine",
-    inspectionDate: "2025-04-18",
-    status: "planned",
-    location: "Interior Plumbing Zone",
-    photoCount: 0,
-  },
-  {
-    id: "si4",
-    title: "Wall crack investigation",
-    project: "Riverside Tower",
-    unit: "Block B",
-    type: "quality_issue",
-    inspectionDate: "2025-04-14",
-    status: "completed",
-    location: "3rd Floor, East Wing",
-    notes:
-      "Found hairline cracks in the wall. Documented for quality control team.",
-    photoCount: 6,
-  },
-  {
-    id: "si5",
-    title: "Roof installation inspection",
-    project: "Valley Heights",
-    unit: "Unit 7",
-    type: "milestone",
-    inspectionDate: "2025-04-20",
-    status: "planned",
-    location: "Rooftop Area",
-    photoCount: 0,
-  },
-];
-
 const typeColors: Record<string, string> = {
   routine: "bg-blue-100 text-blue-800",
   quality_issue: "bg-red-100 text-red-800",
@@ -148,7 +86,6 @@ const SiteInspections = () => {
   const [photos, setPhotos] = useState<File[]>([]);
   const [siteInspections, setSiteInspections] = useState([]);
   const [projects, setProjects] = useState([]);
-  ``;
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
@@ -165,6 +102,7 @@ const SiteInspections = () => {
     useState(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isInspection, setIsInspection] = useState(false);
 
   const handleUpdateStatus = (inspection) => {
     setSelectedInspection(inspection);
@@ -192,7 +130,7 @@ const SiteInspections = () => {
   const fetchDropdownData = async () => {
     try {
       const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/project`,
+        `${import.meta.env.VITE_URL}/api/project/projects`,
         { withCredentials: true }
       );
 
@@ -201,6 +139,7 @@ const SiteInspections = () => {
       console.error("Error fetching dropdown data:", error);
     }
   };
+
   useEffect(() => {
     fetchInspections();
     fetchDropdownData();
@@ -260,7 +199,7 @@ const SiteInspections = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setIsInspection(true);
     // 1. Upload photos one-by-one
     const uploadedImageUrls: string[] = [];
     for (const photo of photos) {
@@ -303,9 +242,18 @@ const SiteInspections = () => {
       toast.success("Inspection created successfully!");
       setNewInspectionOpen(false); // close modal
       fetchInspections();
+      setTitle("");
+      setDate("");
+      setSelectedProject("");
+      setUnit("");
+      setSelectedType("");
+      setLocation("");
+      setNotes("");
     } catch (error) {
       toast.error("Failed to create inspection.");
       console.error("Inspection error:", error);
+    } finally {
+      setIsInspection(false);
     }
   };
 
@@ -411,8 +359,8 @@ const SiteInspections = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-projects">All Projects</SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project} value={project}>
+                {projects.map((project, idx) => (
+                  <SelectItem key={project._id || idx} value={project._id}>
                     {project.projectTitle}
                   </SelectItem>
                 ))}
@@ -508,8 +456,11 @@ const SiteInspections = () => {
                         <SelectValue placeholder="Select project" />
                       </SelectTrigger>
                       <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project._id} value={project._id}>
+                        {projects.map((project, idx) => (
+                          <SelectItem
+                            key={project._id || idx}
+                            value={project._id}
+                          >
                             {project.projectTitle}
                           </SelectItem>
                         ))}
@@ -631,8 +582,14 @@ const SiteInspections = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" onClick={handleSubmit}>
-                    Create Inspection
+                  <Button
+                    type="submit"
+                    onClick={handleSubmit}
+                    disabled={isInspection}
+                  >
+                    {isInspection
+                      ? "Creating Inspection..."
+                      : "Create Inspection"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -642,120 +599,206 @@ const SiteInspections = () => {
 
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Project / Unit</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Photos</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInspections.length === 0 ? (
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-6 text-muted-foreground"
-                    >
-                      No inspections found matching your filters
-                    </TableCell>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Project / Unit</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Photos</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredInspections.map((inspection) => (
-                    <TableRow key={inspection._id}>
-                      <TableCell className="font-medium">
-                        {inspection.title}
-                        <div className="text-xs text-muted-foreground">
-                          {inspection.locations}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {inspection?.project?.projectId?.basicInfo
-                          ?.projectName || "N/A"}{" "}
-                        / {inspection?.unit || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={typeColors[inspection.type] || ""}
-                        >
-                          {inspection.type === "quality_issue"
-                            ? "Quality Issue"
-                            : inspection.type.charAt(0).toUpperCase() +
-                              inspection.type.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(inspection.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={statusColors[inspection.status] || ""}
-                        >
-                          {inspection.status.charAt(0).toUpperCase() +
-                            inspection.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Camera className="h-4 w-4 mr-1 text-muted-foreground" />
-                          {inspection.photos?.length || "0"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetails(inspection)}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedInspectionForPhotos(inspection);
-                                setOpenPhotoDialog(true);
-                              }}
-                            >
-                              Add Photos
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateStatus(inspection)}
-                            >
-                              Update Status
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleExportReport(inspection)}
-                            >
-                              Export Report
-                            </DropdownMenuItem>
-
-                            {/* {inspection.status === "planned" && (
-                              <DropdownMenuItem>
-                                Complete Inspection
-                              </DropdownMenuItem>
-                            )} */}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                </TableHeader>
+                <TableBody>
+                  {filteredInspections.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-6 text-muted-foreground"
+                      >
+                        No inspections found matching your filters
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredInspections.map((inspection) => (
+                      <TableRow key={inspection._id}>
+                        <TableCell className="font-medium">
+                          {inspection.title}
+                          <div className="text-xs text-muted-foreground">
+                            {inspection.locations}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {inspection?.project?.projectId?.basicInfo
+                            ?.projectName || "N/A"}{" "}
+                          / {inspection?.unit || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={typeColors[inspection.type] || ""}
+                          >
+                            {inspection.type === "quality_issue"
+                              ? "Quality Issue"
+                              : inspection.type.charAt(0).toUpperCase() +
+                                inspection.type.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(inspection.date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={statusColors[inspection.status] || ""}
+                          >
+                            {inspection.status.charAt(0).toUpperCase() +
+                              inspection.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Camera className="h-4 w-4 mr-1 text-muted-foreground" />
+                            {inspection.photos?.length || "0"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handleViewDetails(inspection)}
+                              >
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInspectionForPhotos(inspection);
+                                  setOpenPhotoDialog(true);
+                                }}
+                              >
+                                Add Photos
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateStatus(inspection)}
+                              >
+                                Update Status
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleExportReport(inspection)}
+                              >
+                                Export Report
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+              {filteredInspections.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  No inspections found matching your filters
+                </div>
+              ) : (
+                filteredInspections.map((inspection) => (
+                  <div
+                    key={inspection._id}
+                    className="border rounded-md p-4 shadow-sm bg-white space-y-2"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">{inspection.title}</h4>
+                      <Badge
+                        variant="outline"
+                        className={statusColors[inspection.status] || ""}
+                      >
+                        {inspection.status.charAt(0).toUpperCase() +
+                          inspection.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {inspection.locations}
+                    </p>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>
+                        Project:{" "}
+                        {inspection?.project?.projectId?.basicInfo
+                          ?.projectName || "N/A"}
+                      </span>
+                      <span>Unit: {inspection?.unit || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>
+                        Type:{" "}
+                        {inspection.type === "quality_issue"
+                          ? "Quality Issue"
+                          : inspection.type}
+                      </span>
+                      <span>
+                        Date: {new Date(inspection.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Camera className="h-4 w-4 mr-1" />{" "}
+                      {inspection.photos?.length || "0"} Photos
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            Actions
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetails(inspection)}
+                          >
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedInspectionForPhotos(inspection);
+                              setOpenPhotoDialog(true);
+                            }}
+                          >
+                            Add Photos
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateStatus(inspection)}
+                          >
+                            Update Status
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleExportReport(inspection)}
+                          >
+                            Export Report
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Inspection Details Dialog */}
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] max-w-[90vw] rounded-xl overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Inspection Details</DialogTitle>
                 </DialogHeader>
@@ -809,19 +852,14 @@ const SiteInspections = () => {
               </DialogContent>
             </Dialog>
 
+            {/* Status Update Dialog */}
             <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-              <DialogContent className="max-w-sm">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] max-w-[90vw] rounded-xl overflow-y-auto">
                 <div className="flex justify-between items-start">
                   <DialogHeader>
                     <DialogTitle>Update Status</DialogTitle>
                   </DialogHeader>
-                  {/* <DialogClose asChild>
-                      <Button variant="ghost" size="icon">
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </DialogClose> */}
                 </div>
-
                 <div className="grid gap-4 mt-4">
                   <div className="flex gap-2 justify-between">
                     {["completed", "planned"].map((status) => (
@@ -835,7 +873,6 @@ const SiteInspections = () => {
                       </Button>
                     ))}
                   </div>
-
                   <div className="flex justify-end gap-2 mt-4">
                     <Button
                       variant="outline"
@@ -852,24 +889,13 @@ const SiteInspections = () => {
                             }/api/site-inspection/inspection/${
                               selectedInspection._id
                             }/status`,
-                            {
-                              status: newStatus,
-                            },
+                            { status: newStatus },
                             { withCredentials: true }
                           );
-
-                          // // Update local data (example: using setFilteredIssues if you maintain state)
-                          // setFilteredIssues(prev =>
-                          //   prev.map((i) =>
-                          //     i._id === selectedIssue._id ? { ...i, status: newStatus } : i
-                          //   )
-                          // )
-
                           setStatusDialogOpen(false);
                           fetchInspections();
                         } catch (err) {
                           console.error("Failed to update status", err);
-                          // Optionally show error toast
                         }
                       }}
                     >
@@ -880,12 +906,12 @@ const SiteInspections = () => {
               </DialogContent>
             </Dialog>
 
+            {/* Upload Photos Dialog */}
             <Dialog open={openPhotoDialog} onOpenChange={setOpenPhotoDialog}>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] max-w-[90vw] rounded-xl overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Upload Photos</DialogTitle>
                 </DialogHeader>
-
                 <div className="space-y-4">
                   <input
                     type="file"
@@ -901,7 +927,6 @@ const SiteInspections = () => {
                    file:bg-blue-50 file:text-blue-700
                    hover:file:bg-blue-100"
                   />
-
                   {photoFiles.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
                       {photoFiles.map((file, i) => (
@@ -914,7 +939,6 @@ const SiteInspections = () => {
                       ))}
                     </div>
                   )}
-
                   <Button
                     onClick={async () => {
                       if (
@@ -922,13 +946,11 @@ const SiteInspections = () => {
                         photoFiles.length === 0
                       )
                         return;
-
                       setIsUploading(true);
-                      const uploadedImageUrls: string[] = [];
+                      const uploadedImageUrls = [];
                       for (const photo of photoFiles) {
                         const formData = new FormData();
                         formData.append("file", photo);
-
                         try {
                           const res = await axios.post(
                             `${import.meta.env.VITE_URL}/api/uploads/upload`,
@@ -945,8 +967,6 @@ const SiteInspections = () => {
                           console.error("Upload failed", err);
                         }
                       }
-
-                      // Now call your backend to update the inspection
                       try {
                         await axios.patch(
                           `${
@@ -958,13 +978,10 @@ const SiteInspections = () => {
                           { withCredentials: true }
                         );
                         toast.success("Photos added successfully!");
-                        // Optional: Refresh inspections here
                       } catch (err) {
                         console.error("DB update failed:", err);
                         toast.error("Failed to update inspection photos.");
                       }
-
-                      // Reset states
                       setPhotoFiles([]);
                       setIsUploading(false);
                       setOpenPhotoDialog(false);

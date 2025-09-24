@@ -486,7 +486,7 @@ const ContractorInvoices = () => {
                 </TableRow>
               ) : (
                 filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow key={invoice?._id}>
                     <TableCell className="font-medium">
                       {invoice.invoiceNumber}
                     </TableCell>
@@ -1158,13 +1158,16 @@ const ContractorInvoices = () => {
           open={viewInvoiceDialogOpen}
           onOpenChange={setViewInvoiceDialogOpen}
         >
-          <DialogContent className="sm:max-w-[800px]">
+          <DialogContent className="w-full md:max-w-[800px] max-w-[95vw] max-h-[90vh] overflow-auto rounded-xl p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>Invoice {selectedInvoice.id}</DialogTitle>
+              <DialogTitle className="text-lg md:text-xl font-semibold">
+                Invoice {selectedInvoice.id}
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
+            <div className="space-y-6 mt-2">
+              {/* Header */}
+              <div className="flex flex-col md:flex-row justify-between items-start gap-2">
                 <div>
                   <h3 className="font-bold text-xl">INVOICE</h3>
                   <p className="text-muted-foreground">
@@ -1186,12 +1189,8 @@ const ContractorInvoices = () => {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                {/* <div>
-                  <p className="text-sm text-muted-foreground">Invoice To:</p>
-                  <p className="font-medium">{selectedInvoice.to}</p>
-                </div> */}
-
+              {/* Invoice Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Issue Date:</p>
@@ -1209,7 +1208,7 @@ const ContractorInvoices = () => {
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Due Date:</p>
                     <p>
-                      {new Date(selectedInvoice.issueDate).toLocaleDateString(
+                      {new Date(selectedInvoice.dueDate).toLocaleDateString(
                         "en-GB",
                         {
                           day: "2-digit",
@@ -1237,8 +1236,10 @@ const ContractorInvoices = () => {
                 </div>
               </div>
 
-              <div className="border rounded-md overflow-x-auto">
-                <Table>
+              {/* Invoice Items */}
+              {/* Desktop Table */}
+              <div className="hidden md:block border rounded-md overflow-x-auto">
+                <Table className="min-w-[500px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50%]">Description</TableHead>
@@ -1248,7 +1249,6 @@ const ContractorInvoices = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* Use sample items when viewing an invoice */}
                     {selectedInvoice.items.map((item) => (
                       <TableRow key={item._id}>
                         <TableCell>{item.description}</TableCell>
@@ -1263,8 +1263,32 @@ const ContractorInvoices = () => {
                 </Table>
               </div>
 
-              <div className="flex justify-end">
-                <div className="w-1/2 space-y-2">
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {selectedInvoice.items.map((item) => (
+                  <div
+                    key={item._id}
+                    className="border rounded-md p-4 shadow-sm bg-white"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{item.description}</span>
+                      <span className="text-sm text-gray-500">
+                        ₹{item.amount.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>
+                        Qty: {item.quantity} {item.unit}
+                      </span>
+                      <span>Rate: ₹{item.rate.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Totals */}
+              <div className="flex justify-end mt-4">
+                <div className="w-full md:w-1/2 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal:</span>
                     <span>₹{selectedInvoice.subtotal.toLocaleString()}</span>
@@ -1305,8 +1329,9 @@ const ContractorInvoices = () => {
                 </div>
               </div>
 
+              {/* Notes */}
               {selectedInvoice.notes && (
-                <div>
+                <div className="mt-2">
                   <h4 className="text-sm font-medium">Notes:</h4>
                   <p className="text-muted-foreground">
                     {selectedInvoice.notes}
@@ -1314,6 +1339,7 @@ const ContractorInvoices = () => {
                 </div>
               )}
 
+              {/* Actions */}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
                   variant="outline"
@@ -1321,33 +1347,6 @@ const ContractorInvoices = () => {
                 >
                   Close
                 </Button>
-                {/* {selectedInvoice.status !== "Paid" && (
-                  <Button
-                    onClick={() => {
-                      // Mark invoice as paid
-                      const updatedInvoices = invoices.map((invoice) =>
-                        invoice.id === selectedInvoice.id
-                          ? {
-                              ...invoice,
-                              status: "Paid",
-                              paymentDate: new Date()
-                                .toISOString()
-                                .split("T")[0],
-                            }
-                          : invoice
-                      );
-                      setInvoices(updatedInvoices);
-                      setSelectedInvoice({
-                        ...selectedInvoice,
-                        status: "Paid",
-                        paymentDate: new Date().toISOString().split("T")[0],
-                      });
-                      toast.success("Invoice marked as paid");
-                    }}
-                  >
-                    Mark as Paid
-                  </Button>
-                )} */}
               </div>
             </div>
           </DialogContent>
