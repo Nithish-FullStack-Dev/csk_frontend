@@ -156,13 +156,13 @@ export function OpenPlotDetails({
           </CardHeader>
           <CardContent className="space-y-2">
             <p>
-              <strong>Name:</strong> {plot.customerName || "N/A"}
+              <strong>Name:</strong> {plot.customerId?.user?.name || "N/A"}
             </p>
             <p>
               <strong>Contact:</strong> {plot.customerContact || "N/A"}
             </p>
             <p>
-              <strong>Agent:</strong> {plot.agentName || "N/A"}
+              <strong>Agent:</strong> {plot.agentId?.name || "N/A"}
             </p>
           </CardContent>
         </Card>

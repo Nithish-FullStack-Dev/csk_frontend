@@ -68,7 +68,7 @@ export interface Customer {
 
 // --- API Calls ---
 
-const fetchCustomers = async (): Promise<Customer[]> => {
+export const fetchCustomers = async (): Promise<Customer[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
     {
@@ -89,7 +89,7 @@ const fetchProperties = async (): Promise<Property[]> => {
   return data.data || []; // Now expects data.data to be Property[]
 };
 
-const fetchAgents = async (): Promise<User[]> => {
+export const fetchAgents = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/user/getAllAgents`,
     {

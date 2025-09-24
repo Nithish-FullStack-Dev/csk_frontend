@@ -1,4 +1,5 @@
 import { User } from "@/contexts/AuthContext";
+import { Customer } from "@/pages/CustomerManagement";
 
 export type VillaFacing =
   | "North"
@@ -36,19 +37,19 @@ export interface Property {
   villaFacing: VillaFacing;
   extent: number;
   propertyType: PropertyType;
-  customerName: string;
+  customerId: Customer;
   customerStatus: CustomerStatus;
   status: PropertyStatus;
   projectStatus: ProjectStatus;
   preBooking?: boolean;
-  contractor?: string;
-  siteIncharge?: string;
+  contractor?: User;
+  siteIncharge?: User;
   totalAmount: number;
   workCompleted: number;
   deliveryDate: string;
   emiScheme: boolean;
   contactNo?: string;
-  agentName?: string;
+  agentId?: User;
   registrationStatus: RegistrationStatus;
   ratePlan?: string;
   amountReceived: number;

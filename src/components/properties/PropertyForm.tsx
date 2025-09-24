@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
+import { getCsrfToken, useAuth, User } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import axios from "axios";
 import {
@@ -42,6 +42,12 @@ import {
 import { cn } from "@/lib/utils";
 import { Property, PropertyType } from "@/types/property";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Customer,
+  fetchAgents,
+  fetchCustomers,
+} from "@/pages/CustomerManagement";
 
 // Form schema validation
 const propertyFormSchema = z.object({
@@ -64,7 +70,7 @@ const propertyFormSchema = z.object({
   extent: z.coerce.number().min(0, "Extent must be a positive number"),
   projectStatus: z.enum(["ongoing", "upcoming", "completed"]),
   preBooking: z.boolean().optional().default(false),
-  customerName: z.string().optional(),
+  customerId: z.string().nullable().optional(),
   customerStatus: z.enum(["Purchased", "Inquiry", "Blocked", "Open"]),
   status: z.enum([
     "Available",
@@ -73,8 +79,8 @@ const propertyFormSchema = z.object({
     "Reserved",
     "Blocked",
   ]),
-  contractor: z.string().optional(),
-  siteIncharge: z.string().optional(),
+  contractor: z.string().nullable().optional(),
+  siteIncharge: z.string().nullable().optional(),
   totalAmount: z.coerce
     .number()
     .min(0, "Total amount must be a positive number"),
@@ -87,7 +93,7 @@ const propertyFormSchema = z.object({
   }),
   emiScheme: z.boolean().default(false),
   contactNo: z.string().optional(),
-  agentName: z.string().optional(),
+  agentId: z.string().nullable().optional(),
   registrationStatus: z.enum([
     "Completed",
     "In Progress",
@@ -116,6 +122,20 @@ interface PropertyFormProps {
   onCancel: () => void;
 }
 
+export const fetchContractors = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/contractor`
+  );
+  return data?.data || [];
+};
+
+export const fetchSiteIncharges = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/site-incharges`
+  );
+  return data || [];
+};
+
 export function PropertyForm({
   property,
   onSubmit,
@@ -129,6 +149,32 @@ export function PropertyForm({
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     property?.thumbnailUrl || ""
   );
+  const {
+    data: contractors,
+    isLoading: loadingContractors,
+    error: errorContractors,
+  } = useQuery<User[]>({
+    queryKey: ["contractors"],
+    queryFn: fetchContractors,
+  });
+
+  const {
+    data: siteIncharges,
+    isLoading: loadingIncharges,
+    error: errorIncharges,
+  } = useQuery({ queryKey: ["siteIncharges"], queryFn: fetchSiteIncharges });
+
+  const {
+    data: agents,
+    isLoading: loadingAgents,
+    error: errorAgents,
+  } = useQuery({ queryKey: ["agents"], queryFn: fetchAgents });
+
+  const {
+    data: customers,
+    isLoading: loadingCustomers,
+    error: errorCustomers,
+  } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
 
   const isEditing = !!property;
   // Convert the property data to form values if editing
@@ -141,6 +187,10 @@ export function PropertyForm({
           ? new Date(property.deliveryDate)
           : undefined,
         images: property.images || [],
+        customerId: property?.customerId?._id || null,
+        agentId: property?.agentId?._id || null,
+        contractor: property?.contractor?._id || null,
+        siteIncharge: property?.siteIncharge?._id || null,
       }
     : {
         propertyType: "Villa",
@@ -231,6 +281,16 @@ export function PropertyForm({
     recalculateBalance();
   }, [totalAmount, amountReceived]);
 
+  if (
+    loadingContractors ||
+    loadingIncharges ||
+    loadingAgents ||
+    loadingCustomers
+  )
+    return <div>Loading...</div>;
+  if (errorContractors || errorIncharges || errorAgents || errorCustomers)
+    return <div>Error loading data</div>;
+
   const handleSubmit = async (data: PropertyFormValues) => {
     if (!user || !["owner", "admin"].includes(user.role)) {
       toast.error("You don't have permission to perform this action");
@@ -285,17 +345,17 @@ export function PropertyForm({
           preBooking: data.preBooking,
         },
         customerInfo: {
-          customerName: data.customerName || "",
+          customerId: data.customerId || null,
           customerStatus: data.customerStatus,
           propertyStatus: data.status,
           contactNumber: data.contactNo
             ? parseInt(data.contactNo.replace(/\D/g, ""))
             : null,
-          agentName: data.agentName || "",
+          agentId: data.agentId || null,
         },
         constructionDetails: {
-          contractor: data.contractor || "",
-          siteIncharge: data.siteIncharge || "",
+          contractor: data.contractor || null,
+          siteIncharge: data.siteIncharge || null,
           workCompleted: data.workCompleted,
           deliveryDate: data.deliveryDate,
           municipalPermission: data.municipalPermission,
@@ -323,7 +383,6 @@ export function PropertyForm({
         },
         withCredentials: true,
       };
-
       const response = isEditing
         ? await axios.put(
             `${import.meta.env.VITE_URL}/api/properties/updateProperty/${
@@ -337,7 +396,12 @@ export function PropertyForm({
             transformedPayload,
             config
           );
-
+      onSubmit({
+        ...data,
+        thumbnailUrl: thumbnailUrl,
+        images: uploadedImageUrls,
+        ...(response.data && { id: response.data._id || property?.id }),
+      });
       toast.success(
         isEditing
           ? "Property updated successfully"
@@ -551,16 +615,32 @@ export function PropertyForm({
             {/* Customer Name */}
             <FormField
               control={form.control}
-              name="customerName"
+              name="customerId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer Name</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="John Doe"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value === "none" ? undefined : value)
+                      }
+                      value={field.value || "none"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Clear selection option */}
+                        <SelectItem value="none">No Selection</SelectItem>
+
+                        {/* List actual customer */}
+                        {customers?.map((customer: Customer) => (
+                          <SelectItem key={customer._id} value={customer._id}>
+                            {customer.user?.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -648,16 +728,32 @@ export function PropertyForm({
             {/* Agent Name */}
             <FormField
               control={form.control}
-              name="agentName"
+              name="agentId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Agent Name</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Robert Wilson"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value === "none" ? undefined : value)
+                      }
+                      value={field.value || "none"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select agent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Clear selection option */}
+                        <SelectItem value="none">No Selection</SelectItem>
+
+                        {/* List actual contractors */}
+                        {agents?.map((agent: User) => (
+                          <SelectItem key={agent._id} value={agent._id}>
+                            {agent.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -681,11 +777,30 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Contractor</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="ABC Contractors"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value === "none" ? undefined : value)
+                      }
+                      value={field.value || "none"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Clear selection option */}
+                        <SelectItem value="none">No Selection</SelectItem>
+
+                        {/* List actual contractors */}
+                        {contractors?.map((contractor: User) => (
+                          <SelectItem
+                            key={contractor._id}
+                            value={contractor._id}
+                          >
+                            {contractor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -700,11 +815,27 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Site Incharge</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Jane Smith"
-                      {...field}
-                      value={field.value || ""}
-                    />
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value === "none" ? undefined : value)
+                      }
+                      value={field.value || "none"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select site incharge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Clear selection option */}
+                        <SelectItem value="none">No Selection</SelectItem>
+
+                        {/* List actual site incharges */}
+                        {siteIncharges?.map((incharge: User) => (
+                          <SelectItem key={incharge._id} value={incharge._id}>
+                            {incharge.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

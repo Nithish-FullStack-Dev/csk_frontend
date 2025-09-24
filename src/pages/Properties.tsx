@@ -112,7 +112,6 @@ const Properties = () => {
         const construction = item.constructionDetails || {};
         const finance = item.financialDetails || {};
         const location = item.locationInfo || {};
-        console.log(customer);
         return {
           id: item._id,
           memNo: basic.membershipNumber || "",
@@ -123,17 +122,17 @@ const Properties = () => {
           propertyType: basic.propertyType || "Apartment",
           projectStatus: basic.projectStatus,
           preBooking: basic.preBooking,
-          customerName: customer.customerName || "-",
+          customerId: customer.customerId || null,
           customerStatus: customer.customerStatus || "-",
           status: customer.propertyStatus || "-",
-          contractor: construction.contractor || "-",
-          siteIncharge: construction.siteIncharge || "-",
+          contractor: construction.contractor?.name || null,
+          siteIncharge: construction.siteIncharge?.name || null,
           totalAmount: finance.totalAmount || 0,
           workCompleted: construction.workCompleted || 0,
           deliveryDate: construction.deliveryDate?.slice(0, 10) || "",
           emiScheme: finance.eMIScheme || false,
           contactNo: customer.contactNumber?.toString() || "-",
-          agentName: customer.agentName || "-",
+          agentId: customer.agentId || null,
           registrationStatus: finance.registrationStatus || "-",
           ratePlan: finance.ratePlan || "-",
           amountReceived: finance.amountReceived || 0,
@@ -148,7 +147,6 @@ const Properties = () => {
       });
 
       setProperties(sampleProperties);
-      console.log(data);
       if (isCustomer) {
       } else {
         setFilteredProperties(sampleProperties);
@@ -190,16 +188,18 @@ const Properties = () => {
           property.plotNo.toLowerCase().includes(lowercaseSearch) ||
           property.projectName.toLowerCase().includes(lowercaseSearch) ||
           property.memNo.toLowerCase().includes(lowercaseSearch) ||
-          (property.customerName &&
-            property.customerName.toLowerCase().includes(lowercaseSearch))
+          (property.customerId?.user?.name &&
+            property.customerId?.user?.name
+              .toLowerCase()
+              .includes(lowercaseSearch))
       );
       openPlotResults = openPlotResults.filter(
         (plot) =>
           plot.plotNo.toLowerCase().includes(lowercaseSearch) ||
           plot.projectName.toLowerCase().includes(lowercaseSearch) ||
           plot.memNo.toLowerCase().includes(lowercaseSearch) ||
-          (plot.customerName &&
-            plot.customerName.toLowerCase().includes(lowercaseSearch))
+          (plot.customerId?.user?.name &&
+            plot.customerId?.user?.name.toLowerCase().includes(lowercaseSearch))
       );
     }
 
@@ -243,6 +243,7 @@ const Properties = () => {
           : property
       );
       setProperties(updatedProperties);
+
       toast.success("Property updated successfully");
     } else {
       // Add new property
@@ -252,7 +253,7 @@ const Properties = () => {
       setProperties([...properties, newProperty]);
       toast.success("Property added successfully");
     }
-
+    fetchProperties();
     setDialogOpen(false);
     setCurrentProperty(undefined);
   };
@@ -266,6 +267,7 @@ const Properties = () => {
           : plot
       );
       setOpenPlots(updatedOpenPlots);
+      fetchAllOpenPlots();
       toast.success("Open plot updated successfully");
     } else {
       // Add new open plot

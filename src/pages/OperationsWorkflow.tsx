@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ErrorBoundary from "@/ErrorBoundary";
+import { useNavigate } from "react-router-dom";
 
 // Sample data for charts (kept static as no corresponding API)
 const monthlyProgressData = [
@@ -78,6 +79,7 @@ const issuesData = [
 ];
 
 const OperationsWorkflow = () => {
+  const naviagte = useNavigate();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [activeTab, setActiveTab] = useState("projects");
@@ -298,7 +300,7 @@ const OperationsWorkflow = () => {
                       </div>
 
                       <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
-                        <Button>
+                        <Button onClick={() => naviagte("/properties")}>
                           View Details
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>

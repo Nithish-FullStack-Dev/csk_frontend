@@ -39,7 +39,6 @@ export function PropertyCardDetailed({
   property,
   onView,
 }: PropertyCardDetailedProps) {
-  console.log(property);
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow duration-200">
       <div className="grid grid-cols-1 md:grid-cols-3">
