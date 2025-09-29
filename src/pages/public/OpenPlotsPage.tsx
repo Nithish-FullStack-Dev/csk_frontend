@@ -19,6 +19,9 @@ import { ColourfulText } from "@/components/ui/colourful-text";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 const OpenPlotsPage = () => {
   const navigate = useNavigate();
@@ -33,7 +36,16 @@ const OpenPlotsPage = () => {
       const { data } = await axios.get(
         `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
       );
-      setPlotProjects(data.plots);
+      const projectsWithCoords = data.plots.map((item) => {
+        const location = item.locationInfo || {};
+        return {
+          ...item,
+          lat: location?.coordinates?.lat || 17.4457025, // Default to Hyderabad, India
+          lng: location?.coordinates?.lng || 78.3770637,
+        };
+      });
+
+      setPlotProjects(projectsWithCoords);
       setIsError(false);
     } catch (error) {
       console.error("Failed to fetch open plots:", error);
@@ -152,7 +164,8 @@ const OpenPlotsPage = () => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <ColourfulText text="Discover Your Perfect Plot" />
+              Discover Your Perfect Plot
+              {/* <ColourfulText text="Discover Your Perfect Plot" /> */}
             </motion.h1>
             <motion.p
               className="text-xl md:text-2xl max-w-4xl mx-auto drop-shadow-md text-purple-100"
@@ -187,19 +200,27 @@ const OpenPlotsPage = () => {
             >
               {plotSizes.map((plot, index) => (
                 <motion.div key={index} variants={itemVariants}>
-                  <Card className="text-center h-full flex flex-col justify-between p-6 bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:border-purple-400">
+                  <Card
+                    className="text-center h-full flex flex-col justify-between p-6 
+                   bg-white border border-gray-200 rounded-xl shadow-md 
+                   transition-all duration-300 transform 
+                   hover:shadow-estate-gold/50 hover:shadow-xl hover:-translate-y-1 
+                   hover:border-estate-gold" // <-- Gold Border on Hover
+                  >
                     <CardHeader className="pb-4">
-                      <Ruler className="h-10 w-10 mx-auto mb-3 text-purple-600" />
-                      <CardTitle className="text-2xl font-bold text-gray-800">
+                      {/* Icon in Gold */}
+                      <Ruler className="h-10 w-10 mx-auto mb-3 text-estate-gold" />
+                      <CardTitle className="text-2xl font-bold text-navy-900">
                         {plot.size}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow">
                       <p className="text-gray-700 mb-3 text-base">
-                        Ideal for{" "}
+                        Ideal for
                         <span className="font-semibold">{plot.ideal}</span>
                       </p>
-                      <div className="text-2xl font-extrabold text-blue-700 mt-4">
+                      {/* Price in Gold */}
+                      <div className="text-2xl font-extrabold text-blue-600 mt-4">
                         {plot.price}
                       </div>
                     </CardContent>
@@ -266,14 +287,6 @@ const OpenPlotsPage = () => {
                         Open Plots
                       </CardItem>
 
-                      {/* Title */}
-                      <CardItem
-                        translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
-                      >
-                        {plot.projectName}
-                      </CardItem>
-
                       {/* Image */}
                       <CardItem translateZ={80} className="w-full mt-3">
                         <img
@@ -283,13 +296,48 @@ const OpenPlotsPage = () => {
                         />
                       </CardItem>
 
+                      {/* Title */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
+                      >
+                        {plot.projectName}
+                      </CardItem>
                       {/* Info */}
                       <div className="mt-3 space-y-1">
-                        <CardItem
-                          translateZ={20}
-                          className="text-xs sm:text-sm text-gray-600 dark:text-gray-300"
-                        >
-                          📍 {plot.location || "-"}
+                        {/* Location with Map */}
+                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                          <div className="flex items-center mb-1">
+                            {/* <MapPin className="h-4 w-4 mr-1" />
+                                             <span>{project.location}</span> */}
+                          </div>
+                          {/* Map */}
+                          {plot.lat && plot.lng ? (
+                            <div className="w-full h-32 rounded-lg overflow-hidden">
+                              <MapContainer
+                                key={`${plot.lat}-${plot.lng}`}
+                                center={[plot.lat, plot.lng]}
+                                zoom={15}
+                                scrollWheelZoom={true}
+                                dragging={true}
+                                style={{ width: "100%", height: "100%" }}
+                              >
+                                <TileLayer
+                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                  attribution=""
+                                />
+                                <Marker position={[plot.lat, plot.lng]}>
+                                  <Popup>{plot.title}</Popup>
+                                </Marker>
+                              </MapContainer>
+                            </div>
+                          ) : (
+                            <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <p className="text-gray-500 text-sm">
+                                Location map not available
+                              </p>
+                            </div>
+                          )}
                         </CardItem>
 
                         <CardItem

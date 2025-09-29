@@ -517,7 +517,15 @@ export function OpenPlotForm({
                       type="number"
                       placeholder="200"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      min="0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const sanitizedValue = Math.max(
+                          0,
+                          parseFloat(value) || 0
+                        );
+                        field.onChange(sanitizedValue);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -655,8 +663,16 @@ export function OpenPlotForm({
                         type="number"
                         placeholder="5000"
                         {...field}
+                        min="0"
                         className="pl-10"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -679,8 +695,16 @@ export function OpenPlotForm({
                         type="number"
                         placeholder="1000000"
                         {...field}
+                        min="0"
                         className="pl-10"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -703,8 +727,16 @@ export function OpenPlotForm({
                         type="number"
                         placeholder="50000"
                         {...field}
+                        min="0"
                         className="pl-10"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -727,8 +759,16 @@ export function OpenPlotForm({
                         type="number"
                         placeholder="25000"
                         {...field}
+                        min="0"
                         className="pl-10"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </div>
                   </FormControl>
@@ -751,8 +791,17 @@ export function OpenPlotForm({
                         type="number"
                         placeholder="950000"
                         {...field}
+                        min="0"
                         className="pl-10"
                         readOnly
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
+                        }}
                       />
                     </div>
                   </FormControl>

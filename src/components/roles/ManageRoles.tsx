@@ -4,6 +4,15 @@ import { Button } from "../ui/button";
 import { Shield, Plus, Edit, Delete, User } from "lucide-react";
 import clsx from "clsx";
 import axios from "axios";
+import { toast } from "sonner";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import { Roles } from "@/contexts/AuthContext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAllRoles } from "./Permission ";
+import Loader from "../Loader";
+import CircleLoader from "../CircleLoader";
 
 const colors = [
   "bg-blue-500",
@@ -19,20 +28,47 @@ const ManageRoles = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [description, setDescription] = useState("");
   const [selectedColor, setSelectedColor] = useState(colors[0]);
-  const [roles, setRoles] = useState([]);
+  // const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [userCountMap, setUserCountMap] = useState({});
+  const queryClient = useQueryClient();
+  const {
+    data: roles,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Roles[]>({
+    queryKey: ["roles"],
+    queryFn: fetchAllRoles,
+  });
 
-  const fetchRoles = async () => {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_URL}/api/role/roles`);
-      setRoles(res.data);
-    } catch (err) {
-      console.error("Failed to fetch roles:", err);
-    }
-  };
+  useEffect(() => {
+    getAllUsers();
+  }, []);
+
+  const normalizeRole = (roleName: string) =>
+    roleName?.toLowerCase().replace(/_/g, " ") || "";
+
+  useEffect(() => {
+    const map = {};
+    allUsers.forEach((user) => {
+      const roleKey = normalizeRole(user.role);
+      map[roleKey] = (map[roleKey] || 0) + 1;
+    });
+    setUserCountMap(map);
+  }, [allUsers]);
+
+  if (isError) {
+    console.error("failed to fetch roles", error);
+    toast.error("failed to fetch roles");
+    return null;
+  }
+
+  if (isLoading) {
+    return <CircleLoader />;
+  }
 
   const getAllUsers = async () => {
     try {
@@ -42,6 +78,7 @@ const ManageRoles = () => {
           withCredentials: true,
         }
       );
+      console.log(res);
       setAllUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
@@ -49,44 +86,49 @@ const ManageRoles = () => {
     }
   };
 
-  const getUserCount = (roleName) => userCountMap[roleName.toLowerCase()] || 0;
+  const getUserCount = (roleName: string) =>
+    userCountMap[normalizeRole(roleName)] || 0;
 
-  const handleCreateOrUpdate = async () => {
-    if (!roleName.trim()) return;
-
-    try {
-      setLoading(true);
-      if (isEditMode) {
-        // Update role
-        await axios.patch(
-          `${import.meta.env.VITE_URL}/api/role/${editingRoleId}`,
-          {
-            description,
-            color: selectedColor,
-          }
+  const createOrUpdateRole = useMutation({
+    mutationFn: async (payload: any) => {
+      if (payload.isEditMode && payload.editingRoleId) {
+        return axios.put(
+          `${import.meta.env.VITE_URL}/api/role/updateRole/${
+            payload.editingRoleId
+          }`,
+          payload.data
         );
       } else {
-        // Create or set metadata
-        await axios.post(
-          `${import.meta.env.VITE_URL}/api/role/updateUserRole`,
-          {
-            name: roleName,
-            description,
-            color: selectedColor,
-          }
+        return axios.post(
+          `${import.meta.env.VITE_URL}/api/role/createRole`,
+          payload.data
         );
       }
+    },
+    onSuccess: () => {
+      toast.success("Role saved successfully");
+      queryClient.invalidateQueries({ queryKey: ["roles"] }); // ✅ refetch roles
+    },
+    onError: (err: any) => {
+      const message = err.response?.data?.message || "Failed to save role";
+      toast.error(message);
+    },
+  });
 
-      setRoleName("");
-      setDescription("");
-      setSelectedColor(colors[0]);
-      fetchRoles();
-    } catch (err) {
-      console.error("Failed to create/update role:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const deleteRole = useMutation({
+    mutationFn: async (id: string) => {
+      return axios.delete(
+        `${import.meta.env.VITE_URL}/api/role/deleteRole/${id}`
+      );
+    },
+    onSuccess: () => {
+      toast.success("Role deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["roles"] }); // ✅ refetch roles
+    },
+    onError: () => {
+      toast.error("Failed to delete role");
+    },
+  });
 
   const handleClearRoleMeta = async (id) => {
     const confirm = window.confirm("Clear role color and description?");
@@ -96,25 +138,40 @@ const ManageRoles = () => {
       await axios.patch(
         `${import.meta.env.VITE_URL}/api/role/${id}/clear-meta`
       );
-      fetchRoles();
+      // fetchRoles();
     } catch (err) {
       console.error("Failed to clear role metadata", err);
     }
   };
 
-  useEffect(() => {
-    getAllUsers();
-    fetchRoles();
-  }, []);
+  const handleCreateOrUpdate = () => {
+    if (!roleName.trim()) return;
 
-  useEffect(() => {
-    const map = {};
-    allUsers.forEach((user) => {
-      const roleKey = user.role?.toLowerCase().replace(/_/g, " ") || "";
-      map[roleKey] = (map[roleKey] || 0) + 1;
+    createOrUpdateRole.mutate({
+      isEditMode,
+      editingRoleId,
+      data: {
+        name: roleName,
+        description,
+        color: selectedColor,
+      },
     });
-    setUserCountMap(map);
-  }, [allUsers]);
+
+    // reset form
+    setRoleName("");
+    setDescription("");
+    setSelectedColor(colors[0]);
+    setIsEditMode(false);
+    setEditingRoleId(null);
+  };
+
+  const handleDeleteRole = (id: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this role?"
+    );
+    if (!confirmDelete) return;
+    deleteRole.mutate(id);
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 px-4 sm:px-6">
@@ -127,8 +184,8 @@ const ManageRoles = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium">Role Name</label>
-            <input
+            <Label className="block text-sm font-medium">Role Name</Label>
+            <Input
               className="w-full mt-1 p-2 border rounded text-sm sm:text-base"
               placeholder="e.g., Project Manager"
               value={roleName}
@@ -138,7 +195,7 @@ const ManageRoles = () => {
 
           <div>
             <label className="block text-sm font-medium">Description</label>
-            <textarea
+            <Textarea
               className="w-full mt-1 p-2 border rounded text-sm sm:text-base"
               placeholder="Describe the role responsibilities..."
               value={description}
@@ -147,7 +204,7 @@ const ManageRoles = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Role Color</label>
+            <Label className="block text-sm font-medium mb-1">Role Color</Label>
             <div className="flex flex-wrap gap-2">
               {colors.map((color) => (
                 <div
@@ -223,43 +280,46 @@ const ManageRoles = () => {
           {roles.length === 0 && (
             <p className="text-sm text-gray-500">No roles found.</p>
           )}
-          {roles.map((role, index) => (
-            <div
-              key={index}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center border p-3 rounded gap-2"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+          {roles &&
+            roles.map((role, index) => {
+              return (
                 <div
-                  className={`px-2 py-1 rounded text-white text-xs font-semibold md:w-auto w-[50%] ${role.color}`}
+                  key={role?._id || index}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center border p-3 rounded gap-2"
                 >
-                  {role.name}
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm">{role.description}</p>
-                  <div className="flex items-center text-xs text-gray-600 mt-1 gap-1">
-                    <User className="w-4 h-4" />
-                    {getUserCount(role.name) || 0} users
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                    <div
+                      className={`px-2 py-1 rounded text-white text-xs font-semibold md:w-auto w-[50%] ${role.color}`}
+                    >
+                      {role.name}
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm">{role.description}</p>
+                      <div className="flex items-center text-xs text-gray-600 mt-1 gap-1">
+                        <User className="w-4 h-4" />
+                        {getUserCount(role.name) || 0} users
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Edit
+                      className="w-4 h-4 cursor-pointer text-gray-600"
+                      onClick={() => {
+                        setIsEditMode(true);
+                        setEditingRoleId(role._id);
+                        setRoleName(role.name);
+                        setDescription(role.description || "");
+                        setSelectedColor(role.color || colors[0]);
+                      }}
+                    />
+                    <Delete
+                      className="w-4 h-4 cursor-pointer text-red-600"
+                      onClick={() => handleDeleteRole(role._id)}
+                    />
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Edit
-                  className="w-4 h-4 cursor-pointer text-gray-600"
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setEditingRoleId(role._id);
-                    setRoleName(role.name);
-                    setDescription(role.description || "");
-                    setSelectedColor(role.color || colors[0]);
-                  }}
-                />
-                <Delete
-                  className="w-4 h-4 cursor-pointer text-red-600"
-                  onClick={() => handleClearRoleMeta(role._id)}
-                />
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </CardContent>
       </Card>
     </div>

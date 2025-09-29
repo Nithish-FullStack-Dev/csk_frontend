@@ -2,6 +2,13 @@ import axios from "axios";
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 
+export interface Roles {
+  _id: string;
+  name: string;
+  color: string;
+  description: string;
+}
+
 // Define user roles
 export type UserRole =
   | "owner"

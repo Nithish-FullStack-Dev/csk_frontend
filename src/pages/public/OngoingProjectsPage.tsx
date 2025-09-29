@@ -21,6 +21,9 @@ import axios from "axios";
 import { Property } from "@/types/property";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 const OngoingProjectsPage = () => {
   const [ongoingProjects, setOngoingProjects] = useState([]);
@@ -47,6 +50,8 @@ const OngoingProjectsPage = () => {
           image: location?.mainPropertyImage,
           category: basic?.propertyType,
           preBooking: basic.preBooking,
+          lat: location?.coordinates?.lat || 17.4457025, // Default to India's center coordinates
+          lng: location?.coordinates?.lng || 78.3770637,
         };
       });
       setOngoingProjects(ongoingProjectsFromDB);
@@ -106,7 +111,7 @@ const OngoingProjectsPage = () => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 100, damping: 10 }}
             >
-              🚀 Awesome Ongoing Projects!
+              Awesome Ongoing Projects!
             </motion.h1>
             <motion.p
               className="text-xl md:text-2xl text-yellow-200 max-w-3xl mx-auto italic"
@@ -145,11 +150,10 @@ const OngoingProjectsPage = () => {
               {projectProgress.map((project, index) => (
                 <motion.div
                   key={index}
-                  className="bg-purple-50 p-8 rounded-2xl shadow-lg border-2 border-purple-200 cursor-pointer"
+                  className="bg-white p-8 rounded-2xl shadow-lg border-2 border-navy-200 cursor-pointer"
                   whileHover={{
-                    scale: 1.05,
-                    rotate: 2,
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
+                    scale: 1.03,
+                    borderColor: "#ffcc11",
                   }}
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -159,26 +163,30 @@ const OngoingProjectsPage = () => {
                     stiffness: 120,
                   }}
                 >
-                  <h3 className="text-2xl font-md font-vidaloka mb-3 text-blue-800 text-center">
-                    <Hammer className="inline-block mr-2 text-purple-600" />
+                  <h3 className="text-2xl font-md font-vidaloka mb-3 text-navy-900 text-center">
+                    {/* Use Gold for the icon */}
+                    <Hammer className="inline-block mr-2 text-estate-gold" />
                     {project.name}
                   </h3>
                   <div className="mb-5">
                     <div className="flex justify-between text-base font-semibold mb-2 text-gray-700">
                       <span>Progress!</span>
-                      <span className="text-purple-600">
+                      {/* Use Gold for the percentage highlight */}
+                      <span className="text-estate-gold">
                         {project.progress}%
                       </span>
                     </div>
                     <Progress
                       value={project.progress}
-                      className="h-3 bg-purple-200"
+                      // Use a light Navy for the track and ensure the filled part (via custom CSS) is Gold
+                      className="h-3 bg-navy-200 [&>div]:bg-estate-gold"
                     />
                   </div>
                   <div className="text-base text-gray-600 font-medium text-center">
-                    <Clock className="inline h-5 w-5 mr-1 text-purple-500" />
+                    {/* Use a muted Gold/Navy for the Clock icon */}
+                    <Clock className="inline h-5 w-5 mr-1 text-navy-500" />
                     Ready by:{" "}
-                    <span className="font-semibold text-purple-700">
+                    <span className="font-semibold text-navy-700">
                       {project.expectedCompletion}
                     </span>
                   </div>
@@ -224,14 +232,6 @@ const OngoingProjectsPage = () => {
                 {ongoingProjects.map((project, index) => (
                   <CardContainer key={project.id} className="inter-var">
                     <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[28rem] sm:min-h-[30rem] md:min-h-[32rem] lg:min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
-                      {/* Title */}
-                      <CardItem
-                        translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
-                      >
-                        {project.title}
-                      </CardItem>
-
                       {/* Image */}
                       <CardItem
                         translateZ={80}
@@ -243,14 +243,46 @@ const OngoingProjectsPage = () => {
                           className="h-48 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                         />
                       </CardItem>
-
-                      {/* Location */}
+                      {/* Title */}
                       <CardItem
-                        translateZ={20}
-                        className="mt-1 flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300"
+                        translateZ={30}
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
                       >
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {project.location}
+                        {project.title}
+                      </CardItem>
+                      {/* Location with Map */}
+                      <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                        <div className="flex items-center mb-1">
+                          {/* <MapPin className="h-4 w-4 mr-1" />
+                                             <span>{project.location}</span> */}
+                        </div>
+                        {/* Map */}
+                        {project.lat && project.lng ? (
+                          <div className="w-full h-32 rounded-lg overflow-hidden">
+                            <MapContainer
+                              key={`${project.lat}-${project.lng}`}
+                              center={[project.lat, project.lng]}
+                              zoom={15}
+                              scrollWheelZoom={true}
+                              dragging={true}
+                              style={{ width: "100%", height: "100%" }}
+                            >
+                              <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution=""
+                              />
+                              <Marker position={[project.lat, project.lng]}>
+                                <Popup>{project.title}</Popup>
+                              </Marker>
+                            </MapContainer>
+                          </div>
+                        ) : (
+                          <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <p className="text-gray-500 text-sm">
+                              Location map not available
+                            </p>
+                          </div>
+                        )}
                       </CardItem>
 
                       {/* Price */}
