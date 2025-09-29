@@ -87,7 +87,9 @@ export function PropertyCardDetailed({
                   <div className="text-sm text-muted-foreground">Customer</div>
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span>{property.customerName || "Not assigned"}</span>
+                    <span>
+                      {property.customerId?.user?.name || "Not assigned"}
+                    </span>
                   </div>
                 </div>
                 <div>
