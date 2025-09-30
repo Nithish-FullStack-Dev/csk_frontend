@@ -598,14 +598,16 @@ const ContactPage: React.FC = () => {
                   whileHover={{
                     y: -5,
                     boxShadow: `0 4px 10px ${palette.hoverShadow}`,
+                    borderRadius: "0.75rem",
                   }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <Card
-                    className="border rounded-xl"
+                    className="border rounded-xl overflow-hidden transition-all duration-200" // Add overflow-hidden and transition
                     style={{
                       borderColor: palette.borderLight,
                       backgroundColor: palette.backgroundLight,
+                      borderRadius: "0.75rem", // Explicitly set border radius
                     }}
                   >
                     <CardContent className="p-6">

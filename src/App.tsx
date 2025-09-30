@@ -105,12 +105,12 @@ const OWNER_ADMIN = ["admin", "owner"];
 const ADMIN_SALES = ["admin", "sales_manager"];
 const ADMIN = ["admin"];
 const OWNER = ["owner"];
-const AGENT = ["agent"];
-const LEAD = ["team_lead"];
-const SALES = ["sales_manager"];
-const SITE = ["site_incharge"];
-const CONTRACTOR = ["contractor"];
-const ACCOUNTANT = ["accountant"];
+const AGENT = ["agent", "admin"];
+const LEAD = ["team_lead", "admin"];
+const SALES = ["sales_manager", "admin"];
+const SITE = ["site_incharge", "admin"];
+const CONTRACTOR = ["contractor", "admin"];
+const ACCOUNTANT = ["accountant", "admin"];
 const CUSTOMER_PURCHASED = ["customer_purchased"];
 
 const App = () => {

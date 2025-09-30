@@ -299,7 +299,7 @@ const OpenPlotsPage = () => {
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
+                        className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
                       >
                         {plot.projectName}
                       </CardItem>
@@ -442,7 +442,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         Approved & Clear Titles:
                       </strong>{" "}
                       All layouts are DTCP/RERA approved with transparent and
@@ -452,7 +452,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         Ready Infrastructure:
                       </strong>{" "}
                       Enjoy ready-to-use roads, reliable electricity, and
@@ -462,7 +462,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         Flexible Payment Options:
                       </strong>{" "}
                       Tailored payment plans to suit your financial needs,
@@ -472,7 +472,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         High Appreciation Potential:
                       </strong>{" "}
                       Invest in strategically chosen locations poised for
@@ -482,7 +482,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         Home Loan Assistance:
                       </strong>{" "}
                       Comprehensive support and guidance for hassle-free home
@@ -492,7 +492,7 @@ const OpenPlotsPage = () => {
                   <li className="flex items-start">
                     <CheckCircle2 className="h-6 w-6 mr-4 text-estate-gold flex-shrink-0 mt-1" />
                     <span>
-                      <strong className="text-estate-gold">
+                      <strong className="text-estate-gold text-xl">
                         Construction Support:
                       </strong>{" "}
                       Access to trusted construction partners and expert
@@ -519,10 +519,10 @@ const OpenPlotsPage = () => {
           </div>
         </section>
 
-        {/* Call to Action - Optional addition */}
-        <section className="py-16 bg-purple-100 text-center">
+        {/* Call to Action - Updated Color Palette */}
+        <section className="py-16 bg-stone-50 text-center">
           <div className="container mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-md font-vidaloka text-gray-800 mb-6">
+            <h2 className="text-3xl md:text-4xl font-md font-vidaloka text-estate-navy mb-6">
               Ready to Find Your Plot?
             </h2>
             <p className="text-lg text-gray-700 mb-8 max-w-3xl mx-auto">

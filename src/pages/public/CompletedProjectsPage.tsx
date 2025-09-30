@@ -212,10 +212,15 @@ const CompletedProjectsPage = () => {
               </div>
             ) : (
               <div className="px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-10 gap-5">
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 xl:gap-12 justify-center items-start"
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, amount: 0.3 }}
+                >
                   {completedProjects.map((project) => (
                     <CardContainer key={project.id} className="inter-var">
-                      <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                      <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full max-w-sm sm:max-w-md md:max-w-lg h-auto min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
                         {/* Image */}
                         <CardItem
                           translateZ={80}
@@ -227,20 +232,17 @@ const CompletedProjectsPage = () => {
                             className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                           />
                         </CardItem>
+
                         {/* Title */}
                         <CardItem
                           translateZ={30}
-                          className="text-xl font-bold text-neutral-900 dark:text-white mb-2"
+                          className="text-xl font-bold text-neutral-900 dark:text-white mt-3"
                         >
                           {project.title}
                         </CardItem>
-                        {/* Location with Map */}
-                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
-                          <div className="flex items-center mb-1">
-                            {/* <MapPin className="h-4 w-4 mr-1" />
-                                                                   <span>{project.location}</span> */}
-                          </div>
-                          {/* Map */}
+
+                        {/* Location / Map */}
+                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-full">
                           {project.lat && project.lng ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
                               <MapContainer
@@ -269,7 +271,7 @@ const CompletedProjectsPage = () => {
                           )}
                         </CardItem>
 
-                        {/* Description */}
+                        {/* Category */}
                         <CardItem
                           translateZ={20}
                           className="text-sm text-gray-600 mt-2 line-clamp-2"
@@ -285,8 +287,8 @@ const CompletedProjectsPage = () => {
                           ₹{project.price} Lakhs onwards
                         </CardItem>
 
-                        {/* Button */}
-                        <div className="mt-1 space-y-2">
+                        {/* Buttons */}
+                        <div className="mt-3 space-y-2 flex flex-col">
                           <Link to={`/public/project/${project.id}`}>
                             <CardItem
                               translateZ={40}
@@ -309,7 +311,7 @@ const CompletedProjectsPage = () => {
                       </CardBody>
                     </CardContainer>
                   ))}
-                </div>
+                </motion.div>
               </div>
             )}
           </div>

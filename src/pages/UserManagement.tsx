@@ -38,6 +38,7 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllRoles } from "@/components/roles/Permission ";
 import CircleLoader from "@/components/CircleLoader";
+import Loader from "@/components/Loader";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -56,6 +57,8 @@ const UserManagement = () => {
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -101,10 +104,11 @@ const UserManagement = () => {
   }, [users, searchQuery]);
 
   if (userLoading || isLoading || !roles) {
-    return <CircleLoader />;
+    return <Loader />;
   }
 
   const handleAddUser = async () => {
+    setAdding(true);
     const createdUser = {
       name: newUser.name,
       email: newUser.email,
@@ -136,11 +140,14 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error adding user:", error);
       toast.error("Failed to add user");
+    } finally {
+      setAdding(false);
     }
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
+    setDeleting(true);
     try {
       await axios.delete(
         `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`
@@ -150,6 +157,8 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -346,10 +355,11 @@ const UserManagement = () => {
                       !newUser.name ||
                       !newUser.email ||
                       !newUser.role ||
-                      !newUser.phone
+                      !newUser.phone ||
+                      adding
                     }
                   >
-                    Create User
+                    {adding ? "Creating User..." : "Create User"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -465,11 +475,14 @@ const UserManagement = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                title="Delete user"
+                                title={
+                                  deleting ? "Deleting user..." : "Delete user"
+                                }
                                 onClick={() => {
                                   setSelectedUser(user);
                                   setshowResetDeleteDialog(true);
                                 }}
+                                disabled={deleting}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

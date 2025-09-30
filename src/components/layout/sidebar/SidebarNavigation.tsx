@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "react-router-dom";
 import { navigationByRole } from "./navigationConfig";
@@ -11,9 +10,9 @@ interface SidebarNavigationProps {
 const SidebarNavigation = ({ collapsed }: SidebarNavigationProps) => {
   const { user } = useAuth();
   const location = useLocation();
-  
+
   if (!user) return null;
-  
+
   // Get navigation items for the user's role
   const navigation = navigationByRole[user.role] || [];
 
