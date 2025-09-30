@@ -7,7 +7,8 @@ const AuthRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isUnauthorized) {
+    const isPublicRoute = location.pathname.startsWith("/public");
+    if (isUnauthorized && !isPublicRoute) {
       setIsUnauthorized(false);
       navigate("/login", { replace: true });
     }

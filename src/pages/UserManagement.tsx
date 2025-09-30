@@ -32,9 +32,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { UserPlus, Search, Filter, Edit, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCsrfToken, UserRole } from "@/contexts/AuthContext";
+import { getCsrfToken, Roles, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllRoles } from "@/components/roles/Permission ";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -54,6 +56,17 @@ const UserManagement = () => {
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Fetch all roles
+  const {
+    data: roles,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Roles[]>({
+    queryKey: ["roles"],
+    queryFn: fetchAllRoles,
+  });
 
   const fetchAllUsers = async () => {
     try {
@@ -193,7 +206,7 @@ const UserManagement = () => {
       : "bg-red-100 text-red-800 hover:bg-red-100/80";
   };
 
-  const roles: UserRole[] = [
+  const defroles: UserRole[] = [
     "owner",
     "admin",
     "sales_manager",
@@ -296,20 +309,17 @@ const UserManagement = () => {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                        <SelectItem value="sales_manager">
-                          Sales Manager
-                        </SelectItem>
-                        <SelectItem value="team_lead">Team Lead</SelectItem>
-                        <SelectItem value="agent">Agent</SelectItem>
-                        <SelectItem value="site_incharge">
-                          Site Incharge
-                        </SelectItem>
-                        <SelectItem value="contractor">Contractor</SelectItem>
-                        <SelectItem value="accountant">Accountant</SelectItem>
-                        <SelectItem value="customer_purchased">
-                          Customer_Purchased
-                        </SelectItem>
+                        {isLoading && (
+                          <SelectItem value="">Loading...</SelectItem>
+                        )}
+                        {isError && (
+                          <SelectItem value="">Error loading roles</SelectItem>
+                        )}
+                        {roles.map((role) => (
+                          <SelectItem key={role._id} value={role.name}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -607,10 +617,8 @@ const UserManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        <SelectItem key={role._id} value={role.name}>
+                          {role.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

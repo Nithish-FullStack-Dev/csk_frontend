@@ -33,6 +33,8 @@ const ManageRoles = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [userCountMap, setUserCountMap] = useState({});
+  const [warning, setWarning] = useState(""); // ⚠️ state for warning message
+
   const queryClient = useQueryClient();
   const {
     data: roles,
@@ -78,7 +80,6 @@ const ManageRoles = () => {
           withCredentials: true,
         }
       );
-      console.log(res);
       setAllUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
@@ -163,6 +164,7 @@ const ManageRoles = () => {
     setSelectedColor(colors[0]);
     setIsEditMode(false);
     setEditingRoleId(null);
+    setWarning(""); // clear warning after save
   };
 
   const handleDeleteRole = (id: string) => {
@@ -187,10 +189,20 @@ const ManageRoles = () => {
             <Label className="block text-sm font-medium">Role Name</Label>
             <Input
               className="w-full mt-1 p-2 border rounded text-sm sm:text-base"
-              placeholder="e.g., Project Manager"
+              placeholder="e.g., Project_Manager"
               value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/\s/.test(value)) {
+                  setWarning("Spaces are not allowed. Replaced with '_'");
+                  setRoleName(value.replace(/\s+/g, "_"));
+                } else {
+                  setWarning("");
+                  setRoleName(value);
+                }
+              }}
             />
+            {warning && <p className="text-xs text-red-500 mt-1">{warning}</p>}
           </div>
 
           <div>
@@ -230,7 +242,7 @@ const ManageRoles = () => {
                 <span
                   className={`text-white px-2 py-1 rounded text-xs sm:text-sm font-semibold ${selectedColor}`}
                 >
-                  {roleName || "Role Name"}
+                  {roleName || "Role_Name"}
                 </span>
                 <p className="text-xs sm:text-sm mt-1 text-gray-700">
                   {description || "Role description will appear here..."}
@@ -261,6 +273,7 @@ const ManageRoles = () => {
                 setRoleName("");
                 setDescription("");
                 setSelectedColor(colors[0]);
+                setWarning(""); // clear warning when cancel
               }}
             >
               Cancel Edit
@@ -307,7 +320,18 @@ const ManageRoles = () => {
                       onClick={() => {
                         setIsEditMode(true);
                         setEditingRoleId(role._id);
-                        setRoleName(role.name);
+
+                        // ✅ enforce underscore rule on edit as well
+                        if (/\s/.test(role.name)) {
+                          setWarning(
+                            "Spaces are not allowed. Replaced with '_'"
+                          );
+                          setRoleName(role.name.replace(/\s+/g, "_"));
+                        } else {
+                          setWarning("");
+                          setRoleName(role.name);
+                        }
+
                         setDescription(role.description || "");
                         setSelectedColor(role.color || colors[0]);
                       }}
