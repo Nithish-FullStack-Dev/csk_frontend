@@ -542,7 +542,17 @@ export function PropertyForm({
                 <FormItem>
                   <FormLabel>Extent (sq. ft)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="1200" {...field} />
+                    <Input
+                      type="number"
+                      placeholder="1200"
+                      {...field}
+                      min="0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const sanitizedValue = Math.max(0, parseFloat(value));
+                        field.onChange(sanitizedValue);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -853,6 +863,11 @@ export function PropertyForm({
                     <Input
                       type="number"
                       min="0"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const sanitizedValue = Math.max(0, parseFloat(value));
+                        field.onChange(sanitizedValue);
+                      }}
                       max="100"
                       placeholder="75"
                       {...field}
@@ -948,9 +963,15 @@ export function PropertyForm({
                         type="number"
                         placeholder="5000000"
                         {...field}
+                        min="0"
                         className="pl-10"
                         onChange={(e) => {
-                          field.onChange(e);
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
                           recalculateBalance();
                         }}
                       />
@@ -975,11 +996,17 @@ export function PropertyForm({
                         type="number"
                         placeholder="2500000"
                         {...field}
-                        className="pl-10"
+                        min="0"
                         onChange={(e) => {
-                          field.onChange(e);
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(
+                            0,
+                            parseFloat(value) || 0
+                          );
+                          field.onChange(sanitizedValue);
                           recalculateBalance();
                         }}
+                        className="pl-10"
                       />
                     </div>
                   </FormControl>
@@ -1002,6 +1029,12 @@ export function PropertyForm({
                         type="number"
                         placeholder="2500000"
                         {...field}
+                        min="0"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const sanitizedValue = Math.max(0, parseFloat(value));
+                          field.onChange(sanitizedValue);
+                        }}
                         className="pl-10"
                         readOnly
                       />

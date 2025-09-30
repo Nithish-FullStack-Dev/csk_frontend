@@ -13,7 +13,21 @@ import { useEffect, useState } from "react";
 import { Property } from "@/types/property";
 import { toast } from "sonner";
 import ModernEnquiryForm from "./EnquiryForm";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
+// Add this code after your imports and before the component
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 const UpcomingProjectsPage = () => {
   const [upcomingProjects, setUpcomingProjects] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,6 +56,8 @@ const UpcomingProjectsPage = () => {
           category: basic?.propertyType || "Unknown",
           preBooking:
             typeof basic?.preBooking === "boolean" ? basic.preBooking : false,
+          lat: location?.coordinates?.lat || 20.5937, // Default to India's center coordinates
+          lng: location?.coordinates?.lng || 78.9629,
         };
       });
       setUpcomingProjects(upcomingProjectsFromDB);
@@ -54,7 +70,13 @@ const UpcomingProjectsPage = () => {
       setLoading(false);
     }
   };
-
+  // Fix default marker icon issue
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "/leaflet/marker-icon-2x.png",
+    iconUrl: "/leaflet/marker-icon.png",
+    shadowUrl: "/leaflet/marker-shadow.png",
+  });
   useEffect(() => {
     fetchUpcomingProperties();
     // window.scrollTo(0, 0);
@@ -162,14 +184,15 @@ const UpcomingProjectsPage = () => {
               {benefits.map((benefit, i) => (
                 <Card
                   key={i}
-                  className="text-center hover:shadow-lg transition-all"
+                  className="text-center bg-white border border-gray-100 hover:shadow-xl hover:border-estate-gold transition-all"
                 >
                   <CardContent className="p-6">
-                    <benefit.icon className="h-10 w-10 mx-auto mb-4 text-indigo-500" />
-                    <h3 className="text-lg font-semibold mb-2 text-green-600">
+                    <benefit.icon className="h-10 w-10 mx-auto mb-4 text-estate-gold" />
+
+                    <h3 className="text-lg font-semibold mb-2 text-navy-900">
                       {benefit.title}
                     </h3>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-700 text-sm">
                       {benefit.description}
                     </p>
                   </CardContent>
@@ -183,8 +206,8 @@ const UpcomingProjectsPage = () => {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-5xl font-md font-vidaloka  mb-2">
-                <ColourfulText text="Coming Soon!" />
+              <h2 className="text-5xl font-md font-vidaloka text-orange-600  mb-2">
+                Coming Soon!
               </h2>
               <p className="text-gray-600">
                 Discover our upcoming developments
@@ -218,7 +241,7 @@ const UpcomingProjectsPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                 {upcomingProjects.map((project) => (
                   <CardContainer key={project.id} className="inter-var">
-                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[30rem] md:min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
+                    <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[30rem] md:min-h-[35rem] p-6 shadow-xl flex flex-col justify-between relative">
                       {/* Pre-Booking Badge */}
                       {project.preBooking ? (
                         <CardItem
@@ -236,14 +259,6 @@ const UpcomingProjectsPage = () => {
                         </CardItem>
                       )}
 
-                      {/* Title */}
-                      <CardItem
-                        translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
-                      >
-                        {project.title}
-                      </CardItem>
-
                       {/* Image */}
                       <CardItem
                         translateZ={80}
@@ -256,13 +271,47 @@ const UpcomingProjectsPage = () => {
                         />
                       </CardItem>
 
-                      {/* Location */}
+                      {/* Title */}
                       <CardItem
-                        translateZ={20}
-                        className="mt-2 flex items-center text-xs sm:text-sm text-gray-600 dark:text-gray-300"
+                        translateZ={30}
+                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
                       >
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {project.location}
+                        {project.title}
+                      </CardItem>
+
+                      {/* Location with Map */}
+                      <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                        <div className="flex items-center mb-1">
+                          {/* <MapPin className="h-4 w-4 mr-1" />
+                          <span>{project.location}</span> */}
+                        </div>
+                        {/* Map */}
+                        {project.lat && project.lng ? (
+                          <div className="w-full h-32 rounded-lg overflow-hidden">
+                            <MapContainer
+                              key={`${project.lat}-${project.lng}`}
+                              center={[project.lat, project.lng]}
+                              zoom={15}
+                              scrollWheelZoom={true}
+                              dragging={true}
+                              style={{ width: "100%", height: "100%" }}
+                            >
+                              <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution=""
+                              />
+                              <Marker position={[project.lat, project.lng]}>
+                                <Popup>{project.title}</Popup>
+                              </Marker>
+                            </MapContainer>
+                          </div>
+                        ) : (
+                          <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <p className="text-gray-500 text-sm">
+                              Location map not available
+                            </p>
+                          </div>
+                        )}
                       </CardItem>
 
                       {/* Launch Date */}
@@ -274,7 +323,7 @@ const UpcomingProjectsPage = () => {
                         Launch: {project.launchDate}
                       </CardItem>
 
-                      {/* Description */}
+                      {/* Category */}
                       <CardItem
                         translateZ={20}
                         className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2"

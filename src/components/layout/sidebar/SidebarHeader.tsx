@@ -31,7 +31,7 @@ const SidebarHeader = ({ collapsed, toggleCollapsed }: SidebarHeaderProps) => {
         </Link>
       ) : (
         <img
-          src="/public/lovable-uploads/30bdcab9-a5eb-4aa4-93cf-b6c08a16ec9b.png"
+          src="/assets/images/logo.png"
           alt="CSK Realtors Logo"
           className="h-10 w-auto transition-all duration-300"
         />

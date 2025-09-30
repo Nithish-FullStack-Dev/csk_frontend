@@ -19,6 +19,8 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Loader from "@/components/Loader";
+import CircleLoader from "@/components/CircleLoader";
+import AboutPageSkeleton from "./AboutPageSkeleton";
 
 const team = [
   {
@@ -71,7 +73,7 @@ const PublicAboutPage = () => {
   }
 
   if (isLoading || !data) {
-    return <Loader />;
+    return <AboutPageSkeleton />;
   }
 
   const containerVariants = {
@@ -174,7 +176,7 @@ const PublicAboutPage = () => {
           </div>
         </section>
 
-        <AboutSection data={data} />
+        <AboutSection />
 
         <section className="py-11 md:py-12 bg-yellow-50">
           <div className="container mx-auto px-6">
@@ -198,7 +200,7 @@ const PublicAboutPage = () => {
           </div>
         </section>
 
-        <section className="py-20 md:py-28 bg-gradient-to-br from-[#101F3C] to-[#2A4D6F] text-white relative overflow-hidden">
+        <section className="py-20 md:py-16 bg-gradient-to-br from-[#101F3C] to-[#2A4D6F] text-white relative overflow-hidden">
           <div className="absolute inset-0 z-0 opacity-10">
             <svg
               className="w-full h-full"
@@ -225,7 +227,7 @@ const PublicAboutPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: easeOut }}
               viewport={{ once: true, amount: 0.5 }}
-              className="text-4xl md:text-5xl font-md font-vidaloka mb-6 text-estate-gold leading-tight drop-shadow-lg"
+              className="text-3xl md:text-4xl font-md font-vidaloka mb-6 text-estate-gold leading-tight drop-shadow-lg"
             >
               Ready to Begin Your Real Estate Journey?
             </motion.h2>
@@ -234,7 +236,7 @@ const PublicAboutPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: easeOut }}
               viewport={{ once: true, amount: 0.5 }}
-              className="text-xl md:text-2xl max-w-4xl mx-auto mb-10 opacity-90"
+              className="text-lg md:text-xl max-w-4xl mx-auto mb-10 opacity-90"
             >
               Connect with our experts today and discover properties that align
               with your vision and investment goals.

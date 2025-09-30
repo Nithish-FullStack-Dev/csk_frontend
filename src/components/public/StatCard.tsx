@@ -64,7 +64,7 @@ const StatCard = ({
         ref={ref}
         className="flex items-center justify-center md:justify-start mb-2"
       >
-        {Icon && <Icon className="h-9 w-9 text-purple-600 mr-3" />}
+        {Icon && <Icon className="h-9 w-9 text-estate-gold mr-3" />}
         <span className="text-3xl font-extrabold text-gray-900">
           {count}
           {suffix}

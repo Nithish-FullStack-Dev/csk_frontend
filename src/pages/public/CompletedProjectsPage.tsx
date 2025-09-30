@@ -17,6 +17,9 @@ import { useEffect, useState } from "react";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 const CompletedProjectsPage = () => {
   const [completedProjects, setCompletedProjects] = useState([]);
@@ -43,6 +46,8 @@ const CompletedProjectsPage = () => {
             location?.mainPropertyImage ||
             "https://via.placeholder.com/400x300?text=No+Image",
           category: basic?.propertyType || "Unknown",
+          lat: location?.coordinates?.lat || 17.4457025, // Default to India's center coordinates
+          lng: location?.coordinates?.lng || 78.3770637,
         };
       });
       setCompletedProjects(completedProjectsFromDB);
@@ -211,14 +216,6 @@ const CompletedProjectsPage = () => {
                   {completedProjects.map((project) => (
                     <CardContainer key={project.id} className="inter-var">
                       <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-[25rem] h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
-                        {/* Title */}
-                        <CardItem
-                          translateZ={30}
-                          className="text-xl font-bold text-neutral-900 dark:text-white mb-2"
-                        >
-                          {project.title}
-                        </CardItem>
-
                         {/* Image */}
                         <CardItem
                           translateZ={80}
@@ -230,14 +227,46 @@ const CompletedProjectsPage = () => {
                             className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                           />
                         </CardItem>
-
-                        {/* Location */}
+                        {/* Title */}
                         <CardItem
-                          translateZ={20}
-                          className="mt-3 flex items-center text-sm text-gray-600 dark:text-gray-300"
+                          translateZ={30}
+                          className="text-xl font-bold text-neutral-900 dark:text-white mb-2"
                         >
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {project.location}
+                          {project.title}
+                        </CardItem>
+                        {/* Location with Map */}
+                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                          <div className="flex items-center mb-1">
+                            {/* <MapPin className="h-4 w-4 mr-1" />
+                                                                   <span>{project.location}</span> */}
+                          </div>
+                          {/* Map */}
+                          {project.lat && project.lng ? (
+                            <div className="w-full h-32 rounded-lg overflow-hidden">
+                              <MapContainer
+                                key={`${project.lat}-${project.lng}`}
+                                center={[project.lat, project.lng]}
+                                zoom={15}
+                                scrollWheelZoom={true}
+                                dragging={true}
+                                style={{ width: "100%", height: "100%" }}
+                              >
+                                <TileLayer
+                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                  attribution=""
+                                />
+                                <Marker position={[project.lat, project.lng]}>
+                                  <Popup>{project.title}</Popup>
+                                </Marker>
+                              </MapContainer>
+                            </div>
+                          ) : (
+                            <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                              <p className="text-gray-500 text-sm">
+                                Location map not available
+                              </p>
+                            </div>
+                          )}
                         </CardItem>
 
                         {/* Description */}
