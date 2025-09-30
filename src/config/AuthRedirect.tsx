@@ -13,7 +13,6 @@ const AuthRedirect = () => {
         setIsUnauthorized(false);
         navigate("/login", { replace: true });
       } else {
-        // For public routes, clear unauthorized state so no redirect happens
         setIsUnauthorized(false);
       }
     }

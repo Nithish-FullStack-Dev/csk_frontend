@@ -19,6 +19,8 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Loader from "@/components/Loader";
+import CircleLoader from "@/components/CircleLoader";
+import AboutPageSkeleton from "./AboutPageSkeleton";
 
 const team = [
   {
@@ -71,7 +73,7 @@ const PublicAboutPage = () => {
   }
 
   if (isLoading || !data) {
-    return <Loader />;
+    return <AboutPageSkeleton />;
   }
 
   const containerVariants = {
@@ -174,7 +176,7 @@ const PublicAboutPage = () => {
           </div>
         </section>
 
-        <AboutSection data={data} />
+        <AboutSection />
 
         <section className="py-11 md:py-12 bg-yellow-50">
           <div className="container mx-auto px-6">

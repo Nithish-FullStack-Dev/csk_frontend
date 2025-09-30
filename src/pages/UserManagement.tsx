@@ -37,6 +37,7 @@ import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllRoles } from "@/components/roles/Permission ";
+import CircleLoader from "@/components/CircleLoader";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -54,6 +55,7 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -70,6 +72,7 @@ const UserManagement = () => {
 
   const fetchAllUsers = async () => {
     try {
+      setUserLoading(true);
       const csrfToken = await getCsrfToken();
       const response = await axios.get(
         `${import.meta.env.VITE_URL}/api/user/getUsers`,
@@ -78,6 +81,8 @@ const UserManagement = () => {
       setUsers(response.data.users);
     } catch (error) {
       console.log("error");
+    } finally {
+      setUserLoading(false);
     }
   };
 
@@ -94,6 +99,10 @@ const UserManagement = () => {
         .includes(searchQuery.toLowerCase())
     );
   }, [users, searchQuery]);
+
+  if (userLoading || isLoading || !roles) {
+    return <CircleLoader />;
+  }
 
   const handleAddUser = async () => {
     const createdUser = {

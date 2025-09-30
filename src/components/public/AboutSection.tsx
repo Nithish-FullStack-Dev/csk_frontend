@@ -27,6 +27,8 @@ interface AboutContent {
   image: string;
   stats: [];
   values: [];
+  videoUrl: string;
+  thumbnail: string;
 }
 
 interface Stats {
@@ -58,7 +60,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
 };
 
-const AboutSection = ({ data }) => {
+const AboutSection = () => {
   const controls = useAnimation();
   const sectionRef = useRef(null);
   const [showVideo, setShowVideo] = useState(false);
@@ -70,8 +72,14 @@ const AboutSection = ({ data }) => {
     image: "",
     stats: [],
     values: [],
+    videoUrl: "",
+    thumbnail: "",
   });
   const statIcons = [Building, Users, Award, Clock];
+
+  useEffect(() => {
+    console.log(aboutContent);
+  }, [aboutContent]);
 
   const [stats, setStats] = useState<Stats[]>([]);
   const [values, setValues] = useState<Values[]>([]);
@@ -213,7 +221,7 @@ const AboutSection = ({ data }) => {
                 onClick={() => setShowVideo(true)}
               >
                 <img
-                  src={data?.thumbnail || youtubeThumbnailUrl}
+                  src={aboutContent?.thumbnail || youtubeThumbnailUrl}
                   alt="Video Thumbnail"
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-80"
                 />
@@ -230,7 +238,7 @@ const AboutSection = ({ data }) => {
               >
                 <iframe
                   src={
-                    data?.videoUrl ||
+                    aboutContent?.videoUrl ||
                     `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`
                   }
                   title="YouTube video player"
