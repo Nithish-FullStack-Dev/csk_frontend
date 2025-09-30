@@ -122,7 +122,7 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <AuthRedirect />
-            {/* <ScrollToTop /> */}
+            <ScrollToTop />
             <Routes>
               {/* Public Routes */}
               <Route path="/public" element={<HomePage />} />
