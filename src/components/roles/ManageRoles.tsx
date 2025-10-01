@@ -10,9 +10,9 @@ import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
 import { Roles } from "@/contexts/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAllRoles } from "./Permission ";
 import Loader from "../Loader";
 import CircleLoader from "../CircleLoader";
+import { fetchAllRoles } from "@/pages/UserManagement";
 
 const colors = [
   "bg-blue-500",

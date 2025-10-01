@@ -161,7 +161,8 @@ const Properties = () => {
   const fetchAllOpenPlots = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
+        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
+        { withCredentials: true }
       );
       setOpenPlots(data.plots);
       setFilteredOpenPlots(data.plots);

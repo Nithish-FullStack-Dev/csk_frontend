@@ -36,9 +36,25 @@ import { getCsrfToken, Roles, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAllRoles } from "@/components/roles/Permission ";
 import CircleLoader from "@/components/CircleLoader";
 import Loader from "@/components/Loader";
+
+// API functions
+export const fetchAllRoles = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/roles`,
+    { withCredentials: true }
+  );
+  return data || [];
+};
+
+export const fetchRolePermissions = async (roleName: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
+    { withCredentials: true }
+  );
+  return data || null;
+};
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -118,6 +134,7 @@ const UserManagement = () => {
     };
     try {
       const csrfToken = await getCsrfToken();
+      console.log(csrfToken);
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/addUser`,
         createdUser,
