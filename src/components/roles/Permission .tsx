@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, RotateCcw } from "lucide-react";
+import { Save } from "lucide-react";
 import { Roles, UserRole } from "@/contexts/AuthContext";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,7 +23,6 @@ import { Switch } from "@/components/ui/switch";
 import axios from "axios";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Loader from "../Loader";
 import CircleLoader from "../CircleLoader";
 
 const permissions = ["read", "write", "edit", "delete", "view_only"];
@@ -57,7 +55,7 @@ const defaultModuleConfig: Record<string, string[]> = {
   "Communication Modules": ["Communications"],
 };
 
-// Fetch all roles
+// API functions
 export const fetchAllRoles = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/roles`
@@ -65,14 +63,6 @@ export const fetchAllRoles = async () => {
   return data || [];
 };
 
-export const fetchResetPermissions = async (roleName: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/resetRole/${roleName}`
-  );
-  return data || null;
-};
-
-// Fetch permissions for a role
 export const fetchRolePermissions = async (roleName: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`
@@ -88,7 +78,6 @@ export default function Permission() {
 
   const queryClient = useQueryClient();
 
-  // Fetch all roles
   const {
     data: roles,
     isLoading,
@@ -99,20 +88,17 @@ export default function Permission() {
     queryFn: fetchAllRoles,
   });
 
-  // Fetch permissions for selected role
   const { data: roleData, isLoading: roleLoading } = useQuery({
     queryKey: ["rolePermissions", selectedRole],
     queryFn: () => fetchRolePermissions(selectedRole),
     enabled: !!selectedRole,
   });
 
-  // Build moduleConfig & accessMatrix when roleData changes
   useEffect(() => {
     const buildPermissions = () => {
       const matrix: Record<string, boolean> = {};
       const grouped: Record<string, string[]> = { ...defaultModuleConfig };
 
-      // Fill matrix with defaults (false)
       Object.entries(defaultModuleConfig).forEach(([module, subs]) => {
         subs.forEach((sub) => {
           permissions.forEach((perm) => {
@@ -122,7 +108,6 @@ export default function Permission() {
         });
       });
 
-      // Override with actual roleData if available
       if (roleData?.permissions) {
         roleData.permissions.forEach((perm: any) => {
           const { module, submodule, actions } = perm;
@@ -194,24 +179,6 @@ export default function Permission() {
     }
   };
 
-  const handleReset = async () => {
-    const data = await fetchResetPermissions(selectedRole);
-    if (data && data.permissions) {
-      const resetMatrix: Record<string, boolean> = {};
-
-      data.permissions.forEach((perm: any) => {
-        Object.entries(perm.actions).forEach(([action, value]) => {
-          const key = `${data.name}-${perm.module}-${perm.submodule}-${action}`;
-          resetMatrix[key] = Boolean(value);
-        });
-      });
-
-      setAccessMatrix(resetMatrix);
-    } else {
-      setAccessMatrix({});
-    }
-  };
-
   return (
     <div className="p-2 space-y-6">
       <Card>
@@ -243,13 +210,6 @@ export default function Permission() {
               </Select>
             </div>
             <div className="flex gap-2 flex-wrap md:flex-nowrap">
-              {/* <Button
-                variant="outline"
-                className="flex items-center gap-1 w-full md:w-auto"
-                onClick={handleReset}
-              >
-                <RotateCcw className="w-4 h-4" /> Reset
-              </Button> */}
               <Button
                 className="flex items-center gap-1 w-full md:w-auto"
                 onClick={handleSave}
@@ -265,7 +225,7 @@ export default function Permission() {
               className="border p-4 rounded-md mb-6 space-y-4 overflow-x-auto"
             >
               <div className="flex items-center gap-2 mb-4 flex-wrap">
-                <h5 className="text-[10px] font-medium text-black-600 border rounded-full px-3 py-1 shadow-sm font-sans">
+                <h5 className="text-[10px] font-medium border rounded-full px-3 py-1 shadow-sm font-sans">
                   {module.split(" ")[0]}
                 </h5>
                 <h3 className="font-medium text-base md:text-lg">{module}</h3>

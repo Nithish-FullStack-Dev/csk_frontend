@@ -47,7 +47,7 @@ const sampleOpenPlots: OpenPlot[] = [];
 const Properties = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // State for properties and UI controls
   const [properties, setProperties] = useState<Property[]>(sampleProperties);
