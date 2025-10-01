@@ -45,11 +45,25 @@ const moduleConfig: Record<string, string[]> = {
   "Core Modules": ["Dashboard", "Properties"],
   "Admin Modules": ["User Management", "Content Management", "System Settings"],
   "Sales Modules": [
-    "Sales Pipeline",
+    // "Sales Pipeline",
     "Team Management",
     "Lead Management",
     "Commissions",
+    "Customer Management",
   ],
+  "Team Lead": [
+    "My Team",
+    "Site Visits",
+    "Car Allocation",
+    "Approvals",
+    "My Schedule",
+  ],
+  "Site Incharge": [
+    "Projects Overview",
+    "Construction Timeline",
+    "Site Inspections",
+  ],
+  Contractor: ["Project Tasks"],
   "Operations Modules": [
     "Projects",
     "Task Management",
@@ -58,6 +72,7 @@ const moduleConfig: Record<string, string[]> = {
     "Contractors",
     "Materials",
     "Labor Management",
+    "Photo Evidence",
   ],
   "Finance Modules": [
     "Invoices",
@@ -72,7 +87,7 @@ const moduleConfig: Record<string, string[]> = {
 const permissions = ["read", "write", "edit", "delete", "view_only"];
 
 export default function Permission() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("owner");
   const [accessMatrix, setAccessMatrix] = useState<Record<string, boolean>>({});
 
   const {
@@ -113,7 +128,7 @@ export default function Permission() {
         subs.map((sub) => {
           const actions: Record<string, boolean> = {};
           permissions.forEach((perm) => {
-            const key = `${selectedRole}-${module}-${sub}-${perm}`;
+            const key = ` ${selectedRole}-${module}-${sub}-${perm}`;
             actions[perm] = !!accessMatrix[key];
           });
           return {
@@ -130,11 +145,12 @@ export default function Permission() {
     };
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/role/addRole`,
+      const { data } = await axios.post(
+        ` ${import.meta.env.VITE_URL}/api/role/addRole`,
         payload,
         { withCredentials: true }
       );
+      console.log("saved", data);
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
@@ -168,13 +184,15 @@ export default function Permission() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles?.map((role) => (
-                    <SelectItem key={role._id} value={role?.name}>
-                      {role?.name
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </SelectItem>
-                  ))}
+                  {roles
+                    ?.filter((role) => role.name !== "admin")
+                    .map((role) => (
+                      <SelectItem key={role._id} value={role.name}>
+                        {role.name
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
