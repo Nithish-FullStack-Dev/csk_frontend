@@ -3,7 +3,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Shield, Save, RotateCcw, Badge } from "lucide-react";
-import { UserRole } from "@/contexts/AuthContext";
+import { Roles, UserRole } from "@/contexts/AuthContext";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,6 +23,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import axios from "axios";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllRoles } from "@/pages/UserManagement";
+import CircleLoader from "../CircleLoader";
 
 const roles: UserRole[] = [
   "owner",
@@ -71,6 +74,26 @@ const permissions = ["read", "write", "edit", "delete", "view_only"];
 export default function Permission() {
   const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
   const [accessMatrix, setAccessMatrix] = useState<Record<string, boolean>>({});
+
+  const {
+    data: roles,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Roles[]>({
+    queryKey: ["roles"],
+    queryFn: fetchAllRoles,
+  });
+
+  if (isError) {
+    console.error("Failed to fetch roles", error);
+    toast.error("Failed to fetch roles");
+    return null;
+  }
+
+  if (isLoading || !roles) {
+    return <CircleLoader />;
+  }
 
   const togglePermission = (
     module: string,
@@ -145,9 +168,9 @@ export default function Permission() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role
+                  {roles?.map((role) => (
+                    <SelectItem key={role._id} value={role?.name}>
+                      {role?.name
                         .replace(/_/g, " ")
                         .replace(/\b\w/g, (l) => l.toUpperCase())}
                     </SelectItem>
