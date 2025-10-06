@@ -216,20 +216,48 @@ const App = () => {
               />
               <Route
                 path="/property/:propertyId"
-                element={<PropertyDetails />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <PropertyDetails />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
                 path="/properties/building/:buildingId"
-                element={<BuildingDetails />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <BuildingDetails />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/properties/building/:buildingId/floor/:floorId"
-                element={<FloorUnits />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <FloorUnits />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/properties/unit/:unitId"
-                element={<UnitDetails />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <UnitDetails />
+                  </ProtectedRoute>
+                }
               />
 
               {/* CMS Route */}
