@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Building } from "@/types/building";
 import { toast } from "sonner";
@@ -35,28 +35,42 @@ export const BuildingDialog = ({
   mode,
 }: BuildingDialogProps) => {
   const [formData, setFormData] = useState({
-    projectName: building?.projectName || "",
-    location: building?.location || "",
-    propertyType: building?.propertyType || "Apartment Complex",
-    totalUnits: building?.totalUnits || 1,
-    constructionStatus: building?.constructionStatus || "Planned",
-    completionDate: building?.completionDate || "",
-    description: building?.description || "",
-    municipalPermission: building?.municipalPermission || false,
-    googleMapsLocation: building?.googleMapsLocation || "",
-    thumbnailUrl: building?.thumbnailUrl || "",
-    brochureUrl: building?.brochureUrl || "",
+    projectName: "",
+    location: "",
+    propertyType: "Apartment Complex",
+    totalUnits: 0,
+    availableUnits: 0,
+    soldUnits: 0,
+    constructionStatus: "Planned",
+    completionDate: "",
+    description: "",
+    municipalPermission: false,
+    thumbnailUrl: "",
+    brochureUrl: "",
   });
+
+  useEffect(() => {
+    if (building) setFormData({ ...formData, ...building });
+    else
+      setFormData({
+        projectName: "",
+        location: "",
+        propertyType: "Apartment Complex",
+        totalUnits: 0,
+        availableUnits: 0,
+        soldUnits: 0,
+        constructionStatus: "Planned",
+        completionDate: "",
+        description: "",
+        municipalPermission: false,
+        thumbnailUrl: "",
+        brochureUrl: "",
+      });
+  }, [building, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // In a real app, this would save to the database
-    toast.success(
-      mode === "add"
-        ? "Building created successfully"
-        : "Building updated successfully"
-    );
+    onSave(formData);
     onOpenChange(false);
   };
 
@@ -65,16 +79,15 @@ export const BuildingDialog = ({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === "add" ? "Add New Building" : "Edit Building"}
+            {mode === "add" ? "Add Building" : "Edit Building"}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="projectName">Project Name *</Label>
+            <div>
+              <Label>Project Name *</Label>
               <Input
-                id="projectName"
                 value={formData.projectName}
                 onChange={(e) =>
                   setFormData({ ...formData, projectName: e.target.value })
@@ -82,11 +95,9 @@ export const BuildingDialog = ({
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+            <div>
+              <Label>Location *</Label>
               <Input
-                id="location"
                 value={formData.location}
                 onChange={(e) =>
                   setFormData({ ...formData, location: e.target.value })
@@ -97,12 +108,12 @@ export const BuildingDialog = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="propertyType">Property Type</Label>
+            <div>
+              <Label>Property Type</Label>
               <Select
                 value={formData.propertyType}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, propertyType: value as any })
+                onValueChange={(v) =>
+                  setFormData({ ...formData, propertyType: v })
                 }
               >
                 <SelectTrigger>
@@ -120,13 +131,12 @@ export const BuildingDialog = ({
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="constructionStatus">Construction Status</Label>
+            <div>
+              <Label>Construction Status</Label>
               <Select
                 value={formData.constructionStatus}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, constructionStatus: value as any })
+                onValueChange={(v) =>
+                  setFormData({ ...formData, constructionStatus: v })
                 }
               >
                 <SelectTrigger>
@@ -143,35 +153,55 @@ export const BuildingDialog = ({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="totalUnits">Total Units *</Label>
-            <Input
-              id="totalUnits"
-              type="number"
-              min={1}
-              step={1}
-              value={formData.totalUnits}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  totalUnits: Math.max(
-                    1,
-                    Math.floor(Number(e.target.value) || 1)
-                  ),
-                })
-              }
-              required
-            />
-            <p className="text-sm text-muted-foreground">
-              Units will be auto-created when saving. Display-only counts shown
-              elsewhere.
-            </p>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label>Total Units *</Label>
+              <Input
+                type="number"
+                min={1}
+                value={formData.totalUnits}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    totalUnits: Number(e.target.value),
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label>Available Units</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.availableUnits}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    availableUnits: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Sold Units</Label>
+              <Input
+                type="number"
+                min={0}
+                value={formData.soldUnits}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    soldUnits: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="completionDate">Completion Date</Label>
+          <div>
+            <Label>Completion Date</Label>
             <Input
-              id="completionDate"
               type="date"
               value={formData.completionDate}
               onChange={(e) =>
@@ -180,22 +210,19 @@ export const BuildingDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          <div>
+            <Label>Description</Label>
             <Textarea
-              id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              rows={3}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
+          <div>
+            <Label>Thumbnail URL</Label>
             <Input
-              id="thumbnailUrl"
               value={formData.thumbnailUrl}
               onChange={(e) =>
                 setFormData({ ...formData, thumbnailUrl: e.target.value })
@@ -204,67 +231,51 @@ export const BuildingDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="googleMapsLocation">Google Maps URL</Label>
+          <div>
+            <Label>Project Brochure (PDF)</Label>
             <Input
-              id="googleMapsLocation"
-              value={formData.googleMapsLocation}
-              onChange={(e) =>
-                setFormData({ ...formData, googleMapsLocation: e.target.value })
-              }
-              placeholder="https://maps.google.com/..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="brochure">Project Brochure (PDF)</Label>
-            <input
-              id="brochure"
               type="file"
               accept="application/pdf"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (!file) return;
-                if (file.type !== "application/pdf") {
-                  toast.error("Please upload a PDF file");
-                  return;
+                if (file) {
+                  if (file.type !== "application/pdf") {
+                    toast.error("Only PDF allowed");
+                    return;
+                  }
+                  const url = URL.createObjectURL(file);
+                  setFormData({ ...formData, brochureUrl: url });
+                  toast.success("Brochure uploaded");
                 }
-                const url = URL.createObjectURL(file);
-                setFormData({ ...formData, brochureUrl: url });
-                toast.success("Brochure uploaded successfully");
               }}
             />
             {formData.brochureUrl && (
-              <p className="text-sm text-muted-foreground">
-                ✓ Brochure uploaded (shareable to enquirers)
+              <p className="text-sm text-muted-foreground mt-1">
+                ✓ Brochure uploaded and ready to share
               </p>
             )}
           </div>
 
           <div className="flex items-center space-x-2">
             <Switch
-              id="municipalPermission"
               checked={formData.municipalPermission}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, municipalPermission: checked })
+              onCheckedChange={(v) =>
+                setFormData({ ...formData, municipalPermission: v })
               }
             />
-            <Label htmlFor="municipalPermission">
-              Municipal Permission Obtained
-            </Label>
+            <Label>Municipal Permission Obtained</Label>
           </div>
 
           <DialogFooter>
             <Button
-              type="button"
               variant="outline"
+              type="button"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
             <Button type="submit">
-              {mode === "add" ? "Create Building" : "Update Building"}
+              {mode === "add" ? "Create" : "Update"}
             </Button>
           </DialogFooter>
         </form>

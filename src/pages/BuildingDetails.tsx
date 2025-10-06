@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +26,31 @@ import { FloorDialog } from "@/components/properties/FloorDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
 
-// Sample data - this would come from a database
-const sampleFloorUnits: FloorUnit[] = [
+const BUILDINGS_KEY = "app_buildings_v1";
+const FLOORS_KEY = "app_floors_v1";
+
+// Initial sample building (kept for fallback)
+const sampleBuilding = {
+  id: "1",
+  projectName: "Skyline Towers",
+  location: "Downtown, Metro City",
+  propertyType: "Apartment Complex" as const,
+  totalUnits: 120,
+  availableUnits: 45,
+  soldUnits: 75,
+  constructionStatus: "Completed" as const,
+  completionDate: "2022-06-15",
+  description:
+    "Luxury apartment complex in the heart of downtown with stunning city views, modern amenities, and premium finishes.",
+  municipalPermission: true,
+  thumbnailUrl:
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
+  googleMapsLocation: "https://maps.google.com/?q=40.7128,-74.0060",
+  brochureUrl: null,
+};
+
+// Sample floors (used as initial if localStorage empty)
+const initialFloors: FloorUnit[] = [
   {
     id: "f1",
     buildingId: "1",
@@ -62,37 +85,51 @@ const sampleFloorUnits: FloorUnit[] = [
   },
 ];
 
-// Sample building data
-const sampleBuildings = [
-  {
-    id: "1",
-    projectName: "Skyline Towers",
-    location: "Downtown, Metro City",
-    propertyType: "Apartment Complex" as const,
-    totalUnits: 120,
-    availableUnits: 45,
-    soldUnits: 75,
-    constructionStatus: "Completed" as const,
-    completionDate: "2022-06-15",
-    description:
-      "Luxury apartment complex in the heart of downtown with stunning city views, modern amenities, and premium finishes.",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-    googleMapsLocation: "https://maps.google.com/?q=40.7128,-74.0060",
-    brochureUrl: null,
-  },
-];
-
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const building = sampleBuildings.find((b) => b.id === buildingId);
-  const floorUnits = sampleFloorUnits.filter(
-    (f) => f.buildingId === buildingId
-  );
+  // Load buildings list from localStorage to find the current building
+  const [buildings, setBuildings] = useState(() => {
+    try {
+      const raw = localStorage.getItem(BUILDINGS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    // fallback: try find a building comparable to sampleBuilding by id
+    return [sampleBuilding];
+  });
+
+  // floors: load persisted floors or initial
+  const [floors, setFloors] = useState<FloorUnit[]>(() => {
+    try {
+      const raw = localStorage.getItem(FLOORS_KEY);
+      if (raw) return JSON.parse(raw) as FloorUnit[];
+    } catch (e) {}
+    return initialFloors;
+  });
+
+  // ensure floors persisted whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(FLOORS_KEY, JSON.stringify(floors));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [floors]);
+
+  // Keep buildings in sync with localStorage (user may have added in NewProperties)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(BUILDINGS_KEY);
+      if (raw) setBuildings(JSON.parse(raw));
+    } catch (e) {}
+  }, []);
+
+  const building =
+    buildings.find((b: any) => b.id === buildingId) || sampleBuilding;
+
+  const buildingFloors = floors.filter((f) => f.buildingId === buildingId);
 
   // Dialog states
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
@@ -107,15 +144,14 @@ const BuildingDetails = () => {
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
-  const handleEditBuilding = () => {
-    setBuildingDialogOpen(true);
-  };
-
+  // Handle Building Actions
+  const handleEditBuilding = () => setBuildingDialogOpen(true);
   const handleDeleteBuilding = () => {
     setDeleteTarget({ type: "building", id: buildingId! });
     setDeleteDialogOpen(true);
   };
 
+  // Handle Floor Actions
   const handleAddFloor = () => {
     setSelectedFloor(undefined);
     setDialogMode("add");
@@ -135,33 +171,44 @@ const BuildingDetails = () => {
     setDeleteDialogOpen(true);
   };
 
+  // Persist floors and update localStorage when floors change (already handled above)
+  const handleFloorSave = (data: FloorUnit, mode: "add" | "edit") => {
+    if (mode === "add") {
+      const newFloor = {
+        ...data,
+        id: `f${Date.now()}`,
+        buildingId: buildingId!,
+      };
+      setFloors((prev) => [...prev, newFloor]);
+      toast.success("Floor/Unit added successfully");
+    } else {
+      setFloors((prev) => prev.map((f) => (f.id === data.id ? data : f)));
+      toast.success("Floor/Unit updated successfully");
+    }
+  };
+
   const handleDeleteConfirm = () => {
     if (deleteTarget?.type === "building") {
+      // delete building from stored buildings and persist
+      const updated = buildings.filter((b: any) => b.id !== deleteTarget.id);
+      setBuildings(updated);
+      try {
+        localStorage.setItem(BUILDINGS_KEY, JSON.stringify(updated));
+      } catch (e) {}
       toast.success("Building deleted successfully");
       navigate("/properties");
-    } else {
+    } else if (deleteTarget?.type === "floor") {
+      setFloors((prev) => prev.filter((f) => f.id !== deleteTarget.id));
       toast.success("Floor/Unit deleted successfully");
     }
     setDeleteDialogOpen(false);
     setDeleteTarget(null);
   };
 
-  if (!building) {
-    return (
-      <MainLayout>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold">Building not found</h2>
-          <Button onClick={() => navigate("/properties")} className="mt-4">
-            Back to Properties
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Header Actions */}
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
@@ -174,18 +221,16 @@ const BuildingDetails = () => {
           {canEdit && (
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleEditBuilding}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Building
+                <Pencil className="mr-2 h-4 w-4" /> Edit Building
               </Button>
               <Button variant="destructive" onClick={handleDeleteBuilding}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Building
+                <Trash2 className="mr-2 h-4 w-4" /> Delete Building
               </Button>
             </div>
           )}
         </div>
 
-        {/* Building Header */}
+        {/* Building Info */}
         <Card>
           <div className="flex flex-col md:flex-row">
             {building.thumbnailUrl && (
@@ -197,35 +242,38 @@ const BuildingDetails = () => {
                 />
               </div>
             )}
-            <div
-              className={`${building.thumbnailUrl ? "md:w-2/3" : "w-full"} p-6`}
-            >
+            <div className="p-6 flex-1">
               <h1 className="text-3xl font-bold mb-2">
                 {building.projectName}
               </h1>
               <div className="flex items-center text-muted-foreground mb-4">
-                <MapPin className="h-4 w-4 mr-1" />
-                {building.location}
+                <MapPin className="h-4 w-4 mr-1" /> {building.location}
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div className="space-y-1">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Floors</p>
+                  <p className="text-xl font-semibold text-purple-600">
+                    {buildingFloors.length}
+                  </p>
+                </div>
+                <div>
                   <p className="text-sm text-muted-foreground">Total Units</p>
                   <p className="text-xl font-semibold">{building.totalUnits}</p>
                 </div>
-                <div className="space-y-1">
+                <div>
                   <p className="text-sm text-muted-foreground">Available</p>
                   <p className="text-xl font-semibold text-green-600">
                     {building.availableUnits}
                   </p>
                 </div>
-                <div className="space-y-1">
+                <div>
                   <p className="text-sm text-muted-foreground">Sold</p>
                   <p className="text-xl font-semibold text-blue-600">
                     {building.soldUnits}
                   </p>
                 </div>
-                <div className="space-y-1">
+                <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <Badge className="bg-green-500 text-white">
                     {building.constructionStatus}
@@ -235,26 +283,24 @@ const BuildingDetails = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center">
-                  <Building2 className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <span>{building.propertyType}</span>
+                  <Building2 className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  {building.propertyType}
                 </div>
                 <div className="flex items-center">
-                  <CalendarClock className="h-5 w-5 mr-2 text-muted-foreground" />
-                  <span>
-                    Completed:{" "}
-                    {new Date(building.completionDate).toLocaleDateString()}
-                  </span>
+                  <CalendarClock className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  Completed:{" "}
+                  {new Date(building.completionDate).toLocaleDateString()}
                 </div>
                 <div className="flex items-center">
                   {building.municipalPermission ? (
                     <>
-                      <Check className="h-5 w-5 mr-2 text-green-500" />
-                      <span>Municipal Permission</span>
+                      <Check className="h-5 w-5 mr-2 text-green-500" />{" "}
+                      Municipal Permission
                     </>
                   ) : (
                     <>
-                      <X className="h-5 w-5 mr-2 text-red-500" />
-                      <span>Awaiting Permission</span>
+                      <X className="h-5 w-5 mr-2 text-red-500" /> Awaiting
+                      Permission
                     </>
                   )}
                 </div>
@@ -273,8 +319,8 @@ const BuildingDetails = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Download Project Brochure
+                    <FileText className="mr-2 h-4 w-4" /> Download Project
+                    Brochure
                   </a>
                 </Button>
               )}
@@ -282,25 +328,24 @@ const BuildingDetails = () => {
           </div>
         </Card>
 
-        {/* Floors/Units List */}
+        {/* Floors/Units */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="flex items-center">
-                <Layers className="mr-2 h-5 w-5" />
-                Floors & Units
+                <Layers className="mr-2 h-5 w-5" /> Floors & Units
               </CardTitle>
               {canEdit && (
                 <Button onClick={handleAddFloor}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Floor/Unit
+                  <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
                 </Button>
               )}
             </div>
           </CardHeader>
+
           <CardContent>
             <div className="grid gap-4">
-              {floorUnits.map((floor) => (
+              {buildingFloors.map((floor) => (
                 <Card
                   key={floor.id}
                   className="hover:shadow-md transition-shadow"
@@ -336,25 +381,19 @@ const BuildingDetails = () => {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <span className="text-muted-foreground">
-                              Total Units:{" "}
-                            </span>
+                            Total Units:{" "}
                             <span className="font-medium">
                               {floor.totalSubUnits}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">
-                              Available:{" "}
-                            </span>
+                            Available:{" "}
                             <span className="font-medium text-green-600">
                               {floor.availableSubUnits}
                             </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">
-                              Sold:{" "}
-                            </span>
+                            Sold:{" "}
                             <span className="font-medium text-blue-600">
                               {floor.totalSubUnits - floor.availableSubUnits}
                             </span>
@@ -383,8 +422,7 @@ const BuildingDetails = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Map className="mr-2 h-5 w-5" />
-                Location
+                <Map className="mr-2 h-5 w-5" /> Location
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -395,8 +433,7 @@ const BuildingDetails = () => {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center"
                 >
-                  <Map className="mr-2 h-5 w-5" />
-                  View on Google Maps
+                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
                 </a>
               </Button>
             </CardContent>
@@ -404,40 +441,39 @@ const BuildingDetails = () => {
         )}
       </div>
 
-      {building && (
-        <>
-          <BuildingDialog
-            open={buildingDialogOpen}
-            onOpenChange={setBuildingDialogOpen}
-            building={building}
-            mode="edit"
-          />
+      {/* Dialogs */}
+      <BuildingDialog
+        open={buildingDialogOpen}
+        onOpenChange={setBuildingDialogOpen}
+        building={building}
+        mode="edit"
 
-          <FloorDialog
-            open={floorDialogOpen}
-            onOpenChange={setFloorDialogOpen}
-            floor={selectedFloor}
-            buildingId={buildingId!}
-            mode={dialogMode}
-          />
-
-          <DeleteConfirmDialog
-            open={deleteDialogOpen}
-            onOpenChange={setDeleteDialogOpen}
-            onConfirm={handleDeleteConfirm}
-            title={
-              deleteTarget?.type === "building"
-                ? "Delete Building"
-                : "Delete Floor/Unit"
-            }
-            description={
-              deleteTarget?.type === "building"
-                ? "Are you sure you want to delete this building? This action cannot be undone and will also delete all associated floors and units."
-                : "Are you sure you want to delete this floor/unit? This action cannot be undone and will also delete all associated apartments."
-            }
-          />
-        </>
-      )}
+        // NOTE: BuildingDialog won't modify buildings array here — if you want it to update,
+        // edit BuildingDialog to accept onSave and then update BUILDINGS_KEY in localStorage + state.
+      />
+      <FloorDialog
+        open={floorDialogOpen}
+        onOpenChange={setFloorDialogOpen}
+        floor={selectedFloor}
+        buildingId={buildingId!}
+        mode={dialogMode}
+        onSave={handleFloorSave}
+      />
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        title={
+          deleteTarget?.type === "building"
+            ? "Delete Building"
+            : "Delete Floor/Unit"
+        }
+        description={
+          deleteTarget?.type === "building"
+            ? "Are you sure you want to delete this building? This action cannot be undone."
+            : "Are you sure you want to delete this floor/unit? This action cannot be undone."
+        }
+      />
     </MainLayout>
   );
 };
