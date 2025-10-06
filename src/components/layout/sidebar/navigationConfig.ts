@@ -165,6 +165,11 @@ export const moduleToNavItem: Record<string, any> = {
   // Common modules
   Dashboard: { to: "/", icon: Home, label: "Dashboard" },
   Profile: { to: "/profile", icon: User, label: "Profile" },
+  "System Settings": {
+    to: "/settings",
+    icon: Settings,
+    label: "System Settings",
+  },
   Communications: {
     to: "/messaging",
     icon: MessageCircle,
@@ -175,11 +180,6 @@ export const moduleToNavItem: Record<string, any> = {
   "Role Management": { to: "/roles", icon: Shield, label: "Role Management" },
   "User Management": { to: "/users", icon: Users, label: "User Management" },
   "Content Management": { to: "/content", icon: FileText, label: "CMS" },
-  "System Settings": {
-    to: "/settings",
-    icon: Settings,
-    label: "System Settings",
-  },
 
   // Other modules
   Properties: { to: "/properties", icon: Building, label: "Properties" },
@@ -280,8 +280,11 @@ export const buildNavigationForRole = (
   roleName: string
 ): any[] => {
   // const topDefaults = [moduleToNavItem["Dashboard"]];
-  const bottomDefaults = [moduleToNavItem["Profile"]];
-  const middle: any[] = [];
+  const bottomDefaults = [
+    moduleToNavItem["System Settings"],
+    moduleToNavItem["Profile"],
+  ];
+  let middle: any[] = [];
 
   // Admin always sees Role Management (in middle flow)
   if (roleName === "admin") {
@@ -301,6 +304,8 @@ export const buildNavigationForRole = (
     });
   }
 
+  // Remove System Settings and Profile if present in middle
+  middle = middle.filter((item) => item.label !== "System Settings");
   // Final structure: Dashboard → middle → Profile → Communications
   return [...middle, ...bottomDefaults];
 };
