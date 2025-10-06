@@ -32,12 +32,13 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { UserPlus, Search, Filter, Edit, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCsrfToken, Roles, UserRole } from "@/contexts/AuthContext";
+import { getCsrfToken, Roles, useAuth, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
 import Loader from "@/components/Loader";
+import { Permission } from "@/types/permission";
 
 // API functions
 export const fetchAllRoles = async () => {
@@ -66,6 +67,7 @@ export const fetchRolePermissions = async (roleName: string) => {
 };
 
 const UserManagement = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,6 +99,17 @@ const UserManagement = () => {
     queryFn: fetchAllRoles,
   });
 
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
+
   // Fetch all users
   const { data: usersData = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ["users"],
@@ -112,9 +125,24 @@ const UserManagement = () => {
     );
   }, [usersData, searchQuery]);
 
-  if (isUsersLoading || isRolesLoading || !roles) {
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isUsersLoading || isRolesLoading || !roles || isRolePermissionsLoading) {
     return <Loader />;
   }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.write
+  );
+  const userCanEditUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.edit
+  );
+  const userCanDeleteUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.delete
+  );
 
   const handleAddUser = async () => {
     setAdding(true);
@@ -267,10 +295,12 @@ const UserManagement = () => {
               onOpenChange={setShowAddUserDialog}
             >
               <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
+                {userCanAddUser && (
+                  <Button>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                )}
               </DialogTrigger>
               <DialogContent className="md:w-full w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
                 <DialogHeader>
@@ -462,17 +492,19 @@ const UserManagement = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Edit user"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setShowEditUserDialog(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              {userCanEditUser && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Edit user"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setShowEditUserDialog(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -484,20 +516,24 @@ const UserManagement = () => {
                               >
                                 <KeyRound className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title={
-                                  deleting ? "Deleting user..." : "Delete user"
-                                }
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setshowResetDeleteDialog(true);
-                                }}
-                                disabled={deleting}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {userCanDeleteUser && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title={
+                                    deleting
+                                      ? "Deleting user..."
+                                      : "Delete user"
+                                  }
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setshowResetDeleteDialog(true);
+                                  }}
+                                  disabled={deleting}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
