@@ -274,7 +274,7 @@ const UpcomingProjectsPage = () => {
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
+                        className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white "
                       >
                         {project.title}
                       </CardItem>

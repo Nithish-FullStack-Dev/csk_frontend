@@ -25,12 +25,15 @@ const HeroSectionCMS = () => {
     }
   };
 
-  const saveSlides = async () => {
+  const saveSlides = async (slideList) => {
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/api/cms/addAllCms`, {
-        slides,
-      });
-      console.log("Slides saved");
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/cms/addAllCms`,
+        {
+          slides: slideList,
+        },
+        { withCredentials: true }
+      );
     } catch (error) {
       console.log("Save error", error);
     }
@@ -43,7 +46,7 @@ const HeroSectionCMS = () => {
   const handleSave = async () => {
     setIsEditing(false);
     setEditingSlide(null);
-    await saveSlides();
+    await saveSlides(slides);
   };
 
   const addNewSlide = async () => {
@@ -56,7 +59,8 @@ const HeroSectionCMS = () => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/cms/addCms`,
-        newSlide
+        newSlide,
+        { withCredentials: true }
       );
       const savedSlide = response.data.banner;
       setSlides([...slides, savedSlide]);
@@ -88,13 +92,13 @@ const HeroSectionCMS = () => {
 
       const uploadedUrl = res.data?.url;
       if (uploadedUrl) {
-        setSlides((prevSlides) =>
-          prevSlides.map((slide) =>
-            slide._id === slideId
-              ? { ...slide, image: `${uploadedUrl}?v=${Date.now()}` }
-              : slide
-          )
+        const updatedSlides = slides.map((slide) =>
+          slide._id === slideId
+            ? { ...slide, image: `${uploadedUrl}?v=${Date.now()}` }
+            : slide
         );
+        setSlides(updatedSlides);
+        await saveSlides(updatedSlides);
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -106,7 +110,10 @@ const HeroSectionCMS = () => {
 
   const removeSlide = async (id) => {
     try {
-      await axios.delete(`${import.meta.env.VITE_URL}/api/cms/deleteCms/${id}`);
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/cms/deleteCms/${id}`,
+        { withCredentials: true }
+      );
       setSlides((prevSlides) => prevSlides.filter((slide) => slide._id !== id));
     } catch (error) {
       console.error("Delete error", error);
@@ -132,7 +139,7 @@ const HeroSectionCMS = () => {
         </div>
         <div className="flex gap-2 flex-wrap justify-center md:justify-end">
           {isEditing ? (
-            <Button onClick={handleSave} size="sm">
+            <Button onClick={handleSave} size="sm" disabled={uploading}>
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>
@@ -148,6 +155,9 @@ const HeroSectionCMS = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <h3 className="text-lg font-semibold">
             Hero Slides ({slides.length})
+            <p className="text-sm text-muted-foreground text-red-500">
+              Please Don't switch tabs while uploading or saving
+            </p>
           </h3>
           <Button
             onClick={addNewSlide}

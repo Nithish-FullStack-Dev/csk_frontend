@@ -11,7 +11,6 @@ import {
   DollarSign,
   MapPin,
   Calendar,
-  IndianRupee,
 } from "lucide-react"; // Added more icons for fun!
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
@@ -247,7 +246,7 @@ const OngoingProjectsPage = () => {
                       {/* Title */}
                       <CardItem
                         translateZ={30}
-                        className="text-lg sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white mb-2"
+                        className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white "
                       >
                         {project.title}
                       </CardItem>
@@ -347,7 +346,7 @@ const OngoingProjectsPage = () => {
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
               >
-                <IndianRupee className="h-14 w-14 mx-auto mb-4 text-green-600 animate-bounce-subtle" />
+                <DollarSign className="h-14 w-14 mx-auto mb-4 text-green-600 animate-bounce-subtle" />
                 <h3 className="text-2xl font-bold mb-2 text-green-800">
                   Save Money!
                 </h3>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Save, RotateCcw } from "lucide-react";
@@ -23,21 +22,32 @@ import {
 import { Switch } from "@/components/ui/switch";
 import axios from "axios";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Loader from "../Loader";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAllRoles } from "@/pages/UserManagement";
 import CircleLoader from "../CircleLoader";
 
-const permissions = ["read", "write", "edit", "delete", "view_only"];
-
-const defaultModuleConfig: Record<string, string[]> = {
+const moduleConfig: Record<string, string[]> = {
   "Core Modules": ["Dashboard", "Properties"],
   "Admin Modules": ["User Management", "Content Management", "System Settings"],
   "Sales Modules": [
-    "Sales Pipeline",
     "Team Management",
     "Lead Management",
     "Commissions",
+    "Customer Management",
   ],
+  "Team Lead": [
+    "My Team",
+    "Site Visits",
+    "Car Allocation",
+    "Approvals",
+    "My Schedule",
+  ],
+  "Site Incharge": [
+    "Projects Overview",
+    "Construction Timeline",
+    "Site Inspections",
+  ],
+  Contractor: ["Project Tasks"],
   "Operations Modules": [
     "Projects",
     "Task Management",
@@ -46,6 +56,7 @@ const defaultModuleConfig: Record<string, string[]> = {
     "Contractors",
     "Materials",
     "Labor Management",
+    "Photo Evidence",
   ],
   "Finance Modules": [
     "Invoices",
@@ -57,38 +68,13 @@ const defaultModuleConfig: Record<string, string[]> = {
   "Communication Modules": ["Communications"],
 };
 
-// Fetch all roles
-export const fetchAllRoles = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/roles`
-  );
-  return data || [];
-};
-
-export const fetchResetPermissions = async (roleName: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/resetRole/${roleName}`
-  );
-  return data || null;
-};
-
-// Fetch permissions for a role
-export const fetchRolePermissions = async (roleName: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`
-  );
-  return data || null;
-};
+const permissions = ["read", "write", "edit", "delete", "view_only"];
 
 export default function Permission() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>("admin");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("owner");
   const [accessMatrix, setAccessMatrix] = useState<Record<string, boolean>>({});
-  const [moduleConfig, setModuleConfig] =
-    useState<Record<string, string[]>>(defaultModuleConfig);
+  const [saving, setSaving] = useState(false);
 
-  const queryClient = useQueryClient();
-
-  // Fetch all roles
   const {
     data: roles,
     isLoading,
@@ -99,46 +85,39 @@ export default function Permission() {
     queryFn: fetchAllRoles,
   });
 
-  // Fetch permissions for selected role
-  const { data: roleData, isLoading: roleLoading } = useQuery({
-    queryKey: ["rolePermissions", selectedRole],
-    queryFn: () => fetchRolePermissions(selectedRole),
-    enabled: !!selectedRole,
-  });
-
-  // Build moduleConfig & accessMatrix when roleData changes
+  // Fetch saved permissions when role changes
   useEffect(() => {
-    const buildPermissions = () => {
-      const matrix: Record<string, boolean> = {};
-      const grouped: Record<string, string[]> = { ...defaultModuleConfig };
+    if (!selectedRole) return;
 
-      // Fill matrix with defaults (false)
-      Object.entries(defaultModuleConfig).forEach(([module, subs]) => {
-        subs.forEach((sub) => {
-          permissions.forEach((perm) => {
-            const key = `${selectedRole}-${module}-${sub}-${perm}`;
-            matrix[key] = false;
-          });
-        });
-      });
+    const fetchRolePermissions = async () => {
+      try {
+        const { data } = await axios.get(
+          `${import.meta.env.VITE_URL}/api/role/getRole/${selectedRole}`,
+          { withCredentials: true }
+        );
 
-      // Override with actual roleData if available
-      if (roleData?.permissions) {
-        roleData.permissions.forEach((perm: any) => {
-          const { module, submodule, actions } = perm;
-          Object.entries(actions).forEach(([action, value]) => {
-            const key = `${selectedRole}-${module}-${submodule}-${action}`;
-            matrix[key] = !!value;
+        if (data && data.permissions) {
+          const newMatrix: Record<string, boolean> = {};
+          data.permissions.forEach((p: any) => {
+            Object.entries(p.actions).forEach(
+              ([action, value]: [string, boolean]) => {
+                const key = `${selectedRole}-${p.module}-${p.submodule}-${action}`;
+                newMatrix[key] = value;
+              }
+            );
           });
-        });
+          setAccessMatrix(newMatrix);
+        } else {
+          setAccessMatrix({});
+        }
+      } catch (err) {
+        console.error("Error fetching role permissions:", err);
+        setAccessMatrix({});
       }
-
-      setAccessMatrix(matrix);
-      setModuleConfig(grouped);
     };
 
-    buildPermissions();
-  }, [roleData, selectedRole]);
+    fetchRolePermissions();
+  }, [selectedRole]);
 
   if (isError) {
     console.error("Failed to fetch roles", error);
@@ -146,9 +125,7 @@ export default function Permission() {
     return null;
   }
 
-  if (isLoading || roleLoading) {
-    return <CircleLoader />;
-  }
+  if (isLoading || !roles) return <CircleLoader />;
 
   const togglePermission = (
     module: string,
@@ -156,13 +133,46 @@ export default function Permission() {
     permission: string
   ) => {
     const key = `${selectedRole}-${module}-${submodule}-${permission}`;
-    setAccessMatrix((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setAccessMatrix((prev) => {
+      const newState = { ...prev };
+
+      if (permission === "view_only") {
+        const readKey = `${selectedRole}-${module}-${submodule}-read`;
+        const writeKey = `${selectedRole}-${module}-${submodule}-write`;
+        const editKey = `${selectedRole}-${module}-${submodule}-edit`;
+        const deleteKey = `${selectedRole}-${module}-${submodule}-delete`;
+
+        const newValue = !prev[key];
+        newState[key] = newValue;
+        newState[readKey] = true; // always ON with view_only
+        newState[writeKey] = false;
+        newState[editKey] = false;
+        newState[deleteKey] = false;
+        return newState;
+      }
+
+      newState[key] = !prev[key];
+      return newState;
+    });
+  };
+
+  const toggleModule = (module: string, value: boolean) => {
+    setAccessMatrix((prev) => {
+      const newState = { ...prev };
+      const subs = moduleConfig[module];
+      subs.forEach((sub) => {
+        permissions.forEach((perm) => {
+          const key = `${selectedRole}-${module}-${sub}-${perm}`;
+          if (perm === "view_only") newState[key] = false;
+          else newState[key] = value;
+        });
+      });
+      return newState;
+    });
   };
 
   const handleSave = async () => {
+    setSaving(true); // disable button while saving
     const permissionsPayload = Object.entries(moduleConfig).flatMap(
       ([module, subs]) =>
         subs.map((sub) => {
@@ -175,42 +185,27 @@ export default function Permission() {
         })
     );
 
-    const payload = {
-      name: selectedRole,
-      permissions: permissionsPayload,
-    };
+    const payload = { name: selectedRole, permissions: permissionsPayload };
 
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/api/role/addRole`, payload);
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/role/addRole`,
+        payload,
+        { withCredentials: true }
+      );
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
-      queryClient.invalidateQueries({
-        queryKey: ["rolePermissions", selectedRole],
-      });
-    } catch (error) {
-      console.error("Error saving role:", error);
+      console.log("saved", data);
+    } catch (err) {
+      console.error("Error saving role:", err);
       toast.error("Failed to save role");
+    } finally {
+      setSaving(false); // re-enable button after saving
     }
   };
 
-  const handleReset = async () => {
-    const data = await fetchResetPermissions(selectedRole);
-    if (data && data.permissions) {
-      const resetMatrix: Record<string, boolean> = {};
-
-      data.permissions.forEach((perm: any) => {
-        Object.entries(perm.actions).forEach(([action, value]) => {
-          const key = `${data.name}-${perm.module}-${perm.submodule}-${action}`;
-          resetMatrix[key] = Boolean(value);
-        });
-      });
-
-      setAccessMatrix(resetMatrix);
-    } else {
-      setAccessMatrix({});
-    }
-  };
+  const handleReset = () => setAccessMatrix({});
 
   return (
     <div className="p-2 space-y-6">
@@ -232,29 +227,33 @@ export default function Permission() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles?.map((role) => (
-                    <SelectItem key={role._id} value={role?.name}>
-                      {role?.name
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
-                    </SelectItem>
-                  ))}
+                  {roles
+                    ?.filter((role) => role.name !== "admin")
+                    .map((role) => (
+                      <SelectItem key={role._id} value={role.name}>
+                        {role.name
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex gap-2 flex-wrap md:flex-nowrap">
-              {/* <Button
+              <Button
                 variant="outline"
                 className="flex items-center gap-1 w-full md:w-auto"
                 onClick={handleReset}
               >
                 <RotateCcw className="w-4 h-4" /> Reset
-              </Button> */}
+              </Button>
               <Button
                 className="flex items-center gap-1 w-full md:w-auto"
                 onClick={handleSave}
+                disabled={saving} // disable during save
               >
-                <Save className="w-4 h-4" /> Save Changes
+                <Save className="w-4 h-4" />
+                {saving ? "Saving..." : "Save Changes"}{" "}
               </Button>
             </div>
           </div>
@@ -269,6 +268,15 @@ export default function Permission() {
                   {module.split(" ")[0]}
                 </h5>
                 <h3 className="font-medium text-base md:text-lg">{module}</h3>
+                <Switch
+                  checked={submodules.every((sub) =>
+                    permissions.some(
+                      (perm) =>
+                        accessMatrix[`${selectedRole}-${module}-${sub}-${perm}`]
+                    )
+                  )}
+                  onCheckedChange={(val) => toggleModule(module, val)}
+                />
               </div>
               <div className="w-full overflow-x-auto">
                 <Table>
@@ -279,7 +287,7 @@ export default function Permission() {
                       </TableHead>
                       {permissions.map((perm) => (
                         <TableHead
-                          key={`${module}-${perm}`}
+                          key={perm}
                           className="capitalize text-center min-w-[90px] md:w-[100px]"
                         >
                           {perm.replace("_", " ")}
@@ -289,7 +297,7 @@ export default function Permission() {
                   </TableHeader>
                   <TableBody>
                     {submodules.map((sub) => (
-                      <TableRow key={`${module}-${sub}`}>
+                      <TableRow key={sub}>
                         <TableCell className="text-left font-medium whitespace-nowrap">
                           {sub}
                         </TableCell>
@@ -298,7 +306,7 @@ export default function Permission() {
                           const isActive = !!accessMatrix[key];
                           return (
                             <TableCell
-                              key={`${module}-${sub}-${perm}`}
+                              key={perm}
                               className="text-center min-w-[90px]"
                             >
                               <Switch

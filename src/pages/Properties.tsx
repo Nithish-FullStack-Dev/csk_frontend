@@ -47,6 +47,7 @@ const sampleOpenPlots: OpenPlot[] = [];
 const Properties = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   // State for properties and UI controls
   const [properties, setProperties] = useState<Property[]>(sampleProperties);
@@ -90,6 +91,7 @@ const Properties = () => {
 
   const fetchProperties = async () => {
     try {
+      setIsLoading(true);
       let data = [];
 
       if (isCustomer) {
@@ -147,20 +149,20 @@ const Properties = () => {
       });
 
       setProperties(sampleProperties);
-      if (isCustomer) {
-      } else {
-        setFilteredProperties(sampleProperties);
-      }
+      setFilteredProperties(sampleProperties);
     } catch (error) {
       console.error("Failed to fetch properties:", error);
       toast.error("Failed to load properties.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchAllOpenPlots = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
+        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
+        { withCredentials: true }
       );
       setOpenPlots(data.plots);
       setFilteredOpenPlots(data.plots);
@@ -560,7 +562,24 @@ const Properties = () => {
             </Card>
 
             {/* Properties listing */}
-            {filteredProperties.length === 0 ? (
+            {isLoading ? (
+              // Loading skeleton
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className="animate-pulse">
+                    <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+                    <div className="p-4 border border-t-0 rounded-b-lg space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      <div className="flex justify-between">
+                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredProperties.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Building className="h-16 w-16 text-muted-foreground/30 mb-4" />
                 <h3 className="text-xl font-medium">No properties found</h3>

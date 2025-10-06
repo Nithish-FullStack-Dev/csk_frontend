@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +16,7 @@ import Invoices from "./pages/Invoices";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import axios from "axios";
 
 // Owner specific pages
 import BusinessAnalytics from "./pages/BusinessAnalytics";
@@ -78,20 +80,12 @@ import CustomerManagement from "./pages/CustomerManagement";
 import ChatInterface from "./components/communication/ChatInterface";
 import AuthRedirect from "./config/AuthRedirect";
 import AgentSchedule from "./pages/agent/AgentSchedule";
+import BuildingDetails from "./pages/BuildingDetails";
+import FloorUnits from "./pages/FloorUnits";
+import UnitDetails from "./pages/UnitDetails";
+import NewProperties from "./pages/NewProperties";
 
 const queryClient = new QueryClient();
-
-const ALL_ROLES = [
-  "admin",
-  "owner",
-  "agent",
-  "sales_manager",
-  "site_incharge",
-  "contractor",
-  "accountant",
-  "team_lead",
-  "customer_purchased",
-];
 
 const PROPERTIES = [
   "admin",
@@ -105,15 +99,36 @@ const OWNER_ADMIN = ["admin", "owner"];
 const ADMIN_SALES = ["admin", "sales_manager"];
 const ADMIN = ["admin"];
 const OWNER = ["owner"];
-const AGENT = ["agent"];
-const LEAD = ["team_lead"];
-const SALES = ["sales_manager"];
-const SITE = ["site_incharge"];
-const CONTRACTOR = ["contractor"];
-const ACCOUNTANT = ["accountant"];
+const AGENT = ["agent", "admin"];
+const LEAD = ["team_lead", "admin"];
+const SALES = ["sales_manager", "admin"];
+const SITE = ["site_incharge", "admin"];
+const CONTRACTOR = ["contractor", "admin"];
+const ACCOUNTANT = ["accountant", "admin"];
 const CUSTOMER_PURCHASED = ["customer_purchased"];
 
 const App = () => {
+  const [allRoles, setAllRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_URL}/api/role/roles`
+        );
+        setAllRoles(response.data.map((role) => role.name));
+      } catch (error) {
+        console.error("Failed to fetch roles:", error);
+        // Optionally set a fallback: setAllRoles(["admin", "owner", /* etc. */]);
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -153,7 +168,10 @@ const App = () => {
               <Route
                 path="/messaging"
                 element={
-                  <ProtectedRoute allowedRoles={ALL_ROLES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ChatInterface />
                   </ProtectedRoute>
                 }
@@ -169,7 +187,10 @@ const App = () => {
               <Route
                 path="/enquiry"
                 element={
-                  <ProtectedRoute allowedRoles={ADMIN_SALES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Enquiry />
                   </ProtectedRoute>
                 }
@@ -185,21 +206,68 @@ const App = () => {
               <Route
                 path="/properties"
                 element={
-                  <ProtectedRoute allowedRoles={PROPERTIES}>
-                    <Properties />
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <NewProperties />
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="/property/:propertyId"
-                element={<PropertyDetails />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <PropertyDetails />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/properties/building/:buildingId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <BuildingDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/properties/building/:buildingId/floor/:floorId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <FloorUnits />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/properties/unit/:unitId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <UnitDetails />
+                  </ProtectedRoute>
+                }
               />
 
               {/* CMS Route */}
               <Route
                 path="/content"
                 element={
-                  <ProtectedRoute allowedRoles={ADMIN}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContentManagement />
                   </ProtectedRoute>
                 }
@@ -209,7 +277,10 @@ const App = () => {
               <Route
                 path="/analytics"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <BusinessAnalytics />
                   </ProtectedRoute>
                 }
@@ -217,7 +288,10 @@ const App = () => {
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER_ADMIN}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <UserManagement />
                   </ProtectedRoute>
                 }
@@ -225,7 +299,10 @@ const App = () => {
               <Route
                 path="/roles"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER_ADMIN}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <RoleManagement />
                   </ProtectedRoute>
                 }
@@ -233,7 +310,10 @@ const App = () => {
               <Route
                 path="/sales"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <SalesOverview />
                   </ProtectedRoute>
                 }
@@ -241,7 +321,10 @@ const App = () => {
               <Route
                 path="/operations"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <OperationsWorkflow />
                   </ProtectedRoute>
                 }
@@ -249,7 +332,10 @@ const App = () => {
               <Route
                 path="/finances"
                 element={
-                  <ProtectedRoute allowedRoles={OWNER}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Finances />
                   </ProtectedRoute>
                 }
@@ -257,7 +343,10 @@ const App = () => {
               <Route
                 path="/settings"
                 element={
-                  <ProtectedRoute allowedRoles={ALL_ROLES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Settings />
                   </ProtectedRoute>
                 }
@@ -265,7 +354,10 @@ const App = () => {
               <Route
                 path="/profile"
                 element={
-                  <ProtectedRoute allowedRoles={ALL_ROLES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Profile />
                   </ProtectedRoute>
                 }
@@ -275,7 +367,10 @@ const App = () => {
               <Route
                 path="/customer"
                 element={
-                  <ProtectedRoute allowedRoles={SALES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <CustomerManagement />
                   </ProtectedRoute>
                 }
@@ -283,7 +378,10 @@ const App = () => {
               <Route
                 path="/team"
                 element={
-                  <ProtectedRoute allowedRoles={LEAD}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <TeamManagement />
                   </ProtectedRoute>
                 }
@@ -292,7 +390,10 @@ const App = () => {
               <Route
                 path="/teamLead"
                 element={
-                  <ProtectedRoute allowedRoles={SALES}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <TeamLeadManagement />
                   </ProtectedRoute>
                 }
@@ -302,7 +403,10 @@ const App = () => {
               <Route
                 path="/vehicles"
                 element={
-                  <ProtectedRoute allowedRoles={LEAD}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <CarAllocation />
                   </ProtectedRoute>
                 }
@@ -310,7 +414,10 @@ const App = () => {
               <Route
                 path="/approvals"
                 element={
-                  <ProtectedRoute allowedRoles={LEAD}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Approvals />
                   </ProtectedRoute>
                 }
@@ -320,7 +427,10 @@ const App = () => {
               <Route
                 path="/leads"
                 element={
-                  <ProtectedRoute allowedRoles={[...AGENT, ...SALES]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     {<LeadManagement />}
                   </ProtectedRoute>
                 }
@@ -328,7 +438,10 @@ const App = () => {
               <Route
                 path="/schedule"
                 element={
-                  <ProtectedRoute allowedRoles={SITE}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <MySchedule />
                   </ProtectedRoute>
                 }
@@ -336,7 +449,10 @@ const App = () => {
               <Route
                 path="/myschedule"
                 element={
-                  <ProtectedRoute allowedRoles={AGENT}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <AgentSchedule />
                   </ProtectedRoute>
                 }
@@ -344,16 +460,32 @@ const App = () => {
               <Route
                 path="/visits"
                 element={
-                  <ProtectedRoute allowedRoles={[...LEAD, ...AGENT]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <SiteVisits />
                   </ProtectedRoute>
                 }
               />
-              <Route path="/documents" element={<AgentDocuments />} />
+              <Route
+                path="/documents"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <AgentDocuments />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/commissions"
                 element={
-                  <ProtectedRoute allowedRoles={[...SALES, ...AGENT]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <MyCommissions />
                   </ProtectedRoute>
                 }
@@ -363,7 +495,10 @@ const App = () => {
               <Route
                 path="/projects"
                 element={
-                  <ProtectedRoute allowedRoles={[...SITE, ...CONTRACTOR]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorProjects />
                   </ProtectedRoute>
                 }
@@ -371,7 +506,10 @@ const App = () => {
               <Route
                 path="/tasks"
                 element={
-                  <ProtectedRoute allowedRoles={CONTRACTOR}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorTasks />
                   </ProtectedRoute>
                 }
@@ -379,7 +517,10 @@ const App = () => {
               <Route
                 path="/timeline"
                 element={
-                  <ProtectedRoute allowedRoles={CONTRACTOR}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorTimeline />
                   </ProtectedRoute>
                 }
@@ -387,7 +528,10 @@ const App = () => {
               <Route
                 path="/materials"
                 element={
-                  <ProtectedRoute allowedRoles={CONTRACTOR}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorMaterials />
                   </ProtectedRoute>
                 }
@@ -395,7 +539,10 @@ const App = () => {
               <Route
                 path="/labor"
                 element={
-                  <ProtectedRoute allowedRoles={CONTRACTOR}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorLabor />
                   </ProtectedRoute>
                 }
@@ -403,7 +550,10 @@ const App = () => {
               <Route
                 path="/invoices"
                 element={
-                  <ProtectedRoute allowedRoles={[...CONTRACTOR, ...ACCOUNTANT]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorInvoices />
                   </ProtectedRoute>
                 }
@@ -411,7 +561,10 @@ const App = () => {
               <Route
                 path="/evidence"
                 element={
-                  <ProtectedRoute allowedRoles={CONTRACTOR}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorPhotoEvidence />
                   </ProtectedRoute>
                 }
@@ -421,7 +574,10 @@ const App = () => {
               <Route
                 path="/verifications"
                 element={
-                  <ProtectedRoute allowedRoles={SITE}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <TaskVerifications />
                   </ProtectedRoute>
                 }
@@ -429,7 +585,10 @@ const App = () => {
               <Route
                 path="/quality"
                 element={
-                  <ProtectedRoute allowedRoles={SITE}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <QualityControl />
                   </ProtectedRoute>
                 }
@@ -437,7 +596,10 @@ const App = () => {
               <Route
                 path="/inspections"
                 element={
-                  <ProtectedRoute allowedRoles={SITE}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <SiteInspections />
                   </ProtectedRoute>
                 }
@@ -445,7 +607,10 @@ const App = () => {
               <Route
                 path="/contractors"
                 element={
-                  <ProtectedRoute allowedRoles={SITE}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <ContractorsList />
                   </ProtectedRoute>
                 }
@@ -454,7 +619,8 @@ const App = () => {
                 path="/progress"
                 element={
                   <ProtectedRoute
-                    allowedRoles={[...SITE, ...CUSTOMER_PURCHASED]}
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
                   >
                     <ConstructionProgress />
                   </ProtectedRoute>
@@ -462,11 +628,24 @@ const App = () => {
               />
 
               {/* Accountant Routes */}
-              <Route path="/payments" element={<Payments />} />
+              <Route
+                path="/payments"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <Payments />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/reports"
                 element={
-                  <ProtectedRoute allowedRoles={[...SALES, ...ACCOUNTANT]}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <Reports />
                   </ProtectedRoute>
                 }
@@ -474,7 +653,10 @@ const App = () => {
               <Route
                 path="/budgets"
                 element={
-                  <ProtectedRoute allowedRoles={ACCOUNTANT}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <BudgetTracking />
                   </ProtectedRoute>
                 }
@@ -482,7 +664,10 @@ const App = () => {
               <Route
                 path="/taxes"
                 element={
-                  <ProtectedRoute allowedRoles={ACCOUNTANT}>
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
                     <TaxDocuments />
                   </ProtectedRoute>
                 }

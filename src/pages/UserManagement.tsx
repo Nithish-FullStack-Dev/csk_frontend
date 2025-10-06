@@ -32,14 +32,43 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { UserPlus, Search, Filter, Edit, Trash2, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCsrfToken, Roles, UserRole } from "@/contexts/AuthContext";
+import { getCsrfToken, Roles, useAuth, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAllRoles } from "@/components/roles/Permission ";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
+import Loader from "@/components/Loader";
+import { Permission } from "@/types/permission";
+
+// API functions
+export const fetchAllRoles = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/roles`,
+    { withCredentials: true }
+  );
+  return data || [];
+};
+
+const fetchAllUsers = async () => {
+  const csrfToken = await getCsrfToken();
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/getUsers`,
+    { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
+  );
+  return data.users || [];
+};
+
+export const fetchRolePermissions = async (roleName: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
+    { withCredentials: true }
+  );
+  return data || null;
+};
 
 const UserManagement = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -50,61 +79,73 @@ const UserManagement = () => {
     role: "agent" as UserRole,
     phone: "",
   });
-  const [userAdded, setUserAdded] = useState(false);
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
-  const [userLoading, setUserLoading] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // Fetch all roles
   const {
     data: roles,
-    isLoading,
-    isError,
-    error,
+    isLoading: isRolesLoading,
+    isError: isRolesError,
+    error: rolesError,
   } = useQuery<Roles[]>({
     queryKey: ["roles"],
     queryFn: fetchAllRoles,
   });
 
-  const fetchAllUsers = async () => {
-    try {
-      setUserLoading(true);
-      const csrfToken = await getCsrfToken();
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/getUsers`,
-        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
-      );
-      setUsers(response.data.users);
-    } catch (error) {
-      console.log("error");
-    } finally {
-      setUserLoading(false);
-    }
-  };
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
 
-  useEffect(() => {
-    fetchAllUsers();
-    if (userAdded) setUserAdded(false);
-  }, [userAdded]);
+  // Fetch all users
+  const { data: usersData = [], isLoading: isUsersLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchAllUsers,
+  });
 
   const filteredUsers = useMemo(() => {
-    return users.filter((user) =>
+    return usersData.filter((user) =>
       [user.name, user.email, user.role]
         .join(" ")
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
     );
-  }, [users, searchQuery]);
+  }, [usersData, searchQuery]);
 
-  if (userLoading || isLoading || !roles) {
-    return <CircleLoader />;
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
   }
 
+  if (isUsersLoading || isRolesLoading || !roles || isRolePermissionsLoading) {
+    return <Loader />;
+  }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.write
+  );
+  const userCanEditUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.edit
+  );
+  const userCanDeleteUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "User Management" && per.actions.delete
+  );
+
   const handleAddUser = async () => {
+    setAdding(true);
     const createdUser = {
       name: newUser.name,
       email: newUser.email,
@@ -114,6 +155,7 @@ const UserManagement = () => {
     };
     try {
       const csrfToken = await getCsrfToken();
+      console.log(csrfToken);
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/addUser`,
         createdUser,
@@ -123,7 +165,7 @@ const UserManagement = () => {
         toast.success("User added successfully", {
           description: `${newUser.name} has been added as a ${newUser.role}`,
         });
-        setUserAdded(true);
+        queryClient.invalidateQueries({ queryKey: ["users"] });
         setShowAddUserDialog(false);
         setNewUser({
           name: "",
@@ -136,20 +178,26 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error adding user:", error);
       toast.error("Failed to add user");
+    } finally {
+      setAdding(false);
     }
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
+    setDeleting(true);
     try {
       await axios.delete(
         `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`
       );
       toast.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
     } catch (error) {
       console.error("Error deleting user:", error);
       toast.error("Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -160,6 +208,7 @@ const UserManagement = () => {
         updatedUser: selectedUser,
       });
       toast.success("User updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -246,10 +295,12 @@ const UserManagement = () => {
               onOpenChange={setShowAddUserDialog}
             >
               <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add User
-                </Button>
+                {userCanAddUser && (
+                  <Button>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add User
+                  </Button>
+                )}
               </DialogTrigger>
               <DialogContent className="md:w-full w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
                 <DialogHeader>
@@ -318,10 +369,10 @@ const UserManagement = () => {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isLoading && (
+                        {isRolesLoading && (
                           <SelectItem value="">Loading...</SelectItem>
                         )}
-                        {isError && (
+                        {isRolesError && (
                           <SelectItem value="">Error loading roles</SelectItem>
                         )}
                         {roles.map((role) => (
@@ -346,10 +397,11 @@ const UserManagement = () => {
                       !newUser.name ||
                       !newUser.email ||
                       !newUser.role ||
-                      !newUser.phone
+                      !newUser.phone ||
+                      adding
                     }
                   >
-                    Create User
+                    {adding ? "Creating User..." : "Create User"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -440,17 +492,19 @@ const UserManagement = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Edit user"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setShowEditUserDialog(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              {userCanEditUser && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Edit user"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setShowEditUserDialog(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -462,17 +516,24 @@ const UserManagement = () => {
                               >
                                 <KeyRound className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                title="Delete user"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setshowResetDeleteDialog(true);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {userCanDeleteUser && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title={
+                                    deleting
+                                      ? "Deleting user..."
+                                      : "Delete user"
+                                  }
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setshowResetDeleteDialog(true);
+                                  }}
+                                  disabled={deleting}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -662,8 +723,6 @@ const UserManagement = () => {
               <Button
                 onClick={async () => {
                   await handleUpdateUser();
-                  setShowEditUserDialog(false);
-                  await fetchAllUsers();
                 }}
               >
                 Update User
@@ -745,7 +804,6 @@ const UserManagement = () => {
                 variant="destructive"
                 onClick={async () => {
                   await handleDeleteUser();
-                  await fetchAllUsers();
                   setshowResetDeleteDialog(false);
                 }}
               >

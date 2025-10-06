@@ -768,6 +768,9 @@ const TeamLeadManagement = () => {
             </div>
 
             <DialogFooter>
+              {selectedTeam && (
+                <Button variant="destructive">Remove Member</Button>
+              )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>

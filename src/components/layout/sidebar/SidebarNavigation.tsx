@@ -1,21 +1,35 @@
-
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "react-router-dom";
-import { navigationByRole } from "./navigationConfig";
 import SidebarLink from "./SidebarLink";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { buildNavigationForRole } from "./navigationConfig";
 
 interface SidebarNavigationProps {
   collapsed: boolean;
 }
 
+const fetchRolePermissions = async (roleName: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
+    { withCredentials: true }
+  );
+  return data?.permissions || [];
+};
+
 const SidebarNavigation = ({ collapsed }: SidebarNavigationProps) => {
   const { user } = useAuth();
   const location = useLocation();
-  
+
   if (!user) return null;
-  
-  // Get navigation items for the user's role
-  const navigation = navigationByRole[user.role] || [];
+
+  const { data: rolePermissions } = useQuery({
+    queryKey: ["sidebarPermissions", user.role],
+    queryFn: () => fetchRolePermissions(user.role),
+    enabled: !!user.role,
+  });
+
+  const navigation = buildNavigationForRole(rolePermissions || [], user.role);
 
   return (
     <nav className="flex-1 overflow-y-auto py-4 px-3">

@@ -14,6 +14,15 @@ export type VillaFacing =
 export type CustomerStatus = "Purchased" | "Inquiry" | "Blocked" | "Open";
 export type ProjectStatus = "ongoing" | "upcoming" | "completed";
 
+export interface PropertyDocument {
+  id: string;
+  title: string;
+  fileUrl: string;
+  mimeType: string;
+  visibility: "PURCHASER_ONLY" | "PUBLIC_ENQUIRER";
+  createdAt?: string;
+}
+
 export type PropertyStatus =
   | "Available"
   | "Sold"
@@ -59,4 +68,9 @@ export interface Property {
   googleMapsLocation?: string;
   thumbnailUrl?: string;
   images?: string[];
+  documents?: PropertyDocument[];
+  enquiryCustomerName?: string;
+  enquiryCustomerContact?: string;
+  purchasedCustomerName?: string;
+  purchasedCustomerContact?: string;
 }

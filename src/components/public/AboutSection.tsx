@@ -60,7 +60,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
 };
 
-const AboutSection = () => {
+const AboutSection = ({ data }) => {
   const controls = useAnimation();
   const sectionRef = useRef(null);
   const [showVideo, setShowVideo] = useState(false);
@@ -76,10 +76,6 @@ const AboutSection = () => {
     thumbnail: "",
   });
   const statIcons = [Building, Users, Award, Clock];
-
-  useEffect(() => {
-    console.log(aboutContent);
-  }, [aboutContent]);
 
   const [stats, setStats] = useState<Stats[]>([]);
   const [values, setValues] = useState<Values[]>([]);
@@ -221,7 +217,7 @@ const AboutSection = () => {
                 onClick={() => setShowVideo(true)}
               >
                 <img
-                  src={aboutContent?.thumbnail || youtubeThumbnailUrl}
+                  src={data?.thumbnail || youtubeThumbnailUrl}
                   alt="Video Thumbnail"
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-80"
                 />
@@ -238,7 +234,7 @@ const AboutSection = () => {
               >
                 <iframe
                   src={
-                    aboutContent?.videoUrl ||
+                    data?.videoUrl ||
                     `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`
                   }
                   title="YouTube video player"
@@ -251,7 +247,7 @@ const AboutSection = () => {
             )}
           </div>
         </motion.div>
-        <section className="py-20 md:py-28 bg-white border-b border-gray-100">
+        <section className="py-16 bg-white border-b border-gray-100">
           <div className="container mx-auto px-6">
             <h2 className="text-4xl md:text-5xl font-md font-vidaloka text-gray-800 text-center mb-16 leading-tight">
               Our Guiding Principles
@@ -268,20 +264,20 @@ const AboutSection = () => {
 
                 if (idx === 0)
                   icon = (
-                    <div className="w-20 h-20 bg-[#C05621] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                      <Target className="h-9 w-9 text-white" />
+                    <div className="w-20 h-20  rounded-full flex items-center bg-estate-navy  justify-center mx-auto mb-6 shadow-md">
+                      <Target className="h-9 w-9 text-estate-gold" />
                     </div>
                   );
                 else if (idx === 1)
                   icon = (
-                    <div className="w-20 h-20 bg-[#6B46C1] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                      <Eye className="h-9 w-9 text-white" />
+                    <div className="w-20 h-20  rounded-full flex items-center bg-estate-navy justify-center mx-auto mb-6 shadow-md">
+                      <Eye className="h-9 w-9 text-estate-gold" />
                     </div>
                   );
                 else if (idx === 2)
                   icon = (
-                    <div className="w-20 h-20 bg-[#2C7A7B] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                      <Gem className="h-9 w-9 text-white" />
+                    <div className="w-20 h-20  rounded-full flex items-center bg-estate-navy justify-center mx-auto mb-6 shadow-md">
+                      <Gem className="h-9 w-9 text-estate-gold" />
                     </div>
                   );
 

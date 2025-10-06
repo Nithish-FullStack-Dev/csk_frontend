@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "./UserManagement";
 
 export interface TeamMember {
   _id: string;
@@ -128,6 +130,17 @@ const TeamManagement = () => {
     );
     return data || [];
   };
+
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
 
   const {
     data: teamMembers,
@@ -239,7 +252,36 @@ const TeamManagement = () => {
     },
   });
 
-  if (isLoading || isTeamMemLoading) return <Loader />;
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/team/deleteTeam/${memberId}`,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      setDialogOpen(false);
+      setIsEditing(false);
+      setEditingMember(null);
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.data?.message || "Failed to remove team member.";
+      toast.error(errorMessage);
+    },
+  });
+
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
@@ -248,6 +290,18 @@ const TeamManagement = () => {
     toast.error("Failed to fetch unassigned team members");
     console.error("fetch error:", isTeamMemErr);
   }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "My Team" && per.actions.write
+  );
+
+  const userCanEditUser = rolePermissions?.permissions?.some(
+    (per) => per.submodule === "My Team" && per?.actions?.edit
+  );
+
+  const userCanDeleteUser = rolePermissions?.permissions?.some(
+    (per) => per.submodule === "My Team" && per?.actions?.delete
+  );
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -301,6 +355,11 @@ const TeamManagement = () => {
         toast.error("User not authenticated.");
       }
     }
+  };
+
+  const handleRemoveMember = (id: string) => {
+    console.log(id);
+    deleteTeamMemberMutation.mutate(id);
   };
 
   const handleOpenAddDialog = () => {
@@ -371,10 +430,12 @@ const TeamManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleOpenAddDialog}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            {userCanAddUser && (
+              <Button onClick={handleOpenAddDialog}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -477,13 +538,15 @@ const TeamManagement = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleOpenEditDialog(member)}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
+                    {userCanEditUser && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleOpenEditDialog(member)}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -749,6 +812,17 @@ const TeamManagement = () => {
             </div>
 
             <DialogFooter>
+              {isEditing && userCanDeleteUser && (
+                <Button
+                  variant="destructive"
+                  onClick={() => handleRemoveMember(editingMember?._id!)}
+                  disabled={deleteTeamMemberMutation.isPending}
+                >
+                  {deleteTeamMemberMutation.isPending
+                    ? "Removing..."
+                    : "Remove Member"}
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
