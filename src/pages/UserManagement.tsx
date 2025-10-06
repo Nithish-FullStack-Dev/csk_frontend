@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCsrfToken, Roles, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
 import Loader from "@/components/Loader";
 
@@ -48,6 +48,15 @@ export const fetchAllRoles = async () => {
   return data || [];
 };
 
+const fetchAllUsers = async () => {
+  const csrfToken = await getCsrfToken();
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/getUsers`,
+    { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
+  );
+  return data.users || [];
+};
+
 export const fetchRolePermissions = async (roleName: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
@@ -57,6 +66,7 @@ export const fetchRolePermissions = async (roleName: string) => {
 };
 
 const UserManagement = () => {
+  const queryClient = useQueryClient();
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -67,12 +77,10 @@ const UserManagement = () => {
     role: "agent" as UserRole,
     phone: "",
   });
-  const [userAdded, setUserAdded] = useState(false);
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
-  const [userLoading, setUserLoading] = useState(false);
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -81,45 +89,30 @@ const UserManagement = () => {
   // Fetch all roles
   const {
     data: roles,
-    isLoading,
-    isError,
-    error,
+    isLoading: isRolesLoading,
+    isError: isRolesError,
+    error: rolesError,
   } = useQuery<Roles[]>({
     queryKey: ["roles"],
     queryFn: fetchAllRoles,
   });
 
-  const fetchAllUsers = async () => {
-    try {
-      setUserLoading(true);
-      const csrfToken = await getCsrfToken();
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/getUsers`,
-        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
-      );
-      setUsers(response.data.users);
-    } catch (error) {
-      console.log("error");
-    } finally {
-      setUserLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAllUsers();
-    if (userAdded) setUserAdded(false);
-  }, [userAdded]);
+  // Fetch all users
+  const { data: usersData = [], isLoading: isUsersLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchAllUsers,
+  });
 
   const filteredUsers = useMemo(() => {
-    return users.filter((user) =>
+    return usersData.filter((user) =>
       [user.name, user.email, user.role]
         .join(" ")
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
     );
-  }, [users, searchQuery]);
+  }, [usersData, searchQuery]);
 
-  if (userLoading || isLoading || !roles) {
+  if (isUsersLoading || isRolesLoading || !roles) {
     return <Loader />;
   }
 
@@ -144,7 +137,7 @@ const UserManagement = () => {
         toast.success("User added successfully", {
           description: `${newUser.name} has been added as a ${newUser.role}`,
         });
-        setUserAdded(true);
+        queryClient.invalidateQueries({ queryKey: ["users"] });
         setShowAddUserDialog(false);
         setNewUser({
           name: "",
@@ -170,6 +163,7 @@ const UserManagement = () => {
         `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`
       );
       toast.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -186,6 +180,7 @@ const UserManagement = () => {
         updatedUser: selectedUser,
       });
       toast.success("User updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -344,10 +339,10 @@ const UserManagement = () => {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isLoading && (
+                        {isRolesLoading && (
                           <SelectItem value="">Loading...</SelectItem>
                         )}
-                        {isError && (
+                        {isRolesError && (
                           <SelectItem value="">Error loading roles</SelectItem>
                         )}
                         {roles.map((role) => (
@@ -692,8 +687,6 @@ const UserManagement = () => {
               <Button
                 onClick={async () => {
                   await handleUpdateUser();
-                  setShowEditUserDialog(false);
-                  await fetchAllUsers();
                 }}
               >
                 Update User
@@ -775,7 +768,6 @@ const UserManagement = () => {
                 variant="destructive"
                 onClick={async () => {
                   await handleDeleteUser();
-                  await fetchAllUsers();
                   setshowResetDeleteDialog(false);
                 }}
               >
