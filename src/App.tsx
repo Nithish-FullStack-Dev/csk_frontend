@@ -80,6 +80,9 @@ import CustomerManagement from "./pages/CustomerManagement";
 import ChatInterface from "./components/communication/ChatInterface";
 import AuthRedirect from "./config/AuthRedirect";
 import AgentSchedule from "./pages/agent/AgentSchedule";
+import BuildingDetails from "./pages/BuildingDetails";
+import FloorUnits from "./pages/FloorUnits";
+import UnitDetails from "./pages/UnitDetails";
 
 const queryClient = new QueryClient();
 
@@ -213,6 +216,19 @@ const App = () => {
               <Route
                 path="/property/:propertyId"
                 element={<PropertyDetails />}
+              />
+
+              <Route
+                path="/properties/building/:buildingId"
+                element={<BuildingDetails />}
+              />
+              <Route
+                path="/properties/building/:buildingId/floor/:floorId"
+                element={<FloorUnits />}
+              />
+              <Route
+                path="/properties/unit/:unitId"
+                element={<UnitDetails />}
               />
 
               {/* CMS Route */}
