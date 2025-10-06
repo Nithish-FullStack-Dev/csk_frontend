@@ -83,6 +83,7 @@ import AgentSchedule from "./pages/agent/AgentSchedule";
 import BuildingDetails from "./pages/BuildingDetails";
 import FloorUnits from "./pages/FloorUnits";
 import UnitDetails from "./pages/UnitDetails";
+import NewProperties from "./pages/NewProperties";
 
 const queryClient = new QueryClient();
 
@@ -209,7 +210,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <Properties />
+                    <NewProperties />
                   </ProtectedRoute>
                 }
               />

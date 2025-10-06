@@ -11,10 +11,17 @@ import {
   DollarSign,
   PercentIcon,
   Calendar,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Property } from "@/types/property";
 import { Progress } from "@/components/ui/progress";
 import { formatIndianCurrency } from "@/lib/formatCurrency";
+import { useAuth } from "@/contexts/AuthContext";
+import { ApartmentDialog } from "@/components/properties/ApartmentDialog";
+import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
+import { toast } from "sonner";
 
 // Sample apartment data
 const sampleApartments: Property[] = [
@@ -113,8 +120,47 @@ const FloorUnits = () => {
     floorId: string;
   }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const apartments = sampleApartments;
+
+  // Dialog states
+  const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState<
+    Property | undefined
+  >();
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
+    null
+  );
+
+  const canEdit = user && ["owner", "admin"].includes(user.role);
+
+  const handleAddApartment = () => {
+    setSelectedApartment(undefined);
+    setDialogMode("add");
+    setApartmentDialogOpen(true);
+  };
+
+  const handleEditApartment = (apartment: Property, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedApartment(apartment);
+    setDialogMode("edit");
+    setApartmentDialogOpen(true);
+  };
+
+  const handleDeleteClick = (apartmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setApartmentToDelete(apartmentId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    toast.success("Unit deleted successfully");
+    setDeleteDialogOpen(false);
+    setApartmentToDelete(null);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
@@ -144,6 +190,12 @@ const FloorUnits = () => {
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Building
           </Button>
+          {canEdit && (
+            <Button onClick={handleAddApartment}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Unit
+            </Button>
+          )}
         </div>
 
         <div>
@@ -189,7 +241,31 @@ const FloorUnits = () => {
                               Mem. No: {apartment.memNo}
                             </p>
                           </div>
-                          {getStatusBadge(apartment.status)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(apartment.status)}
+                            {canEdit && (
+                              <div className="flex gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) =>
+                                    handleEditApartment(apartment, e)
+                                  }
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) =>
+                                    handleDeleteClick(apartment.id, e)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -263,6 +339,21 @@ const FloorUnits = () => {
           ))}
         </div>
       </div>
+
+      <ApartmentDialog
+        open={apartmentDialogOpen}
+        onOpenChange={setApartmentDialogOpen}
+        apartment={selectedApartment}
+        mode={dialogMode}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Unit"
+        description="Are you sure you want to delete this unit? This action cannot be undone."
+      />
     </MainLayout>
   );
 };
