@@ -462,12 +462,12 @@ const TeamLeadManagement = () => {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-12 w-12">
                         <AvatarImage
-                          src={member?.salesId?.avatar}
-                          alt={member?.salesId?.name}
+                          src={member?.teamLeadId?.avatar}
+                          alt={member?.teamLeadId?.name}
                         />
                         <AvatarFallback>
-                          {member?.salesId?.name
-                            ? member.salesId.name
+                          {member?.teamLeadId?.name
+                            ? member.teamLeadId.name
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")
@@ -476,10 +476,10 @@ const TeamLeadManagement = () => {
                       </Avatar>
                       <div>
                         <h3 className="font-semibold">
-                          {member?.salesId?.name}
+                          {member?.teamLeadId?.name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {member?.salesId?.role}
+                          {member?.teamLeadId?.role}
                         </p>
                         <Badge className={getStatusColor(member?.status)}>
                           {member?.status}

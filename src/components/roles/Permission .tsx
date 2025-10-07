@@ -228,7 +228,7 @@ export default function Permission() {
                 </SelectTrigger>
                 <SelectContent>
                   {roles
-                    ?.filter((role) => role.name !== "admin")
+                    // ?.filter((role) => role.name !== "admin")
                     .map((role) => (
                       <SelectItem key={role._id} value={role.name}>
                         {role.name
