@@ -8,8 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Unauthorized from "./pages/Unauthorized";
 import MessagingPage from "./pages/MessagingPage";
-import Properties from "./pages/Properties";
-import PropertyDetails from "./pages/Properties/PropertyDetails";
+// import Properties from "./pages/Properties";
+// import PropertyDetails from "./pages/Properties/PropertyDetails";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import Invoices from "./pages/Invoices";
@@ -84,6 +84,9 @@ import BuildingDetails from "./pages/BuildingDetails";
 import FloorUnits from "./pages/FloorUnits";
 import UnitDetails from "./pages/UnitDetails";
 import NewProperties from "./pages/NewProperties";
+import PropertyDetails from "./pages/Properties/PropertyDetails";
+// import  PropertyDetails  from "./pages/Properties/PropertyDetails";
+// import { PropertyDetails } from "./pages/Properties/PropertyDetails";
 
 const queryClient = new QueryClient();
 
@@ -214,17 +217,17 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/property/:propertyId"
                 element={
                   <ProtectedRoute
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <PropertyDetails />
+                    <PropertyDetails  />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
 
               <Route
                 path="/properties/building/:buildingId"

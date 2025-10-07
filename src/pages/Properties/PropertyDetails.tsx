@@ -61,7 +61,7 @@ interface PropertyDetailsProps {
   onBack: () => void;
 }
 
-export function PropertyDetails({
+function PropertyDetails({
   property,
   onEdit,
   onDelete,
@@ -387,3 +387,5 @@ export function PropertyDetails({
     </>
   );
 }
+
+export default PropertyDetails;
