@@ -67,6 +67,8 @@ import { Property } from "../public/PropertyInterfaces";
 import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { AddCustomerDialog, CustomerPayload } from "./AddCustomerDialog";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "../UserManagement";
 
 export interface Lead {
   _id: string;
@@ -274,6 +276,17 @@ const LeadManagement = () => {
     staleTime: 0,
   });
 
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
+
   const { data: properties = [] } = useQuery<Property[]>({
     queryKey: ["available-properties"],
     queryFn: async () => {
@@ -326,9 +339,6 @@ const LeadManagement = () => {
     if (customer_purchased) setAvailableCustomer(customer_purchased);
   }, [customer_purchased]);
 
-  if (isLoading || agentsLoad || CustomerLoad) {
-    return <Loader />;
-  }
   if (isError) {
     toast.error("Failed to fetch leads");
     console.error("Error fetching leads", error);
@@ -341,6 +351,25 @@ const LeadManagement = () => {
     toast.error("Failed to fetch customer");
     console.error("Error fetching customer_purchased", customerErr);
   }
+
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isLoading || agentsLoad || CustomerLoad || isRolePermissionsLoading) {
+    return <Loader />;
+  }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Lead Management" && per.actions.write
+  );
+  const userCanEditUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Lead Management" && per.actions.edit
+  );
+  const userCanDeleteUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Lead Management" && per.actions.delete
+  );
 
   // Filter leads based on search and tab
   const filteredLeads = (leadData || []).filter((lead: Lead) => {
@@ -512,7 +541,7 @@ const LeadManagement = () => {
               open={isAddLeadDialogOpen}
             >
               <DialogTrigger asChild>
-                {!isSalesManager && (
+                {!isSalesManager && userCanAddUser && (
                   <Button
                     onClick={() => {
                       setLeadToEdit(null); // Ensure no lead is in edit mode when adding
@@ -851,11 +880,13 @@ const LeadManagement = () => {
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => setLeadToEdit(lead)}
-                                >
-                                  <FileText className="mr-2 h-4 w-4" /> Edit
-                                </DropdownMenuItem>
+                                {userCanEditUser && (
+                                  <DropdownMenuItem
+                                    onClick={() => setLeadToEdit(lead)}
+                                  >
+                                    <FileText className="mr-2 h-4 w-4" /> Edit
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
