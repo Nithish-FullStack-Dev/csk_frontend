@@ -88,6 +88,17 @@ import PropertyDetails from "./pages/Properties/PropertyDetails";
 // import  PropertyDetails  from "./pages/Properties/PropertyDetails";
 // import { PropertyDetails } from "./pages/Properties/PropertyDetails";
 
+// Reports module
+import ReportsHome from "./modules/reports/ReportsHome";
+import PropertiesReport from "./modules/reports/pages/PropertiesReport";
+import AgentsReport from "./modules/reports/pages/AgentsReport";
+import TeamLeadsReport from "./modules/reports/pages/TeamLeadsReport";
+import AccountingReport from "./modules/reports/pages/AccountingReport";
+import ContractorsReport from "./modules/reports/pages/ContractorsReport";
+import SiteInchargeReport from "./modules/reports/pages/SiteInchargeReport";
+import UsersAccessReport from "./modules/reports/pages/UsersAccessReport";
+import SalesManagersReport from "./modules/reports/pages/SalesManagersReport";
+
 const queryClient = new QueryClient();
 
 const PROPERTIES = [
@@ -195,6 +206,107 @@ const App = () => {
                     loading={rolesLoading}
                   >
                     <Enquiry />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Reports Module */}
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <ReportsHome />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/properties"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <PropertiesReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/users-access"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <UsersAccessReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/agents"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <AgentsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/team-leads"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <TeamLeadsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/sales-managers"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <SalesManagersReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/accounting"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <AccountingReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/contractors"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <ContractorsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/site-incharge"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <SiteInchargeReport />
                   </ProtectedRoute>
                 }
               />
