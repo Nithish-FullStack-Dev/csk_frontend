@@ -27,7 +27,7 @@ import {
 import { toast } from "sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import axios from "axios";
 import { Label } from "@radix-ui/react-label";
 import {
@@ -108,7 +108,7 @@ export interface SiteVisitData {
   time: string;
   status: "confirmed" | "pending" | "completed" | "cancelled";
   notes?: string;
-  bookedBy: string;
+  bookedBy: string | User;
   priority: "high" | "medium" | "low";
   createdAt: string;
   updatedAt: string;
