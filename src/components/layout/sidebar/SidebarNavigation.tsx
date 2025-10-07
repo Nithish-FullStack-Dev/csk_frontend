@@ -4,6 +4,7 @@ import SidebarLink from "./SidebarLink";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { buildNavigationForRole } from "./navigationConfig";
+import "./SidebarNavigation.css";
 
 interface SidebarNavigationProps {
   collapsed: boolean;
@@ -32,7 +33,7 @@ const SidebarNavigation = ({ collapsed }: SidebarNavigationProps) => {
   const navigation = buildNavigationForRole(rolePermissions || [], user.role);
 
   return (
-    <nav className="flex-1 overflow-y-auto py-4 px-3">
+    <nav className="flex-1 overflow-y-auto py-4 px-3 sidebar-scroll">
       <div className="space-y-1">
         {navigation.map((item) => (
           <SidebarLink
