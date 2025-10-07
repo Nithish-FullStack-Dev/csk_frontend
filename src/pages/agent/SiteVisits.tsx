@@ -50,7 +50,7 @@ const createSiteVisit = async (bookDetails: any) => {
   return data;
 };
 
-const fetchAllSiteVisits = async () => {
+export const fetchAllSiteVisits = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/siteVisit/getAllSiteVis`,
     { withCredentials: true }

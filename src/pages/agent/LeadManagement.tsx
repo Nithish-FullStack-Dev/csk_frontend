@@ -52,7 +52,7 @@ import {
   Download,
 } from "lucide-react";
 import axios from "axios";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, set } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -161,7 +161,7 @@ const fetchAllcustomers = async () => {
   return data;
 };
 
-const fetchAllAgents = async () => {
+export const fetchAllAgents = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/user/getAllAgents`
   );
@@ -229,6 +229,8 @@ const LeadManagement = () => {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [loading, setloading] = useState(false);
+  const [updating, setupdating] = useState(false);
 
   const { mutate: submitLead } = useSaveLead();
   const { mutate: editLead } = useUpdateLead();
@@ -364,6 +366,12 @@ const LeadManagement = () => {
   });
 
   const handleSaveLead = async () => {
+    setloading(true);
+    if (!name || !email || !source || !status || !phone) {
+      toast.error("Please fill all required fields");
+      setloading(false);
+      return;
+    }
     const payload: LeadInput = {
       name,
       email,
@@ -397,11 +405,17 @@ const LeadManagement = () => {
     setStatus("");
     setNote("");
     setPhone("");
+    setloading(false);
   };
 
   const handleUpdateLead = async () => {
     if (!leadToEdit) return;
-
+    setupdating(true);
+    if (!name || !email || !source || !status || !phone) {
+      toast.error("Please fill all required fields");
+      setupdating(false);
+      return;
+    }
     const payload: Lead = {
       ...leadToEdit,
       name,
@@ -430,6 +444,7 @@ const LeadManagement = () => {
         console.error(err);
       },
     });
+    setupdating(false);
   };
 
   const handleSaveCustomer = () => {
@@ -638,7 +653,9 @@ const LeadManagement = () => {
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleSaveLead}>Save Lead</Button>
+                  <Button onClick={handleSaveLead} disabled={loading}>
+                    {loading ? "Saving Lead..." : "Save Lead"}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -1302,7 +1319,9 @@ const LeadManagement = () => {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleUpdateLead}>Save Changes</Button>
+                <Button onClick={handleUpdateLead} disabled={updating}>
+                  {updating ? "Updating Changes..." : "Update Changes"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
