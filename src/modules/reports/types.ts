@@ -93,7 +93,9 @@ export interface TeamLeadReportRow {
   leadsClosed: number;
   siteBookingsApproved: number;
   siteBookingsRejected: number;
-  totalSales: number;
+  incentivesToDate: number;
+  trips: number;
+  kms: number;
 }
 
 export interface SalesManagerReportRow {
