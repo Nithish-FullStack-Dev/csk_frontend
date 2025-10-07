@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/components/properties/FloorDialog.tsx
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ interface FloorDialogProps {
   floor?: FloorUnit;
   buildingId: string;
   mode: "add" | "edit";
+  onSave: (data: FloorUnit, mode: "add" | "edit") => void;
 }
 
 export const FloorDialog = ({
@@ -26,23 +28,34 @@ export const FloorDialog = ({
   floor,
   buildingId,
   mode,
+  onSave,
 }: FloorDialogProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FloorUnit>({
+    id: floor?.id || Date.now().toString(),
+    buildingId,
     floorNumber: floor?.floorNumber || 1,
     unitType: floor?.unitType || "",
     totalSubUnits: floor?.totalSubUnits || 1,
     availableSubUnits: floor?.availableSubUnits || 1,
   });
 
+  useEffect(() => {
+    if (floor) setFormData({ ...floor });
+    else
+      setFormData({
+        id: Date.now().toString(),
+        buildingId,
+        floorNumber: 1,
+        unitType: "",
+        totalSubUnits: 1,
+        availableSubUnits: 1,
+      });
+  }, [floor, buildingId, open]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // In a real app, this would save to the database
-    toast.success(
-      mode === "add"
-        ? "Floor/Unit created successfully"
-        : "Floor/Unit updated successfully"
-    );
+    onSave(formData, mode);
+    toast.success(mode === "add" ? "Floor created" : "Floor updated");
     onOpenChange(false);
   };
 
@@ -63,7 +76,6 @@ export const FloorDialog = ({
                 id="floorNumber"
                 type="number"
                 min={1}
-                step={1}
                 value={formData.floorNumber}
                 onChange={(e) =>
                   setFormData({
@@ -83,7 +95,7 @@ export const FloorDialog = ({
                 onChange={(e) =>
                   setFormData({ ...formData, unitType: e.target.value })
                 }
-                placeholder="e.g., 2 BHK, 3 BHK, Penthouse"
+                placeholder="e.g., 2 BHK"
                 required
               />
             </div>
@@ -96,7 +108,6 @@ export const FloorDialog = ({
                 id="totalSubUnits"
                 type="number"
                 min={1}
-                step={1}
                 value={formData.totalSubUnits}
                 onChange={(e) =>
                   setFormData({
@@ -114,7 +125,6 @@ export const FloorDialog = ({
                 id="availableSubUnits"
                 type="number"
                 min={0}
-                step={1}
                 value={formData.availableSubUnits}
                 onChange={(e) =>
                   setFormData({
@@ -128,8 +138,8 @@ export const FloorDialog = ({
 
           <DialogFooter>
             <Button
-              type="button"
               variant="outline"
+              type="button"
               onClick={() => onOpenChange(false)}
             >
               Cancel

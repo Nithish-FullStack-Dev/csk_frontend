@@ -1,3 +1,4 @@
+// src/pages/BuildingDetails.tsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -29,27 +30,24 @@ import { toast } from "sonner";
 const BUILDINGS_KEY = "app_buildings_v1";
 const FLOORS_KEY = "app_floors_v1";
 
-// Initial sample building (kept for fallback)
 const sampleBuilding = {
   id: "1",
   projectName: "Skyline Towers",
   location: "Downtown, Metro City",
-  propertyType: "Apartment Complex" as const,
+  propertyType: "Apartment Complex",
   totalUnits: 120,
   availableUnits: 45,
   soldUnits: 75,
-  constructionStatus: "Completed" as const,
+  constructionStatus: "Completed",
   completionDate: "2022-06-15",
-  description:
-    "Luxury apartment complex in the heart of downtown with stunning city views, modern amenities, and premium finishes.",
+  description: "Luxury apartment complex",
   municipalPermission: true,
   thumbnailUrl:
     "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
   googleMapsLocation: "https://maps.google.com/?q=40.7128,-74.0060",
   brochureUrl: null,
-};
+} as unknown as any;
 
-// Sample floors (used as initial if localStorage empty)
 const initialFloors: FloorUnit[] = [
   {
     id: "f1",
@@ -67,22 +65,6 @@ const initialFloors: FloorUnit[] = [
     totalSubUnits: 8,
     availableSubUnits: 5,
   },
-  {
-    id: "f3",
-    buildingId: "1",
-    floorNumber: 3,
-    unitType: "3 BHK",
-    totalSubUnits: 6,
-    availableSubUnits: 2,
-  },
-  {
-    id: "f4",
-    buildingId: "1",
-    floorNumber: 4,
-    unitType: "Penthouse",
-    totalSubUnits: 2,
-    availableSubUnits: 0,
-  },
 ];
 
 const BuildingDetails = () => {
@@ -90,17 +72,14 @@ const BuildingDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Load buildings list from localStorage to find the current building
-  const [buildings, setBuildings] = useState(() => {
+  const [buildings, setBuildings] = useState<any[]>(() => {
     try {
       const raw = localStorage.getItem(BUILDINGS_KEY);
       if (raw) return JSON.parse(raw);
     } catch (e) {}
-    // fallback: try find a building comparable to sampleBuilding by id
     return [sampleBuilding];
   });
 
-  // floors: load persisted floors or initial
   const [floors, setFloors] = useState<FloorUnit[]>(() => {
     try {
       const raw = localStorage.getItem(FLOORS_KEY);
@@ -109,16 +88,12 @@ const BuildingDetails = () => {
     return initialFloors;
   });
 
-  // ensure floors persisted whenever they change
   useEffect(() => {
     try {
       localStorage.setItem(FLOORS_KEY, JSON.stringify(floors));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) {}
   }, [floors]);
 
-  // Keep buildings in sync with localStorage (user may have added in NewProperties)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(BUILDINGS_KEY);
@@ -126,9 +101,7 @@ const BuildingDetails = () => {
     } catch (e) {}
   }, []);
 
-  const building =
-    buildings.find((b: any) => b.id === buildingId) || sampleBuilding;
-
+  const building = buildings.find((b) => b.id === buildingId) || sampleBuilding;
   const buildingFloors = floors.filter((f) => f.buildingId === buildingId);
 
   // Dialog states
@@ -144,14 +117,14 @@ const BuildingDetails = () => {
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
-  // Handle Building Actions
+  // Building actions
   const handleEditBuilding = () => setBuildingDialogOpen(true);
   const handleDeleteBuilding = () => {
     setDeleteTarget({ type: "building", id: buildingId! });
     setDeleteDialogOpen(true);
   };
 
-  // Handle Floor Actions
+  // Floor actions
   const handleAddFloor = () => {
     setSelectedFloor(undefined);
     setDialogMode("add");
@@ -171,14 +144,9 @@ const BuildingDetails = () => {
     setDeleteDialogOpen(true);
   };
 
-  // Persist floors and update localStorage when floors change (already handled above)
   const handleFloorSave = (data: FloorUnit, mode: "add" | "edit") => {
     if (mode === "add") {
-      const newFloor = {
-        ...data,
-        id: `f${Date.now()}`,
-        buildingId: buildingId!,
-      };
+      const newFloor = { ...data, id: `f${Date.now()}` };
       setFloors((prev) => [...prev, newFloor]);
       toast.success("Floor/Unit added successfully");
     } else {
@@ -189,12 +157,9 @@ const BuildingDetails = () => {
 
   const handleDeleteConfirm = () => {
     if (deleteTarget?.type === "building") {
-      // delete building from stored buildings and persist
-      const updated = buildings.filter((b: any) => b.id !== deleteTarget.id);
+      const updated = buildings.filter((b) => b.id !== deleteTarget.id);
       setBuildings(updated);
-      try {
-        localStorage.setItem(BUILDINGS_KEY, JSON.stringify(updated));
-      } catch (e) {}
+      localStorage.setItem(BUILDINGS_KEY, JSON.stringify(updated));
       toast.success("Building deleted successfully");
       navigate("/properties");
     } else if (deleteTarget?.type === "floor") {
@@ -208,16 +173,16 @@ const BuildingDetails = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header Actions */}
+        {/* Header */}
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate("/properties")}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Buildings
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
           </Button>
+
           {canEdit && (
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleEditBuilding}>
@@ -445,12 +410,23 @@ const BuildingDetails = () => {
       <BuildingDialog
         open={buildingDialogOpen}
         onOpenChange={setBuildingDialogOpen}
-        building={building}
+        building={building as any}
         mode="edit"
-
-        // NOTE: BuildingDialog won't modify buildings array here — if you want it to update,
-        // edit BuildingDialog to accept onSave and then update BUILDINGS_KEY in localStorage + state.
+        onSave={(d) => {
+          // update building in storage
+          setBuildings((prev) =>
+            prev.map((b) => (b.id === building.id ? { ...b, ...d } : b))
+          );
+          localStorage.setItem(
+            BUILDINGS_KEY,
+            JSON.stringify(
+              buildings.map((b) => (b.id === building.id ? { ...b, ...d } : b))
+            )
+          );
+          toast.success("Building updated");
+        }}
       />
+
       <FloorDialog
         open={floorDialogOpen}
         onOpenChange={setFloorDialogOpen}
@@ -459,6 +435,7 @@ const BuildingDetails = () => {
         mode={dialogMode}
         onSave={handleFloorSave}
       />
+
       <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

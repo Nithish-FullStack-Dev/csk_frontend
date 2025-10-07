@@ -1,401 +1,389 @@
+// src/pages/PropertyDetails.tsx
 import { useState } from "react";
-import { useParams } from "react-router-dom";
-import MainLayout from "@/components/layout/MainLayout";
+import { useNavigate } from "react-router-dom";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import {
+  Check,
   Building,
+  Map,
+  Calendar,
   Edit,
-  MapPin,
+  Trash,
+  FileText,
+  PercentIcon,
   Phone,
   User,
-  Banknote,
-  Home,
-  Users,
-  ShowerHead,
-  BedDouble,
-  SquareStack,
-  Check,
-  Clock,
-  CalendarClock,
-  Layers,
+  MessageSquare,
+  ChevronLeft,
+  X,
+  IndianRupee,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
+import { Property } from "@/types/property";
+import { formatIndianCurrency } from "@/lib/formatCurrency";
 
-// Sample property data
-const propertyData = {
-  id: "1",
-  name: "Skyline Towers",
-  type: "Apartment Complex",
-  location: "Downtown, Metro City",
-  status: "Listed",
-  price: "$250,000 - $450,000",
-  totalUnits: 120,
-  availableUnits: 45,
-  constructionStatus: "Completed",
-  completionDate: "2022-06-15",
-  description:
-    "Luxury apartment complex in the heart of downtown with stunning city views, modern amenities, and premium finishes.",
-  features: [
-    "24/7 Security",
-    "Swimming Pool",
-    "Fitness Center",
-    "Rooftop Garden",
-    "Underground Parking",
-    "Children's Play Area",
-    "Community Hall",
-    "High-speed Internet",
-  ],
-  mainImage:
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-  images: [
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1564013434775-f71db0030976?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-  ],
-  contactPerson: "Michael Brown",
-  contactPhone: "+1 (555) 123-4567",
-  contactEmail: "michael.brown@csk-realmanager.com",
-  units: [
-    {
-      id: "101",
-      number: "101",
-      type: "1 BHK",
-      floor: 1,
-      area: 650,
-      bedrooms: 1,
-      bathrooms: 1,
-      price: 250000,
-      status: "available",
-    },
-    {
-      id: "102",
-      number: "102",
-      type: "2 BHK",
-      floor: 1,
-      area: 950,
-      bedrooms: 2,
-      bathrooms: 2,
-      price: 350000,
-      status: "reserved",
-    },
-    {
-      id: "201",
-      number: "201",
-      type: "3 BHK",
-      floor: 2,
-      area: 1200,
-      bedrooms: 3,
-      bathrooms: 2,
-      price: 450000,
-      status: "sold",
-    },
-    {
-      id: "202",
-      number: "202",
-      type: "2 BHK",
-      floor: 2,
-      area: 950,
-      bedrooms: 2,
-      bathrooms: 2,
-      price: 350000,
-      status: "available",
-    },
-  ],
-};
+function getStatusBadge(status: string) {
+  const statusColors: Record<string, string> = {
+    Available: "bg-green-500",
+    Sold: "bg-blue-500",
+    "Under Construction": "bg-yellow-500",
+    Reserved: "bg-purple-500",
+    Blocked: "bg-red-500",
+    Purchased: "bg-blue-500",
+    Inquiry: "bg-yellow-500",
+    Open: "bg-green-500",
+    Completed: "bg-green-500",
+    "In Progress": "bg-yellow-500",
+    Pending: "bg-orange-500",
+    "Not Started": "bg-gray-500",
+  };
+  return (
+    <Badge className={`${statusColors[status] || "bg-gray-500"} text-white`}>
+      {status}
+    </Badge>
+  );
+}
 
-const PropertyDetails = () => {
-  const { propertyId } = useParams<{ propertyId: string }>();
-  const [activeTab, setActiveTab] = useState("overview");
+interface PropertyDetailsProps {
+  property: Property;
+  onEdit: () => void;
+  onDelete: () => void;
+  onBack: () => void;
+}
 
-  // In a real app, we would fetch property data based on propertyId
-  const property = propertyData;
+export function PropertyDetails({
+  property,
+  onEdit,
+  onDelete,
+  onBack,
+}: PropertyDetailsProps) {
+  const { user } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const canEdit = user && ["owner", "admin"].includes(user.role);
 
-  const getUnitStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return <Badge className="bg-estate-success">Available</Badge>;
-      case "reserved":
-        return <Badge className="bg-estate-gold">Reserved</Badge>;
-      case "sold":
-        return <Badge className="bg-estate-error">Sold</Badge>;
-      default:
-        return <Badge>Unknown</Badge>;
-    }
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{property.name}</h1>
-          <div className="flex items-center text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-1" />
-            {property.location}
-          </div>
-        </div>
-        <Button variant="default">
-          <Edit className="mr-2 h-4 w-4" />
-          Edit Property
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card>
-            <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-              <img
-                src={property.mainImage}
-                alt={property.name}
-                className="h-full w-full object-cover"
-              />
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Button variant="outline" size="sm" onClick={onBack}>
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to All Properties
+          </Button>
+          {canEdit && (
+            <div className="flex md:flex-row flex-col gap-3">
+              <Button size="sm" onClick={onEdit}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash className="mr-2 h-4 w-4" /> Delete
+              </Button>
             </div>
-            <CardContent className="p-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="units">Units</TabsTrigger>
-                  <TabsTrigger value="documents">Documents</TabsTrigger>
-                </TabsList>
-                <TabsContent value="overview" className="space-y-4 pt-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Description</h3>
-                    <p className="text-muted-foreground">
-                      {property.description}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">
-                      Features & Amenities
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-2">
-                      {property.features.map((feature, index) => (
-                        <div key={index} className="flex items-center">
-                          <Check className="h-4 w-4 mr-2 text-estate-teal" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Building className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Property Type
-                      </span>
-                      <span className="font-medium">{property.type}</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Users className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Total Units
-                      </span>
-                      <span className="font-medium">{property.totalUnits}</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Home className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Available Units
-                      </span>
-                      <span className="font-medium">
-                        {property.availableUnits}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Banknote className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Price Range
-                      </span>
-                      <span className="font-medium">{property.price}</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <Layers className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Status
-                      </span>
-                      <span className="font-medium">{property.status}</span>
-                    </div>
-                    <div className="flex flex-col items-center justify-center p-4 border rounded-md">
-                      <CalendarClock className="h-6 w-6 text-estate-navy mb-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Completion
-                      </span>
-                      <span className="font-medium">
-                        {property.constructionStatus}
-                      </span>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="units" className="pt-4">
-                  <h3 className="text-lg font-semibold mb-4">Property Units</h3>
-                  <div className="rounded-md border">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Unit
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Type
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Floor
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Area (sq ft)
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Beds
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Baths
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Price
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {property.units.map((unit) => (
-                          <tr key={unit.id}>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {unit.number}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {unit.type}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {unit.floor}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {unit.area}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <BedDouble className="h-4 w-4 mr-1" />
-                                {unit.bedrooms}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <ShowerHead className="h-4 w-4 mr-1" />
-                                {unit.bathrooms}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              ${unit.price.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {getUnitStatusBadge(unit.status)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </TabsContent>
-                <TabsContent value="documents" className="pt-4">
-                  <div className="flex items-center justify-center h-40 bg-muted/50 rounded-md">
-                    <div className="text-center">
-                      <SquareStack className="h-8 w-8 mx-auto text-muted-foreground" />
-                      <p className="mt-2 text-muted-foreground">
-                        Property documents will be displayed here
-                      </p>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+          )}
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-estate-navy mt-0.5" />
+        <Card>
+          <div className="flex flex-col md:flex-row">
+            {property.thumbnailUrl && (
+              <div className="md:w-1/3">
+                <img
+                  src={property.thumbnailUrl}
+                  alt={property.projectName}
+                  className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                />
+              </div>
+            )}
+            <div
+              className={`${property.thumbnailUrl ? "md:w-2/3" : "w-full"} p-6`}
+            >
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium">{property.contactPerson}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Property Manager
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h2 className="text-2xl font-bold">
+                      {property.projectName}
+                    </h2>
+                    {getStatusBadge(property.status)}
+                  </div>
+                  <p className="text-muted-foreground">
+                    Plot No. {property.plotNo} • Mem. No. {property.memNo}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-estate-navy" />
-                <p>{property.contactPhone}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div className="flex items-center">
+                  <Map className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <span>Facing: {property.villaFacing}</span>
+                </div>
+                <div className="flex items-center">
+                  <Building className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <span>Extent: {property.extent} sq. ft</span>
+                </div>
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <span>Delivery: {formatDate(property.deliveryDate)}</span>
+                </div>
+                <div className="flex items-center">
+                  <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <span>
+                    Total: {formatIndianCurrency(property.totalAmount)}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Building className="h-5 w-5 text-estate-navy" />
-                <p className="text-sm">{property.contactEmail}</p>
+
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-1">
+                  <span>Construction Progress: {property.workCompleted}%</span>
+                </div>
+                <Progress value={property.workCompleted} className="h-2" />
               </div>
-              <Button className="w-full">Contact Now</Button>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                <User className="mr-2 h-5 w-5" /> Customer Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Customer Name</p>
+                <p className="font-medium">
+                  {(property.customerId as any)?.user?.name ||
+                    (property.status === "Sold"
+                      ? property.purchasedCustomerName || "Owner"
+                      : "N/A")}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Customer Status</p>
+                <div>
+                  {getStatusBadge(
+                    property.customerStatus ||
+                      (property.status === "Sold" ? "Purchased" : "Open")
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Contact Number</p>
+                <p className="font-medium flex items-center">
+                  <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                  {property.contactNo || "N/A"}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Property Photos</CardTitle>
+              <CardTitle className="text-xl flex items-center">
+                <IndianRupee className="mr-2 h-5 w-5" /> Financial Details
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                {property.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square overflow-hidden rounded-md"
-                  >
-                    <img
-                      src={image}
-                      alt={`Property image ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Total Amount</p>
+                <p className="font-medium text-lg">
+                  {formatIndianCurrency(property.totalAmount)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    Amount Received
+                  </p>
+                  <p className="font-medium text-green-600">
+                    {formatIndianCurrency(property.amountReceived)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">
+                    Balance Amount
+                  </p>
+                  <p className="font-medium text-red-600">
+                    {formatIndianCurrency(property.balanceAmount)}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Rate Plan (Scheme)
+                </p>
+                <p className="font-medium">{property.ratePlan || "N/A"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">EMI Scheme</p>
+                <p className="font-medium flex items-center">
+                  {property.emiScheme ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4 text-green-500" />{" "}
+                      Available
+                    </>
+                  ) : (
+                    <>
+                      <X className="mr-2 h-4 w-4 text-red-500" /> Not Available
+                    </>
+                  )}
+                </p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Property Status</CardTitle>
+              <CardTitle className="text-xl flex items-center">
+                <Building className="mr-2 h-5 w-5" /> Project Details
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Listed on</p>
-                  <p className="font-medium">Jan 15, 2023</p>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Contractor</p>
+                <p className="font-medium">
+                  {(property.contractor as any)?.name || "N/A"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Site Incharge</p>
+                <p className="font-medium">
+                  {(property.siteIncharge as any)?.name || "N/A"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Work Completed</p>
+                <div className="flex items-center">
+                  <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{property.workCompleted}%</span>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge className="mt-1 bg-estate-teal">Active</Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Last Updated</p>
-                  <div className="flex items-center mt-1">
-                    <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <p>10 days ago</p>
-                  </div>
-                </div>
+                <Progress value={property.workCompleted} className="h-2 mt-2" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Delivery Date</p>
+                <p className="font-medium flex items-center">
+                  <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                  {formatDate(property.deliveryDate)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                <FileText className="mr-2 h-5 w-5" /> Legal & Other Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Registration Status
+                </p>
+                <div>{getStatusBadge(property.registrationStatus)}</div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Municipal Permission
+                </p>
+                <p className="font-medium flex items-center">
+                  {property.municipalPermission ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4 text-green-500" /> Approved
+                    </>
+                  ) : (
+                    <>
+                      <X className="mr-2 h-4 w-4 text-red-500" /> Not Approved
+                    </>
+                  )}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Remarks</p>
+                <p className="font-medium">
+                  {property.remarks ? (
+                    <div className="flex items-start">
+                      <MessageSquare className="mr-2 h-4 w-4 mt-1 text-muted-foreground" />
+                      <span>{property.remarks}</span>
+                    </div>
+                  ) : (
+                    "No remarks"
+                  )}
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
-  );
-};
 
-export default PropertyDetails;
+        {property.googleMapsLocation && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                <Map className="mr-2 h-5 w-5" /> Location
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" asChild className="w-full">
+                <a
+                  href={property.googleMapsLocation}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center"
+                >
+                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete();
+                setDeleteDialogOpen(false);
+              }}
+            >
+              Delete Property
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

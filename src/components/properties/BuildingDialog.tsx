@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/components/properties/BuildingDialog.tsx
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Building } from "@/types/building";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ interface BuildingDialogProps {
   onOpenChange: (open: boolean) => void;
   building?: Building;
   mode: "add" | "edit";
+  onSave: (data: Partial<Building>) => void;
 }
 
 export const BuildingDialog = ({
@@ -33,8 +35,9 @@ export const BuildingDialog = ({
   onOpenChange,
   building,
   mode,
+  onSave,
 }: BuildingDialogProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<Building>>({
     projectName: "",
     location: "",
     propertyType: "Apartment Complex",
@@ -46,11 +49,12 @@ export const BuildingDialog = ({
     description: "",
     municipalPermission: false,
     thumbnailUrl: "",
-    brochureUrl: "",
+    brochureUrl: null,
+    googleMapsLocation: undefined,
   });
 
   useEffect(() => {
-    if (building) setFormData({ ...formData, ...building });
+    if (building) setFormData({ ...building });
     else
       setFormData({
         projectName: "",
@@ -64,14 +68,19 @@ export const BuildingDialog = ({
         description: "",
         municipalPermission: false,
         thumbnailUrl: "",
-        brochureUrl: "",
+        brochureUrl: null,
+        googleMapsLocation: undefined,
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [building, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.projectName || !formData.location) {
+      toast.error("Please fill required fields");
+      return;
+    }
     onSave(formData);
-    onOpenChange(false);
   };
 
   return (
@@ -88,7 +97,7 @@ export const BuildingDialog = ({
             <div>
               <Label>Project Name *</Label>
               <Input
-                value={formData.projectName}
+                value={formData.projectName || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, projectName: e.target.value })
                 }
@@ -98,7 +107,7 @@ export const BuildingDialog = ({
             <div>
               <Label>Location *</Label>
               <Input
-                value={formData.location}
+                value={formData.location || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, location: e.target.value })
                 }
@@ -111,9 +120,9 @@ export const BuildingDialog = ({
             <div>
               <Label>Property Type</Label>
               <Select
-                value={formData.propertyType}
+                value={String(formData.propertyType || "Apartment Complex")}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, propertyType: v })
+                  setFormData({ ...formData, propertyType: v as any })
                 }
               >
                 <SelectTrigger>
@@ -127,16 +136,16 @@ export const BuildingDialog = ({
                   <SelectItem value="Plot Development">
                     Plot Development
                   </SelectItem>
-                  <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label>Construction Status</Label>
               <Select
-                value={formData.constructionStatus}
+                value={String(formData.constructionStatus || "Planned")}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, constructionStatus: v })
+                  setFormData({ ...formData, constructionStatus: v as any })
                 }
               >
                 <SelectTrigger>
@@ -159,7 +168,7 @@ export const BuildingDialog = ({
               <Input
                 type="number"
                 min={1}
-                value={formData.totalUnits}
+                value={String(formData.totalUnits || 0)}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -174,7 +183,7 @@ export const BuildingDialog = ({
               <Input
                 type="number"
                 min={0}
-                value={formData.availableUnits}
+                value={String(formData.availableUnits || 0)}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -188,7 +197,7 @@ export const BuildingDialog = ({
               <Input
                 type="number"
                 min={0}
-                value={formData.soldUnits}
+                value={String(formData.soldUnits || 0)}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -203,7 +212,7 @@ export const BuildingDialog = ({
             <Label>Completion Date</Label>
             <Input
               type="date"
-              value={formData.completionDate}
+              value={formData.completionDate || ""}
               onChange={(e) =>
                 setFormData({ ...formData, completionDate: e.target.value })
               }
@@ -213,7 +222,7 @@ export const BuildingDialog = ({
           <div>
             <Label>Description</Label>
             <Textarea
-              value={formData.description}
+              value={formData.description || ""}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
@@ -223,7 +232,7 @@ export const BuildingDialog = ({
           <div>
             <Label>Thumbnail URL</Label>
             <Input
-              value={formData.thumbnailUrl}
+              value={formData.thumbnailUrl || ""}
               onChange={(e) =>
                 setFormData({ ...formData, thumbnailUrl: e.target.value })
               }
@@ -244,7 +253,7 @@ export const BuildingDialog = ({
                     return;
                   }
                   const url = URL.createObjectURL(file);
-                  setFormData({ ...formData, brochureUrl: url });
+                  setFormData((p) => ({ ...p, brochureUrl: url }));
                   toast.success("Brochure uploaded");
                 }
               }}
@@ -258,9 +267,9 @@ export const BuildingDialog = ({
 
           <div className="flex items-center space-x-2">
             <Switch
-              checked={formData.municipalPermission}
+              checked={!!formData.municipalPermission}
               onCheckedChange={(v) =>
-                setFormData({ ...formData, municipalPermission: v })
+                setFormData({ ...formData, municipalPermission: !!v })
               }
             />
             <Label>Municipal Permission Obtained</Label>

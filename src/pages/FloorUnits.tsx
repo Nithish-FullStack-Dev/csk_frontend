@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/FloorUnits.tsx
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +9,7 @@ import {
   ChevronLeft,
   Home,
   User,
-  DollarSign,
   PercentIcon,
-  Calendar,
   Plus,
   Pencil,
   Trash2,
@@ -23,7 +22,8 @@ import { ApartmentDialog } from "@/components/properties/ApartmentDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
 
-// Sample apartment data
+const APARTMENTS_KEY = "app_apartments_v1";
+
 const sampleApartments: Property[] = [
   {
     id: "apt1",
@@ -33,17 +33,17 @@ const sampleApartments: Property[] = [
     villaFacing: "North-East",
     extent: 1250,
     propertyType: "Apartment",
-    customerId: null,
+    customerId: null as any,
     customerStatus: "Purchased",
     status: "Sold",
-    contractor: null,
-    siteIncharge: null,
+    contractor: null as any,
+    siteIncharge: null as any,
     totalAmount: 4200000,
     workCompleted: 100,
     deliveryDate: "2023-10-15",
     emiScheme: true,
     contactNo: "+91 98765 43210",
-    agentId: null,
+    agentId: null as any,
     registrationStatus: "Completed",
     ratePlan: "Premium Plan",
     amountReceived: 4200000,
@@ -51,67 +51,9 @@ const sampleApartments: Property[] = [
     remarks: "Handover completed",
     municipalPermission: true,
     thumbnailUrl:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
     projectStatus: "upcoming",
-  },
-  {
-    id: "apt2",
-    memNo: "MEM002",
-    projectName: "Skyline Towers",
-    plotNo: "102",
-    villaFacing: "North",
-    extent: 1200,
-    propertyType: "Apartment",
-    customerId: null,
-    customerStatus: "Purchased",
-    status: "Sold",
-    contractor: null,
-    siteIncharge: null,
-    totalAmount: 3900000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "+91 98765 43211",
-    agentId: null,
-    registrationStatus: "Completed",
-    ratePlan: "Standard Plan",
-    amountReceived: 3900000,
-    balanceAmount: 0,
-    remarks: "Completed",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    projectStatus: "upcoming",
-  },
-  {
-    id: "apt3",
-    memNo: "MEM003",
-    projectName: "Skyline Towers",
-    plotNo: "103",
-    villaFacing: "East",
-    extent: 1300,
-    propertyType: "Apartment",
-    customerId: null,
-    customerStatus: "Open",
-    status: "Available",
-    contractor: null,
-    siteIncharge: null,
-    totalAmount: 4000000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "",
-    agentId: null,
-    registrationStatus: "Not Started",
-    ratePlan: "Standard Plan",
-    amountReceived: 0,
-    balanceAmount: 4000000,
-    remarks: "Ready for sale",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    projectStatus: "completed",
-  },
+  } as unknown as Property,
 ];
 
 const FloorUnits = () => {
@@ -122,9 +64,20 @@ const FloorUnits = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const apartments = sampleApartments;
+  const [apartments, setApartments] = useState<Property[]>(() => {
+    try {
+      const raw = localStorage.getItem(APARTMENTS_KEY);
+      if (raw) return JSON.parse(raw) as Property[];
+    } catch (e) {}
+    return sampleApartments;
+  });
 
-  // Dialog states
+  useEffect(() => {
+    try {
+      localStorage.setItem(APARTMENTS_KEY, JSON.stringify(apartments));
+    } catch (e) {}
+  }, [apartments]);
+
   const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<
     Property | undefined
@@ -157,9 +110,63 @@ const FloorUnits = () => {
   };
 
   const handleDeleteConfirm = () => {
+    setApartments((prev) => prev.filter((a) => a.id !== apartmentToDelete));
     toast.success("Unit deleted successfully");
     setDeleteDialogOpen(false);
     setApartmentToDelete(null);
+  };
+
+  const handleSaveApartment = (
+    data: Partial<Property>,
+    mode: "add" | "edit"
+  ) => {
+    if (mode === "add") {
+      const newApt: Property = {
+        id: Date.now().toString(),
+        memNo: data.memNo || "",
+        projectName: data.projectName || "",
+        plotNo: data.plotNo || "",
+        villaFacing: (data.villaFacing as any) || "North",
+        extent: Number(data.extent) || 0,
+        propertyType: (data.propertyType as any) || "Apartment",
+        customerId: (data.customerId as any) || null,
+        customerStatus: (data.customerStatus as any) || "Open",
+        status: (data.status as any) || "Available",
+        contractor: (data.contractor as any) || null,
+        siteIncharge: (data.siteIncharge as any) || null,
+        totalAmount: Number(data.totalAmount) || 0,
+        workCompleted: Number(data.workCompleted) || 0,
+        deliveryDate: data.deliveryDate || "",
+        emiScheme: !!data.emiScheme,
+        contactNo: data.contactNo || "",
+        agentId: (data.agentId as any) || null,
+        registrationStatus: (data.registrationStatus as any) || "Not Started",
+        ratePlan: data.ratePlan || "",
+        amountReceived: Number(data.amountReceived) || 0,
+        balanceAmount: Number(data.balanceAmount) || 0,
+        remarks: data.remarks || "",
+        municipalPermission: !!data.municipalPermission,
+        googleMapsLocation: data.googleMapsLocation || "",
+        thumbnailUrl: data.thumbnailUrl || "",
+        images: (data as any).images || [],
+        documents: (data as any).documents || [],
+        enquiryCustomerName: data.enquiryCustomerName || "",
+        enquiryCustomerContact: data.enquiryCustomerContact || "",
+        purchasedCustomerName: data.purchasedCustomerName || "",
+        purchasedCustomerContact: data.purchasedCustomerContact || "",
+        projectStatus: (data as any).projectStatus || "upcoming",
+      } as Property;
+      setApartments((prev) => [...prev, newApt]);
+      toast.success("Unit added");
+    } else {
+      setApartments((prev) =>
+        prev.map((a) =>
+          a.id === (data as any).id ? ({ ...a, ...data } as Property) : a
+        )
+      );
+      toast.success("Unit updated");
+    }
+    setApartmentDialogOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -170,7 +177,6 @@ const FloorUnits = () => {
       Reserved: "bg-purple-500",
       Blocked: "bg-red-500",
     };
-
     return (
       <Badge className={`${statusColors[status] || "bg-gray-500"} text-white`}>
         {status}
@@ -187,13 +193,11 @@ const FloorUnits = () => {
             size="sm"
             onClick={() => navigate(`/properties/building/${buildingId}`)}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Building
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Building
           </Button>
           {canEdit && (
             <Button onClick={handleAddApartment}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Unit
+              <Plus className="mr-2 h-4 w-4" /> Add Unit
             </Button>
           )}
         </div>
@@ -206,6 +210,12 @@ const FloorUnits = () => {
         </div>
 
         <div className="grid gap-4">
+          {apartments.length === 0 && (
+            <p className="text-muted-foreground">
+              No units found for this floor.
+            </p>
+          )}
+
           {apartments.map((apartment) => (
             <Card
               key={apartment.id}
@@ -213,7 +223,6 @@ const FloorUnits = () => {
             >
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {/* Image */}
                   <div className="md:col-span-1">
                     {apartment.thumbnailUrl ? (
                       <img
@@ -228,7 +237,6 @@ const FloorUnits = () => {
                     )}
                   </div>
 
-                  {/* Details */}
                   <div className="md:col-span-3 p-6">
                     <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                       <div className="flex-1 space-y-4">
@@ -292,8 +300,10 @@ const FloorUnits = () => {
                             <div className="flex items-center">
                               <User className="h-4 w-4 mr-1 text-muted-foreground" />
                               <p className="font-medium">
-                                {apartment.customerId?.user?.name ||
-                                  "Available"}
+                                {(apartment.customerId as any)?.user?.name ||
+                                  (apartment.status === "Sold"
+                                    ? "Owner"
+                                    : "Available")}
                               </p>
                             </div>
                           </div>
@@ -311,8 +321,8 @@ const FloorUnits = () => {
                           <div>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="flex items-center">
-                                <PercentIcon className="h-4 w-4 mr-1" />
-                                Work Progress
+                                <PercentIcon className="h-4 w-4 mr-1" /> Work
+                                Progress
                               </span>
                               <span>{apartment.workCompleted}%</span>
                             </div>
@@ -345,6 +355,7 @@ const FloorUnits = () => {
         onOpenChange={setApartmentDialogOpen}
         apartment={selectedApartment}
         mode={dialogMode}
+        onSave={(d, m) => handleSaveApartment(d, m)}
       />
 
       <DeleteConfirmDialog
