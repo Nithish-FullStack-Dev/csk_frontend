@@ -61,7 +61,7 @@ export const FloorDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-[90vw] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>
             {mode === "add" ? "Add New Floor/Unit" : "Edit Floor/Unit"}
