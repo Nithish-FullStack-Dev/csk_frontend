@@ -259,7 +259,7 @@ const FeaturedProperties = () => {
                 <p className="text-sm text-gray-600">{property.subtitle}</p>
                 <Link
                   to={`/public/project/${property._id}`}
-                  className="btn transparent-btn mt-2 inline-block"
+                  className="btn mt-2 inline-block"
                 >
                   <div className="btn_m">
                     <div className="btn_c">

@@ -1,12 +1,14 @@
 :root {
   --tg-body-font-family: "Montserrat", sans-serif;
   --tg-heading-font-family: "Vidaloka", serif;
-  --tg-primary-color: #1f3a60;
+  /* --tg-primary-color: #1f3a60; */
   --linkedin: #1976d2;
   --pinterest: #3b5998;
   --youtube: #e53935;
   --skype: #00aff0;
   --tg-gold: #ffcc11;
+    --tg-primary-color: #d4af37; /* Estate gold */
+  --tg-dark-color: #0a1a2f;    
 }
 
 /* Shine Container */
@@ -50,81 +52,106 @@
   }
 }
 
-/* Core Button Styling */
+
+/* Base button */
 .btn {
   position: relative;
   display: inline-block;
   padding: 0.6rem 1.6rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border: 1px solid;
+  border: 1px solid var(--tg-primary-color);
+  border-radius: 0.375rem;
   overflow: hidden;
   cursor: pointer;
   text-align: center;
-  border-radius: 0.375rem;
+  color: var(--tg-dark-color);
+  background: transparent;
   transition: all 0.4s ease;
   line-height: 1.25rem;
+  isolation: isolate;
 }
 
-/* Transparent button style */
-.transparent-btn {
-  background: transparent;
-  color: var(--tg-primary-color);
-  border-color: var(--tg-primary-color);
+/* wave gradient overlay */
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+      circle at 10% 20%,
+      rgba(255, 255, 255, 0.25) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 90% 80%,
+      rgba(255, 255, 255, 0.15) 0%,
+      transparent 70%
+    );
+  background-size: 200% 200%;
+  transform: translateX(-100%);
+  opacity: 0;
+  z-index: 0;
 }
 
-.transparent-btn:hover {
-  background: var(--tg-primary-color);
-  color: white;
-  border-color: var(--tg-primary-color);
+/* shimmer animation keyframes */
+@keyframes waveMove {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
-/* Button inner wrapper */
+/* text container */
 .btn_m {
   position: relative;
   overflow: hidden;
   height: 1.25rem;
+  z-index: 1;
 }
 
-/* Inner content wrapper */
+/* text slide wrapper */
 .btn_c {
   display: block;
-  transition: transform 0.6s cubic-bezier(0.5, 0, 0.1, 1);
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.1, 1);
 }
 
-/* Text layers */
+/* text layers */
 .btn_t1,
 .btn_t2 {
   display: block;
-  transition: transform 0.6s cubic-bezier(0.5, 0, 0.1, 1), color 0.6s ease;
-  will-change: transform;
-  transform-origin: right;
+  height: 1.25rem;
+  line-height: 1.25rem;
+  transition: transform 0.6s cubic-bezier(0.45, 0, 0.1, 1);
 }
 
 .btn_t2 {
-  transform: rotate(40deg);
-  transform-origin: left;
+  transform: translateY(100%);
 }
 
-/* Hover effects */
+/* Hover Effects */
+.btn:hover {
+  background: var(--tg-primary-color);
+  color: var(--tg-dark-color);
+  border-color: var(--tg-primary-color);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.4);
+}
+
 .btn:hover .btn_c {
-  transform: translateY(-1.3rem);
+  transform: translateY(-100%);
 }
 
-.btn:hover .btn_t1 {
-  transform: rotate(40deg);
+/* Trigger wave animation */
+.btn:hover::before {
+  animation: waveMove 1.4s ease forwards;
 }
 
-.btn:hover .btn_t2 {
-  transform: rotate(0deg);
-  background-color: var(--tg-primary-color);
-}
-
-@keyframes shine {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+.btn:active {
+  transform: scale(0.97);
 }

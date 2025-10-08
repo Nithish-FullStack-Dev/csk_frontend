@@ -85,7 +85,7 @@ export const BuildingDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className=" max-h-[90vh] max-w-[90vw] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "add" ? "Add Building" : "Edit Building"}
