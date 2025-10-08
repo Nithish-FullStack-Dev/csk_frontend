@@ -6,7 +6,7 @@ export type PropertyStatus =
   | "Blocked";
 
 export interface Building {
-  id: string;
+  _id?: string;
   projectName: string;
   location: string;
   propertyType:
