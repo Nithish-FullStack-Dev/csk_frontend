@@ -249,7 +249,6 @@ const BuildingDetails = () => {
     }
 
     if (mode === "add") {
-      console.log(payload);
       createFloorMutation.mutate(payload);
     } else {
       updateFloorMutation.mutate({ floorId: data._id, payload });

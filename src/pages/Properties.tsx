@@ -286,7 +286,6 @@ const Properties = () => {
   // Handler for deleting a property
   const handleDeleteProperty = async () => {
     if (!selectedProperty) return;
-    console.log(selectedProperty);
     try {
       const csrfToken = await getCsrfToken();
 

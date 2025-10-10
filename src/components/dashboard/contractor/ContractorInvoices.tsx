@@ -187,7 +187,6 @@ const ContractorInvoices = () => {
 
   const handleSubmit = async (data: InvoiceFormValues) => {
     try {
-      console.log("Submitting..........");
       if (invoiceItems.length === 0) {
         toast.error("Please add at least one item to the invoice");
         return;
@@ -1045,13 +1044,6 @@ const ContractorInvoices = () => {
                           type="button"
                           onClick={async () => {
                             const isValid = await itemForm.trigger();
-                            console.log("Form Valid?", isValid);
-                            console.log("Form Values", itemForm.getValues());
-                            console.log(
-                              "Quantity typeof:",
-                              typeof itemForm.getValues("quantity")
-                            );
-
                             if (isValid) {
                               addInvoiceItem(itemForm.getValues());
                               itemForm.reset();
@@ -1137,15 +1129,7 @@ const ContractorInvoices = () => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  onClick={() => {
-                    console.log("Errors", form.formState.errors);
-                    console.log("Values", form.getValues());
-                  }}
-                >
-                  Create Invoice
-                </Button>
+                <Button type="submit">Create Invoice</Button>
               </div>
             </form>
           </Form>

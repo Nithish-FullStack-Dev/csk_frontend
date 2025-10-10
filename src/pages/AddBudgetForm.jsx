@@ -43,17 +43,12 @@ export default function AddBudgetForm({ onClose }) {
       })),
     };
 
-    // Replace this with API call
-    console.log("Submitting budget:", budgetData);
-
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/budget/add`, // Adjust if needed
         budgetData,
         { withCredentials: true }
       );
-      console.log("Budget created:", response.data);
-      // Optionally: reset form, show toast, close dialog
     } catch (err) {
       console.error(
         "Error creating budget:",

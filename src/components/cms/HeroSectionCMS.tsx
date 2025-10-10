@@ -22,6 +22,7 @@ const HeroSectionCMS = () => {
       setSlides(res.data.banners);
     } catch (error) {
       console.log("Fetch error", error);
+      return null;
     }
   };
 
@@ -36,6 +37,7 @@ const HeroSectionCMS = () => {
       );
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 
@@ -66,6 +68,7 @@ const HeroSectionCMS = () => {
       setSlides([...slides, savedSlide]);
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 

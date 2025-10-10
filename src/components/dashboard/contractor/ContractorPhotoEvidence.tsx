@@ -171,7 +171,6 @@ const ContractorPhotoEvidence: React.FC<ContractorPhotoEvidenceProps> = ({
     );
 
     try {
-      console.log("trying...........");
       const zip = new JSZip();
       const folder = zip.folder(photo.title || "photo-evidence")!;
 
@@ -185,7 +184,6 @@ const ContractorPhotoEvidence: React.FC<ContractorPhotoEvidenceProps> = ({
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `${photo.title || "photo-evidence"}.zip`);
-      console.log("ready...........");
 
       toast.success("Download ready!", { id: loadingToast });
     } catch (error) {
