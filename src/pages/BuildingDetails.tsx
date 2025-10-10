@@ -1,8 +1,7 @@
-// src/pages/BuildingDetails.tsx
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,89 +19,93 @@ import {
   Trash2,
   FileText,
 } from "lucide-react";
-import { FloorUnit } from "@/types/building";
+import { Building, FloorUnit } from "@/types/building";
 import { useAuth } from "@/contexts/AuthContext";
 import { BuildingDialog } from "@/components/properties/BuildingDialog";
 import { FloorDialog } from "@/components/properties/FloorDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import Loader from "@/components/Loader";
 
-const BUILDINGS_KEY = "app_buildings_v1";
-const FLOORS_KEY = "app_floors_v1";
+const getBuildingById = async (buildingId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/building/getBuildingById/${buildingId}`,
+    { withCredentials: true }
+  );
+  return data.data as Building;
+};
 
-const sampleBuilding = {
-  id: "1",
-  projectName: "Skyline Towers",
-  location: "Downtown, Metro City",
-  propertyType: "Apartment Complex",
-  totalUnits: 120,
-  availableUnits: 45,
-  soldUnits: 75,
-  constructionStatus: "Completed",
-  completionDate: "2022-06-15",
-  description: "Luxury apartment complex",
-  municipalPermission: true,
-  thumbnailUrl:
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
-  googleMapsLocation: "https://maps.google.com/?q=40.7128,-74.0060",
-  brochureUrl: null,
-} as unknown as any;
+const getFloorsByBuildingId = async (buildingId: string) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/floor/getAllFloorsByBuildingId/${buildingId}`,
+    { withCredentials: true }
+  );
+  return data.data as FloorUnit[];
+};
 
-const initialFloors: FloorUnit[] = [
-  {
-    id: "f1",
-    buildingId: "1",
-    floorNumber: 1,
-    unitType: "2 BHK",
-    totalSubUnits: 8,
-    availableSubUnits: 3,
-  },
-  {
-    id: "f2",
-    buildingId: "1",
-    floorNumber: 2,
-    unitType: "2 BHK",
-    totalSubUnits: 8,
-    availableSubUnits: 5,
-  },
-];
+const createFloor = async (payload: FormData) => {
+  const { data } = await axios.post(
+    `${import.meta.env.VITE_URL}/api/floor/createFloor`,
+    payload,
+    {
+      withCredentials: true,
+    }
+  );
+  return data;
+};
+
+const updateFloor = async (floorId: string, payload: FormData) => {
+  console.log("floorId", floorId);
+  const { data } = await axios.patch(
+    `${import.meta.env.VITE_URL}/api/floor/updateFloorById/${floorId}`,
+    payload,
+    {
+      withCredentials: true,
+    }
+  );
+  return data;
+};
+
+const deleteFloor = async (floorId: string) => {
+  const { data } = await axios.delete(
+    `${import.meta.env.VITE_URL}/api/floor/deleteFloorById/${floorId}`,
+    { withCredentials: true }
+  );
+  return data;
+};
 
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [buildings, setBuildings] = useState<any[]>(() => {
-    try {
-      const raw = localStorage.getItem(BUILDINGS_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return [sampleBuilding];
+  // Fetch floors
+  const {
+    data: floors,
+    isLoading: floorsLoading,
+    isError: floorsError,
+    error: floorsErr,
+  } = useQuery<FloorUnit[]>({
+    queryKey: ["floors", buildingId],
+    queryFn: () => getFloorsByBuildingId(buildingId!),
+    enabled: !!buildingId,
   });
 
-  const [floors, setFloors] = useState<FloorUnit[]>(() => {
-    try {
-      const raw = localStorage.getItem(FLOORS_KEY);
-      if (raw) return JSON.parse(raw) as FloorUnit[];
-    } catch (e) {}
-    return initialFloors;
+  const {
+    data: building,
+    isLoading: buildingLoading,
+    isError: buildError,
+    error: buildErr,
+  } = useQuery({
+    queryKey: ["building", buildingId],
+    queryFn: () => getBuildingById(buildingId!),
+    enabled: !!buildingId,
   });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(FLOORS_KEY, JSON.stringify(floors));
-    } catch (e) {}
-  }, [floors]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(BUILDINGS_KEY);
-      if (raw) setBuildings(JSON.parse(raw));
-    } catch (e) {}
-  }, []);
-
-  const building = buildings.find((b) => b.id === buildingId) || sampleBuilding;
-  const buildingFloors = floors.filter((f) => f.buildingId === buildingId);
 
   // Dialog states
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
@@ -116,6 +119,94 @@ const BuildingDetails = () => {
   } | null>(null);
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
+
+  // Mutations for floors
+  const createFloorMutation = useMutation({
+    mutationFn: createFloor,
+    onSuccess: (data) => {
+      toast.success(data.message || "Floor/Unit added successfully");
+      queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to add floor");
+    },
+  });
+
+  const updateFloorMutation = useMutation({
+    mutationFn: ({
+      floorId,
+      payload,
+    }: {
+      floorId: string;
+      payload: FormData;
+    }) => updateFloor(floorId, payload),
+    onSuccess: (data) => {
+      toast.success(data.message || "Floor/Unit updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update floor");
+    },
+  });
+
+  const deleteFloorMutation = useMutation({
+    mutationFn: deleteFloor,
+    onSuccess: (data) => {
+      toast.success(data.message || "Floor/Unit deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to delete floor");
+    },
+  });
+
+  const deleteBuildingMutation = useMutation({
+    mutationFn: (id: string) =>
+      axios.delete(
+        `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
+        {
+          withCredentials: true,
+        }
+      ),
+    onSuccess: () => {
+      toast.success("Building deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      navigate("/properties");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to delete building");
+    },
+  });
+
+  // Handle errors
+  useEffect(() => {
+    if (buildError) {
+      toast.error(buildErr?.message || "Failed to fetch building");
+    }
+    if (floorsError) {
+      toast.error(floorsErr?.message || "Failed to fetch floors");
+    }
+  }, [buildErr, buildError, floorsError, floorsErr, navigate]);
+
+  // Loading state
+  if (floorsLoading || buildingLoading) {
+    return <Loader />;
+  }
+
+  // Building not found
+  if (!building) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12">
+          <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Building not found</h3>
+          <Button onClick={() => navigate("/properties")}>
+            Back to Properties
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   // Building actions
   const handleEditBuilding = () => setBuildingDialogOpen(true);
@@ -145,29 +236,38 @@ const BuildingDetails = () => {
   };
 
   const handleFloorSave = (data: FloorUnit, mode: "add" | "edit") => {
+    const payload = new FormData();
+    payload.append("buildingId", buildingId!);
+    payload.append("floorNumber", data.floorNumber.toString());
+    payload.append("unitType", data.unitType);
+    payload.append("totalSubUnits", data.totalSubUnits.toString());
+    payload.append("availableSubUnits", data.availableSubUnits.toString());
+    if (data.priceRange) {
+      payload.append("priceRange[min]", data.priceRange.min.toString());
+      payload.append("priceRange[max]", data.priceRange.max.toString());
+    }
+
     if (mode === "add") {
-      const newFloor = { ...data, id: `f${Date.now()}` };
-      setFloors((prev) => [...prev, newFloor]);
-      toast.success("Floor/Unit added successfully");
+      console.log(payload);
+      createFloorMutation.mutate(payload);
     } else {
-      setFloors((prev) => prev.map((f) => (f.id === data.id ? data : f)));
-      toast.success("Floor/Unit updated successfully");
+      updateFloorMutation.mutate({ floorId: data._id, payload });
     }
   };
 
   const handleDeleteConfirm = () => {
     if (deleteTarget?.type === "building") {
-      const updated = buildings.filter((b) => b.id !== deleteTarget.id);
-      setBuildings(updated);
-      localStorage.setItem(BUILDINGS_KEY, JSON.stringify(updated));
-      toast.success("Building deleted successfully");
-      navigate("/properties");
+      deleteBuildingMutation.mutate(deleteTarget.id);
     } else if (deleteTarget?.type === "floor") {
-      setFloors((prev) => prev.filter((f) => f.id !== deleteTarget.id));
-      toast.success("Floor/Unit deleted successfully");
+      deleteFloorMutation.mutate(deleteTarget.id);
     }
     setDeleteDialogOpen(false);
     setDeleteTarget(null);
+  };
+
+  const handleSuccessfulSave = () => {
+    queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
+    queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
   return (
@@ -203,7 +303,7 @@ const BuildingDetails = () => {
                 <img
                   src={building.thumbnailUrl}
                   alt={building.projectName}
-                  className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                  className="h-full w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
               </div>
             )}
@@ -219,7 +319,7 @@ const BuildingDetails = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Floors</p>
                   <p className="text-xl font-semibold text-purple-600">
-                    {buildingFloors.length}
+                    {(floors || []).length}
                   </p>
                 </div>
                 <div>
@@ -248,13 +348,15 @@ const BuildingDetails = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center">
-                  <Building2 className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <Building2 className="h-5 w-5 mr-2 text-muted-foreground" />
                   {building.propertyType}
                 </div>
                 <div className="flex items-center">
-                  <CalendarClock className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
+                  <CalendarClock className="h-5 w-5 mr-2 text-muted-foreground" />
                   Completed:{" "}
-                  {new Date(building.completionDate).toLocaleDateString()}
+                  {building.completionDate
+                    ? new Date(building.completionDate).toLocaleDateString()
+                    : "N/A"}
                 </div>
                 <div className="flex items-center">
                   {building.municipalPermission ? (
@@ -310,9 +412,9 @@ const BuildingDetails = () => {
 
           <CardContent>
             <div className="grid gap-4">
-              {buildingFloors.map((floor) => (
+              {(floors || []).map((floor, idx) => (
                 <Card
-                  key={floor.id}
+                  key={floor._id || idx}
                   className="hover:shadow-md transition-shadow"
                 >
                   <CardContent className="p-6">
@@ -337,7 +439,7 @@ const BuildingDetails = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={(e) => handleDeleteFloor(floor.id, e)}
+                                onClick={(e) => handleDeleteFloor(floor._id, e)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -368,7 +470,7 @@ const BuildingDetails = () => {
                       <Button
                         onClick={() =>
                           navigate(
-                            `/properties/building/${buildingId}/floor/${floor.id}`
+                            `/properties/building/${buildingId}/floor/${floor._id}`
                           )
                         }
                       >
@@ -378,6 +480,11 @@ const BuildingDetails = () => {
                   </CardContent>
                 </Card>
               ))}
+              {(!floors || floors.length === 0) && (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">No floors found</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -410,21 +517,9 @@ const BuildingDetails = () => {
       <BuildingDialog
         open={buildingDialogOpen}
         onOpenChange={setBuildingDialogOpen}
-        building={building as any}
+        building={building}
         mode="edit"
-        onSave={(d) => {
-          // update building in storage
-          setBuildings((prev) =>
-            prev.map((b) => (b.id === building.id ? { ...b, ...d } : b))
-          );
-          localStorage.setItem(
-            BUILDINGS_KEY,
-            JSON.stringify(
-              buildings.map((b) => (b.id === building.id ? { ...b, ...d } : b))
-            )
-          );
-          toast.success("Building updated");
-        }}
+        onSuccessfulSave={handleSuccessfulSave}
       />
 
       <FloorDialog
@@ -434,6 +529,9 @@ const BuildingDetails = () => {
         buildingId={buildingId!}
         mode={dialogMode}
         onSave={handleFloorSave}
+        isSaving={
+          createFloorMutation.isPending || updateFloorMutation.isPending
+        }
       />
 
       <DeleteConfirmDialog

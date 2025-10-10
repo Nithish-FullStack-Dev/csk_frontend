@@ -33,7 +33,7 @@ export interface Building {
 }
 
 export interface FloorUnit {
-  id: string;
+  _id?: string;
   buildingId: string;
   floorNumber: number;
   unitType: string; // e.g., "1 BHK", "2 BHK", "Villa"

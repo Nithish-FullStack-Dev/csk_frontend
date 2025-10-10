@@ -4,8 +4,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ interface BuildingDialogProps {
   onOpenChange: (open: boolean) => void;
   building?: Building;
   mode: "add" | "edit";
-  onSave: (data: Building) => void;
+  onSuccessfulSave: () => void;
 }
 
 export const BuildingDialog = ({
@@ -37,7 +37,7 @@ export const BuildingDialog = ({
   onOpenChange,
   building,
   mode,
-  onSave,
+  onSuccessfulSave,
 }: BuildingDialogProps) => {
   const [formData, setFormData] = useState<Building>({
     projectName: "",
@@ -61,6 +61,13 @@ export const BuildingDialog = ({
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [brochurePreview, setBrochurePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+      if (brochurePreview) URL.revokeObjectURL(brochurePreview);
+    };
+  }, [thumbnailPreview, brochurePreview]);
 
   useEffect(() => {
     if (building) {
@@ -125,9 +132,10 @@ export const BuildingDialog = ({
       );
       return data;
     },
-    onSuccess: () => {
-      toast.success("Building added successfully!");
+    onSuccess: (data) => {
+      toast.success(data?.message || "Building added successfully");
       resetForm();
+      onSuccessfulSave();
       onOpenChange(false);
     },
     onError: (err: any) => {
@@ -137,8 +145,32 @@ export const BuildingDialog = ({
     },
   });
 
-  // Placeholder for future update mutation
-  // const updateBuilding = useMutation({...});
+  const updateBuilding = useMutation({
+    mutationFn: async (payload: FormData) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/building/updateBuilding/${
+          building?._id
+        }`,
+        payload,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Building updated successfully");
+      resetForm();
+      onSuccessfulSave();
+      onOpenChange(false);
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.data?.message || "Failed to update building.";
+      toast.error(errorMessage);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,10 +178,13 @@ export const BuildingDialog = ({
       !formData.projectName ||
       !formData.location ||
       !formData.propertyType ||
-      formData.totalUnits <= 0 ||
-      (mode === "add" && (!thumbnailFile || !brochureFile))
+      formData.totalUnits <= 0
     ) {
-      toast.error("Please fill all required fields and upload files");
+      toast.error("Please fill all required fields");
+      return;
+    }
+    if (mode === "add" && (!thumbnailFile || !brochureFile)) {
+      toast.error("Please upload thumbnail and brochure files");
       return;
     }
 
@@ -171,18 +206,14 @@ export const BuildingDialog = ({
     );
     if (formData.googleMapsLocation)
       payload.append("googleMapsLocation", formData.googleMapsLocation);
-    if (mode === "add") {
-      payload.append("thumbnailUrl", thumbnailFile!);
-      payload.append("brochureUrl", brochureFile!);
-    }
-
-    onSave(formData); // If needed for local state
+    // Append files if provided (required for add, optional for edit)
+    if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
+    if (brochureFile) payload.append("brochureUrl", brochureFile);
 
     if (mode === "add") {
       createBuilding.mutate(payload);
     } else {
-      toast.error("Edit mode not implemented yet");
-      // TODO: Call updateBuilding.mutate({ id: building._id, payload });
+      updateBuilding.mutate(payload);
     }
   };
 
@@ -193,7 +224,7 @@ export const BuildingDialog = ({
           <DialogTitle>
             {mode === "add" ? "Add Building" : "Edit Building"}
           </DialogTitle>
-          <DialogDescription>Manage buildings</DialogDescription>
+          <DialogDescription>Manage building details</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -226,7 +257,10 @@ export const BuildingDialog = ({
               <Select
                 value={formData.propertyType}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, propertyType: v as any })
+                  setFormData({
+                    ...formData,
+                    propertyType: v as Building["propertyType"],
+                  })
                 }
               >
                 <SelectTrigger>
@@ -250,7 +284,10 @@ export const BuildingDialog = ({
               <Select
                 value={formData.constructionStatus}
                 onValueChange={(v) =>
-                  setFormData({ ...formData, constructionStatus: v as any })
+                  setFormData({
+                    ...formData,
+                    constructionStatus: v as Building["constructionStatus"],
+                  })
                 }
               >
                 <SelectTrigger>
@@ -346,7 +383,7 @@ export const BuildingDialog = ({
           </div>
 
           <div>
-            <Label>Thumbnail (Image File) *</Label>
+            <Label>Thumbnail (Image File) {mode === "add" ? "*" : ""}</Label>
             <Input
               type="file"
               accept="image/*"
@@ -358,6 +395,7 @@ export const BuildingDialog = ({
                     return;
                   }
                   setThumbnailFile(file);
+                  if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
                   const previewUrl = URL.createObjectURL(file);
                   setThumbnailPreview(previewUrl);
                   toast.success("Thumbnail selected");
@@ -378,7 +416,7 @@ export const BuildingDialog = ({
           </div>
 
           <div>
-            <Label>Project Brochure (PDF) *</Label>
+            <Label>Project Brochure (PDF) {mode === "add" ? "*" : ""}</Label>
             <Input
               type="file"
               accept="application/pdf"
@@ -390,6 +428,7 @@ export const BuildingDialog = ({
                     return;
                   }
                   setBrochureFile(file);
+                  if (brochurePreview) URL.revokeObjectURL(brochurePreview);
                   const previewUrl = URL.createObjectURL(file);
                   setBrochurePreview(previewUrl);
                   toast.success("Brochure selected");
@@ -421,8 +460,11 @@ export const BuildingDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createBuilding.isPending}>
-              {createBuilding.isPending
+            <Button
+              type="submit"
+              disabled={createBuilding.isPending || updateBuilding.isPending}
+            >
+              {createBuilding.isPending || updateBuilding.isPending
                 ? "Saving..."
                 : mode === "add"
                 ? "Create"

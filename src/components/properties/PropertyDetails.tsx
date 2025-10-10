@@ -1,6 +1,6 @@
 // src/pages/PropertyDetails.tsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigation } from "react-router-dom";
 import {
   Check,
   Building,
@@ -68,9 +68,10 @@ export function PropertyDetails({
   onBack,
 }: PropertyDetailsProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
-
+  console.log(property.thumbnailUrl);
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -85,7 +86,7 @@ export function PropertyDetails({
     <>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="outline" size="sm" onClick={onBack}>
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
             <ChevronLeft className="mr-2 h-4 w-4" /> Back to All Properties
           </Button>
           {canEdit && (

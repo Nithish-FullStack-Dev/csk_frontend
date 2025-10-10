@@ -32,43 +32,24 @@ import { Building } from "@/types/building";
 import { BuildingDialog } from "@/components/properties/BuildingDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
+import axios from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Loader from "@/components/Loader";
 
-const BUILDINGS_KEY = "app_buildings_v1";
-
-const sampleInitial: Building[] = [
-  {
-    id: "1",
-    projectName: "Skyline Towers",
-    location: "Downtown, Metro City",
-    propertyType: "Apartment Complex",
-    totalUnits: 120,
-    availableUnits: 45,
-    soldUnits: 75,
-    constructionStatus: "Completed",
-    completionDate: "2022-06-15",
-    description: "Luxury apartment complex in the heart of downtown",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80",
-    brochureUrl: "https://example.com/brochures/skyline-towers.pdf",
-    googleMapsLocation: undefined,
-  } as unknown as Building,
-];
+export const getAllBuildings = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
+    { withCredentials: true }
+  );
+  return data.data || []; // Assuming ApiResponse structure { status, data, message }
+};
 
 const NewProperties = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const [buildings, setBuildings] = useState<Building[]>(() => {
-    try {
-      const raw = localStorage.getItem(BUILDINGS_KEY);
-      if (raw) return JSON.parse(raw) as Building[];
-    } catch (e) {}
-    return sampleInitial;
-  });
-
-  const [filteredBuildings, setFilteredBuildings] =
-    useState<Building[]>(buildings);
+  const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -84,20 +65,19 @@ const NewProperties = () => {
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
-  // persist buildings when changed
-  useEffect(() => {
-    try {
-      localStorage.setItem(BUILDINGS_KEY, JSON.stringify(buildings));
-    } catch (e) {
-      console.error(e);
-    }
-    // update filtered list
-    setFilteredBuildings(buildings);
-  }, [buildings]);
+  const {
+    data: buildings,
+    isLoading: buildingsLoading,
+    isError: buildError,
+    error: buildErr,
+  } = useQuery<Building[]>({
+    queryKey: ["buildings"],
+    queryFn: getAllBuildings,
+  });
 
   // Filtering logic
   useEffect(() => {
-    let results = buildings.slice();
+    let results = (buildings || []).slice();
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       results = results.filter(
@@ -140,41 +120,40 @@ const NewProperties = () => {
     setDeleteDialogOpen(true);
   };
 
+  const deleteBuilding = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
+        { withCredentials: true }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      toast.success("Building deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to delete building");
+    },
+  });
+
+  if (buildError) {
+    toast.error(buildErr?.message || "Failed to fetch buildings");
+    console.error(buildErr);
+  }
+
+  if (buildingsLoading) {
+    return <Loader />;
+  }
+
   const handleDeleteConfirm = () => {
     if (!buildingToDelete) return;
-    setBuildings((prev) => prev.filter((b) => b.id !== buildingToDelete));
-    toast.success("Building deleted successfully");
+    deleteBuilding.mutate(buildingToDelete);
     setBuildingToDelete(null);
     setDeleteDialogOpen(false);
   };
 
-  const handleSaveBuilding = (data: Partial<Building>) => {
-    if (dialogMode === "add") {
-      const newBuilding: Building = {
-        id: Date.now().toString(),
-        projectName: data.projectName || "Untitled",
-        location: data.location || "",
-        propertyType: data.propertyType || "Apartment Complex",
-        totalUnits: Number(data.totalUnits) || 0,
-        availableUnits: Number(data.availableUnits) || 0,
-        soldUnits: Number(data.soldUnits) || 0,
-        constructionStatus: data.constructionStatus || "Planned",
-        completionDate: data.completionDate || new Date().toISOString(),
-        description: data.description || "",
-        municipalPermission: !!data.municipalPermission,
-        thumbnailUrl: data.thumbnailUrl || "",
-        brochureUrl: data.brochureUrl || null,
-        googleMapsLocation: (data as any).googleMapsLocation || undefined,
-      } as Building;
-      setBuildings((prev) => [...prev, newBuilding]);
-      toast.success("Building added successfully");
-    } else if (dialogMode === "edit" && selectedBuilding) {
-      setBuildings((prev) =>
-        prev.map((b) => (b.id === selectedBuilding.id ? { ...b, ...data } : b))
-      );
-      toast.success("Building updated successfully");
-    }
-    setBuildingDialogOpen(false);
+  const handleSuccessfulSave = () => {
+    queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
   const getStatusBadge = (status: string) => {
@@ -238,6 +217,7 @@ const NewProperties = () => {
                   <SelectItem value="Plot Development">
                     Plot Development
                   </SelectItem>
+                  <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -265,9 +245,9 @@ const NewProperties = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {filteredBuildings.map((b) => (
+              {filteredBuildings.map((b, idx) => (
                 <Card
-                  key={b.id}
+                  key={b._id || idx}
                   className="overflow-hidden hover:shadow-lg transition cursor-pointer"
                 >
                   <div className="relative">
@@ -305,7 +285,7 @@ const NewProperties = () => {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={(e) => handleDeleteClick(b.id, e)}
+                            onClick={(e) => handleDeleteClick(b._id!, e)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -357,7 +337,9 @@ const NewProperties = () => {
                       <Button
                         size="sm"
                         className="flex-1"
-                        onClick={() => navigate(`/properties/building/${b.id}`)}
+                        onClick={() =>
+                          navigate(`/properties/building/${b._id}`)
+                        }
                       >
                         View More
                       </Button>
@@ -425,7 +407,7 @@ const NewProperties = () => {
         onOpenChange={setBuildingDialogOpen}
         building={selectedBuilding || undefined}
         mode={dialogMode}
-        onSave={handleSaveBuilding}
+        onSuccessfulSave={handleSuccessfulSave}
       />
 
       <DeleteConfirmDialog
