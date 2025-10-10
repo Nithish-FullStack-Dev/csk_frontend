@@ -40,6 +40,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "@/components/Loader";
 
 const MySchedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date()); // Using April 10, 2025
@@ -149,6 +151,14 @@ const MySchedule = () => {
     fetchDropdownData();
   }, []);
 
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "My Schedule" });
+
+  if (isRolePermissionsLoading) return <Loader />;
   const todaysAppointments = appointments.filter((appointment) =>
     date ? isSameDay(appointment.date, date) : false
   );
@@ -172,10 +182,12 @@ const MySchedule = () => {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Appointment
-              </Button>
+              {userCanAddUser && (
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Appointment
+                </Button>
+              )}
             </DialogTrigger>
 
             <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">

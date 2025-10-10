@@ -34,6 +34,7 @@ const moduleConfig: Record<string, string[]> = {
     "Lead Management",
     "Commissions",
     "Customer Management",
+    "Enquiry",
   ],
   "Team Lead": [
     "My Team",

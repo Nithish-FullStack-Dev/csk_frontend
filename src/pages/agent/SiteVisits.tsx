@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { fetchLeads } from "./LeadManagement";
 import { Property } from "../public/PropertyInterfaces";
+import { useRBAC } from "@/config/RBAC";
 
 // API Calls
 const createSiteVisit = async (bookDetails: any) => {
@@ -212,7 +213,17 @@ const SiteVisits = () => {
     staleTime: 0,
   });
 
-  if (clientLoading || isLoading || siteVisitsLoading || agentLoading)
+  const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
+    roleSubmodule: "Site Visits",
+  });
+
+  if (
+    clientLoading ||
+    isLoading ||
+    siteVisitsLoading ||
+    agentLoading ||
+    isRolePermissionsLoading
+  )
     return <Loader />;
 
   if (isError || clientHasError || siteVisitsError || agentError) {
@@ -332,10 +343,12 @@ const SiteVisits = () => {
               Schedule and manage property visits with clients
             </p>
           </div>
-          <Button onClick={() => setIsBookingOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Book New Visit
-          </Button>
+          {userCanAddUser && (
+            <Button onClick={() => setIsBookingOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Book New Visit
+            </Button>
+          )}
         </div>
 
         <Tabs defaultValue="upcoming">

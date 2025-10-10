@@ -509,7 +509,7 @@ const LeadManagement = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            {isSalesManager && (
+            {isSalesManager && userCanAddUser && (
               <AddCustomerDialog
                 isSalesManager={isSalesManager}
                 isAddCustomerDialogOpen={isAddCustomerDialogOpen}

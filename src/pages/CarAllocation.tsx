@@ -28,6 +28,7 @@ import Loader from "@/components/Loader"; // Assuming you have this component
 import { useAuth, User } from "@/contexts/AuthContext"; // Assuming your Auth context is here
 import { DatePicker } from "@/components/ui/date-picker";
 import { TeamMember } from "./TeamManagement";
+import { useRBAC } from "@/config/RBAC";
 
 // --- Interface Definitions (Ensure these match your backend types) ---
 
@@ -296,16 +297,25 @@ const CarAllocation = () => {
     }
   }, [vehicles]);
 
-  if (isLoading || teamLoading) {
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Car Allocation" });
+
+  if (isLoading || teamLoading || isRolePermissionsLoading) {
     return <Loader />;
   }
   if (isError) {
     toast.error("Failed to fetch Cars Allocation");
     console.error("Error fetching cars", error);
+    return null;
   }
   if (teamError) {
     toast.error("Failed to fetch Team members");
     console.error("Error fetching team", teamErr);
+    return null;
   }
 
   const getStatusColor = (status: string) => {
@@ -429,6 +439,7 @@ const CarAllocation = () => {
           name: selectedTeamMember.agentId.name,
           avatar: selectedTeamMember.agentId.avatar,
           role: selectedTeamMember.agentId.role,
+          email: selectedTeamMember.agentId.email,
         },
         assignedUntil: new Date(assignedUntil),
       },
@@ -479,10 +490,12 @@ const CarAllocation = () => {
             </Select>
             <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Vehicle
-                </Button>
+                {userCanAddUser && (
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Vehicle
+                  </Button>
+                )}
               </DialogTrigger>
               <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                 <DialogHeader>
@@ -834,16 +847,18 @@ const CarAllocation = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setDialogOpen(true);
-                        setSelectedVehicle(vehicle);
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
+                    {userCanEditUser && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setDialogOpen(true);
+                          setSelectedVehicle(vehicle);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -919,10 +934,12 @@ const CarAllocation = () => {
                     {vehicle.status === "available" && (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button size="sm" className="flex-1">
-                            <Users className="mr-2 h-3 w-3" />
-                            Assign
-                          </Button>
+                          {userCanAddUser && userCanEditUser && (
+                            <Button size="sm" className="flex-1">
+                              <Users className="mr-2 h-3 w-3" />
+                              Assign
+                            </Button>
+                          )}
                         </DialogTrigger>
                         <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                           <DialogHeader>

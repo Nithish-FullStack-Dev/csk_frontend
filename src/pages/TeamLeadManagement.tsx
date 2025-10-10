@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useRBAC } from "@/config/RBAC";
 
 export interface TeamMember {
   _id: string;
@@ -252,14 +253,24 @@ const TeamLeadManagement = () => {
     },
   });
 
-  if (isLoading || isTeamMemLoading) return <Loader />;
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Team Management" });
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
+    return null;
   }
   if (teamMemError) {
     toast.error("Failed to fetch unassigned team members");
     console.error("fetch error:", isTeamMemErr);
+    return null;
   }
 
   const getStatusColor = (status: string) => {
@@ -374,15 +385,17 @@ const TeamLeadManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => {
-                setSelectedTeam(null); // Clear selectedTeam for "Add Member"
-                setDialogOpen(true);
-              }}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            {userCanAddUser && (
+              <Button
+                onClick={() => {
+                  setSelectedTeam(null); // Clear selectedTeam for "Add Member"
+                  setDialogOpen(true);
+                }}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -487,16 +500,18 @@ const TeamLeadManagement = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedTeam(member);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
+                    {userCanEditUser && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedTeam(member);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -781,7 +796,7 @@ const TeamLeadManagement = () => {
             </div>
 
             <DialogFooter>
-              {selectedTeam && (
+              {userCanDeleteUser && selectedTeam && (
                 <Button variant="destructive">Remove Member</Button>
               )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>

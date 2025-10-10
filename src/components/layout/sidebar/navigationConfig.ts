@@ -266,7 +266,11 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Tax Documents": { to: "/taxes", icon: FileText, label: "Tax Documents" },
   Reports: { to: "/reports", icon: FileText, label: "Reports" },
-  Customer: { to: "/customer", icon: BarChart3, label: "Customer Management" },
+  "Customer Management": {
+    to: "/customer",
+    icon: BarChart3,
+    label: "Customer Management",
+  },
   "Photo Evidence": {
     to: "/evidence",
     icon: FileText,
