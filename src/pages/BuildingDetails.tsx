@@ -18,6 +18,7 @@ import {
   Pencil,
   Trash2,
   FileText,
+  Edit,
 } from "lucide-react";
 import { Building, FloorUnit } from "@/types/building";
 import { useAuth } from "@/contexts/AuthContext";
@@ -274,7 +275,7 @@ const BuildingDetails = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between md:items-center items-start">
           <Button
             variant="outline"
             size="sm"
@@ -284,12 +285,12 @@ const BuildingDetails = () => {
           </Button>
 
           {canEdit && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 md:flex-row flex-col">
               <Button variant="outline" onClick={handleEditBuilding}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit Building
+                <Edit className="mr-2 h-4 w-4" /> Edit
               </Button>
               <Button variant="destructive" onClick={handleDeleteBuilding}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete Building
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
               </Button>
             </div>
           )}
