@@ -1,3 +1,4 @@
+// AdminTeamLead.tsx
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,11 +42,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
+const TEAM_QUERY_KEY = ["teamLeads"];
+
 export interface TeamMember {
   _id: string;
   salesId: User; // This is the sales agent user
   teamLeadId: User; // This is the actual team lead user (the manager)
-  status: "active" | "training" | "on-leave";
+  status: "active" | "training" | "on-leave" | "inactive";
   performance: {
     sales: number;
     target: number;
@@ -61,7 +64,8 @@ interface User {
   name: string;
   email: string;
   role: string;
-  avatar: string;
+  avatar?: string;
+  phone?: string;
 }
 
 const fetchUnassignedMem = async (): Promise<User[]> => {
@@ -69,19 +73,29 @@ const fetchUnassignedMem = async (): Promise<User[]> => {
     `${import.meta.env.VITE_URL}/api/teamLead/unassigned`,
     { withCredentials: false }
   );
-  return data.data || [];
+  // support different shapes (data.data or data)
+  return data?.data ?? data ?? [];
 };
 
-const TeamLeadManagement = () => {
+const fetchAllTeamLeads = async (): Promise<TeamMember[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/teamLead/getAllTeamLeads`,
+    { withCredentials: true }
+  );
+  // support API returning array directly or under data.data
+  return data?.data ?? data ?? [];
+};
+
+const AdminTeamLead = () => {
   const { user } = useAuth();
   const [sortBy, setSortBy] = useState("performance");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [status, setStatus] = useState<"active" | "training" | "on-leave">(
-    "active"
-  );
+  const [status, setStatus] = useState<
+    "active" | "training" | "on-leave" | "inactive"
+  >("active");
   const [selectedTeam, setSelectedTeam] = useState<TeamMember | null>(null);
-  const [selectedTeamLeadId, setSelectedAgentId] = useState("");
+  const [selectedAgentId, setSelectedAgentId] = useState("");
   const [performance, setPerformance] = useState({
     sales: 0,
     target: 0,
@@ -93,31 +107,16 @@ const TeamLeadManagement = () => {
 
   const queryClient = useQueryClient();
 
-  const handlePerformanceChange = (field: string, value: string | number) => {
-    setPerformance((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const fetchMyTeam = async (): Promise<TeamMember[]> => {
-    const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/teamLead/getAllSalesTeam/${user._id}`,
-      { withCredentials: true }
-    );
-    return data || [];
-  };
-
   useEffect(() => {
     if (selectedTeam) {
-      setSelectedAgentId(selectedTeam.salesId._id);
+      setSelectedAgentId(selectedTeam.salesId?._id ?? "");
       setStatus(selectedTeam.status);
       setPerformance({
-        sales: selectedTeam.performance?.sales || 0,
-        target: selectedTeam.performance?.target || 0,
-        deals: selectedTeam.performance?.deals || 0,
-        leads: selectedTeam.performance?.leads || 0,
-        conversionRate: selectedTeam.performance?.conversionRate || 0,
+        sales: selectedTeam.performance?.sales ?? 0,
+        target: selectedTeam.performance?.target ?? 0,
+        deals: selectedTeam.performance?.deals ?? 0,
+        leads: selectedTeam.performance?.leads ?? 0,
+        conversionRate: selectedTeam.performance?.conversionRate ?? 0,
         lastActivity: selectedTeam.performance?.lastActivity
           ? new Date(selectedTeam.performance.lastActivity)
               .toISOString()
@@ -125,7 +124,7 @@ const TeamLeadManagement = () => {
           : new Date().toISOString().slice(0, 16),
       });
     } else {
-      // Reset form when dialog opens for adding a new member
+      // reset form
       setSelectedAgentId("");
       setStatus("active");
       setPerformance({
@@ -139,137 +138,134 @@ const TeamLeadManagement = () => {
     }
   }, [selectedTeam]);
 
+  const handlePerformanceChange = (field: string, value: string | number) => {
+    setPerformance((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // main list query (standardized query key)
   const {
     data: teamMembers,
-    isLoading,
+    isLoading: isTeamLoading,
     isError,
     error,
   } = useQuery<TeamMember[]>({
-    queryKey: ["teams", user?._id],
-    queryFn: fetchMyTeam,
+    queryKey: TEAM_QUERY_KEY,
+    queryFn: fetchAllTeamLeads,
     staleTime: 0,
-    enabled: !!user?._id,
+    // Admin view shows all; no need to depend on user._id
   });
 
   const {
     data: availableAgents,
-    isLoading: isTeamMemLoading,
-    isError: teamMemError,
-    error: isTeamMemErr,
+    isLoading: isAgentsLoading,
+    isError: agentsError,
+    error: agentsErr,
   } = useQuery<User[]>({
     queryKey: ["unassignedAgents"],
     queryFn: fetchUnassignedMem,
     staleTime: 0,
   });
 
+  // Add mutation
   const addTeamMemberMutation = useMutation({
-    mutationFn: async ({
-      salesId, // This is the ID of the agent being added to the team
-      status,
-      performance,
-      teamLeadId, // This is the ID of the current logged-in user (the team lead)
-    }: {
+    mutationFn: async (payload: {
       salesId: string;
-      status: "active" | "training" | "on-leave";
-      performance: {
-        sales: number;
-        target: number;
-        deals: number;
-        leads: number;
-        conversionRate: number;
-        lastActivity: string;
-      };
       teamLeadId: string;
+      status: "active" | "training" | "on-leave";
+      performance: any;
     }) => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/teamLead/addTeamLead`,
-        { salesId, teamLeadId, performance, status },
+        payload,
         { withCredentials: true }
       );
       return data;
     },
     onSuccess: () => {
       toast.success("Team member added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
-      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      // invalidate the standardized key so other components refetch
+      queryClient.invalidateQueries();
+      queryClient.invalidateQueries();
       setDialogOpen(false);
-      setSelectedAgentId("");
-      setStatus("active");
-      setPerformance({
-        sales: 0,
-        target: 0,
-        deals: 0,
-        leads: 0,
-        conversionRate: 0,
-        lastActivity: new Date().toISOString().slice(0, 16),
-      });
+      setSelectedTeam(null);
     },
     onError: (err: any) => {
-      const errorMessage =
-        err.response?.data?.message || "Failed to add team member.";
-      toast.error(errorMessage);
+      toast.error(err?.response?.data?.message || "Failed to add team member.");
     },
   });
 
+  // Update mutation
   const updateTeamMemberMutation = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-      performance,
-    }: {
+    mutationFn: async (payload: {
       id: string;
-      status: "active" | "training" | "on-leave";
-      performance: {
-        sales: number;
-        target: number;
-        deals: number;
-        leads: number;
-        conversionRate: number;
-        lastActivity: string;
-      };
+      status: string;
+      performance: any;
     }) => {
       const { data } = await axios.patch(
-        `${import.meta.env.VITE_URL}/api/teamLead/updateTeamLead/${id}`,
-        {
-          status,
-          performance,
-        },
+        `${import.meta.env.VITE_URL}/api/teamLead/updateTeamLead/${payload.id}`,
+        { status: payload.status, performance: payload.performance },
         { withCredentials: true }
       );
       return data;
     },
     onSuccess: () => {
-      toast.success("Team member updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
-      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      toast.success("Team member updated!");
+      queryClient.invalidateQueries();
+      queryClient.invalidateQueries();
       setDialogOpen(false);
       setSelectedTeam(null);
     },
     onError: (err: any) => {
-      const errorMessage =
-        err.response?.data?.message || "Failed to update team member.";
-      toast.error(errorMessage);
+      toast.error(
+        err?.response?.data?.message || "Failed to update team member."
+      );
     },
   });
 
-  if (isLoading || isTeamMemLoading) return <Loader />;
+  // Delete mutation (admin delete from this view)
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/teamLead/deleteTeamLead/${memberId}`,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully!");
+      // invalidate same key so TeamLeadManagement or other views refetch
+      queryClient.invalidateQueries();
+      queryClient.invalidateQueries();
+      setDialogOpen(false);
+      setSelectedTeam(null);
+    },
+    onError: (err: any) => {
+      toast.error(
+        err?.response?.data?.message || "Failed to remove team member"
+      );
+      console.error("Delete error:", err);
+    },
+  });
+
+  if (isTeamLoading || isAgentsLoading) return <Loader />;
+
   if (isError) {
-    toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
+    toast.error("Failed to fetch Team");
   }
-  if (teamMemError) {
-    toast.error("Failed to fetch unassigned team members");
-    console.error("fetch error:", isTeamMemErr);
+  if (agentsError) {
+    console.error("fetch error:", agentsErr);
+    toast.error("Failed to fetch unassigned agents");
   }
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       active: "bg-green-100 text-green-800",
       training: "bg-yellow-100 text-yellow-800",
       inactive: "bg-red-100 text-red-800",
       "on-leave": "bg-red-100 text-red-800",
     };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800";
+    return colors[status] ?? "bg-gray-100 text-gray-800";
   };
 
   const getPerformanceLevel = (percentage: number) => {
@@ -281,63 +277,81 @@ const TeamLeadManagement = () => {
   };
 
   const totalTeamSales =
-    teamMembers?.reduce((sum, member) => sum + member.performance.sales, 0) ||
-    0;
+    teamMembers?.reduce(
+      (sum, m) => sum + (Number(m.performance?.sales) || 0),
+      0
+    ) ?? 0;
   const totalTeamTarget =
-    teamMembers?.reduce((sum, member) => sum + member.performance.target, 0) ||
-    0;
+    teamMembers?.reduce(
+      (sum, m) => sum + (Number(m.performance?.target) || 0),
+      0
+    ) ?? 0;
   const teamPerformance =
     totalTeamTarget > 0 ? (totalTeamSales / totalTeamTarget) * 100 : 0;
 
-  const handleAddMemberSubmit = () => {
-    if (!selectedTeamLeadId) {
-      toast.error("Please select a team member.");
+  const handleAddOrUpdate = async () => {
+    if (!selectedAgentId) {
+      toast.error("Select a sales agent");
       return;
     }
 
-    const payload = {
-      salesId: user?._id || "",
-      status,
-      performance,
-      teamLeadId: selectedTeamLeadId,
+    const normalizedPerformance = {
+      sales: Number(performance.sales) || 0,
+      target: Number(performance.target) || 0,
+      deals: Number(performance.deals) || 0,
+      leads: Number(performance.leads) || 0,
+      conversionRate: Number(performance.conversionRate) || 0,
+      lastActivity: new Date(performance.lastActivity).toISOString(),
     };
 
     if (selectedTeam?._id) {
-      updateTeamMemberMutation.mutate({
+      // update
+      await updateTeamMemberMutation.mutateAsync({
         id: selectedTeam._id,
         status,
-        performance,
+        performance: normalizedPerformance,
       });
-    } else {
-      // Add new member
-      if (user?._id) {
-        addTeamMemberMutation.mutate(payload);
-      } else {
-        toast.error("User not authenticated.");
-      }
+      return;
     }
+
+    // add - teamLeadId expects the manager id; here you passed selectedAgentId earlier in older code:
+    // Based on your requirements: Sales Manager adds Team Lead (if this view is Admin, pass appropriate IDs).
+    // We'll assume the payload should be { salesId, teamLeadId } as your API expects.
+    // To add a team lead entry you might want to send teamLeadId as selectedAgentId and salesId as user._id
+    const payload: {
+      salesId: string;
+      teamLeadId: string;
+      status: "active" | "training" | "on-leave" | "inactive";
+      performance: any;
+    } = {
+      salesId: user?._id ?? "", // the sales manager / agent depending on your flow
+      teamLeadId: selectedAgentId,
+      status,
+      performance: normalizedPerformance,
+    };
+
+    await addTeamMemberMutation.mutateAsync(payload);
   };
 
-  const sortedAndFilteredTeamMembers = teamMembers
-    ?.filter((member) => {
-      if (filterStatus === "all") return true;
-      return member.status === filterStatus;
-    })
+  const handleDelete = (memberId: string) => {
+    // NO popup — directly delete as you requested
+    deleteTeamMemberMutation.mutate(memberId);
+  };
+
+  const sortedAndFilteredTeamMembers = (teamMembers ?? [])
+    .filter((member) =>
+      filterStatus === "all" ? true : member.status === filterStatus
+    )
     .sort((a, b) => {
       if (sortBy === "performance") {
-        const perfA = (a.performance.sales / a.performance.target) * 100 || 0;
-        const perfB = (b.performance.sales / b.performance.target) * 100 || 0;
+        const perfA = (a.performance.sales / (a.performance.target || 1)) * 100;
+        const perfB = (b.performance.sales / (b.performance.target || 1)) * 100;
         return perfB - perfA;
       }
-      if (sortBy === "sales") {
-        return b.performance.sales - a.performance.sales;
-      }
-      if (sortBy === "deals") {
-        return b.performance.deals - a.performance.deals;
-      }
-      if (sortBy === "name") {
+      if (sortBy === "sales") return b.performance.sales - a.performance.sales;
+      if (sortBy === "deals") return b.performance.deals - a.performance.deals;
+      if (sortBy === "name")
         return a.salesId.name.localeCompare(b.salesId.name);
-      }
       return 0;
     });
 
@@ -351,6 +365,7 @@ const TeamLeadManagement = () => {
               Manage your sales team and track their performance
             </p>
           </div>
+
           <div className="flex md:items-center space-x-2 mt-4 md:mt-0 md:flex-row flex-col items-start gap-5">
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[150px]">
@@ -363,6 +378,7 @@ const TeamLeadManagement = () => {
                 <SelectItem value="name">Name</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Status" />
@@ -374,17 +390,20 @@ const TeamLeadManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button
+
+            {/* <Button
               onClick={() => {
-                setSelectedTeam(null); // Clear selectedTeam for "Add Member"
+                setSelectedTeam(null);
                 setDialogOpen(true);
               }}
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Add Member
-            </Button>
+            </Button> */}
           </div>
         </div>
+
+        {/* stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -395,7 +414,7 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  {teamMembers?.length}
+                  {teamMembers?.length ?? 0}
                 </span>
                 <Users className="h-6 w-6 text-estate-navy" />
               </div>
@@ -411,7 +430,9 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  {teamPerformance.toFixed(1)}%
+                  {totalTeamTarget > 0
+                    ? `${teamPerformance.toFixed(1)}%`
+                    : "N/A"}
                 </span>
                 <Target className="h-6 w-6 text-estate-teal" />
               </div>
@@ -426,9 +447,9 @@ const TeamLeadManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
-                </span>
+                <span className="text-2xl font-bold">{`₹${(
+                  totalTeamSales / 1000000
+                ).toFixed(1)}M`}</span>
                 <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
             </CardContent>
@@ -443,19 +464,24 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  {teamMembers?.filter((m) => m.status === "active").length}
+                  {
+                    (teamMembers ?? []).filter((m) => m.status === "active")
+                      .length
+                  }
                 </span>
                 <Award className="h-6 w-6 text-estate-success" />
               </div>
             </CardContent>
           </Card>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {sortedAndFilteredTeamMembers?.map((member) => {
-            const performancePercentage =
-              (member.performance.sales / member.performance.target) * 100;
-            const performanceLevel = getPerformanceLevel(performancePercentage);
 
+        {/* list */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {sortedAndFilteredTeamMembers.map((member) => {
+            const perfPct =
+              (member.performance.sales / (member.performance.target || 1)) *
+              100;
+            const perfLevel = getPerformanceLevel(perfPct);
             return (
               <Card key={member._id}>
                 <CardHeader className="pb-4">
@@ -477,41 +503,61 @@ const TeamLeadManagement = () => {
                       </Avatar>
                       <div>
                         <h3 className="font-semibold">
-                          {member?.teamLeadId?.name}
+                          {member?.salesId?.name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {member?.teamLeadId?.role}
+                          {member?.salesId?.role}
                         </p>
                         <Badge className={getStatusColor(member?.status)}>
                           {member?.status}
                         </Badge>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span className="font-medium">Sales Manager:</span>
+                          <span className="truncate">
+                            {member?.teamLeadId?.name}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedTeam(member);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
+
+                    {/* <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedTeam(member);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(member._id)}
+                        disabled={deleteTeamMemberMutation.isLoading}
+                      >
+                        {deleteTeamMemberMutation.isLoading
+                          ? "Removing..."
+                          : "Remove"}
+                      </Button>
+                    </div> */}
                   </div>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Sales</p>
-                      <p className="font-semibold">
-                        ₹{(member.performance.sales / 1000).toFixed(0)}k
-                      </p>
+                      <p className="font-semibold">{`₹${(
+                        member.performance.sales / 1000
+                      ).toFixed(0)}k`}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
-                      <p className="font-semibold">
-                        ₹{(member.performance.target / 1000).toFixed(0)}k
-                      </p>
+                      <p className="font-semibold">{`₹${(
+                        member.performance.target / 1000
+                      ).toFixed(0)}k`}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Deals</p>
@@ -530,13 +576,14 @@ const TeamLeadManagement = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Target Achievement</span>
-                      <span className={performanceLevel.color}>
-                        {performanceLevel.level}
-                      </span>
+                      <span className={perfLevel.color}>{perfLevel.level}</span>
                     </div>
-                    <Progress value={performancePercentage} className="h-2" />
+                    <Progress
+                      value={Math.max(0, Math.min(100, perfPct))}
+                      className="h-2"
+                    />
                     <p className="text-xs text-muted-foreground text-right">
-                      {performancePercentage.toFixed(1)}% of target
+                      {perfPct.toFixed(1)}% of target
                     </p>
                   </div>
 
@@ -563,27 +610,22 @@ const TeamLeadManagement = () => {
                       className="flex-1"
                     >
                       <Button size="sm" variant="outline" className="w-full">
-                        <Mail className="mr-2 h-3 w-3" />
-                        Email
+                        <Mail className="mr-2 h-3 w-3" /> Email
                       </Button>
                     </a>
-                    {/* <div className="flex-1">
-                      <Button size="sm" variant="outline" className="w-full">
-                        <BarChart3 className="mr-2 h-3 w-3" />
-                        Report
-                      </Button>
-                    </div> */}
                   </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
+
+        {/* performance card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
-              Team Performance Overview
+              <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" /> Team
+              Performance Overview
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -592,24 +634,25 @@ const TeamLeadManagement = () => {
                 <h4 className="font-medium">Top Performers</h4>
                 <div className="space-y-1">
                   {teamMembers
-                    ?.sort(
+                    ?.slice()
+                    .sort(
                       (a, b) =>
-                        b.performance.sales / b.performance.target -
-                        a.performance.sales / a.performance.target
+                        b.performance.sales / (b.performance.target || 1) -
+                        a.performance.sales / (a.performance.target || 1)
                     )
                     .slice(0, 3)
-                    .map((member, index) => (
+                    .map((m, idx) => (
                       <div
-                        key={member._id}
+                        key={m._id}
                         className="flex items-center justify-between text-sm"
                       >
                         <span>
-                          {index + 1}. {member.salesId?.name}
+                          {idx + 1}. {m.salesId?.name}
                         </span>
                         <span className="font-medium">
                           {(
-                            (member.performance.sales /
-                              member.performance.target) *
+                            (m.performance.sales /
+                              (m.performance.target || 1)) *
                             100
                           ).toFixed(1)}
                           %
@@ -629,7 +672,7 @@ const TeamLeadManagement = () => {
                 </div>
               </div>
 
-              {/* <div className="space-y-2">
+              <div className="space-y-2">
                 <h4 className="font-medium">Quick Actions</h4>
                 <div className="space-y-2">
                   <Button
@@ -637,31 +680,29 @@ const TeamLeadManagement = () => {
                     variant="outline"
                     className="w-full justify-start"
                   >
-                    <Calendar className="mr-2 h-3 w-3" />
-                    Schedule Team Meeting
+                    <Calendar className="mr-2 h-3 w-3" /> Schedule Team Meeting
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     className="w-full justify-start"
                   >
-                    <BarChart3 className="mr-2 h-3 w-3" />
-                    Generate Team Report
+                    <BarChart3 className="mr-2 h-3 w-3" /> Generate Team Report
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     className="w-full justify-start"
                   >
-                    <Target className="mr-2 h-3 w-3" />
-                    Set Team Goals
+                    <Target className="mr-2 h-3 w-3" /> Set Team Goals
                   </Button>
                 </div>
-              </div> */}
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* add/edit dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px] max-w-[90vw] max-h-[90vh] rounded-xl overflow-auto">
             <DialogHeader>
@@ -674,6 +715,7 @@ const TeamLeadManagement = () => {
                   : "Select a sales agent, assign status, and optionally set performance metrics."}
               </DialogDescription>
             </DialogHeader>
+
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="agent" className="text-right">
@@ -681,14 +723,13 @@ const TeamLeadManagement = () => {
                 </Label>
                 <Select
                   onValueChange={setSelectedAgentId}
-                  value={selectedTeamLeadId}
+                  value={selectedAgentId}
                   disabled={!!selectedTeam}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue>
-                      {availableAgents?.find(
-                        (agent) => agent._id === selectedTeamLeadId
-                      )?.name || "Select a sales agent"}
+                      {availableAgents?.find((a) => a._id === selectedAgentId)
+                        ?.name ?? "Select a sales agent"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -707,9 +748,7 @@ const TeamLeadManagement = () => {
                 </Label>
                 <Select
                   value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as "active" | "training" | "on-leave")
-                  }
+                  onValueChange={(v) => setStatus(v as any)}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select status" />
@@ -722,47 +761,34 @@ const TeamLeadManagement = () => {
                 </Select>
               </div>
 
-              {["sales", "target", "deals", "leads"].map((key) => (
-                <div className="grid grid-cols-4 items-center gap-4" key={key}>
-                  <Label htmlFor={key} className="text-right capitalize">
-                    {key.replace(/([A-Z])/g, " ₹1")}
-                  </Label>
-                  <Input
-                    type="number"
-                    id={key}
-                    value={performance[key as keyof typeof performance]}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (value >= 0 || isNaN(value)) {
-                        handlePerformanceChange(key, value);
-
-                        // Auto-calculate conversion rate
-                        if (key === "deals" || key === "leads") {
-                          const updatedDeals =
-                            key === "deals" ? value : performance.deals || 0;
-                          const updatedLeads =
-                            key === "leads" ? value : performance.leads || 0;
-
-                          const newRate =
-                            updatedLeads > 0
-                              ? (updatedDeals / updatedLeads) * 100
-                              : 0;
-
-                          handlePerformanceChange(
-                            "conversionRate",
-                            parseFloat(newRate.toFixed(2))
-                          );
-                        }
+              {["sales", "target", "deals", "leads", "conversionRate"].map(
+                (key) => (
+                  <div
+                    className="grid grid-cols-4 items-center gap-4"
+                    key={key}
+                  >
+                    <Label htmlFor={key} className="text-right capitalize">
+                      {key.replace(/([A-Z])/g, " ₹1")}
+                    </Label>
+                    <Input
+                      type="number"
+                      id={key}
+                      value={(performance as any)[key]}
+                      onChange={(e) =>
+                        handlePerformanceChange(
+                          key,
+                          e.target.value === "" ? 0 : Number(e.target.value)
+                        )
                       }
-                    }}
-                    onKeyDown={(e) => {
-                      if (["-", "e"].includes(e.key)) e.preventDefault();
-                    }}
-                    min={0}
-                    className="col-span-3"
-                  />
-                </div>
-              ))}
+                      onKeyDown={(e) => {
+                        if (["-", "e"].includes(e.key)) e.preventDefault();
+                      }}
+                      min={0}
+                      className="col-span-3"
+                    />
+                  </div>
+                )
+              )}
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastActivity" className="text-right">
@@ -781,25 +807,14 @@ const TeamLeadManagement = () => {
             </div>
 
             <DialogFooter>
-              {selectedTeam && (
-                <Button variant="destructive">Remove Member</Button>
-              )}
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
-              </Button>
               <Button
-                onClick={handleAddMemberSubmit}
-                disabled={
-                  addTeamMemberMutation.isPending || !selectedTeamLeadId
-                }
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  setSelectedTeam(null);
+                }}
               >
-                {selectedTeam
-                  ? updateTeamMemberMutation.isPending
-                    ? "Updating..."
-                    : "Update Member"
-                  : addTeamMemberMutation.isPending
-                  ? "Adding..."
-                  : "Add Member"}
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -809,4 +824,4 @@ const TeamLeadManagement = () => {
   );
 };
 
-export default TeamLeadManagement;
+export default AdminTeamLead;

@@ -85,7 +85,7 @@ const FeaturedProperties = () => {
           const singleLoopWidth = carouselTrackRef.current.scrollWidth / 2;
 
           if (Math.abs(newTranslateX) >= singleLoopWidth) {
-            carouselTrackRef.current.style.transform = `translateX(0px)`;
+            carouselTrackRef.current.style.transform = "translateX(0px)";
             start = timestamp;
           } else {
             carouselTrackRef.current.style.transform = `translateX(${newTranslateX}px)`;

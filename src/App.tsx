@@ -11,7 +11,7 @@ import MessagingPage from "./pages/MessagingPage";
 // import Properties from "./pages/Properties";
 // import PropertyDetails from "./pages/Properties/PropertyDetails";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Invoices from "./pages/Invoices";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
@@ -98,6 +98,10 @@ import ContractorsReport from "./modules/reports/pages/ContractorsReport";
 import SiteInchargeReport from "./modules/reports/pages/SiteInchargeReport";
 import UsersAccessReport from "./modules/reports/pages/UsersAccessReport";
 import SalesManagersReport from "./modules/reports/pages/SalesManagersReport";
+import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
+import AdminTeamLead from "./pages/admin/AdminTeamLead";
+import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
+import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +146,32 @@ const App = () => {
 
     fetchRoles();
   }, []);
+
+  const TeamRouteWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+
+    if (role === "admin") return <AdminTeamAgent />;
+    return <TeamManagement />;
+  };
+  const TeamLeadRouteWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminTeamLead />;
+    return <TeamLeadManagement />;
+  };
+  const LeadManagementWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminLeadManagement />;
+    return <LeadManagement />;
+  };
+  const CommissionsWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminMyCommissions />;
+    return <MyCommissions />;
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -497,11 +527,10 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <TeamManagement />
+                    <TeamRouteWrapper />
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/teamLead"
                 element={
@@ -509,7 +538,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <TeamLeadManagement />
+                    <TeamLeadRouteWrapper />
                   </ProtectedRoute>
                 }
               />
@@ -546,7 +575,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    {<LeadManagement />}
+                    {<LeadManagementWrapper />}
                   </ProtectedRoute>
                 }
               />
@@ -601,7 +630,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <MyCommissions />
+                    <CommissionsWrapper />
                   </ProtectedRoute>
                 }
               />

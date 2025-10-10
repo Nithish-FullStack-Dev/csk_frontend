@@ -8,6 +8,9 @@ import { ExportButton } from "../components/ExportButton";
 import { ReportFilters, UserAccessReportRow } from "../types";
 import { reportColumns } from "../utils/columns";
 import { subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const mockData: UserAccessReportRow[] = [
   {
@@ -40,21 +43,40 @@ const mockData: UserAccessReportRow[] = [
 ];
 
 export default function UsersAccessReport() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
     groupBy: "day",
   });
 
-  const totalLogins = mockData.filter((row) => row.eventType === "login").length;
+  const totalLogins = mockData.filter(
+    (row) => row.eventType === "login"
+  ).length;
   const uniqueUsers = new Set(mockData.map((row) => row.userId)).size;
-  const failedAttempts = mockData.filter((row) => row.eventType === "fail").length;
+  const failedAttempts = mockData.filter(
+    (row) => row.eventType === "fail"
+  ).length;
 
   const metrics = [
     { label: "Total Logins", value: totalLogins, format: "number" as const },
-    { label: "Active Users", value: uniqueUsers, format: "number" as const, trend: { value: 12.5, isPositive: true } },
-    { label: "Failed Attempts", value: failedAttempts, format: "number" as const },
-    { label: "Success Rate", value: 98.5, format: "percent" as const, trend: { value: 1.2, isPositive: true } },
+    {
+      label: "Active Users",
+      value: uniqueUsers,
+      format: "number" as const,
+      trend: { value: 12.5, isPositive: true },
+    },
+    {
+      label: "Failed Attempts",
+      value: failedAttempts,
+      format: "number" as const,
+    },
+    {
+      label: "Success Rate",
+      value: 98.5,
+      format: "percent" as const,
+      trend: { value: 1.2, isPositive: true },
+    },
   ];
 
   return (
@@ -62,6 +84,14 @@ export default function UsersAccessReport() {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/reports")}
+              className="mb-4"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+            </Button>
             <h1 className="text-3xl font-bold">User Access History</h1>
             <p className="text-muted-foreground">
               System access tracking and security monitoring
@@ -88,7 +118,10 @@ export default function UsersAccessReport() {
             <CardTitle>Access Log</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable columns={reportColumns["users-access"]} data={mockData} />
+            <DataTable
+              columns={reportColumns["users-access"]}
+              data={mockData}
+            />
           </CardContent>
         </Card>
       </div>

@@ -8,6 +8,9 @@ import { ExportButton } from "../components/ExportButton";
 import { ReportFilters, AccountingReportRow } from "../types";
 import { reportColumns } from "../utils/columns";
 import { subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Mock data
 const mockData: AccountingReportRow[] = [
@@ -44,6 +47,7 @@ const mockData: AccountingReportRow[] = [
 ];
 
 export default function AccountingReport() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
@@ -52,14 +56,39 @@ export default function AccountingReport() {
 
   const totalRevenue = mockData.reduce((sum, row) => sum + row.revenueTotal, 0);
   const totalCashFlow = mockData.reduce((sum, row) => sum + row.netCashFlow, 0);
-  const totalInvoices = mockData.reduce((sum, row) => sum + row.invoicesReceived, 0);
-  const avgBudgetUtil = mockData.reduce((sum, row) => sum + row.budgetUtilizedPercent, 0) / mockData.length;
+  const totalInvoices = mockData.reduce(
+    (sum, row) => sum + row.invoicesReceived,
+    0
+  );
+  const avgBudgetUtil =
+    mockData.reduce((sum, row) => sum + row.budgetUtilizedPercent, 0) /
+    mockData.length;
 
   const metrics = [
-    { label: "Total Revenue", value: totalRevenue, format: "currency" as const, trend: { value: 12.8, isPositive: true } },
-    { label: "Net Cash Flow", value: totalCashFlow, format: "currency" as const, trend: { value: 8.5, isPositive: true } },
-    { label: "Invoices Received", value: totalInvoices, format: "number" as const, trend: { value: 15.2, isPositive: true } },
-    { label: "Budget Utilized", value: avgBudgetUtil, format: "percent" as const, trend: { value: 4.2, isPositive: false } },
+    {
+      label: "Total Revenue",
+      value: totalRevenue,
+      format: "currency" as const,
+      trend: { value: 12.8, isPositive: true },
+    },
+    {
+      label: "Net Cash Flow",
+      value: totalCashFlow,
+      format: "currency" as const,
+      trend: { value: 8.5, isPositive: true },
+    },
+    {
+      label: "Invoices Received",
+      value: totalInvoices,
+      format: "number" as const,
+      trend: { value: 15.2, isPositive: true },
+    },
+    {
+      label: "Budget Utilized",
+      value: avgBudgetUtil,
+      format: "percent" as const,
+      trend: { value: 4.2, isPositive: false },
+    },
   ];
 
   return (
@@ -67,9 +96,18 @@ export default function AccountingReport() {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/reports")}
+              className="mb-4"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+            </Button>
             <h1 className="text-3xl font-bold">Financial Report</h1>
             <p className="text-muted-foreground">
-              Comprehensive financial analysis including revenue, cash flow, and budget tracking
+              Comprehensive financial analysis including revenue, cash flow, and
+              budget tracking
             </p>
           </div>
           <ExportButton
@@ -80,7 +118,11 @@ export default function AccountingReport() {
           />
         </div>
 
-        <FilterBar filters={filters} onFiltersChange={setFilters} showSearch={false} />
+        <FilterBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          showSearch={false}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {metrics.map((metric, index) => (

@@ -8,6 +8,9 @@ import { ExportButton } from "../components/ExportButton";
 import { ReportFilters, TeamLeadReportRow } from "../types";
 import { reportColumns } from "../utils/columns";
 import { subDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 
 const mockData: TeamLeadReportRow[] = [
   {
@@ -37,6 +40,7 @@ const mockData: TeamLeadReportRow[] = [
 ];
 
 export default function TeamLeadsReport() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
@@ -81,6 +85,14 @@ export default function TeamLeadsReport() {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/reports")}
+              className="mb-4"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+            </Button>
             <h1 className="text-3xl font-bold">Team Lead Report</h1>
             <p className="text-muted-foreground">
               Team performance, incentives, and vehicle tracking

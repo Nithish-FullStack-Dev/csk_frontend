@@ -5,7 +5,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,  
+  CardTitle,
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,10 +62,11 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { useAuth, User } from "@/contexts/AuthContext";
 import { Property } from "../public/PropertyInterfaces";
-import { Lead } from "./LeadManagement";
+// import { Lead } from "./LeadManagement";
 import { Calendar } from "@/components/ui/calendar";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "../UserManagement";
+import { Lead } from "../agent/LeadManagement";
 
 interface PopulatedLead extends Omit<Lead, "property" | "addedBy"> {
   property: Property;
@@ -110,7 +111,7 @@ const fetchCommissionEligibleLeads = async (): Promise<
     : [];
 };
 
-const MyCommissions = () => {
+const AdminMyCommissions = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [selectedCommission, setSelectedCommission] =
@@ -524,7 +525,7 @@ const MyCommissions = () => {
       });
     } else {
       addCommissionMutation.mutate({
-        clientId: commissionFormData.clientId,
+        clientId: commissionFormData?.clientId,
         ...formattedPayload,
       });
     }
@@ -541,12 +542,12 @@ const MyCommissions = () => {
             </p>
           </div>
           <div className="flex gap-2 md:flex-row flex-col">
-            {userCanAddUser && (
+            {/* {userCanAddUser && (
               <Button variant="outline" onClick={handleAddCommissionClick}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Commission
               </Button>
-            )}
+            )} */}
             <Button variant="outline" onClick={handleDownloadReport}>
               <Download className="mr-2 h-4 w-4" />
               Download Report
@@ -788,7 +789,7 @@ const MyCommissions = () => {
                                 <Info className="h-4 w-4" />
                                 <span className="sr-only">View Details</span>
                               </Button>
-                              {userCanEditUser && (
+                              {/* {userCanEditUser && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -801,7 +802,7 @@ const MyCommissions = () => {
                                     Edit Commission
                                   </span>
                                 </Button>
-                              )}
+                              )} */}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1288,4 +1289,4 @@ const MyCommissions = () => {
   );
 };
 
-export default MyCommissions;
+export default AdminMyCommissions;

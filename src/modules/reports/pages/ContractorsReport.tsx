@@ -8,6 +8,9 @@ import { ExportButton } from "../components/ExportButton";
 import { ReportFilters, ContractorReportRow } from "../types";
 import { reportColumns } from "../utils/columns";
 import { subDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 
 const mockData: ContractorReportRow[] = [
   {
@@ -35,6 +38,7 @@ const mockData: ContractorReportRow[] = [
 ];
 
 export default function ContractorsReport() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
@@ -42,15 +46,43 @@ export default function ContractorsReport() {
   });
 
   const totalTasks = mockData.reduce((sum, row) => sum + row.tasksCreated, 0);
-  const totalApproved = mockData.reduce((sum, row) => sum + row.tasksApproved, 0);
-  const totalInvoices = mockData.reduce((sum, row) => sum + row.invoicesCount, 0);
-  const avgProgress = mockData.reduce((sum, row) => sum + row.avgProgressPercent, 0) / mockData.length;
+  const totalApproved = mockData.reduce(
+    (sum, row) => sum + row.tasksApproved,
+    0
+  );
+  const totalInvoices = mockData.reduce(
+    (sum, row) => sum + row.invoicesCount,
+    0
+  );
+  const avgProgress =
+    mockData.reduce((sum, row) => sum + row.avgProgressPercent, 0) /
+    mockData.length;
 
   const metrics = [
-    { label: "Total Tasks", value: totalTasks, format: "number" as const, trend: { value: 15.2, isPositive: true } },
-    { label: "Tasks Approved", value: totalApproved, format: "number" as const, trend: { value: 18.8, isPositive: true } },
-    { label: "Invoices Created", value: totalInvoices, format: "number" as const, trend: { value: 12.5, isPositive: true } },
-    { label: "Avg Progress", value: avgProgress, format: "percent" as const, trend: { value: 8.3, isPositive: true } },
+    {
+      label: "Total Tasks",
+      value: totalTasks,
+      format: "number" as const,
+      trend: { value: 15.2, isPositive: true },
+    },
+    {
+      label: "Tasks Approved",
+      value: totalApproved,
+      format: "number" as const,
+      trend: { value: 18.8, isPositive: true },
+    },
+    {
+      label: "Invoices Created",
+      value: totalInvoices,
+      format: "number" as const,
+      trend: { value: 12.5, isPositive: true },
+    },
+    {
+      label: "Avg Progress",
+      value: avgProgress,
+      format: "percent" as const,
+      trend: { value: 8.3, isPositive: true },
+    },
   ];
 
   return (
@@ -58,6 +90,14 @@ export default function ContractorsReport() {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/reports")}
+              className="mb-4"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+            </Button>
             <h1 className="text-3xl font-bold">Contractor Report</h1>
             <p className="text-muted-foreground">
               Tasks, invoices, photo evidence, and work progress tracking

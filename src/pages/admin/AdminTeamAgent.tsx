@@ -24,7 +24,7 @@ import {
   Award,
   IndianRupee,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,12 +40,14 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "../UserManagement";
 
 export interface TeamMember {
   _id: string;
-  salesId: User; // This is the sales agent user
-  teamLeadId: User; // This is the actual team lead user (the manager)
-  status: "active" | "training" | "on-leave";
+  agentId: User;
+  teamLeadId?: User; // team lead may be optional
+  status: "active" | "training" | "inactive" | "on-leave";
   performance: {
     sales: number;
     target: number;
@@ -61,27 +63,31 @@ interface User {
   name: string;
   email: string;
   role: string;
-  avatar: string;
+  avatar?: string;
+  // add phone if your backend provides it
+  phone?: string;
 }
 
 const fetchUnassignedMem = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/teamLead/unassigned`,
+    `${import.meta.env.VITE_URL}/api/team/unassigned`,
     { withCredentials: false }
   );
   return data.data || [];
 };
 
-const TeamLeadManagement = () => {
+const AdminTeamAgent = () => {
   const { user } = useAuth();
   const [sortBy, setSortBy] = useState("performance");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
     "active"
   );
-  const [selectedTeam, setSelectedTeam] = useState<TeamMember | null>(null);
-  const [selectedTeamLeadId, setSelectedAgentId] = useState("");
+  const [agentId, setAgentId] = useState("");
   const [performance, setPerformance] = useState({
     sales: 0,
     target: 0,
@@ -93,40 +99,14 @@ const TeamLeadManagement = () => {
 
   const queryClient = useQueryClient();
 
-  const handlePerformanceChange = (field: string, value: string | number) => {
-    setPerformance((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const fetchMyTeam = async (): Promise<TeamMember[]> => {
-    const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/teamLead/getAllSalesTeam/${user._id}`,
-      { withCredentials: true }
-    );
-    return data || [];
-  };
-
   useEffect(() => {
-    if (selectedTeam) {
-      setSelectedAgentId(selectedTeam.salesId._id);
-      setStatus(selectedTeam.status);
-      setPerformance({
-        sales: selectedTeam.performance?.sales || 0,
-        target: selectedTeam.performance?.target || 0,
-        deals: selectedTeam.performance?.deals || 0,
-        leads: selectedTeam.performance?.leads || 0,
-        conversionRate: selectedTeam.performance?.conversionRate || 0,
-        lastActivity: selectedTeam.performance?.lastActivity
-          ? new Date(selectedTeam.performance.lastActivity)
-              .toISOString()
-              .slice(0, 16)
-          : new Date().toISOString().slice(0, 16),
-      });
+    if (editingMember) {
+      setAgentId(editingMember.agentId._id);
+      setStatus(editingMember.status as "active" | "training" | "on-leave");
+      setPerformance(editingMember.performance);
     } else {
-      // Reset form when dialog opens for adding a new member
-      setSelectedAgentId("");
+      // Reset form when not editing or dialog is closed
+      setAgentId("");
       setStatus("active");
       setPerformance({
         sales: 0,
@@ -137,7 +117,34 @@ const TeamLeadManagement = () => {
         lastActivity: new Date().toISOString().slice(0, 16),
       });
     }
-  }, [selectedTeam]);
+  }, [editingMember]);
+
+  const handlePerformanceChange = (field: string, value: string | number) => {
+    setPerformance((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Fetch all agents/team-members for admin
+  const fetchAllAgents = async (): Promise<TeamMember[]> => {
+    const { data } = await axios.get(
+      `${import.meta.env.VITE_URL}/api/team/getAllTeamMembers`,
+      { withCredentials: true }
+    );
+    return data || [];
+  };
+
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
 
   const {
     data: teamMembers,
@@ -145,10 +152,9 @@ const TeamLeadManagement = () => {
     isError,
     error,
   } = useQuery<TeamMember[]>({
-    queryKey: ["teams", user?._id],
-    queryFn: fetchMyTeam,
+    queryKey: ["allAgents"],
+    queryFn: fetchAllAgents,
     staleTime: 0,
-    enabled: !!user?._id,
   });
 
   const {
@@ -164,12 +170,12 @@ const TeamLeadManagement = () => {
 
   const addTeamMemberMutation = useMutation({
     mutationFn: async ({
-      salesId, // This is the ID of the agent being added to the team
+      agentId,
       status,
       performance,
-      teamLeadId, // This is the ID of the current logged-in user (the team lead)
+      teamLeadId,
     }: {
-      salesId: string;
+      agentId: string;
       status: "active" | "training" | "on-leave";
       performance: {
         sales: number;
@@ -182,8 +188,8 @@ const TeamLeadManagement = () => {
       teamLeadId: string;
     }) => {
       const { data } = await axios.post(
-        `${import.meta.env.VITE_URL}/api/teamLead/addTeamLead`,
-        { salesId, teamLeadId, performance, status },
+        `${import.meta.env.VITE_URL}/api/team/addTeamMember`,
+        { agentId, status, performance, teamLeadId },
         { withCredentials: true }
       );
       return data;
@@ -193,7 +199,7 @@ const TeamLeadManagement = () => {
       queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
       queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
-      setSelectedAgentId("");
+      setAgentId("");
       setStatus("active");
       setPerformance({
         sales: 0,
@@ -213,12 +219,12 @@ const TeamLeadManagement = () => {
 
   const updateTeamMemberMutation = useMutation({
     mutationFn: async ({
-      id,
+      memberId,
       status,
       performance,
     }: {
-      id: string;
-      status: "active" | "training" | "on-leave";
+      memberId: string;
+      status: "active" | "training" | "inactive" | "on-leave";
       performance: {
         sales: number;
         target: number;
@@ -229,11 +235,8 @@ const TeamLeadManagement = () => {
       };
     }) => {
       const { data } = await axios.patch(
-        `${import.meta.env.VITE_URL}/api/teamLead/updateTeamLead/${id}`,
-        {
-          status,
-          performance,
-        },
+        `${import.meta.env.VITE_URL}/api/team/updateTeam/${memberId}`,
+        { status, performance },
         { withCredentials: true }
       );
       return data;
@@ -241,9 +244,9 @@ const TeamLeadManagement = () => {
     onSuccess: () => {
       toast.success("Team member updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
-      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
-      setSelectedTeam(null);
+      setIsEditing(false);
+      setEditingMember(null);
     },
     onError: (err: any) => {
       const errorMessage =
@@ -252,7 +255,36 @@ const TeamLeadManagement = () => {
     },
   });
 
-  if (isLoading || isTeamMemLoading) return <Loader />;
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/team/deleteTeam/${memberId}`,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      setDialogOpen(false);
+      setIsEditing(false);
+      setEditingMember(null);
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.data?.message || "Failed to remove team member.";
+      toast.error(errorMessage);
+    },
+  });
+
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
@@ -261,6 +293,18 @@ const TeamLeadManagement = () => {
     toast.error("Failed to fetch unassigned team members");
     console.error("fetch error:", isTeamMemErr);
   }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "My Team" && per.actions.write
+  );
+
+  const userCanEditUser = rolePermissions?.permissions?.some(
+    (per) => per.submodule === "My Team" && per?.actions?.edit
+  );
+
+  const userCanDeleteUser = rolePermissions?.permissions?.some(
+    (per) => per.submodule === "My Team" && per?.actions?.delete
+  );
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -280,42 +324,106 @@ const TeamLeadManagement = () => {
     return { level: "Needs Improvement", color: "text-red-600" };
   };
 
-  const totalTeamSales =
-    teamMembers?.reduce((sum, member) => sum + member.performance.sales, 0) ||
-    0;
-  const totalTeamTarget =
-    teamMembers?.reduce((sum, member) => sum + member.performance.target, 0) ||
-    0;
-  const teamPerformance =
-    totalTeamTarget > 0 ? (totalTeamSales / totalTeamTarget) * 100 : 0;
+  // --- defensive totals + team performance (paste where you compute totals) ---
 
-  const handleAddMemberSubmit = () => {
-    if (!selectedTeamLeadId) {
-      toast.error("Please select a team member.");
-      return;
-    }
+  // 1) Normalize values and compute totals safely
+  const normalizedMembers = (teamMembers || []).map((member) => {
+    const sales = Number(member?.performance?.sales) || 0;
+    const target = Number(member?.performance?.target) || 0;
+    // raw percent (if target is 0 we'll treat carefully below)
+    const rawPercent = target > 0 ? (sales / target) * 100 : null;
+    // capped percent (if rawPercent is null, leave null)
+    const cappedPercent =
+      rawPercent === null
+        ? null
+        : Math.max(
+            0,
+            Math.min(100, Number.isFinite(rawPercent) ? rawPercent : 0)
+          );
+    return { member, sales, target, rawPercent, cappedPercent };
+  });
 
-    const payload = {
-      salesId: user?._id || "",
-      status,
-      performance,
-      teamLeadId: selectedTeamLeadId,
-    };
+  // 2) Totals (sales/target)
+  const totalTeamSales = normalizedMembers.reduce(
+    (sum, nm) => sum + nm.sales,
+    0
+  );
+  const totalTeamTarget = normalizedMembers.reduce(
+    (sum, nm) => sum + nm.target,
+    0
+  );
 
-    if (selectedTeam?._id) {
-      updateTeamMemberMutation.mutate({
-        id: selectedTeam._id,
-        status,
-        performance,
-      });
+  // 3) Compute teamPerformance
+  let teamPerformance = 0; // numeric 0..100
+
+  if (totalTeamTarget > 0) {
+    // Recommended: weighted average of each member's cappedPercent, weight = member.target
+    const weightedSum = normalizedMembers.reduce((acc, nm) => {
+      if (!nm.cappedPercent || nm.target <= 0) return acc;
+      return acc + nm.cappedPercent * nm.target;
+    }, 0);
+
+    teamPerformance = weightedSum / totalTeamTarget;
+    // final clamp (just in case)
+    teamPerformance = Math.max(0, Math.min(100, teamPerformance));
+  } else {
+    // No targets present: fallback to simple average of cappedPercent (exclude nulls)
+    const caps = normalizedMembers
+      .map((nm) => nm.cappedPercent)
+      .filter((c): c is number => typeof c === "number");
+    if (caps.length > 0) {
+      const avg = caps.reduce((s, v) => s + v, 0) / caps.length;
+      teamPerformance = Math.max(0, Math.min(100, avg));
     } else {
-      // Add new member
+      // no useful data -> 0 (or you can set to null and show "N/A")
+      teamPerformance = 0;
+    }
+  }
+
+  // formatted display
+  const teamPerformanceDisplay = `${teamPerformance.toFixed(1)}%`;
+  const handleAddOrEditMemberSubmit = () => {
+    if (isEditing) {
+      if (editingMember) {
+        updateTeamMemberMutation.mutate({
+          memberId: editingMember._id,
+          status,
+          performance,
+        });
+      }
+    } else {
+      if (!agentId) {
+        toast.error("Please select an agent.");
+        return;
+      }
       if (user?._id) {
-        addTeamMemberMutation.mutate(payload);
+        addTeamMemberMutation.mutate({
+          agentId,
+          status,
+          performance,
+          teamLeadId: user._id,
+        });
       } else {
         toast.error("User not authenticated.");
       }
     }
+  };
+
+  const handleRemoveMember = (id: string) => {
+    console.log(id);
+    deleteTeamMemberMutation.mutate(id);
+  };
+
+  const handleOpenAddDialog = () => {
+    setIsEditing(false);
+    setEditingMember(null); // Clear any previous editing data
+    setDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (member: TeamMember) => {
+    setIsEditing(true);
+    setEditingMember(member);
+    setDialogOpen(true);
   };
 
   const sortedAndFilteredTeamMembers = teamMembers
@@ -336,7 +444,7 @@ const TeamLeadManagement = () => {
         return b.performance.deals - a.performance.deals;
       }
       if (sortBy === "name") {
-        return a.salesId.name.localeCompare(b.salesId.name);
+        return a.agentId.name.localeCompare(b.agentId.name);
       }
       return 0;
     });
@@ -351,7 +459,7 @@ const TeamLeadManagement = () => {
               Manage your sales team and track their performance
             </p>
           </div>
-          <div className="flex md:items-center space-x-2 mt-4 md:mt-0 md:flex-row flex-col items-start gap-5">
+          <div className="flex md:items-center items-start space-x-2 mt-4 md:mt-0 md:flex-row flex-col gap-5">
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Sort by" />
@@ -374,17 +482,15 @@ const TeamLeadManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => {
-                setSelectedTeam(null); // Clear selectedTeam for "Add Member"
-                setDialogOpen(true);
-              }}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            {/* {userCanAddUser && (
+              <Button onClick={handleOpenAddDialog}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            )} */}
           </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -450,11 +556,16 @@ const TeamLeadManagement = () => {
             </CardContent>
           </Card>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {sortedAndFilteredTeamMembers?.map((member) => {
             const performancePercentage =
               (member.performance.sales / member.performance.target) * 100;
             const performanceLevel = getPerformanceLevel(performancePercentage);
+
+            // team lead info
+            const teamLead = member.teamLeadId;
+            const teamLeadName = teamLead?.name || "Unassigned";
 
             return (
               <Card key={member._id}>
@@ -463,42 +574,34 @@ const TeamLeadManagement = () => {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-12 w-12">
                         <AvatarImage
-                          src={member?.teamLeadId?.avatar}
-                          alt={member?.teamLeadId?.name}
+                          src={member?.agentId?.avatar}
+                          alt={member?.agentId?.name}
                         />
                         <AvatarFallback>
-                          {member?.teamLeadId?.name
-                            ? member.teamLeadId.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                            : "UN"}
+                          {member?.agentId?.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <h3 className="font-semibold">
-                          {member?.teamLeadId?.name}
+                          {member?.agentId?.name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {member?.teamLeadId?.role}
+                          {member?.agentId?.role}
                         </p>
-                        <Badge className={getStatusColor(member?.status)}>
-                          {member?.status}
-                        </Badge>
+
+                        {/* Team lead line */}
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span className="font-medium">Team lead:</span>
+                          <span className="truncate">{teamLeadName}</span>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedTeam(member);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardHeader>
+
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -553,32 +656,32 @@ const TeamLeadManagement = () => {
                   </div>
 
                   <div className="flex md:flex-row flex-col gap-2 w-full">
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Phone className="mr-2 h-3 w-3" /> Call
-                    </Button>
+                    <a href={`tel:${user.phone}`}>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Phone className="mr-2 h-3 w-3" />
+                        Call
+                      </Button>
+                    </a>
+
                     <a
-                      href={`mailto:${member.teamLeadId.email}`}
+                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                        member.agentId.email
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1"
                     >
                       <Button size="sm" variant="outline" className="w-full">
                         <Mail className="mr-2 h-3 w-3" />
-                        Email
+                        Email Agent
                       </Button>
                     </a>
-                    {/* <div className="flex-1">
-                      <Button size="sm" variant="outline" className="w-full">
-                        <BarChart3 className="mr-2 h-3 w-3" />
-                        Report
-                      </Button>
-                    </div> */}
                   </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -604,13 +707,17 @@ const TeamLeadManagement = () => {
                         className="flex items-center justify-between text-sm"
                       >
                         <span>
-                          {index + 1}. {member.salesId?.name}
+                          {index + 1}. {member.agentId?.name}
+                          {/* show team lead name next to top performer */}
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            ({member.teamLeadId?.name ?? "No lead"})
+                          </span>
                         </span>
                         <span className="font-medium">
                           {(
                             (member.performance.sales /
                               member.performance.target) *
-                            100
+                              100 || 0
                           ).toFixed(1)}
                           %
                         </span>
@@ -629,7 +736,7 @@ const TeamLeadManagement = () => {
                 </div>
               </div>
 
-              {/* <div className="space-y-2">
+              <div className="space-y-2">
                 <h4 className="font-medium">Quick Actions</h4>
                 <div className="space-y-2">
                   <Button
@@ -657,156 +764,13 @@ const TeamLeadManagement = () => {
                     Set Team Goals
                   </Button>
                 </div>
-              </div> */}
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] max-w-[90vw] max-h-[90vh] rounded-xl overflow-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedTeam ? "Edit Team Member" : "Add New Team Member"}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedTeam
-                  ? "Update team member details and performance."
-                  : "Select a sales agent, assign status, and optionally set performance metrics."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="agent" className="text-right">
-                  Sales Agent
-                </Label>
-                <Select
-                  onValueChange={setSelectedAgentId}
-                  value={selectedTeamLeadId}
-                  disabled={!!selectedTeam}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue>
-                      {availableAgents?.find(
-                        (agent) => agent._id === selectedTeamLeadId
-                      )?.name || "Select a sales agent"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableAgents?.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>
-                        {agent.name} ({agent.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
-                  Status
-                </Label>
-                <Select
-                  value={status}
-                  onValueChange={(value) =>
-                    setStatus(value as "active" | "training" | "on-leave")
-                  }
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="training">Training</SelectItem>
-                    <SelectItem value="on-leave">On-Leave</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {["sales", "target", "deals", "leads"].map((key) => (
-                <div className="grid grid-cols-4 items-center gap-4" key={key}>
-                  <Label htmlFor={key} className="text-right capitalize">
-                    {key.replace(/([A-Z])/g, " ₹1")}
-                  </Label>
-                  <Input
-                    type="number"
-                    id={key}
-                    value={performance[key as keyof typeof performance]}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (value >= 0 || isNaN(value)) {
-                        handlePerformanceChange(key, value);
-
-                        // Auto-calculate conversion rate
-                        if (key === "deals" || key === "leads") {
-                          const updatedDeals =
-                            key === "deals" ? value : performance.deals || 0;
-                          const updatedLeads =
-                            key === "leads" ? value : performance.leads || 0;
-
-                          const newRate =
-                            updatedLeads > 0
-                              ? (updatedDeals / updatedLeads) * 100
-                              : 0;
-
-                          handlePerformanceChange(
-                            "conversionRate",
-                            parseFloat(newRate.toFixed(2))
-                          );
-                        }
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (["-", "e"].includes(e.key)) e.preventDefault();
-                    }}
-                    min={0}
-                    className="col-span-3"
-                  />
-                </div>
-              ))}
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="lastActivity" className="text-right">
-                  Last Activity
-                </Label>
-                <Input
-                  type="datetime-local"
-                  id="lastActivity"
-                  value={performance.lastActivity}
-                  onChange={(e) =>
-                    handlePerformanceChange("lastActivity", e.target.value)
-                  }
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              {selectedTeam && (
-                <Button variant="destructive">Remove Member</Button>
-              )}
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddMemberSubmit}
-                disabled={
-                  addTeamMemberMutation.isPending || !selectedTeamLeadId
-                }
-              >
-                {selectedTeam
-                  ? updateTeamMemberMutation.isPending
-                    ? "Updating..."
-                    : "Update Member"
-                  : addTeamMemberMutation.isPending
-                  ? "Adding..."
-                  : "Add Member"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );
 };
 
-export default TeamLeadManagement;
+export default AdminTeamAgent;

@@ -1,6 +1,6 @@
-// src/pages/FloorUnits.tsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,40 +21,50 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ApartmentDialog } from "@/components/properties/ApartmentDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
+import axios from "axios";
+import Loader from "@/components/Loader";
 
-const APARTMENTS_KEY = "app_apartments_v1";
+const fetchUnits = async (buildingId: string, floorId: string) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/unit/getUnitsByFloorIdAndBuildingId/${buildingId}/${floorId}`,
+    { withCredentials: true }
+  );
+  return data.data as Property[];
+};
 
-const sampleApartments: Property[] = [
-  {
-    id: "apt1",
-    memNo: "MEM001",
-    projectName: "Skyline Towers",
-    plotNo: "101",
-    villaFacing: "North-East",
-    extent: 1250,
-    propertyType: "Apartment",
-    customerId: null as any,
-    customerStatus: "Purchased",
-    status: "Sold",
-    contractor: null as any,
-    siteIncharge: null as any,
-    totalAmount: 4200000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "+91 98765 43210",
-    agentId: null as any,
-    registrationStatus: "Completed",
-    ratePlan: "Premium Plan",
-    amountReceived: 4200000,
-    balanceAmount: 0,
-    remarks: "Handover completed",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80",
-    projectStatus: "upcoming",
-  } as unknown as Property,
-];
+const createUnit = async (unitData: FormData) => {
+  const { data } = await axios.post(
+    `${import.meta.env.VITE_URL}/api/unit/createUnit`,
+    unitData,
+    {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return data.data as Property;
+};
+
+const updateUnit = async (unitId: string, unitData: FormData) => {
+  const { data } = await axios.patch(
+    `${import.meta.env.VITE_URL}/api/unit/updateUnit/${unitId}`,
+    unitData,
+    {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return data.data as Property;
+};
+
+const deleteUnit = async (unitId: string) => {
+  const { data } = await axios.delete(
+    `${import.meta.env.VITE_URL}/api/unit/deleteUnit/${unitId}`,
+    { withCredentials: true }
+  );
+  return data.data;
+};
 
 const FloorUnits = () => {
   const { buildingId, floorId } = useParams<{
@@ -63,20 +73,67 @@ const FloorUnits = () => {
   }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [apartments, setApartments] = useState<Property[]>(() => {
-    try {
-      const raw = localStorage.getItem(APARTMENTS_KEY);
-      if (raw) return JSON.parse(raw) as Property[];
-    } catch (e) {}
-    return sampleApartments;
+  const {
+    data: apartments = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["units", buildingId, floorId],
+    queryFn: () => fetchUnits(buildingId!, floorId!),
+    enabled: !!buildingId && !!floorId,
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(APARTMENTS_KEY, JSON.stringify(apartments));
-    } catch (e) {}
-  }, [apartments]);
+  const createUnitMutation = useMutation({
+    mutationFn: createUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit created successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create unit");
+    },
+  });
+
+  const updateUnitMutation = useMutation({
+    mutationFn: ({
+      unitId,
+      unitData,
+    }: {
+      unitId: string;
+      unitData: FormData;
+    }) => updateUnit(unitId, unitData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit updated successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update unit");
+    },
+  });
+
+  const deleteUnitMutation = useMutation({
+    mutationFn: deleteUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit deleted successfully");
+      setDeleteDialogOpen(false);
+      setApartmentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete unit");
+    },
+  });
 
   const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<
@@ -110,63 +167,23 @@ const FloorUnits = () => {
   };
 
   const handleDeleteConfirm = () => {
-    setApartments((prev) => prev.filter((a) => a.id !== apartmentToDelete));
-    toast.success("Unit deleted successfully");
-    setDeleteDialogOpen(false);
-    setApartmentToDelete(null);
+    if (apartmentToDelete) {
+      deleteUnitMutation.mutate(apartmentToDelete);
+    }
   };
 
-  const handleSaveApartment = (
-    data: Partial<Property>,
-    mode: "add" | "edit"
-  ) => {
+  const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
+    // Include buildingId and floorId in the FormData for createUnit
     if (mode === "add") {
-      const newApt: Property = {
-        id: Date.now().toString(),
-        memNo: data.memNo || "",
-        projectName: data.projectName || "",
-        plotNo: data.plotNo || "",
-        villaFacing: (data.villaFacing as any) || "North",
-        extent: Number(data.extent) || 0,
-        propertyType: (data.propertyType as any) || "Apartment",
-        customerId: (data.customerId as any) || null,
-        customerStatus: (data.customerStatus as any) || "Open",
-        status: (data.status as any) || "Available",
-        contractor: (data.contractor as any) || null,
-        siteIncharge: (data.siteIncharge as any) || null,
-        totalAmount: Number(data.totalAmount) || 0,
-        workCompleted: Number(data.workCompleted) || 0,
-        deliveryDate: data.deliveryDate || "",
-        emiScheme: !!data.emiScheme,
-        contactNo: data.contactNo || "",
-        agentId: (data.agentId as any) || null,
-        registrationStatus: (data.registrationStatus as any) || "Not Started",
-        ratePlan: data.ratePlan || "",
-        amountReceived: Number(data.amountReceived) || 0,
-        balanceAmount: Number(data.balanceAmount) || 0,
-        remarks: data.remarks || "",
-        municipalPermission: !!data.municipalPermission,
-        googleMapsLocation: data.googleMapsLocation || "",
-        thumbnailUrl: data.thumbnailUrl || "",
-        images: (data as any).images || [],
-        documents: (data as any).documents || [],
-        enquiryCustomerName: data.enquiryCustomerName || "",
-        enquiryCustomerContact: data.enquiryCustomerContact || "",
-        purchasedCustomerName: data.purchasedCustomerName || "",
-        purchasedCustomerContact: data.purchasedCustomerContact || "",
-        projectStatus: (data as any).projectStatus || "upcoming",
-      } as Property;
-      setApartments((prev) => [...prev, newApt]);
-      toast.success("Unit added");
-    } else {
-      setApartments((prev) =>
-        prev.map((a) =>
-          a.id === (data as any).id ? ({ ...a, ...data } as Property) : a
-        )
-      );
-      toast.success("Unit updated");
+      data.append("buildingId", buildingId!);
+      data.append("floorId", floorId!);
+      createUnitMutation.mutate(data);
+    } else if (selectedApartment?._id) {
+      updateUnitMutation.mutate({
+        unitId: selectedApartment._id,
+        unitData: data,
+      });
     }
-    setApartmentDialogOpen(false);
   };
 
   const getStatusBadge = (status: string) => {
@@ -183,6 +200,12 @@ const FloorUnits = () => {
       </Badge>
     );
   };
+
+  if (isError) {
+    console.error(error?.message);
+    toast.error(error?.message || "Failed to fetch units");
+  }
+  if (isLoading) return <Loader />;
 
   return (
     <MainLayout>
@@ -216,10 +239,11 @@ const FloorUnits = () => {
             </p>
           )}
 
-          {apartments.map((apartment) => (
+          {apartments.map((apartment, idx) => (
             <Card
-              key={apartment.id}
+              key={apartment._id || idx}
               className="hover:shadow-md transition-shadow"
+              onClick={() => navigate(`/properties/unit/${apartment._id}`)}
             >
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -246,7 +270,7 @@ const FloorUnits = () => {
                               Unit {apartment.plotNo}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              Mem. No: {apartment.memNo}
+                              Mem. No: {apartment.memNo || "N/A"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -266,7 +290,7 @@ const FloorUnits = () => {
                                   size="icon"
                                   variant="ghost"
                                   onClick={(e) =>
-                                    handleDeleteClick(apartment.id, e)
+                                    handleDeleteClick(apartment._id, e)
                                   }
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -290,7 +314,7 @@ const FloorUnits = () => {
                               Facing
                             </p>
                             <p className="font-medium">
-                              {apartment.villaFacing}
+                              {apartment.villaFacing || "N/A"}
                             </p>
                           </div>
                           <div>
@@ -301,6 +325,7 @@ const FloorUnits = () => {
                               <User className="h-4 w-4 mr-1 text-muted-foreground" />
                               <p className="font-medium">
                                 {(apartment.customerId as any)?.user?.name ||
+                                  apartment.purchasedCustomerName ||
                                   (apartment.status === "Sold"
                                     ? "Owner"
                                     : "Available")}
@@ -336,7 +361,7 @@ const FloorUnits = () => {
 
                       <Button
                         onClick={() =>
-                          navigate(`/properties/unit/${apartment.id}`)
+                          navigate(`/properties/unit/${apartment._id}`)
                         }
                       >
                         View Full Details
@@ -355,7 +380,7 @@ const FloorUnits = () => {
         onOpenChange={setApartmentDialogOpen}
         apartment={selectedApartment}
         mode={dialogMode}
-        onSave={(d, m) => handleSaveApartment(d, m)}
+        onSave={handleSaveApartment}
       />
 
       <DeleteConfirmDialog

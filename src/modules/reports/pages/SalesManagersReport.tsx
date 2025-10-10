@@ -8,6 +8,9 @@ import { ExportButton } from "../components/ExportButton";
 import { ReportFilters, SalesManagerReportRow } from "../types";
 import { reportColumns } from "../utils/columns";
 import { subDays } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const mockData: SalesManagerReportRow[] = [
   {
@@ -40,6 +43,7 @@ const mockData: SalesManagerReportRow[] = [
 ];
 
 export default function SalesManagersReport() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
@@ -52,10 +56,30 @@ export default function SalesManagersReport() {
   const avgDealSize = totalRevenue / totalDeals;
 
   const metrics = [
-    { label: "Total Bookings", value: totalBookings, format: "number" as const, trend: { value: 15.8, isPositive: true } },
-    { label: "Deals Won", value: totalDeals, format: "number" as const, trend: { value: 18.2, isPositive: true } },
-    { label: "Total Revenue", value: totalRevenue, format: "currency" as const, trend: { value: 22.5, isPositive: true } },
-    { label: "Avg Deal Size", value: avgDealSize, format: "currency" as const, trend: { value: 5.3, isPositive: true } },
+    {
+      label: "Total Bookings",
+      value: totalBookings,
+      format: "number" as const,
+      trend: { value: 15.8, isPositive: true },
+    },
+    {
+      label: "Deals Won",
+      value: totalDeals,
+      format: "number" as const,
+      trend: { value: 18.2, isPositive: true },
+    },
+    {
+      label: "Total Revenue",
+      value: totalRevenue,
+      format: "currency" as const,
+      trend: { value: 22.5, isPositive: true },
+    },
+    {
+      label: "Avg Deal Size",
+      value: avgDealSize,
+      format: "currency" as const,
+      trend: { value: 5.3, isPositive: true },
+    },
   ];
 
   return (
@@ -63,6 +87,14 @@ export default function SalesManagersReport() {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/reports")}
+              className="mb-4"
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+            </Button>
             <h1 className="text-3xl font-bold">Sales Manager Report</h1>
             <p className="text-muted-foreground">
               Overall sales performance, bookings, and revenue tracking
@@ -89,7 +121,10 @@ export default function SalesManagersReport() {
             <CardTitle>Sales Manager Performance</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable columns={reportColumns["sales-managers"]} data={mockData} />
+            <DataTable
+              columns={reportColumns["sales-managers"]}
+              data={mockData}
+            />
           </CardContent>
         </Card>
       </div>
