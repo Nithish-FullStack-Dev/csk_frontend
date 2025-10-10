@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit, Save, Upload, Plus, Trash2 } from "lucide-react";
 import axios from "axios";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "../Loader";
 
 interface GalleryItem {
   _id?: string;
@@ -12,13 +14,6 @@ interface GalleryItem {
   title: string;
   image: string;
   uploading?: boolean;
-}
-
-interface AboutContent {
-  _id: string;
-  galleryTitle: string;
-  galleryDes: string;
-  gallery: GalleryItem[];
 }
 
 const GalleryCms = () => {
@@ -56,6 +51,15 @@ const GalleryCms = () => {
   useEffect(() => {
     fetchGalleryInfo();
   }, []);
+
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Content Management" });
+
+  if (isRolePermissionsLoading) return <Loader />;
 
   // Gallery image upload
   const handleImageUpload = async (key: string, file: File) => {
@@ -189,16 +193,18 @@ const GalleryCms = () => {
             )}
           </div>
           <div className="flex gap-2">
-            {isEditing ? (
+            {(userCanAddUser || userCanEditUser) && isEditing ? (
               <Button onClick={handleSave} size="sm" disabled={isAnyUploading}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
             ) : (
-              <Button onClick={() => setIsEditing(true)} size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              userCanEditUser && (
+                <Button onClick={() => setIsEditing(true)} size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )
             )}
           </div>
         </CardHeader>
@@ -258,15 +264,17 @@ const GalleryCms = () => {
                         placeholder="Image Title"
                       />
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeGalleryItem(item.key)}
-                      className="w-full"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove
-                    </Button>
+                    {userCanDeleteUser && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeGalleryItem(item.key)}
+                        className="w-full"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center space-y-3">
