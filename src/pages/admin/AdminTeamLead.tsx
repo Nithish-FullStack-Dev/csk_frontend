@@ -23,6 +23,7 @@ import {
   Settings,
   BarChart3,
   Award,
+  IndianRupee,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -90,9 +91,9 @@ const AdminTeamLead = () => {
   const [sortBy, setSortBy] = useState("performance");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [status, setStatus] = useState<"active" | "training" | "on-leave">(
-    "active"
-  );
+  const [status, setStatus] = useState<
+    "active" | "training" | "on-leave" | "inactive"
+  >("active");
   const [selectedTeam, setSelectedTeam] = useState<TeamMember | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [performance, setPerformance] = useState({
@@ -317,7 +318,12 @@ const AdminTeamLead = () => {
     // Based on your requirements: Sales Manager adds Team Lead (if this view is Admin, pass appropriate IDs).
     // We'll assume the payload should be { salesId, teamLeadId } as your API expects.
     // To add a team lead entry you might want to send teamLeadId as selectedAgentId and salesId as user._id
-    const payload = {
+    const payload: {
+      salesId: string;
+      teamLeadId: string;
+      status: "active" | "training" | "on-leave" | "inactive";
+      performance: any;
+    } = {
       salesId: user?._id ?? "", // the sales manager / agent depending on your flow
       teamLeadId: selectedAgentId,
       status,
@@ -385,7 +391,7 @@ const AdminTeamLead = () => {
               </SelectContent>
             </Select>
 
-            <Button
+            {/* <Button
               onClick={() => {
                 setSelectedTeam(null);
                 setDialogOpen(true);
@@ -393,7 +399,7 @@ const AdminTeamLead = () => {
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Add Member
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -441,10 +447,10 @@ const AdminTeamLead = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">{`$${(
+                <span className="text-2xl font-bold">{`₹${(
                   totalTeamSales / 1000000
                 ).toFixed(1)}M`}</span>
-                <DollarSign className="h-6 w-6 text-estate-gold" />
+                <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
             </CardContent>
           </Card>
@@ -543,13 +549,13 @@ const AdminTeamLead = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Sales</p>
-                      <p className="font-semibold">{`$${(
+                      <p className="font-semibold">{`₹${(
                         member.performance.sales / 1000
                       ).toFixed(0)}k`}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
-                      <p className="font-semibold">{`$${(
+                      <p className="font-semibold">{`₹${(
                         member.performance.target / 1000
                       ).toFixed(0)}k`}</p>
                     </div>
@@ -762,7 +768,7 @@ const AdminTeamLead = () => {
                     key={key}
                   >
                     <Label htmlFor={key} className="text-right capitalize">
-                      {key.replace(/([A-Z])/g, " $1")}
+                      {key.replace(/([A-Z])/g, " ₹1")}
                     </Label>
                     <Input
                       type="number"
