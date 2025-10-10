@@ -196,7 +196,6 @@ export default function Permission() {
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
-      console.log("saved", data);
     } catch (err) {
       console.error("Error saving role:", err);
       toast.error("Failed to save role");

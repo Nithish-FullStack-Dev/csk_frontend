@@ -86,8 +86,6 @@ const FloorUnits = () => {
     enabled: !!buildingId && !!floorId,
   });
 
-  console.log(apartments);
-
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
     onSuccess: () => {

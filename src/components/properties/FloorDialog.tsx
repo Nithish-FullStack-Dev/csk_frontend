@@ -106,7 +106,6 @@ export const FloorDialog = ({
       },
       mode
     );
-    console.log(formData);
     resetForm();
     onOpenChange(false);
   };

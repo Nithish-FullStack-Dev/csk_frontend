@@ -99,7 +99,6 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
         payload,
         { withCredentials: true }
       ); // Replace with your real endpoint
-      console.log("Assignment successful:", res.data);
 
       setOpen(false);
       setSelectedUnit("");

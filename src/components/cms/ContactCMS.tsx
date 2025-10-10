@@ -37,7 +37,6 @@ const ContactCMS = () => {
         contactInfo
       );
       setIsEditing(false);
-      console.log("Saved:", contactInfo);
     } catch (error) {
       console.error("Failed to save contact info:", error);
     }

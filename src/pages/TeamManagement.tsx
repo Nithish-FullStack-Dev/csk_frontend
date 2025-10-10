@@ -358,7 +358,6 @@ const TeamManagement = () => {
   };
 
   const handleRemoveMember = (id: string) => {
-    console.log(id);
     deleteTeamMemberMutation.mutate(id);
   };
 

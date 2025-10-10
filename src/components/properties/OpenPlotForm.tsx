@@ -310,7 +310,6 @@ export function OpenPlotForm({
         (url) => !url.startsWith("blob:")
       ); // Filter out client-side blob URLs
       if (imageFiles.length > 0) {
-        console.log("Uploading additional images...");
         for (const photo of imageFiles) {
           const formData = new FormData();
           formData.append("file", photo);
@@ -327,7 +326,6 @@ export function OpenPlotForm({
           );
           if (res.data.url) finalImageUrls.push(res.data.url);
         }
-        console.log("Additional images uploaded. URLs:", finalImageUrls);
       }
 
       // Prepare the payload for the main API call

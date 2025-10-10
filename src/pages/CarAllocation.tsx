@@ -393,7 +393,6 @@ const CarAllocation = () => {
       lastService: lastService || new Date(), // Ensure lastService is a Date
       location,
     };
-    console.log(updatedVehicle);
     updateCarById(updatedVehicle);
   };
 
@@ -439,8 +438,6 @@ const CarAllocation = () => {
       assignedAt: assignmentDate, // Store when it was assigned
       usageLogs: [...(vehicle.usageLogs || []), newUsageLog], // Add new log
     };
-
-    console.log("🚗 Assigning Vehicle Update:", updatedVehicle);
     updateCarById(updatedVehicle);
   };
 

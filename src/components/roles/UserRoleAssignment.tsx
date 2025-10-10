@@ -102,10 +102,6 @@ const UserRoleAssignment = () => {
       .includes(searchQuery.toLowerCase())
   );
 
-  const handleAddUser = async () => {
-    console.log("clicked");
-  };
-
   function handleEdit(user) {
     setNewUser(user);
   }

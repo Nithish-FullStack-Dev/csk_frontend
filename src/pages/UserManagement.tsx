@@ -155,7 +155,7 @@ const UserManagement = () => {
     };
     try {
       const csrfToken = await getCsrfToken();
-      console.log(csrfToken);
+
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/addUser`,
         createdUser,

@@ -94,7 +94,7 @@ export const ApartmentDialog = ({
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [documentPreviews, setDocumentPreviews] = useState<
     {
-      id: string;
+      _id: string;
       title: string;
       previewUrl: string;
       mimeType: string;
@@ -156,7 +156,7 @@ export const ApartmentDialog = ({
       setThumbnailPreview(fetchedUnit.thumbnailUrl || "");
       setDocumentPreviews(
         (fetchedUnit.documents || []).map((doc) => ({
-          id: doc.id,
+          _id: doc._id,
           title: doc.title,
           previewUrl: doc.fileUrl,
           mimeType: doc.mimeType,
@@ -241,7 +241,7 @@ export const ApartmentDialog = ({
       return;
     }
     const newDocs = validFiles.map((f) => ({
-      id: Math.random().toString(36).substring(7),
+      _id: Math.random().toString(36).substring(7),
       title: f.name,
       previewUrl: URL.createObjectURL(f),
       mimeType: f.type,
@@ -255,7 +255,7 @@ export const ApartmentDialog = ({
       documents: [
         ...(prev.documents || []),
         ...newDocs.map((doc) => ({
-          id: doc.id,
+          _id: doc._id,
           title: doc.title,
           fileUrl: doc.previewUrl,
           mimeType: doc.mimeType,
@@ -270,17 +270,17 @@ export const ApartmentDialog = ({
   const removeDocument = (docId: string) => {
     setDocumentFiles((prev) =>
       prev.filter((_, index) =>
-        documentPreviews[index] ? documentPreviews[index].id !== docId : true
+        documentPreviews[index] ? documentPreviews[index]._id !== docId : true
       )
     );
     setDocumentPreviews((prev) => {
-      const doc = prev.find((d) => d.id === docId);
+      const doc = prev.find((d) => d._id === docId);
       if (doc) URL.revokeObjectURL(doc.previewUrl);
-      return prev.filter((d) => d.id !== docId);
+      return prev.filter((d) => d._id !== docId);
     });
     setFormData((prev) => ({
       ...prev,
-      documents: (prev.documents || []).filter((d) => d.id !== docId),
+      documents: (prev.documents || []).filter((d) => d._id !== docId),
     }));
     toast.success("Document removed");
   };
@@ -310,7 +310,7 @@ export const ApartmentDialog = ({
     // Append document metadata as a JSON string
     if (formData.documents && formData.documents.length > 0) {
       const documentMetadata = formData.documents.map((doc) => ({
-        id: doc.id,
+        id: doc._id,
         title: doc.title,
         visibility: doc.visibility,
         mimeType: doc.mimeType,
@@ -605,9 +605,9 @@ export const ApartmentDialog = ({
             />
             {documentPreviews.length > 0 && (
               <div className="mt-2 space-y-2">
-                {documentPreviews.map((doc) => (
+                {documentPreviews.map((doc, idx) => (
                   <div
-                    key={doc.id}
+                    key={doc._id || idx}
                     className="flex items-center justify-between p-2 border rounded-md"
                   >
                     <div className="flex items-center gap-2">
@@ -618,7 +618,7 @@ export const ApartmentDialog = ({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeDocument(doc.id)}
+                      onClick={() => removeDocument(doc._id)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
