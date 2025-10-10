@@ -383,6 +383,8 @@ const FloorUnits = () => {
         apartment={selectedApartment}
         mode={dialogMode}
         onSave={handleSaveApartment}
+        isCreating={createUnitMutation.isPending}
+        isUpdating={updateUnitMutation.isPending}
       />
 
       <DeleteConfirmDialog

@@ -39,6 +39,8 @@ interface ApartmentDialogProps {
   apartment?: Property | null;
   mode: "add" | "edit";
   onSave?: (data: FormData, mode: "add" | "edit") => void;
+  isCreating?: boolean;
+  isUpdating?: boolean;
 }
 
 export const fetchUnit = async (unitId: string) => {
@@ -55,6 +57,8 @@ export const ApartmentDialog = ({
   apartment,
   mode,
   onSave,
+  isCreating,
+  isUpdating,
 }: ApartmentDialogProps) => {
   const [formData, setFormData] = useState<Partial<Property>>({
     memNo: "",
@@ -719,8 +723,8 @@ export const ApartmentDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isFetchingUnit}>
-              {isFetchingUnit
+            <Button type="submit" disabled={isCreating || isUpdating}>
+              {isCreating || isUpdating
                 ? "Loading..."
                 : mode === "add"
                 ? "Create Unit"
