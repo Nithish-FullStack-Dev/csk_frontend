@@ -66,9 +66,9 @@ import { useNavigate } from "react-router-dom";
 import { Property } from "../public/PropertyInterfaces";
 import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
-import { AddCustomerDialog, CustomerPayload } from "./AddCustomerDialog";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "../UserManagement";
+import { AddCustomerDialog, CustomerPayload } from "../agent/AddCustomerDialog";
 
 export interface Lead {
   _id: string;
@@ -92,19 +92,29 @@ export interface Lead {
 }
 
 export const fetchLeads = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getLeadsById`,
-    { withCredentials: true }
-  );
-  return data || [];
+  try {
+    const { data } = await axios.get(
+      `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
+      { withCredentials: true }
+    );
+    return Array.isArray(data) ? data : data.leads || [];
+  } catch (error) {
+    return [];
+  }
 };
 
 export const fetchAllLeads = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
-    { withCredentials: true }
-  );
-  return data.leads || [];
+  try {
+    const { data } = await axios.get(
+      `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
+      { withCredentials: true }
+    );
+    console.log("API Response:", data);
+    return Array.isArray(data) ? data : data.leads || [];
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return [];
+  }
 };
 
 const saveLead = async (
@@ -195,7 +205,7 @@ export const useUpdateLead = () => {
   });
 };
 
-const LeadManagement = () => {
+const AdminLeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isAddLeadDialogOpen, setIsAddLeadDialogOpen] = useState(false);
@@ -534,160 +544,6 @@ const LeadManagement = () => {
                 handleSaveCustomer={handleSaveCustomer}
               />
             )}
-
-            {/* Add New Lead Dialog */}
-            <Dialog
-              onOpenChange={setIsAddLeadDialogOpen}
-              open={isAddLeadDialogOpen}
-            >
-              <DialogTrigger asChild>
-                {!isSalesManager && userCanAddUser && (
-                  <Button
-                    onClick={() => {
-                      setLeadToEdit(null); // Ensure no lead is in edit mode when adding
-                      // Clear form states for new lead
-                      setName("");
-                      setEmail("");
-                      setPhone("");
-                      setSource("");
-                      setProperty("");
-                      setStatus("");
-                      setNote("");
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add New Lead
-                  </Button>
-                )}
-              </DialogTrigger>
-              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Lead</DialogTitle>
-                  <DialogDescription>
-                    Enter the details of the new lead. All fields marked with *
-                    are required.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Name *
-                      </label>
-                      <Input
-                        id="name"
-                        placeholder="Full name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium">
-                        Email *
-                      </label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Email address"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="phone" className="text-sm font-medium">
-                        Phone *
-                      </label>
-                      <Input
-                        id="phone"
-                        placeholder="Phone number"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="source" className="text-sm font-medium">
-                        Source *
-                      </label>
-                      <Input
-                        id="source"
-                        placeholder="Lead source"
-                        onChange={(e) => setSource(e.target.value)}
-                        value={source}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="property" className="text-sm font-medium">
-                      Property Interest
-                    </label>
-                    <Select
-                      onValueChange={(value) => setProperty(value)}
-                      value={property} // Value will be the string ID
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Property" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableProperties.map((prop) => (
-                          <SelectItem key={prop._id} value={prop._id}>
-                            {prop.basicInfo.projectName} -{" "}
-                            {prop.basicInfo.plotNumber}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="status" className="text-sm font-medium">
-                      Status
-                    </label>
-                    <Select
-                      value={status}
-                      onValueChange={(value) =>
-                        setStatus(value as "hot" | "warm" | "cold" | "")
-                      }
-                    >
-                      <SelectTrigger
-                        id="status"
-                        className="w-[150px] border px-3 py-2 rounded-md"
-                      >
-                        <SelectValue placeholder="Select Status" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="hot">Hot</SelectItem>
-                        <SelectItem value="warm">Warm</SelectItem>
-                        <SelectItem value="cold">Cold</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="notes" className="text-sm font-medium">
-                      Notes
-                    </label>
-                    <Input
-                      id="notes"
-                      placeholder="Additional notes"
-                      onChange={(e) => setNote(e.target.value)}
-                      value={notes}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAddLeadDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSaveLead} disabled={loading}>
-                    {loading ? "Saving Lead..." : "Save Lead"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
 
@@ -871,22 +727,8 @@ const LeadManagement = () => {
                                     <Mail className="mr-2 h-4 w-4" /> Email
                                   </DropdownMenuItem>
                                 </a>
-                                {!isSalesManager && (
-                                  <DropdownMenuItem
-                                    onClick={() => navigate("/visits")}
-                                  >
-                                    <Calendar className="mr-2 h-4 w-4" />{" "}
-                                    Schedule Visit
-                                  </DropdownMenuItem>
-                                )}
+
                                 <DropdownMenuSeparator />
-                                {userCanEditUser && (
-                                  <DropdownMenuItem
-                                    onClick={() => setLeadToEdit(lead)}
-                                  >
-                                    <FileText className="mr-2 h-4 w-4" /> Edit
-                                  </DropdownMenuItem>
-                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -1362,4 +1204,4 @@ const LeadManagement = () => {
   );
 };
 
-export default LeadManagement;
+export default AdminLeadManagement;

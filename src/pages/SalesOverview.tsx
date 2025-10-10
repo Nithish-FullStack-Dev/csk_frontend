@@ -504,12 +504,12 @@ const SalesOverview = () => {
                       <XAxis dataKey="month" />
                       <YAxis
                         tickFormatter={(value) =>
-                          `$${(value / 1000000).toFixed(1)}M`
+                          `₹${(value / 1000000).toFixed(1)}M`
                         }
                       />
                       <Tooltip
                         formatter={(value) => [
-                          `$${(Number(value) / 1000000).toFixed(2)}M`,
+                          `₹${(Number(value) / 1000000).toFixed(2)}M`,
                         ]}
                       />
                       <Legend />
@@ -592,7 +592,7 @@ const SalesOverview = () => {
                         <XAxis
                           type="number"
                           tickFormatter={(value) =>
-                            `$${(value / 1000000).toFixed(1)}M`
+                            `₹${(value / 1000000).toFixed(1)}M`
                           }
                         />
                         <YAxis
@@ -603,7 +603,7 @@ const SalesOverview = () => {
                         />
                         <Tooltip
                           formatter={(value) => [
-                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            `₹${(Number(value) / 1000000).toFixed(2)}M`,
                             "Sales",
                           ]}
                         />
@@ -636,14 +636,14 @@ const SalesOverview = () => {
                       <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                       <YAxis
                         tickFormatter={(value) =>
-                          `$${(value / 1000000).toFixed(1)}M`
+                          `₹${(value / 1000000).toFixed(1)}M`
                         }
                       />
                       <Tooltip
                         formatter={(value, name) => {
                           if (name === "deals") return [value, "Deals Closed"];
                           return [
-                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            `₹${(Number(value) / 1000000).toFixed(2)}M`,
                             name,
                           ];
                         }}

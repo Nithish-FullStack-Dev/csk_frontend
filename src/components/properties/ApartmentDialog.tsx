@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,86 +18,213 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Property, PropertyDocument } from "@/types/property";
+import {
+  Property,
+  PropertyDocument,
+  VillaFacing,
+  PropertyType,
+  PropertyStatus,
+  RegistrationStatus,
+  CustomerStatus,
+  ProjectStatus,
+} from "@/types/property";
 import { toast } from "sonner";
 import { X, Upload } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 interface ApartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  apartment?: Property;
+  apartment?: Property | null;
   mode: "add" | "edit";
+  onSave?: (data: FormData, mode: "add" | "edit") => void;
 }
+
+export const fetchUnit = async (unitId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/unit/getUnit/${unitId}`,
+    { withCredentials: true }
+  );
+  return data.data as Property;
+};
 
 export const ApartmentDialog = ({
   open,
   onOpenChange,
   apartment,
   mode,
+  onSave,
 }: ApartmentDialogProps) => {
-  const { user } = useAuth();
-  const canEditCustomerDetails =
-    user &&
-    ["owner", "admin", "sales_manager", "team_lead"].includes(user.role);
-
-  const [formData, setFormData] = useState({
-    memNo: apartment?.memNo || "",
-    plotNo: apartment?.plotNo || "",
-    villaFacing: apartment?.villaFacing || "",
-    extent: apartment?.extent || 0,
-    propertyType: apartment?.propertyType || "Apartment",
-    status: apartment?.status || "Available",
-    totalAmount: apartment?.totalAmount || 0,
-    amountReceived: apartment?.amountReceived || 0,
-    balanceAmount: apartment?.balanceAmount || 0,
-    ratePlan: apartment?.ratePlan || "",
-    deliveryDate: apartment?.deliveryDate || "",
-    emiScheme: apartment?.emiScheme || false,
-    municipalPermission: apartment?.municipalPermission || false,
-    remarks: apartment?.remarks || "",
-    thumbnailUrl: apartment?.thumbnailUrl || "",
-    documents: apartment?.documents || ([] as PropertyDocument[]),
-    enquiryCustomerName: apartment?.enquiryCustomerName || "",
-    enquiryCustomerContact: apartment?.enquiryCustomerContact || "",
-    purchasedCustomerName: apartment?.purchasedCustomerName || "",
-    purchasedCustomerContact: apartment?.purchasedCustomerContact || "",
-  });
-
-  const [errors, setErrors] = useState({
+  const [formData, setFormData] = useState<Partial<Property>>({
     memNo: "",
     plotNo: "",
-    totalAmount: "",
+    villaFacing: "North",
+    extent: 0,
+    propertyType: "Apartment",
+    status: "Available",
+    projectStatus: "upcoming",
+    totalAmount: 0,
+    amountReceived: 0,
+    balanceAmount: 0,
+    ratePlan: "",
+    deliveryDate: "",
+    emiScheme: false,
+    municipalPermission: false,
+    remarks: "",
+    thumbnailUrl: "",
+    documents: [],
+    enquiryCustomerName: "",
+    enquiryCustomerContact: "",
+    purchasedCustomerName: "",
+    purchasedCustomerContact: "",
+    workCompleted: 0,
+    registrationStatus: "Not Started",
+    customerStatus: "Open",
+    googleMapsLocation: "",
+    images: [],
   });
 
-  // Auto-calculate balance amount
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [documentPreviews, setDocumentPreviews] = useState<
+    {
+      id: string;
+      title: string;
+      previewUrl: string;
+      mimeType: string;
+      visibility: PropertyDocument["visibility"];
+      createdAt?: string;
+    }[]
+  >([]);
+
+  const { data: fetchedUnit, isLoading: isFetchingUnit } = useQuery({
+    queryKey: ["unit", apartment?._id],
+    queryFn: () => fetchUnit(apartment!._id),
+    enabled: !!apartment?._id && mode === "edit",
+  });
+
   useEffect(() => {
-    const balance = Math.max(0, formData.totalAmount - formData.amountReceived);
-    setFormData((prev) => ({ ...prev, balanceAmount: balance }));
+    return () => {
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+      documentPreviews.forEach((doc) => URL.revokeObjectURL(doc.previewUrl));
+    };
+  }, [thumbnailPreview, documentPreviews]);
+
+  useEffect(() => {
+    if (mode === "edit" && fetchedUnit) {
+      setFormData({
+        ...fetchedUnit,
+        memNo: fetchedUnit.memNo || "",
+        plotNo: fetchedUnit.plotNo || "",
+        villaFacing: fetchedUnit.villaFacing || "North",
+        extent: fetchedUnit.extent || 0,
+        propertyType: fetchedUnit.propertyType || "Apartment",
+        status: fetchedUnit.status || "Available",
+        projectStatus: fetchedUnit.projectStatus || "upcoming",
+        totalAmount: fetchedUnit.totalAmount || 0,
+        amountReceived: fetchedUnit.amountReceived || 0,
+        balanceAmount: fetchedUnit.balanceAmount || 0,
+        ratePlan: fetchedUnit.ratePlan || "",
+        deliveryDate: fetchedUnit.deliveryDate
+          ? new Date(fetchedUnit.deliveryDate).toISOString().split("T")[0]
+          : "",
+        emiScheme: fetchedUnit.emiScheme || false,
+        municipalPermission: fetchedUnit.municipalPermission || false,
+        remarks: fetchedUnit.remarks || "",
+        thumbnailUrl: fetchedUnit.thumbnailUrl || "",
+        documents: fetchedUnit.documents || [],
+        enquiryCustomerName: fetchedUnit.enquiryCustomerName || "",
+        enquiryCustomerContact: fetchedUnit.enquiryCustomerContact || "",
+        purchasedCustomerName: fetchedUnit.purchasedCustomerName || "",
+        purchasedCustomerContact: fetchedUnit.purchasedCustomerContact || "",
+        workCompleted: fetchedUnit.workCompleted || 0,
+        registrationStatus: fetchedUnit.registrationStatus || "Not Started",
+        customerStatus: fetchedUnit.customerStatus || "Open",
+        customerId: fetchedUnit.customerId || undefined,
+        contractor: fetchedUnit.contractor || undefined,
+        siteIncharge: fetchedUnit.siteIncharge || undefined,
+        agentId: fetchedUnit.agentId || undefined,
+        googleMapsLocation: fetchedUnit.googleMapsLocation || "",
+        images: fetchedUnit.images || [],
+      });
+      setThumbnailPreview(fetchedUnit.thumbnailUrl || "");
+      setDocumentPreviews(
+        (fetchedUnit.documents || []).map((doc) => ({
+          id: doc.id,
+          title: doc.title,
+          previewUrl: doc.fileUrl,
+          mimeType: doc.mimeType,
+          visibility: doc.visibility || "PURCHASER_ONLY",
+          createdAt: doc.createdAt,
+        }))
+      );
+      setThumbnailFile(null);
+      setDocumentFiles([]);
+    } else if (mode === "add") {
+      resetForm();
+    }
+  }, [fetchedUnit, mode, open]);
+
+  const resetForm = () => {
+    setFormData({
+      memNo: "",
+      plotNo: "",
+      villaFacing: "North",
+      extent: 0,
+      propertyType: "Apartment",
+      status: "Available",
+      projectStatus: "upcoming",
+      totalAmount: 0,
+      amountReceived: 0,
+      balanceAmount: 0,
+      ratePlan: "",
+      deliveryDate: "",
+      emiScheme: false,
+      municipalPermission: false,
+      remarks: "",
+      thumbnailUrl: "",
+      documents: [],
+      enquiryCustomerName: "",
+      enquiryCustomerContact: "",
+      purchasedCustomerName: "",
+      purchasedCustomerContact: "",
+      workCompleted: 0,
+      registrationStatus: "Not Started",
+      customerStatus: "Open",
+      googleMapsLocation: "",
+      images: [],
+    });
+    setThumbnailFile(null);
+    setDocumentFiles([]);
+    setThumbnailPreview("");
+    setDocumentPreviews([]);
+  };
+
+  useEffect(() => {
+    const total = Number(formData.totalAmount) || 0;
+    const received = Number(formData.amountReceived) || 0;
+    setFormData((prev) => ({
+      ...prev,
+      balanceAmount: Math.max(0, total - received),
+    }));
   }, [formData.totalAmount, formData.amountReceived]);
 
-  const validateAlphanumeric = (value: string, field: string) => {
-    const pattern = /^[a-zA-Z0-9\-_\/]+$/;
-    if (!value) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: `${
-          field === "memNo" ? "Membership" : "Plot"
-        } number is required`,
-      }));
-      return false;
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Only image files are allowed for thumbnail");
+        return;
+      }
+      setThumbnailFile(file);
+      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
+      const previewUrl = URL.createObjectURL(file);
+      setThumbnailPreview(previewUrl);
+      setFormData((prev) => ({ ...prev, thumbnailUrl: previewUrl }));
+      toast.success("Thumbnail selected");
     }
-    if (!pattern.test(value)) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "Only letters, numbers, -, _, and / allowed",
-      }));
-      return false;
-    }
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-    return true;
   };
 
   const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,64 +232,103 @@ export const ApartmentDialog = ({
     const validFiles = files.filter(
       (f) => f.type === "application/pdf" || f.type.startsWith("image/")
     );
-
     if (validFiles.length !== files.length) {
       toast.error("Only PDF and image files are allowed");
       return;
     }
-
-    const newDocs: PropertyDocument[] = validFiles.map((f) => ({
+    const newDocs = validFiles.map((f) => ({
       id: Math.random().toString(36).substring(7),
       title: f.name,
-      fileUrl: URL.createObjectURL(f),
+      previewUrl: URL.createObjectURL(f),
       mimeType: f.type,
-      visibility: "PURCHASER_ONLY",
+      visibility: "PURCHASER_ONLY" as PropertyDocument["visibility"],
       createdAt: new Date().toISOString(),
     }));
-
+    setDocumentFiles((prev) => [...prev, ...validFiles]);
+    setDocumentPreviews((prev) => [...prev, ...newDocs]);
     setFormData((prev) => ({
       ...prev,
-      documents: [...prev.documents, ...newDocs],
+      documents: [
+        ...(prev.documents || []),
+        ...newDocs.map((doc) => ({
+          id: doc.id,
+          title: doc.title,
+          fileUrl: doc.previewUrl,
+          mimeType: doc.mimeType,
+          visibility: doc.visibility,
+          createdAt: doc.createdAt,
+        })),
+      ],
     }));
-    toast.success(`${validFiles.length} document(s) uploaded`);
+    toast.success(`${newDocs.length} document(s) uploaded`);
   };
 
   const removeDocument = (docId: string) => {
+    setDocumentFiles((prev) =>
+      prev.filter((_, index) =>
+        documentPreviews[index] ? documentPreviews[index].id !== docId : true
+      )
+    );
+    setDocumentPreviews((prev) => {
+      const doc = prev.find((d) => d.id === docId);
+      if (doc) URL.revokeObjectURL(doc.previewUrl);
+      return prev.filter((d) => d.id !== docId);
+    });
     setFormData((prev) => ({
       ...prev,
-      documents: prev.documents.filter((d) => d.id !== docId),
+      documents: (prev.documents || []).filter((d) => d.id !== docId),
     }));
+    toast.success("Document removed");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.memNo || !formData.plotNo) {
+      toast.error("Membership and Plot number are required");
+      return;
+    }
+    if ((formData.totalAmount || 0) <= 0) {
+      toast.error("Total amount must be greater than 0");
+      return;
+    }
+    if (mode === "add" && !thumbnailFile) {
+      toast.error("Thumbnail is required for new units");
+      return;
+    }
 
-    // Validate alphanumeric fields
-    const memNoValid = validateAlphanumeric(formData.memNo, "memNo");
-    const plotNoValid = validateAlphanumeric(formData.plotNo, "plotNo");
+    const payload = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key !== "documents" && value !== null && value !== undefined) {
+        payload.append(key, String(value));
+      }
+    });
 
-    // Validate total amount is positive
-    if (formData.totalAmount <= 0) {
-      setErrors((prev) => ({
-        ...prev,
-        totalAmount: "Total amount must be greater than 0",
+    // Append document metadata as a JSON string
+    if (formData.documents && formData.documents.length > 0) {
+      const documentMetadata = formData.documents.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        visibility: doc.visibility,
+        mimeType: doc.mimeType,
+        createdAt: doc.createdAt,
       }));
-      return;
-    } else {
-      setErrors((prev) => ({ ...prev, totalAmount: "" }));
+      payload.append("documentMetadata", JSON.stringify(documentMetadata));
     }
 
-    if (!memNoValid || !plotNoValid) {
-      toast.error("Please fix validation errors");
-      return;
+    if (thumbnailFile) {
+      payload.append("thumbnailUrl", thumbnailFile);
     }
 
-    // In a real app, this would save to the database
-    toast.success(
-      mode === "add" ? "Unit created successfully" : "Unit updated successfully"
-    );
-    onOpenChange(false);
+    if (documentFiles.length > 0) {
+      documentFiles.forEach((file) => {
+        payload.append("documents", file);
+      });
+    }
+
+    onSave?.(payload, mode);
   };
+
+  if (isFetchingUnit) return <div>Loading unit details...</div>;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,88 +341,76 @@ export const ApartmentDialog = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="memNo">Membership Number *</Label>
+            <div>
+              <Label>Membership Number *</Label>
               <Input
-                id="memNo"
-                value={formData.memNo}
-                onChange={(e) => {
-                  setFormData({ ...formData, memNo: e.target.value });
-                  validateAlphanumeric(e.target.value, "memNo");
-                }}
-                onBlur={(e) => validateAlphanumeric(e.target.value, "memNo")}
-                pattern="^[a-zA-Z0-9\-_\/]+$"
-                className={errors.memNo ? "border-red-500" : ""}
+                value={formData.memNo || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, memNo: e.target.value })
+                }
                 required
               />
-              {errors.memNo && (
-                <p className="text-sm text-red-500">{errors.memNo}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Only letters, numbers, -, _, / allowed
-              </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plotNo">Plot/Unit Number *</Label>
+            <div>
+              <Label>Plot/Unit Number *</Label>
               <Input
-                id="plotNo"
-                value={formData.plotNo}
-                onChange={(e) => {
-                  setFormData({ ...formData, plotNo: e.target.value });
-                  validateAlphanumeric(e.target.value, "plotNo");
-                }}
-                onBlur={(e) => validateAlphanumeric(e.target.value, "plotNo")}
-                pattern="^[a-zA-Z0-9\-_\/]+$"
-                className={errors.plotNo ? "border-red-500" : ""}
+                value={formData.plotNo || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, plotNo: e.target.value })
+                }
                 required
               />
-              {errors.plotNo && (
-                <p className="text-sm text-red-500">{errors.plotNo}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Only letters, numbers, -, _, / allowed
-              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="extent">Extent (sq.ft) *</Label>
+            <div>
+              <Label>Extent (sq.ft) *</Label>
               <Input
-                id="extent"
                 type="number"
                 min={1}
-                step="0.01"
-                value={formData.extent}
+                value={String(formData.extent || 0)}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    extent: Math.max(1, Number(e.target.value) || 1),
-                  })
+                  setFormData({ ...formData, extent: Number(e.target.value) })
                 }
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="villaFacing">Facing</Label>
-              <Input
-                id="villaFacing"
-                value={formData.villaFacing}
-                onChange={(e) =>
-                  setFormData({ ...formData, villaFacing: e.target.value })
-                }
-                placeholder="e.g., North, East"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="propertyType">Property Type</Label>
+            <div>
+              <Label>Facing</Label>
               <Select
-                value={formData.propertyType}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, propertyType: value as any })
+                value={formData.villaFacing || "North"}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, villaFacing: v as VillaFacing })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select facing" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    "North",
+                    "East",
+                    "West",
+                    "South",
+                    "North-East",
+                    "North-West",
+                    "South-East",
+                    "South-West",
+                  ].map((facing) => (
+                    <SelectItem key={facing} value={facing}>
+                      {facing}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Property Type</Label>
+              <Select
+                value={formData.propertyType || "Apartment"}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, propertyType: v as PropertyType })
                 }
               >
                 <SelectTrigger>
@@ -266,19 +420,19 @@ export const ApartmentDialog = ({
                   <SelectItem value="Apartment">Apartment</SelectItem>
                   <SelectItem value="Villa">Villa</SelectItem>
                   <SelectItem value="Plot">Plot</SelectItem>
-                  <SelectItem value="Land">Land</SelectItem>
+                  <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+            <div>
+              <Label>Status</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value as any })
+                value={formData.status || "Available"}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, status: v as PropertyStatus })
                 }
               >
                 <SelectTrigger>
@@ -296,217 +450,158 @@ export const ApartmentDialog = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="totalAmount">Total Amount (₹) *</Label>
-              <Input
-                id="totalAmount"
-                type="number"
-                min={1}
-                step="0.01"
-                value={formData.totalAmount}
-                onChange={(e) => {
-                  const value = Math.max(1, Number(e.target.value) || 0);
-                  setFormData({ ...formData, totalAmount: value });
-                  if (value > 0) {
-                    setErrors((prev) => ({ ...prev, totalAmount: "" }));
-                  }
-                }}
-                className={errors.totalAmount ? "border-red-500" : ""}
-                required
-              />
-              {errors.totalAmount && (
-                <p className="text-sm text-red-500">{errors.totalAmount}</p>
-              )}
+            <div>
+              <Label>Project Status</Label>
+              <Select
+                value={formData.projectStatus || "upcoming"}
+                onValueChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    projectStatus: v as ProjectStatus,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ongoing">Ongoing</SelectItem>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="amountReceived">Advance Received (₹)</Label>
+            <div>
+              <Label>Total Amount (₹) *</Label>
               <Input
-                id="amountReceived"
                 type="number"
-                min={0}
-                step="0.01"
-                value={formData.amountReceived}
+                min={1}
+                value={String(formData.totalAmount || 0)}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    amountReceived: Math.max(0, Number(e.target.value) || 0),
+                    totalAmount: Number(e.target.value),
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label>Amount Received (₹)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={String(formData.amountReceived || 0)}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amountReceived: Number(e.target.value),
                   })
                 }
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="balanceAmount">Balance Payment (₹)</Label>
+            <div>
+              <Label>Balance (₹)</Label>
               <Input
-                id="balanceAmount"
-                type="number"
-                value={formData.balanceAmount}
                 readOnly
+                value={String(formData.balanceAmount || 0)}
                 className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">Auto-calculated</p>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ratePlan">Rate Plan</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Rate Plan</Label>
               <Input
-                id="ratePlan"
-                value={formData.ratePlan}
+                value={formData.ratePlan || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, ratePlan: e.target.value })
                 }
-                placeholder="e.g., Standard Plan"
               />
+            </div>
+            <div>
+              <Label>Registration Status</Label>
+              <Select
+                value={formData.registrationStatus || "Not Started"}
+                onValueChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    registrationStatus: v as RegistrationStatus,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="deliveryDate">Expected Delivery Date</Label>
+          <div>
+            <Label>Expected Delivery Date</Label>
             <Input
-              id="deliveryDate"
               type="date"
-              value={formData.deliveryDate}
+              value={formData.deliveryDate || ""}
               onChange={(e) =>
                 setFormData({ ...formData, deliveryDate: e.target.value })
               }
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="thumbnailUrl">Thumbnail URL</Label>
+          <div>
+            <Label>Google Maps Location</Label>
             <Input
-              id="thumbnailUrl"
-              value={formData.thumbnailUrl}
+              value={formData.googleMapsLocation || ""}
               onChange={(e) =>
-                setFormData({ ...formData, thumbnailUrl: e.target.value })
+                setFormData({ ...formData, googleMapsLocation: e.target.value })
               }
-              placeholder="https://..."
+              placeholder="https://maps.google.com/..."
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea
-              id="remarks"
-              value={formData.remarks}
-              onChange={(e) =>
-                setFormData({ ...formData, remarks: e.target.value })
-              }
-              rows={3}
+          <div>
+            <Label>Thumbnail (Image File) {mode === "add" ? "*" : ""}</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailUpload}
             />
+            {thumbnailPreview && (
+              <p className="text-sm text-muted-foreground mt-1">
+                ✓ Thumbnail selected (
+                <img
+                  src={thumbnailPreview}
+                  alt="thumbnail preview"
+                  className="w-20 h-20 object-cover inline-block"
+                />
+                )
+              </p>
+            )}
           </div>
 
-          {/* Customer Details Section */}
-          <Separator className="my-6" />
-          <h3 className="text-lg font-semibold mb-4">Customer Details</h3>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="enquiryCustomerName">Enquiry Customer Name</Label>
-              <Input
-                id="enquiryCustomerName"
-                value={formData.enquiryCustomerName}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    enquiryCustomerName: e.target.value,
-                  })
-                }
-                placeholder="Enter customer name"
-                disabled={!canEditCustomerDetails}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="enquiryCustomerContact">
-                Enquiry Customer Contact
-              </Label>
-              <Input
-                id="enquiryCustomerContact"
-                type="tel"
-                value={formData.enquiryCustomerContact}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    enquiryCustomerContact: e.target.value,
-                  })
-                }
-                placeholder="+91 XXXXX XXXXX"
-                disabled={!canEditCustomerDetails}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="purchasedCustomerName">
-                Purchased Customer Name
-              </Label>
-              <Input
-                id="purchasedCustomerName"
-                value={formData.purchasedCustomerName}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    purchasedCustomerName: e.target.value,
-                  })
-                }
-                placeholder="Enter customer name"
-                disabled={!canEditCustomerDetails}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="purchasedCustomerContact">
-                Purchased Customer Contact
-              </Label>
-              <Input
-                id="purchasedCustomerContact"
-                type="tel"
-                value={formData.purchasedCustomerContact}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    purchasedCustomerContact: e.target.value,
-                  })
-                }
-                placeholder="+91 XXXXX XXXXX"
-                disabled={!canEditCustomerDetails}
-              />
-            </div>
-          </div>
-
-          {!canEditCustomerDetails && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Only admins, owners, sales managers, and team leads can edit
-              customer details.
-            </p>
-          )}
-
-          <Separator className="my-6" />
-
-          <div className="space-y-2">
-            <Label htmlFor="documents">Unit Documents (PDF/Images)</Label>
-            <div className="flex items-center gap-2">
-              <input
-                id="documents"
-                type="file"
-                accept="application/pdf,image/*"
-                multiple
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                onChange={handleDocumentUpload}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Documents are visible only to purchaser (and admin/owner)
-            </p>
-
-            {formData.documents.length > 0 && (
+          <div>
+            <Label>Documents (PDF/Images)</Label>
+            <Input
+              type="file"
+              accept="application/pdf,image/*"
+              multiple
+              onChange={handleDocumentUpload}
+              className="mt-2"
+            />
+            {documentPreviews.length > 0 && (
               <div className="mt-2 space-y-2">
-                {formData.documents.map((doc) => (
+                {documentPreviews.map((doc) => (
                   <div
                     key={doc.id}
                     className="flex items-center justify-between p-2 border rounded-md"
@@ -514,11 +609,6 @@ export const ApartmentDialog = ({
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{doc.title}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {doc.visibility === "PURCHASER_ONLY"
-                          ? "Purchaser Only"
-                          : "Public"}
-                      </Badge>
                     </div>
                     <Button
                       type="button"
@@ -534,27 +624,90 @@ export const ApartmentDialog = ({
             )}
           </div>
 
+          <div>
+            <Label>Remarks</Label>
+            <Textarea
+              value={formData.remarks || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, remarks: e.target.value })
+              }
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Enquiry Customer Name</Label>
+              <Input
+                value={formData.enquiryCustomerName || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    enquiryCustomerName: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Enquiry Customer Contact</Label>
+              <Input
+                value={formData.enquiryCustomerContact || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    enquiryCustomerContact: e.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Purchased Customer Name</Label>
+              <Input
+                value={formData.purchasedCustomerName || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    purchasedCustomerName: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Purchased Customer Contact</Label>
+              <Input
+                value={formData.purchasedCustomerContact || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    purchasedCustomerContact: e.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Switch
-                id="emiScheme"
-                checked={formData.emiScheme}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, emiScheme: checked })
+                checked={!!formData.emiScheme}
+                onCheckedChange={(v) =>
+                  setFormData({ ...formData, emiScheme: !!v })
                 }
               />
-              <Label htmlFor="emiScheme">EMI Available</Label>
+              <Label>EMI Available</Label>
             </div>
 
             <div className="flex items-center space-x-2">
               <Switch
-                id="municipalPermission"
-                checked={formData.municipalPermission}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, municipalPermission: checked })
+                checked={!!formData.municipalPermission}
+                onCheckedChange={(v) =>
+                  setFormData({ ...formData, municipalPermission: !!v })
                 }
               />
-              <Label htmlFor="municipalPermission">Municipal Permission</Label>
+              <Label>Municipal Permission</Label>
             </div>
           </div>
 
@@ -566,8 +719,12 @@ export const ApartmentDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit">
-              {mode === "add" ? "Create Unit" : "Update Unit"}
+            <Button type="submit" disabled={isFetchingUnit}>
+              {isFetchingUnit
+                ? "Loading..."
+                : mode === "add"
+                ? "Create Unit"
+                : "Update Unit"}
             </Button>
           </DialogFooter>
         </form>

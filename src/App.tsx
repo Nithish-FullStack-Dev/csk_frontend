@@ -8,10 +8,10 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Unauthorized from "./pages/Unauthorized";
 import MessagingPage from "./pages/MessagingPage";
-import Properties from "./pages/Properties";
-import PropertyDetails from "./pages/Properties/PropertyDetails";
+// import Properties from "./pages/Properties";
+// import PropertyDetails from "./pages/Properties/PropertyDetails";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Invoices from "./pages/Invoices";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
@@ -84,6 +84,23 @@ import BuildingDetails from "./pages/BuildingDetails";
 import FloorUnits from "./pages/FloorUnits";
 import UnitDetails from "./pages/UnitDetails";
 import NewProperties from "./pages/NewProperties";
+import PropertyDetails from "./pages/Properties/PropertyDetails";
+// import  PropertyDetails  from "./pages/Properties/PropertyDetails";
+// import { PropertyDetails } from "./pages/Properties/PropertyDetails";
+
+// Reports module
+import ReportsHome from "./modules/reports/ReportsHome";
+import PropertiesReport from "./modules/reports/pages/PropertiesReport";
+import AgentsReport from "./modules/reports/pages/AgentsReport";
+import TeamLeadsReport from "./modules/reports/pages/TeamLeadsReport";
+import AccountingReport from "./modules/reports/pages/AccountingReport";
+import ContractorsReport from "./modules/reports/pages/ContractorsReport";
+import SiteInchargeReport from "./modules/reports/pages/SiteInchargeReport";
+import UsersAccessReport from "./modules/reports/pages/UsersAccessReport";
+import SalesManagersReport from "./modules/reports/pages/SalesManagersReport";
+import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
+import AdminTeamLead from "./pages/admin/AdminTeamLead";
+import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +145,26 @@ const App = () => {
 
     fetchRoles();
   }, []);
+
+  const TeamRouteWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+
+    if (role === "admin") return <AdminTeamAgent />;
+    return <TeamManagement />;
+  };
+  const TeamLeadRouteWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminTeamLead />;
+    return <TeamLeadManagement />;
+  };
+  const LeadManagementWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminLeadManagement />;
+    return <LeadManagement />;
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -196,6 +233,107 @@ const App = () => {
                 }
               />
 
+              {/* Reports Module */}
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <ReportsHome />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/properties"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <PropertiesReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/users-access"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <UsersAccessReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/agents"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <AgentsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/team-leads"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <TeamLeadsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/sales-managers"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <SalesManagersReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/accounting"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <AccountingReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/contractors"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <ContractorsReport />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports/site-incharge"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <SiteInchargeReport />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Public User Route - Redirects to public homepage */}
               <Route
                 path="/public-user"
@@ -214,17 +352,17 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/property/:propertyId"
                 element={
                   <ProtectedRoute
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <PropertyDetails />
+                    <PropertyDetails  />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
 
               <Route
                 path="/properties/building/:buildingId"
@@ -382,11 +520,10 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <TeamManagement />
+                    <TeamRouteWrapper />
                   </ProtectedRoute>
                 }
               />
-
               <Route
                 path="/teamLead"
                 element={
@@ -394,7 +531,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <TeamLeadManagement />
+                    <TeamLeadRouteWrapper />
                   </ProtectedRoute>
                 }
               />
@@ -431,7 +568,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    {<LeadManagement />}
+                    {<LeadManagementWrapper />}
                   </ProtectedRoute>
                 }
               />

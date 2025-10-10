@@ -27,7 +27,7 @@ import {
 import { toast } from "sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import axios from "axios";
 import { Label } from "@radix-ui/react-label";
 import {
@@ -50,7 +50,7 @@ const createSiteVisit = async (bookDetails: any) => {
   return data;
 };
 
-const fetchAllSiteVisits = async () => {
+export const fetchAllSiteVisits = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/siteVisit/getAllSiteVis`,
     { withCredentials: true }
@@ -108,7 +108,7 @@ export interface SiteVisitData {
   time: string;
   status: "confirmed" | "pending" | "completed" | "cancelled";
   notes?: string;
-  bookedBy: string;
+  bookedBy: string | User;
   priority: "high" | "medium" | "low";
   createdAt: string;
   updatedAt: string;

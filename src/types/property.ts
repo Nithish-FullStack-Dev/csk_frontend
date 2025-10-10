@@ -39,7 +39,7 @@ export type RegistrationStatus =
 export type PropertyType = "Villa" | "Apartment" | "Plot" | "Land Parcel";
 
 export interface Property {
-  id: string;
+  _id: string;
   memNo: string;
   projectName: string;
   plotNo: string;

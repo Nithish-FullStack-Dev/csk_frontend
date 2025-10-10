@@ -85,7 +85,7 @@ const FeaturedProperties = () => {
           const singleLoopWidth = carouselTrackRef.current.scrollWidth / 2;
 
           if (Math.abs(newTranslateX) >= singleLoopWidth) {
-            carouselTrackRef.current.style.transform = `translateX(0px)`;
+            carouselTrackRef.current.style.transform = "translateX(0px)";
             start = timestamp;
           } else {
             carouselTrackRef.current.style.transform = `translateX(${newTranslateX}px)`;
@@ -259,7 +259,7 @@ const FeaturedProperties = () => {
                 <p className="text-sm text-gray-600">{property.subtitle}</p>
                 <Link
                   to={`/public/project/${property._id}`}
-                  className="btn transparent-btn mt-2 inline-block"
+                  className="btn mt-2 inline-block"
                 >
                   <div className="btn_m">
                     <div className="btn_c">

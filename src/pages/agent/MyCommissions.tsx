@@ -60,10 +60,12 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
-import { User } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import { Property } from "../public/PropertyInterfaces";
 import { Lead } from "./LeadManagement";
 import { Calendar } from "@/components/ui/calendar";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "../UserManagement";
 
 interface PopulatedLead extends Omit<Lead, "property" | "addedBy"> {
   property: Property;
@@ -109,6 +111,7 @@ const fetchCommissionEligibleLeads = async (): Promise<
 };
 
 const MyCommissions = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [selectedCommission, setSelectedCommission] =
     useState<Commission | null>(null);
@@ -146,6 +149,17 @@ const MyCommissions = () => {
     queryKey: ["commissionEligibleLeads"],
     queryFn: fetchCommissionEligibleLeads,
     staleTime: 0,
+  });
+
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
   });
 
   const addCommissionMutation = useMutation({
@@ -216,9 +230,24 @@ const MyCommissions = () => {
     }
   }, [isLeadsError, leadsErr]);
 
-  if (isCommissionLoading || isLeadsLoading) {
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isCommissionLoading || isLeadsLoading || isRolePermissionsLoading) {
     return <Loader />;
   }
+
+  const userCanAddUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Commissions" && per.actions.write
+  );
+  const userCanEditUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Commissions" && per.actions.edit
+  );
+  const userCanDeleteUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Commissions" && per.actions.delete
+  );
 
   const actualCommissions: Commission[] = commissions || [];
   const actualCommissionEligibleLeads: CommissionEligibleLead[] =
@@ -512,10 +541,12 @@ const MyCommissions = () => {
             </p>
           </div>
           <div className="flex gap-2 md:flex-row flex-col">
-            <Button variant="outline" onClick={handleAddCommissionClick}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Commission
-            </Button>
+            {userCanAddUser && (
+              <Button variant="outline" onClick={handleAddCommissionClick}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Commission
+              </Button>
+            )}
             <Button variant="outline" onClick={handleDownloadReport}>
               <Download className="mr-2 h-4 w-4" />
               Download Report
@@ -757,16 +788,20 @@ const MyCommissions = () => {
                                 <Info className="h-4 w-4" />
                                 <span className="sr-only">View Details</span>
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  handleEditCommissionClick(commission)
-                                }
-                              >
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Edit Commission</span>
-                              </Button>
+                              {userCanEditUser && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleEditCommissionClick(commission)
+                                  }
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span className="sr-only">
+                                    Edit Commission
+                                  </span>
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>

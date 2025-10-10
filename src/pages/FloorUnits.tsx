@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,7 @@ import {
   ChevronLeft,
   Home,
   User,
-  DollarSign,
   PercentIcon,
-  Calendar,
   Plus,
   Pencil,
   Trash2,
@@ -22,97 +21,50 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ApartmentDialog } from "@/components/properties/ApartmentDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
+import axios from "axios";
+import Loader from "@/components/Loader";
 
-// Sample apartment data
-const sampleApartments: Property[] = [
-  {
-    id: "apt1",
-    memNo: "MEM001",
-    projectName: "Skyline Towers",
-    plotNo: "101",
-    villaFacing: "North-East",
-    extent: 1250,
-    propertyType: "Apartment",
-    customerId: null,
-    customerStatus: "Purchased",
-    status: "Sold",
-    contractor: null,
-    siteIncharge: null,
-    totalAmount: 4200000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "+91 98765 43210",
-    agentId: null,
-    registrationStatus: "Completed",
-    ratePlan: "Premium Plan",
-    amountReceived: 4200000,
-    balanceAmount: 0,
-    remarks: "Handover completed",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    projectStatus: "upcoming",
-  },
-  {
-    id: "apt2",
-    memNo: "MEM002",
-    projectName: "Skyline Towers",
-    plotNo: "102",
-    villaFacing: "North",
-    extent: 1200,
-    propertyType: "Apartment",
-    customerId: null,
-    customerStatus: "Purchased",
-    status: "Sold",
-    contractor: null,
-    siteIncharge: null,
-    totalAmount: 3900000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "+91 98765 43211",
-    agentId: null,
-    registrationStatus: "Completed",
-    ratePlan: "Standard Plan",
-    amountReceived: 3900000,
-    balanceAmount: 0,
-    remarks: "Completed",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    projectStatus: "upcoming",
-  },
-  {
-    id: "apt3",
-    memNo: "MEM003",
-    projectName: "Skyline Towers",
-    plotNo: "103",
-    villaFacing: "East",
-    extent: 1300,
-    propertyType: "Apartment",
-    customerId: null,
-    customerStatus: "Open",
-    status: "Available",
-    contractor: null,
-    siteIncharge: null,
-    totalAmount: 4000000,
-    workCompleted: 100,
-    deliveryDate: "2023-10-15",
-    emiScheme: true,
-    contactNo: "",
-    agentId: null,
-    registrationStatus: "Not Started",
-    ratePlan: "Standard Plan",
-    amountReceived: 0,
-    balanceAmount: 4000000,
-    remarks: "Ready for sale",
-    municipalPermission: true,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
-    projectStatus: "completed",
-  },
-];
+const fetchUnits = async (buildingId: string, floorId: string) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/unit/getUnitsByFloorIdAndBuildingId/${buildingId}/${floorId}`,
+    { withCredentials: true }
+  );
+  return data.data as Property[];
+};
+
+const createUnit = async (unitData: FormData) => {
+  const { data } = await axios.post(
+    `${import.meta.env.VITE_URL}/api/unit/createUnit`,
+    unitData,
+    {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return data.data as Property;
+};
+
+const updateUnit = async (unitId: string, unitData: FormData) => {
+  const { data } = await axios.patch(
+    `${import.meta.env.VITE_URL}/api/unit/updateUnit/${unitId}`,
+    unitData,
+    {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return data.data as Property;
+};
+
+const deleteUnit = async (unitId: string) => {
+  const { data } = await axios.delete(
+    `${import.meta.env.VITE_URL}/api/unit/deleteUnit/${unitId}`,
+    { withCredentials: true }
+  );
+  return data.data;
+};
 
 const FloorUnits = () => {
   const { buildingId, floorId } = useParams<{
@@ -121,10 +73,70 @@ const FloorUnits = () => {
   }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const apartments = sampleApartments;
+  const {
+    data: apartments = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["units", buildingId, floorId],
+    queryFn: () => fetchUnits(buildingId!, floorId!),
+    enabled: !!buildingId && !!floorId,
+  });
 
-  // Dialog states
+  console.log(apartments);
+
+  const createUnitMutation = useMutation({
+    mutationFn: createUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit created successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create unit");
+    },
+  });
+
+  const updateUnitMutation = useMutation({
+    mutationFn: ({
+      unitId,
+      unitData,
+    }: {
+      unitId: string;
+      unitData: FormData;
+    }) => updateUnit(unitId, unitData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit updated successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update unit");
+    },
+  });
+
+  const deleteUnitMutation = useMutation({
+    mutationFn: deleteUnit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit deleted successfully");
+      setDeleteDialogOpen(false);
+      setApartmentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete unit");
+    },
+  });
+
   const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<
     Property | undefined
@@ -157,9 +169,23 @@ const FloorUnits = () => {
   };
 
   const handleDeleteConfirm = () => {
-    toast.success("Unit deleted successfully");
-    setDeleteDialogOpen(false);
-    setApartmentToDelete(null);
+    if (apartmentToDelete) {
+      deleteUnitMutation.mutate(apartmentToDelete);
+    }
+  };
+
+  const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
+    // Include buildingId and floorId in the FormData for createUnit
+    if (mode === "add") {
+      data.append("buildingId", buildingId!);
+      data.append("floorId", floorId!);
+      createUnitMutation.mutate(data);
+    } else if (selectedApartment?._id) {
+      updateUnitMutation.mutate({
+        unitId: selectedApartment._id,
+        unitData: data,
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -170,13 +196,18 @@ const FloorUnits = () => {
       Reserved: "bg-purple-500",
       Blocked: "bg-red-500",
     };
-
     return (
       <Badge className={`${statusColors[status] || "bg-gray-500"} text-white`}>
         {status}
       </Badge>
     );
   };
+
+  if (isError) {
+    console.error(error?.message);
+    toast.error(error?.message || "Failed to fetch units");
+  }
+  if (isLoading) return <Loader />;
 
   return (
     <MainLayout>
@@ -187,13 +218,11 @@ const FloorUnits = () => {
             size="sm"
             onClick={() => navigate(`/properties/building/${buildingId}`)}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Building
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Building
           </Button>
           {canEdit && (
             <Button onClick={handleAddApartment}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Unit
+              <Plus className="mr-2 h-4 w-4" /> Add Unit
             </Button>
           )}
         </div>
@@ -206,14 +235,20 @@ const FloorUnits = () => {
         </div>
 
         <div className="grid gap-4">
-          {apartments.map((apartment) => (
+          {apartments.length === 0 && (
+            <p className="text-muted-foreground">
+              No units found for this floor.
+            </p>
+          )}
+
+          {apartments.map((apartment, idx) => (
             <Card
-              key={apartment.id}
+              key={apartment._id || idx}
               className="hover:shadow-md transition-shadow"
+              onClick={() => navigate(`/properties/unit/${apartment._id}`)}
             >
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {/* Image */}
                   <div className="md:col-span-1">
                     {apartment.thumbnailUrl ? (
                       <img
@@ -228,7 +263,6 @@ const FloorUnits = () => {
                     )}
                   </div>
 
-                  {/* Details */}
                   <div className="md:col-span-3 p-6">
                     <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
                       <div className="flex-1 space-y-4">
@@ -238,7 +272,7 @@ const FloorUnits = () => {
                               Unit {apartment.plotNo}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              Mem. No: {apartment.memNo}
+                              Mem. No: {apartment.memNo || "N/A"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -258,7 +292,7 @@ const FloorUnits = () => {
                                   size="icon"
                                   variant="ghost"
                                   onClick={(e) =>
-                                    handleDeleteClick(apartment.id, e)
+                                    handleDeleteClick(apartment._id, e)
                                   }
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -282,7 +316,7 @@ const FloorUnits = () => {
                               Facing
                             </p>
                             <p className="font-medium">
-                              {apartment.villaFacing}
+                              {apartment.villaFacing || "N/A"}
                             </p>
                           </div>
                           <div>
@@ -292,8 +326,11 @@ const FloorUnits = () => {
                             <div className="flex items-center">
                               <User className="h-4 w-4 mr-1 text-muted-foreground" />
                               <p className="font-medium">
-                                {apartment.customerId?.user?.name ||
-                                  "Available"}
+                                {(apartment.customerId as any)?.user?.name ||
+                                  apartment.purchasedCustomerName ||
+                                  (apartment.status === "Sold"
+                                    ? "Owner"
+                                    : "Available")}
                               </p>
                             </div>
                           </div>
@@ -311,8 +348,8 @@ const FloorUnits = () => {
                           <div>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="flex items-center">
-                                <PercentIcon className="h-4 w-4 mr-1" />
-                                Work Progress
+                                <PercentIcon className="h-4 w-4 mr-1" /> Work
+                                Progress
                               </span>
                               <span>{apartment.workCompleted}%</span>
                             </div>
@@ -326,7 +363,7 @@ const FloorUnits = () => {
 
                       <Button
                         onClick={() =>
-                          navigate(`/properties/unit/${apartment.id}`)
+                          navigate(`/properties/unit/${apartment._id}`)
                         }
                       >
                         View Full Details
@@ -345,6 +382,7 @@ const FloorUnits = () => {
         onOpenChange={setApartmentDialogOpen}
         apartment={selectedApartment}
         mode={dialogMode}
+        onSave={handleSaveApartment}
       />
 
       <DeleteConfirmDialog

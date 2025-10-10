@@ -512,12 +512,12 @@ const Finances = () => {
                         <XAxis dataKey="month" />
                         <YAxis
                           tickFormatter={(value) =>
-                            `$${(value / 1000000).toFixed(1)}M`
+                            `₹${(value / 1000000).toFixed(1)}M`
                           }
                         />
                         <Tooltip
                           formatter={(value) => [
-                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            `₹${(Number(value) / 1000000).toFixed(2)}M`,
                           ]}
                         />
                         <Area
@@ -570,7 +570,7 @@ const Finances = () => {
                           {expensesByCategory.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
+                              fill={`COLORS[index % COLORS.length]`}
                             />
                           ))}
                         </Pie>
@@ -599,12 +599,12 @@ const Finances = () => {
                         <XAxis dataKey="quarter" />
                         <YAxis
                           tickFormatter={(value) =>
-                            `$${(value / 1000000).toFixed(1)}M`
+                            `₹${(value / 1000000).toFixed(1)}M`
                           }
                         />
                         <Tooltip
                           formatter={(value) => [
-                            `$${(Number(value) / 1000000).toFixed(2)}M`,
+                            `₹${(Number(value) / 1000000).toFixed(2)}M`,
                           ]}
                         />
                         <Bar dataKey="revenue" fill="#4338ca" name="Revenue" />
@@ -636,12 +636,12 @@ const Finances = () => {
                       <XAxis dataKey="month" />
                       <YAxis
                         tickFormatter={(value) =>
-                          `$${(value / 1000000).toFixed(1)}M`
+                          `₹${(value / 1000000).toFixed(1)}M`
                         }
                       />
                       <Tooltip
                         formatter={(value) => [
-                          `$${(Number(value) / 1000000).toFixed(2)}M`,
+                          `₹${(Number(value) / 1000000).toFixed(2)}M`,
                         ]}
                       />
                       <Line

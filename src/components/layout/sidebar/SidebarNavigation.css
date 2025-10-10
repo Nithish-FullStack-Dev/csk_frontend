@@ -1,0 +1,14 @@
+/* Hide scrollbar but keep scroll functionality */
+.sidebar-scroll {
+  overflow-y: auto; 
+  -ms-overflow-style: none;  
+  scrollbar-width: none;     
+  box-shadow: inset 0px 0px 8px 7px rgb(0 0 0 / 10%);
+
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+

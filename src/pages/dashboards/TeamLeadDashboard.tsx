@@ -224,7 +224,7 @@ const TeamLeadDashboard = () => {
                             {member?.performance?.target || 0}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            Visits
+                            targets
                           </span>
                         </div>
                         <div className="flex flex-col items-center p-2 bg-muted rounded-md">
