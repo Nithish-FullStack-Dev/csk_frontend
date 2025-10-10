@@ -22,6 +22,7 @@ import {
   Settings,
   BarChart3,
   Award,
+  IndianRupee,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -426,9 +427,9 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  ${(totalTeamSales / 1000000).toFixed(1)}M
+                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
                 </span>
-                <DollarSign className="h-6 w-6 text-estate-gold" />
+                <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
             </CardContent>
           </Card>
@@ -503,13 +504,13 @@ const TeamLeadManagement = () => {
                     <div>
                       <p className="text-muted-foreground">Sales</p>
                       <p className="font-semibold">
-                        ${(member.performance.sales / 1000).toFixed(0)}k
+                        ₹{(member.performance.sales / 1000).toFixed(0)}k
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
                       <p className="font-semibold">
-                        ${(member.performance.target / 1000).toFixed(0)}k
+                        ₹{(member.performance.target / 1000).toFixed(0)}k
                       </p>
                     </div>
                     <div>
@@ -721,36 +722,48 @@ const TeamLeadManagement = () => {
                 </Select>
               </div>
 
-              {["sales", "target", "deals", "leads", "conversionRate"].map(
-                (key) => (
-                  <div
-                    className="grid grid-cols-4 items-center gap-4"
-                    key={key}
-                  >
-                    <Label htmlFor={key} className="text-right capitalize">
-                      {key.replace(/([A-Z])/g, " $1")}
-                    </Label>
-                    <Input
-                      type="number"
-                      id={key}
-                      value={performance[key as keyof typeof performance]}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (value >= 0 || isNaN(value)) {
-                          handlePerformanceChange(key, value);
+              {["sales", "target", "deals", "leads"].map((key) => (
+                <div className="grid grid-cols-4 items-center gap-4" key={key}>
+                  <Label htmlFor={key} className="text-right capitalize">
+                    {key.replace(/([A-Z])/g, " ₹1")}
+                  </Label>
+                  <Input
+                    type="number"
+                    id={key}
+                    value={performance[key as keyof typeof performance]}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (value >= 0 || isNaN(value)) {
+                        handlePerformanceChange(key, value);
+
+                        // Auto-calculate conversion rate
+                        if (key === "deals" || key === "leads") {
+                          const updatedDeals =
+                            key === "deals" ? value : performance.deals || 0;
+                          const updatedLeads =
+                            key === "leads" ? value : performance.leads || 0;
+
+                          const newRate =
+                            updatedLeads > 0
+                              ? (updatedDeals / updatedLeads) * 100
+                              : 0;
+
+                          handlePerformanceChange(
+                            "conversionRate",
+                            parseFloat(newRate.toFixed(2))
+                          );
                         }
-                      }}
-                      onKeyDown={(e) => {
-                        if (["-", "e"].includes(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                      min={0}
-                      className="col-span-3"
-                    />
-                  </div>
-                )
-              )}
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (["-", "e"].includes(e.key)) e.preventDefault();
+                    }}
+                    min={0}
+                    className="col-span-3"
+                  />
+                </div>
+              ))}
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastActivity" className="text-right">
                   Last Activity

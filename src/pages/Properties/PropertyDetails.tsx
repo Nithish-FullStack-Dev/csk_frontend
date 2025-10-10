@@ -1,6 +1,6 @@
 // src/pages/PropertyDetails.tsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Check,
   Building,
@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   X,
   IndianRupee,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,9 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { Property } from "@/types/property";
 import { formatIndianCurrency } from "@/lib/formatCurrency";
+import { ApartmentDialog } from "@/components/properties/ApartmentDialog";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -67,10 +71,70 @@ function PropertyDetails({
   onDelete,
   onBack,
 }: PropertyDetailsProps) {
+  const { buildingId, floorId } = useParams<{
+    buildingId: string;
+    floorId: string;
+  }>();
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState<
+    Property | undefined
+  >();
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const createUnitMutation = useMutation({
+    mutationFn: createUnit,
+    onSuccess: () => {
+       queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit created successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create unit");
+    },
+  });
 
+  const updateUnitMutation = useMutation({
+    mutationFn: ({
+      unitId,
+      unitData,
+    }: {
+      unitId: string;
+      unitData: FormData;
+    }) => updateUnit(unitId, unitData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+      toast.success("Unit updated successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update unit");
+    },
+  });
+  const handleEditApartment = (apartment: Property, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedApartment(apartment);
+    setDialogMode("edit");
+    setApartmentDialogOpen(true);
+  };
+  const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
+    // Include buildingId and floorId in the FormData for createUnit
+    if (mode === "add") {
+      data.append("buildingId", buildingId!);
+      data.append("floorId", floorId!);
+      createUnitMutation.mutate(data);
+    } else if (selectedApartment?._id) {
+      updateUnitMutation.mutate({
+        unitId: selectedApartment._id,
+        unitData: data,
+      });
+    }
+  };
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -92,6 +156,13 @@ function PropertyDetails({
             <div className="flex md:flex-row flex-col gap-3">
               <Button size="sm" onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={(e) => handleEditApartment(apartment, e)}
+              >
+                <Pencil className="h-4 w-4" />
               </Button>
               <Button
                 size="sm"
@@ -384,6 +455,13 @@ function PropertyDetails({
           </div>
         </DialogContent>
       </Dialog>
+      <ApartmentDialog
+        open={apartmentDialogOpen}
+        onOpenChange={setApartmentDialogOpen}
+        apartment={selectedApartment}
+        mode={dialogMode}
+        onSave={handleSaveApartment}
+      />
     </>
   );
 }
