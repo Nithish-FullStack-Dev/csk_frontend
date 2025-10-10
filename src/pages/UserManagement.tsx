@@ -69,7 +69,6 @@ export const fetchRolePermissions = async (roleName: string) => {
 const UserManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -84,6 +83,7 @@ const UserManagement = () => {
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [showResetDeleteDialog, setshowResetDeleteDialog] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -188,14 +188,16 @@ const UserManagement = () => {
     setDeleting(true);
     try {
       await axios.delete(
-        `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`
+        `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`,
+        { withCredentials: true }
       );
       toast.success("User deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
-    } catch (error) {
+      setshowResetDeleteDialog(false);
+    } catch (error: any) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+      toast.error(error.response?.data?.message || "Failed to delete user");
     } finally {
       setDeleting(false);
     }
@@ -203,35 +205,46 @@ const UserManagement = () => {
 
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
+    setUpdating(true);
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/api/user/updateUser`, {
-        updatedUser: selectedUser,
-      });
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/user/updateUser`,
+        { updatedUser: selectedUser },
+        { withCredentials: true }
+      );
       toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowEditUserDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user:", error);
-      toast.error("Failed to update user");
+      toast.error(error.response?.data?.message || "Failed to update user");
+    } finally {
+      setUpdating(false);
     }
   };
 
   const handleResetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
     try {
-      await axios.post(`${import.meta.env.VITE_URL}/api/user/resetPassword`, {
-        id: selectedUser?._id,
-        password: newPassword,
-      });
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/user/resetPassword`,
+        { id: selectedUser?._id, password: newPassword },
+        { withCredentials: true }
+      );
+      toast.success("Password updated successfully");
       setShowResetPasswordDialog(false);
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Password updated succesfully.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Reset failed:", error);
-      setShowResetPasswordDialog(false);
-      setNewPassword("");
-      setConfirmPassword("");
-      toast.error("Failed to update password");
+      toast.error(error.response?.data?.message || "Failed to update password");
     }
   };
 
@@ -263,20 +276,6 @@ const UserManagement = () => {
       ? "bg-green-100 text-green-800 hover:bg-green-100/80"
       : "bg-red-100 text-red-800 hover:bg-red-100/80";
   };
-
-  const defroles: UserRole[] = [
-    "owner",
-    "admin",
-    "sales_manager",
-    "team_lead",
-    "agent",
-    "site_incharge",
-    "contractor",
-    "accountant",
-    "customer_purchased",
-    "customer_prospect",
-    "public_user",
-  ];
 
   return (
     <MainLayout>
@@ -426,9 +425,6 @@ const UserManagement = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline" size="icon" title="Filter users">
-                    <Filter className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -720,12 +716,8 @@ const UserManagement = () => {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={async () => {
-                  await handleUpdateUser();
-                }}
-              >
-                Update User
+              <Button onClick={handleUpdateUser} disabled={updating}>
+                {updating ? "Updating User..." : "Update User"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -790,7 +782,7 @@ const UserManagement = () => {
             <DialogHeader>
               <DialogTitle>Delete User</DialogTitle>
               <DialogDescription>
-                Do you want to delete user {selectedUser?.name}
+                Do you want to delete user {selectedUser?.name}?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -802,12 +794,10 @@ const UserManagement = () => {
               </Button>
               <Button
                 variant="destructive"
-                onClick={async () => {
-                  await handleDeleteUser();
-                  setshowResetDeleteDialog(false);
-                }}
+                onClick={handleDeleteUser}
+                disabled={deleting}
               >
-                Delete User
+                {deleting ? "Deleting User..." : "Delete User"}
               </Button>
             </DialogFooter>
           </DialogContent>
