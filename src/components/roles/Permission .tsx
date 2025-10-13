@@ -47,6 +47,7 @@ const moduleConfig: Record<string, string[]> = {
     "Projects Overview",
     "Construction Timeline",
     "Site Inspections",
+    "Inspection Schedule",
   ],
   Contractor: ["Project Tasks"],
   "Operations Modules": [
