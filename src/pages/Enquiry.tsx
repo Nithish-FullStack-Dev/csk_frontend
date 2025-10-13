@@ -51,6 +51,8 @@ import { cn } from "@/lib/utils";
 import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "@/components/Loader";
 
 // --- Interfaces ---
 interface Enquiry {
@@ -98,6 +100,7 @@ const EnquiryManagement = () => {
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [assignedSalespersonId, setAssignedSalespersonId] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [project, setProject] = useState("");
   const [address, setAddress] = useState("");
 
@@ -176,9 +179,16 @@ const EnquiryManagement = () => {
       // Only fetch salespersons if admin/owner needs to assign
       fetchSalespersons();
     }
-  }, [user, isAdminOrOwner, isSalesManager]); // Added isSalesManager for clarity, though user alone implies it
+  }, [user, isAdminOrOwner, isSalesManager]);
 
-  // --- Handlers for Actions ---
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Enquiry" });
+
+  if (isRolePermissionsLoading) return <Loader />;
 
   // For both roles
   const handleViewEnquiry = (enquiry: Enquiry) => {
@@ -308,7 +318,7 @@ const EnquiryManagement = () => {
 
   const handleManageSubmit = async () => {
     if (!selectedEnquiry) return;
-
+    setIsSaving(true);
     try {
       const csrfToken = await getCsrfToken();
       const updatedTimeline = selectedEnquiry.timeline
@@ -360,6 +370,8 @@ const EnquiryManagement = () => {
     } catch (error) {
       console.error("Failed to update enquiry progress:", error);
       toast.error("Failed to update enquiry progress.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -560,7 +572,7 @@ const EnquiryManagement = () => {
                                 <UserPlus className="h-4 w-4" /> Assign
                               </Button>
                             )}
-                            {isSalesManager && (
+                            {userCanEditUser && isSalesManager && (
                               <Button
                                 variant="default"
                                 size="sm"
@@ -1108,7 +1120,9 @@ const EnquiryManagement = () => {
               >
                 Cancel
               </Button>
-              <Button onClick={handleManageSubmit}>Save Progress</Button>
+              <Button onClick={handleManageSubmit} disabled={isSaving}>
+                {isSaving ? "Saving Progress..." : "Save Progress"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

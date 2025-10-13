@@ -460,7 +460,6 @@ const LeadManagement = () => {
     editLead(payload, {
       onSuccess: (res) => {
         toast.success("Lead updated successfully!");
-        console.log(res.lead);
         queryClient.invalidateQueries({
           queryKey: isSalesManager ? ["allLeads"] : ["leads"],
           refetchType: "active",

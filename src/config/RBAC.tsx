@@ -25,6 +25,7 @@ export const useRBAC = ({ roleSubmodule }: Prop) => {
   if (isRolePermissionsError) {
     console.error("Error fetching role permissions:", rolePermissionsError);
     toast.error("Failed to load role permissions");
+    return null;
   }
 
   const userCanAddUser = rolePermissions?.permissions.some(
