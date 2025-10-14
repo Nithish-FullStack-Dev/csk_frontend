@@ -1085,7 +1085,7 @@ const Properties = () => {
                             })
                             .map((property) => (
                               <PropertyCardDetailed
-                                key={property.id}
+                                key={property._id}
                                 property={property}
                                 onView={() => setSelectedProperty(property)}
                               />

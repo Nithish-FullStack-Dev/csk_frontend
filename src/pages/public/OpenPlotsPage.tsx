@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { Property } from "@/types/property";
+import { OpenPlot } from "@/types/OpenPlots";
 
 const OpenPlotsPage = () => {
   const navigate = useNavigate();
@@ -36,14 +38,14 @@ const OpenPlotsPage = () => {
       const { data } = await axios.get(
         `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
       );
-      const projectsWithCoords = data.plots.map((item) => {
-        const location = item.locationInfo || {};
-        return {
-          ...item,
-          lat: location?.coordinates?.lat || 17.4457025, // Default to Hyderabad, India
-          lng: location?.coordinates?.lng || 78.3770637,
-        };
-      });
+      const projectsWithCoords: OpenPlot[] = data.plots.map(
+        (item: OpenPlot) => {
+          return {
+            ...item,
+            googleMapsLocation: item.googleMapsLink || "",
+          };
+        }
+      );
 
       setPlotProjects(projectsWithCoords);
       setIsError(false);
@@ -269,8 +271,8 @@ const OpenPlotsPage = () => {
                 whileInView="show"
                 viewport={{ once: true, amount: 0.3 }}
               >
-                {plotProjects.map((plot) => (
-                  <CardContainer key={plot.id} className="inter-var">
+                {plotProjects.map((plot: OpenPlot) => (
+                  <CardContainer key={plot._id} className="inter-var">
                     <CardBody
                       className="
       bg-white dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2]
@@ -291,7 +293,7 @@ const OpenPlotsPage = () => {
                       <CardItem translateZ={80} className="w-full mt-3">
                         <img
                           src={plot.thumbnailUrl}
-                          alt={plot.title}
+                          alt={plot.projectName}
                           className="h-44 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
                         />
                       </CardItem>
@@ -312,24 +314,17 @@ const OpenPlotsPage = () => {
                                              <span>{project.location}</span> */}
                           </div>
                           {/* Map */}
-                          {plot.lat && plot.lng ? (
+                          {plot.googleMapsLink ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
-                              <MapContainer
-                                key={`${plot.lat}-${plot.lng}`}
-                                center={[plot.lat, plot.lng]}
-                                zoom={15}
-                                scrollWheelZoom={true}
-                                dragging={true}
-                                style={{ width: "100%", height: "100%" }}
-                              >
-                                <TileLayer
-                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                  attribution=""
-                                />
-                                <Marker position={[plot.lat, plot.lng]}>
-                                  <Popup>{plot.title}</Popup>
-                                </Marker>
-                              </MapContainer>
+                              <iframe
+                                src={plot.googleMapsLink}
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                              ></iframe>
                             </div>
                           ) : (
                             <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
