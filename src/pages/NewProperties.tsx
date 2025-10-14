@@ -37,6 +37,7 @@ import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
 import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
+import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
 export const getAllBuildings = async (): Promise<Building[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
@@ -84,10 +85,9 @@ const NewProperties = () => {
   // local copies for open plots (synced with react-query)
   const [openPlots, setOpenPlots] = useState<OpenPlot[]>([]);
   const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
-  const [selectedOpenPlot, setSelectedOpenPlot] = useState<
-    // New state for selected open plot
-    OpenPlot | undefined
-  >(undefined);
+  const [selectedOpenPlot, setSelectedOpenPlot] = useState<OpenPlot | null>(
+    null
+  );
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
   const {
@@ -179,11 +179,18 @@ const NewProperties = () => {
       );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedData, { id }) => {
       toast.success("Open plot updated");
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
       setDialogOpenPlot(false);
       setCurrentOpenPlot(undefined);
+      // After invalidation, find the updated plot and refresh the detailed view
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] }).then(() => {
+        const freshData = queryClient.getQueryData<OpenPlot[]>(["openPlots"]);
+        if (freshData) {
+          const newlyUpdatedPlot = freshData.find((plot) => plot._id === id);
+          if (newlyUpdatedPlot) setSelectedOpenPlot(newlyUpdatedPlot);
+        }
+      });
     },
     onError: (err: any) => {
       console.error("updateOpenPlot error:", err?.response || err);
@@ -199,10 +206,10 @@ const NewProperties = () => {
 
   const deleteOpenPlotMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedOpenPlot) return;
+      if (!currentOpenPlot) return;
       await axios.delete(
         `${import.meta.env.VITE_URL}/api/openPlot/deleteOpenPlot/${
-          selectedOpenPlot._id
+          currentOpenPlot._id
         }`,
         {
           withCredentials: true,
@@ -327,11 +334,19 @@ const NewProperties = () => {
 
   const handleDeleteOpenPlot = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    setCurrentOpenPlot(openPlots.find((p) => p._id === id));
     // confirm quickly
-    if (!confirm("Delete this open plot?")) return;
+    if (!window.confirm("Delete this open plot?")) return;
     deleteOpenPlotMutation.mutate();
   };
 
+  const handleDeleteOpenPlotFromDetails = async () => {
+    if (!selectedOpenPlot) return;
+    setCurrentOpenPlot(selectedOpenPlot);
+    if (!window.confirm("Delete this open plot?")) return;
+    await deleteOpenPlotMutation.mutateAsync();
+    setSelectedOpenPlot(null); // Go back to the list view
+  };
   // ---------- Loading UX ----------
   if (buildingsLoading || openPlotsLoading) {
     return <Loader />;
@@ -341,266 +356,116 @@ const NewProperties = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <Building2 className="mr-2 h-7 w-7" />
-              Properties
-            </h1>
-            <p className="text-muted-foreground">
-              Manage buildings and view details
-            </p>
-          </div>
-
-          {canEdit && (
-            <div className="flex gap-3">
-              <Button
-                className="bg-estate-tomato hover:bg-estate-tomato/90"
-                onClick={() => {
-                  setCurrentOpenPlot(undefined);
-                  setDialogOpenPlot(true);
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Open Plots
-              </Button>
-
-              <Button onClick={handleAddBuilding}>
-                <Plus className="mr-2 h-4 w-4" /> Add Building
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Filters + Buildings Grid */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or location..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {selectedOpenPlot ? (
+          <OpenPlotDetails
+            plot={selectedOpenPlot}
+            onEdit={() => {
+              handleEditOpenPlot(selectedOpenPlot);
+            }}
+            onDelete={handleDeleteOpenPlotFromDetails}
+            onBack={() => setSelectedOpenPlot(null)}
+          />
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold flex items-center">
+                  <Building2 className="mr-2 h-7 w-7" />
+                  Properties
+                </h1>
+                <p className="text-muted-foreground">
+                  Manage buildings and view details
+                </p>
               </div>
 
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="Apartment Complex">
-                    Apartment Complex
-                  </SelectItem>
-                  <SelectItem value="Villa Complex">Villa Complex</SelectItem>
-                  <SelectItem value="Plot Development">
-                    Plot Development
-                  </SelectItem>
-                  <SelectItem value="Land Parcel">Land Parcel</SelectItem>
-                  <SelectItem value="Open Plot">Open Plot</SelectItem>
-                </SelectContent>
-              </Select>
+              {canEdit && (
+                <div className="flex gap-3">
+                  <Button
+                    className="bg-estate-tomato hover:bg-estate-tomato/90"
+                    onClick={() => {
+                      setCurrentOpenPlot(undefined);
+                      setDialogOpenPlot(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Open Plots
+                  </Button>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Under Construction">
-                    Under Construction
-                  </SelectItem>
-                  <SelectItem value="Planned">Planned</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {(searchTerm !== "" ||
-                typeFilter !== "all" ||
-                statusFilter !== "all") && (
-                <Button variant="ghost" onClick={clearFilters}>
-                  <X className="mr-2 h-4 w-4" /> Clear
-                </Button>
+                  <Button onClick={handleAddBuilding}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Building
+                  </Button>
+                </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {filteredBuildings.map((b, idx) => (
-                <Card
-                  key={b._id || idx}
-                  className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                >
-                  <div className="relative">
-                    {b.thumbnailUrl ? (
-                      <img
-                        src={b.thumbnailUrl}
-                        alt={b.projectName}
-                        className="h-48 w-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-48 bg-muted flex items-center justify-center">
-                        <Building2 className="h-10 w-10 opacity-20" />
-                      </div>
-                    )}
-                    <div className="absolute top-3 right-3">
-                      {getStatusBadge(b.constructionStatus)}
-                    </div>
+            {/* Filters + Buildings Grid */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name or location..."
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
 
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-semibold text-lg">{b.projectName}</h3>
-                      {canEdit && (
-                        <div
-                          className="flex gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => handleEditBuilding(b, e)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={(e) => handleDeleteClick(b._id!, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="Apartment Complex">
+                        Apartment Complex
+                      </SelectItem>
+                      <SelectItem value="Villa Complex">
+                        Villa Complex
+                      </SelectItem>
+                      <SelectItem value="Plot Development">
+                        Plot Development
+                      </SelectItem>
+                      <SelectItem value="Land Parcel">Land Parcel</SelectItem>
+                      <SelectItem value="Open Plot">Open Plot</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <div className="flex items-center text-sm text-muted-foreground mb-3">
-                      <MapPin className="h-4 w-4 mr-1" /> {b.location}
-                    </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Under Construction">
+                        Under Construction
+                      </SelectItem>
+                      <SelectItem value="Planned">Planned</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                    <div className="space-y-2 mb-4 text-sm">
-                      <div className="flex justify-between">
-                        <span>Total Units</span>
-                        <span>{b.totalUnits}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Available</span>
-                        <span className="text-green-600">
-                          {b.availableUnits}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Sold</span>
-                        <span className="text-blue-600">{b.soldUnits}</span>
-                      </div>
-                    </div>
-
-                    <div className="border-t pt-3 text-sm space-y-2">
-                      <div className="flex justify-between">
-                        <span className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" /> Completion
-                        </span>
-                        <span>
-                          {new Date(b.completionDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Municipal</span>
-                        {b.municipalPermission ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <X className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() =>
-                          navigate(`/properties/building/${b._id}`)
-                        }
-                      >
-                        View More
-                      </Button>
-
-                      {b.brochureUrl && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const link = document.createElement("a");
-                              link.href = b.brochureUrl!;
-                              link.download = `${
-                                b.projectName || "brochure"
-                              }.pdf`;
-                              link.target = "_blank";
-                              link.click();
-                            }}
-                            title="Download Brochure"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(
-                                b.brochureUrl || ""
-                              );
-                              toast.success("Brochure link copied!");
-                            }}
-                            title="Copy Share Link"
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ---------- Open Plots Section ---------- */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">Open Plots</h2>
-            <div />
-          </div>
-
-          <Card>
-            <CardContent className="p-6">
-              {openPlots.length === 0 ? (
-                <div className="text-center py-12">
-                  <h3 className="text-lg font-semibold mb-2">
-                    No open plots found
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Add open plots using the button above.
-                  </p>
+                  {(searchTerm !== "" ||
+                    typeFilter !== "all" ||
+                    statusFilter !== "all") && (
+                    <Button variant="ghost" onClick={clearFilters}>
+                      <X className="mr-2 h-4 w-4" /> Clear
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {openPlots.map((plot) => (
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  {filteredBuildings.map((b, idx) => (
                     <Card
-                      key={plot._id}
+                      key={b._id || idx}
                       className="overflow-hidden hover:shadow-lg transition cursor-pointer"
                     >
                       <div className="relative">
-                        {plot.thumbnailUrl ? (
+                        {b.thumbnailUrl ? (
                           <img
-                            src={plot.thumbnailUrl}
-                            alt={plot.projectName}
+                            src={b.thumbnailUrl}
+                            alt={b.projectName}
                             className="h-48 w-full object-cover"
                           />
                         ) : (
@@ -608,12 +473,15 @@ const NewProperties = () => {
                             <Building2 className="h-10 w-10 opacity-20" />
                           </div>
                         )}
+                        <div className="absolute top-3 right-3">
+                          {getStatusBadge(b.constructionStatus)}
+                        </div>
                       </div>
 
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-1">
                           <h3 className="font-semibold text-lg">
-                            {plot.projectName} — {plot.plotNo}
+                            {b.projectName}
                           </h3>
                           {canEdit && (
                             <div
@@ -623,16 +491,14 @@ const NewProperties = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={(e) => handleEditOpenPlot(plot, e)}
+                                onClick={(e) => handleEditBuilding(b, e)}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={(e) =>
-                                  handleDeleteOpenPlot(plot._id!, e)
-                                }
+                                onClick={(e) => handleDeleteClick(b._id!, e)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -641,44 +507,42 @@ const NewProperties = () => {
                         </div>
 
                         <div className="flex items-center text-sm text-muted-foreground mb-3">
-                          <MapPin className="h-4 w-4 mr-1" />{" "}
-                          {plot.googleMapsLink ? (
-                            <a
-                              className="underline"
-                              href={plot.googleMapsLink}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              View on map
-                            </a>
-                          ) : (
-                            plot.projectName
-                          )}
+                          <MapPin className="h-4 w-4 mr-1" /> {b.location}
                         </div>
 
                         <div className="space-y-2 mb-4 text-sm">
                           <div className="flex justify-between">
-                            <span>Extent (SqYards)</span>
-                            <span>{plot.extentSqYards}</span>
+                            <span>Total Units</span>
+                            <span>{b.totalUnits}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Price / SqYard</span>
-                            <span>₹{plot.pricePerSqYard}</span>
+                            <span>Available</span>
+                            <span className="text-green-600">
+                              {b.availableUnits}
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Total Amount</span>
-                            <span>₹{plot.totalAmount}</span>
+                            <span>Sold</span>
+                            <span className="text-blue-600">{b.soldUnits}</span>
                           </div>
                         </div>
 
                         <div className="border-t pt-3 text-sm space-y-2">
                           <div className="flex justify-between">
-                            <span>Availability</span>
-                            <span>{plot.availabilityStatus}</span>
+                            <span className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-1" /> Completion
+                            </span>
+                            <span>
+                              {new Date(b.completionDate).toLocaleDateString()}
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Approval</span>
-                            <span>{plot.approval}</span>
+                            <span>Municipal</span>
+                            {b.municipalPermission ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
                           </div>
                         </div>
 
@@ -686,12 +550,182 @@ const NewProperties = () => {
                           <Button
                             size="sm"
                             className="flex-1"
-
+                            onClick={() =>
+                              navigate(`/properties/building/${b._id}`)
+                            }
                           >
-                            View Plot Details
+                            View More
                           </Button>
 
-                          {/* <Button
+                          {b.brochureUrl && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = document.createElement("a");
+                                  link.href = b.brochureUrl!;
+                                  link.download = `${
+                                    b.projectName || "brochure"
+                                  }.pdf`;
+                                  link.target = "_blank";
+                                  link.click();
+                                }}
+                                title="Download Brochure"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(
+                                    b.brochureUrl || ""
+                                  );
+                                  toast.success("Brochure link copied!");
+                                }}
+                                title="Copy Share Link"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ---------- Open Plots Section ---------- */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold">Open Plots</h2>
+                <div />
+              </div>
+
+              <Card>
+                <CardContent className="p-6">
+                  {openPlots.length === 0 ? (
+                    <div className="text-center py-12">
+                      <h3 className="text-lg font-semibold mb-2">
+                        No open plots found
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Add open plots using the button above.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {openPlots.map((plot) => (
+                        <Card
+                          key={plot._id}
+                          onClick={() => setSelectedOpenPlot(plot)}
+                          className="overflow-hidden hover:shadow-lg transition cursor-pointer"
+                        >
+                          <div className="relative">
+                            {plot.thumbnailUrl ? (
+                              <img
+                                src={plot.thumbnailUrl}
+                                alt={plot.projectName}
+                                className="h-48 w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-48 bg-muted flex items-center justify-center">
+                                <Building2 className="h-10 w-10 opacity-20" />
+                              </div>
+                            )}
+                          </div>
+
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="font-semibold text-lg">
+                                {plot.projectName} — {plot.plotNo}
+                              </h3>
+                              {canEdit && (
+                                <div
+                                  className="flex gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => handleEditOpenPlot(plot, e)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      handleDeleteOpenPlot(plot._id!, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4 mr-1" />{" "}
+                              {plot.googleMapsLink ? (
+                                <a
+                                  className="underline"
+                                  href={plot.googleMapsLink}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View on map
+                                </a>
+                              ) : (
+                                plot.projectName
+                              )}
+                            </div>
+
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div className="flex justify-between">
+                                <span>Extent (SqYards)</span>
+                                <span>{plot.extentSqYards}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Price / SqYard</span>
+                                <span>₹{plot.pricePerSqYard}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Total Amount</span>
+                                <span>₹{plot.totalAmount}</span>
+                              </div>
+                            </div>
+
+                            <div className="border-t pt-3 text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span>Availability</span>
+                                <span>{plot.availabilityStatus}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Approval</span>
+                                <span>{plot.approval}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOpenPlot(plot);
+                                }}
+                              >
+                                View Plot Details
+                              </Button>
+
+                              {/* <Button
                         size="sm"
                         className="flex-1"
                         onClick={() =>
@@ -700,15 +734,17 @@ const NewProperties = () => {
                       >
                         View More
                       </Button> */}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </section>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+          </>
+        )}
       </div>
 
       {/* Dialogs */}
