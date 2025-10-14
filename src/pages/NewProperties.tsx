@@ -179,18 +179,14 @@ const NewProperties = () => {
       );
       return data;
     },
-    onSuccess: (updatedData, { id }) => {
+    onSuccess: (updatedData) => {
       toast.success("Open plot updated");
       setDialogOpenPlot(false);
       setCurrentOpenPlot(undefined);
-      // After invalidation, find the updated plot and refresh the detailed view
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] }).then(() => {
-        const freshData = queryClient.getQueryData<OpenPlot[]>(["openPlots"]);
-        if (freshData) {
-          const newlyUpdatedPlot = freshData.find((plot) => plot._id === id);
-          if (newlyUpdatedPlot) setSelectedOpenPlot(newlyUpdatedPlot);
-        }
-      });
+      // Invalidate the query to refetch in the background
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+      // Immediately update the detailed view with the fresh data from the server
+      if (updatedData?.data) setSelectedOpenPlot(updatedData.data);
     },
     onError: (err: any) => {
       console.error("updateOpenPlot error:", err?.response || err);
