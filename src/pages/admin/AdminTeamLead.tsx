@@ -503,10 +503,10 @@ const AdminTeamLead = () => {
                       </Avatar>
                       <div>
                         <h3 className="font-semibold">
-                          {member?.salesId?.name}
+                          {member?.teamLeadId?.name}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {member?.salesId?.role}
+                          {member?.teamLeadId?.role}
                         </p>
                         <Badge className={getStatusColor(member?.status)}>
                           {member?.status}
@@ -514,7 +514,7 @@ const AdminTeamLead = () => {
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           <span className="font-medium">Sales Manager:</span>
                           <span className="truncate">
-                            {member?.teamLeadId?.name}
+                            {member?.salesId?.name}
                           </span>
                         </div>
                       </div>

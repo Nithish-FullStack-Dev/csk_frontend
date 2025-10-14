@@ -175,7 +175,7 @@ const SiteVisits = () => {
   } = useQuery<Vehicle[]>({
     queryKey: ["cars"],
     queryFn: fetchAllVehicles,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const {
@@ -186,7 +186,7 @@ const SiteVisits = () => {
   } = useQuery<Lead[]>({
     queryKey: ["leads"],
     queryFn: user.role === "agent" ? fetchLeads : fetchAllLeads,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const {
@@ -198,7 +198,7 @@ const SiteVisits = () => {
   } = useQuery<SiteVisitData[]>({
     queryKey: ["siteVisits"],
     queryFn: fetchAllSiteVisits,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const {
@@ -210,7 +210,7 @@ const SiteVisits = () => {
     queryKey: ["siteVisitOfAgent", user?._id], // Include user ID in query key
     queryFn: fetchSiteVisitsOfAgent,
     enabled: !!user?._id && isAgent, // Only run if user is agent and user ID exists
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
