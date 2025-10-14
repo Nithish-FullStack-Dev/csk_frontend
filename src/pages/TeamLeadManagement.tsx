@@ -253,6 +253,28 @@ const TeamLeadManagement = () => {
     },
   });
 
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/teamLead/deleteTeamLead/${id}`,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      setDialogOpen(false);
+      setSelectedTeam(null);
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.data?.message || "Failed to remove team member.";
+      toast.error(errorMessage);
+    },
+  });
+
   const {
     isRolePermissionsLoading,
     userCanAddUser,
@@ -260,8 +282,6 @@ const TeamLeadManagement = () => {
     userCanEditUser,
   } = useRBAC({ roleSubmodule: "Team Management" });
 
-  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
-    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
@@ -272,6 +292,9 @@ const TeamLeadManagement = () => {
     console.error("fetch error:", isTeamMemErr);
     return null;
   }
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -326,6 +349,17 @@ const TeamLeadManagement = () => {
       } else {
         toast.error("User not authenticated.");
       }
+    }
+  };
+
+  const handleDelete = () => {
+    if (!selectedTeam?._id) {
+      toast.error("No team member selected for removal.");
+      return;
+    }
+
+    if (confirm("Are you sure you want to remove this team member?")) {
+      deleteTeamMemberMutation.mutate(selectedTeam._id);
     }
   };
 
@@ -692,7 +726,7 @@ const TeamLeadManagement = () => {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="agent" className="text-right">
-                  Sales Agent
+                  Team Lead
                 </Label>
                 <Select
                   onValueChange={setSelectedAgentId}
@@ -703,7 +737,7 @@ const TeamLeadManagement = () => {
                     <SelectValue>
                       {availableAgents?.find(
                         (agent) => agent._id === selectedTeamLeadId
-                      )?.name || "Select a sales agent"}
+                      )?.name || "Select a team lead"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -797,7 +831,15 @@ const TeamLeadManagement = () => {
 
             <DialogFooter>
               {userCanDeleteUser && selectedTeam && (
-                <Button variant="destructive">Remove Member</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteTeamMemberMutation.isPending}
+                >
+                  {deleteTeamMemberMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Member"}
+                </Button>
               )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
