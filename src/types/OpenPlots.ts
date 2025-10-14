@@ -62,11 +62,11 @@ export interface OpenPlot {
   registrationStatus: RegistrationStatus;
   emiScheme: boolean;
   remarks?: string;
-  thumbnailUrl?: string; // Should be the URL returned by the backend
-  images?: string[]; // Should be URLs returned by the backend
-  listedDate: string; // Important: This is a string, but Zod schema expects Date.
-  availableFrom: string; // Important: This is a string, but Zod schema expects Date.
-  
+  thumbnailUrl?: string;
+  images?: string[];
+  listedDate: string;
+  availableFrom: string;
+  brochureUrl?: string | null;
 }
 
 const sampleOpenPlots: OpenPlot[] = [];

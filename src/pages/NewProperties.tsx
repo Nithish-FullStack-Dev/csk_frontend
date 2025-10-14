@@ -720,7 +720,42 @@ const NewProperties = () => {
                               >
                                 View Plot Details
                               </Button>
+                              {plot.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const link = document.createElement("a");
+                                      link.href = plot.brochureUrl!;
+                                      link.download = `${
+                                        plot.projectName || "brochure"
+                                      }.pdf`;
+                                      link.target = "_blank";
+                                      link.click();
+                                    }}
+                                    title="Download Brochure"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
 
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(
+                                        plot.brochureUrl || ""
+                                      );
+                                      toast.success("Brochure link copied!");
+                                    }}
+                                    title="Copy Share Link"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                               {/* <Button
                         size="sm"
                         className="flex-1"

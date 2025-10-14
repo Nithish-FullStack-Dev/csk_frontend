@@ -104,7 +104,16 @@ import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions:{
+    queries:{
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnMount:false,
+      refetchInterval: false,
+      refetchOnWindowFocus:false,
+    }
+  }
+});
 
 const PROPERTIES = [
   "admin",
