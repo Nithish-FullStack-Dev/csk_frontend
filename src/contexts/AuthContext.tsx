@@ -28,14 +28,14 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: UserRole;
-  phone: string;
-  address: string;
-  department: string;
+  role: string;
+  phone?: string;
+  address?: string;
+  department?: string;
   avatar?: string;
-  updatedAt: Date;
-  createdAt: Date;
-  lastLogin: Date;
+  updatedAt?: Date;
+  createdAt?: Date;
+  lastLogin?: Date;
 }
 
 // Define the context structure

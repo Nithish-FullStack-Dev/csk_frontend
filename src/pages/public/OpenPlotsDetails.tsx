@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { SiteVisitDialog } from "@/components/public/SiteVisitDialog";
 import axios from "axios";
-import { OpenPlot } from "./OpenPlotInterface";
+// import { OpenPlot } from "./OpenPlotInterface";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
@@ -35,6 +35,7 @@ import Autoplay from "embla-carousel-autoplay";
 
 // --- Skeleton Loader Import ---
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
+import { OpenPlot } from "@/components/public/OpenPlotInterface";
 
 // --- Horizontal line for better separation ---
 

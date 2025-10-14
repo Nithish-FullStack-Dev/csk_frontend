@@ -71,7 +71,6 @@ export function PropertyDetails({
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
-  console.log(property.thumbnailUrl);
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);

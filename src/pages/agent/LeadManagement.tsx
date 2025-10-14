@@ -460,7 +460,6 @@ const LeadManagement = () => {
     editLead(payload, {
       onSuccess: (res) => {
         toast.success("Lead updated successfully!");
-        console.log(res.lead);
         queryClient.invalidateQueries({
           queryKey: isSalesManager ? ["allLeads"] : ["leads"],
           refetchType: "active",
@@ -509,7 +508,7 @@ const LeadManagement = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            {isSalesManager && (
+            {isSalesManager && userCanAddUser && (
               <AddCustomerDialog
                 isSalesManager={isSalesManager}
                 isAddCustomerDialogOpen={isAddCustomerDialogOpen}

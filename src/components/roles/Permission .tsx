@@ -34,6 +34,7 @@ const moduleConfig: Record<string, string[]> = {
     "Lead Management",
     "Commissions",
     "Customer Management",
+    "Enquiry",
   ],
   "Team Lead": [
     "My Team",
@@ -46,6 +47,7 @@ const moduleConfig: Record<string, string[]> = {
     "Projects Overview",
     "Construction Timeline",
     "Site Inspections",
+    "Inspection Schedule",
   ],
   Contractor: ["Project Tasks"],
   "Operations Modules": [
@@ -196,7 +198,6 @@ export default function Permission() {
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
       });
-      console.log("saved", data);
     } catch (err) {
       console.error("Error saving role:", err);
       toast.error("Failed to save role");

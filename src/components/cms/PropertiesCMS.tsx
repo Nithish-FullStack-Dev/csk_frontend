@@ -83,10 +83,10 @@ const PropertiesCMS = () => {
       const res = await axios.get(
         `${import.meta.env.VITE_URL}/api/cms/cmsProperty/getAllCms`
       );
-      // console.log(res.data);
       setProperties(res.data.cmsProperties);
     } catch (error) {
       console.log("Fetch error", error);
+      return null;
     }
   };
 
@@ -98,9 +98,9 @@ const PropertiesCMS = () => {
           properties,
         }
       );
-      console.log("Slides saved");
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 
@@ -137,6 +137,7 @@ const PropertiesCMS = () => {
       setProperties([...properties, newProperty]);
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 

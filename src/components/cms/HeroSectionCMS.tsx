@@ -7,12 +7,30 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Save, Plus, Trash2, Eye, Upload } from "lucide-react";
 import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "@/pages/UserManagement";
+import { toast } from "sonner";
+import Loader from "../Loader";
 
 const HeroSectionCMS = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [slides, setSlides] = useState([]);
   const [editingSlide, setEditingSlide] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const {
+    data: rolePermissions,
+    isLoading: isRolePermissionsLoading,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
+  } = useQuery<Permission>({
+    queryKey: ["rolePermissions", user?.role],
+    queryFn: () => fetchRolePermissions(user?.role as string),
+    enabled: !!user?.role,
+  });
 
   const fetchSlides = async () => {
     try {
@@ -22,6 +40,7 @@ const HeroSectionCMS = () => {
       setSlides(res.data.banners);
     } catch (error) {
       console.log("Fetch error", error);
+      return null;
     }
   };
 
@@ -36,12 +55,32 @@ const HeroSectionCMS = () => {
       );
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 
   useEffect(() => {
     fetchSlides();
   }, []);
+
+  if (isRolePermissionsError) {
+    console.error("Error fetching role permissions:", rolePermissionsError);
+    toast.error("Failed to load role permissions");
+  }
+
+  if (isRolePermissionsLoading) {
+    return <Loader />;
+  }
+
+  const canUserAdd = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.write
+  );
+  const canUserEdit = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.edit
+  );
+  const canUserDelete = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.delete
+  );
 
   const handleSave = async () => {
     setIsEditing(false);
@@ -66,6 +105,7 @@ const HeroSectionCMS = () => {
       setSlides([...slides, savedSlide]);
     } catch (error) {
       console.log("Save error", error);
+      return null;
     }
   };
 
@@ -138,17 +178,19 @@ const HeroSectionCMS = () => {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap justify-center md:justify-end">
-          {isEditing ? (
-            <Button onClick={handleSave} size="sm" disabled={uploading}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </Button>
-          ) : (
-            <Button onClick={() => setIsEditing(true)} size="sm">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          )}
+          {isEditing
+            ? (canUserAdd || canUserEdit) && (
+                <Button onClick={handleSave} size="sm" disabled={uploading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              )
+            : canUserEdit && (
+                <Button onClick={() => setIsEditing(true)} size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -159,15 +201,17 @@ const HeroSectionCMS = () => {
               Please Don't switch tabs while uploading or saving
             </p>
           </h3>
-          <Button
-            onClick={addNewSlide}
-            variant="outline"
-            size="sm"
-            className="w-full md:w-auto"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Slide
-          </Button>
+          {canUserAdd && (
+            <Button
+              onClick={addNewSlide}
+              variant="outline"
+              size="sm"
+              className="w-full md:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Slide
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-4">
@@ -184,14 +228,16 @@ const HeroSectionCMS = () => {
                 <div className="flex-grow space-y-3">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <Badge variant="secondary">Slide {index + 1}</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSlide(slide._id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canUserDelete && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSlide(slide._id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
 
                   {isEditing ? (

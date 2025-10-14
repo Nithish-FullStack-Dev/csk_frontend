@@ -101,6 +101,8 @@ import SalesManagersReport from "./modules/reports/pages/SalesManagersReport";
 import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
 import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
+import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
+import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 
 const queryClient = new QueryClient();
 
@@ -164,6 +166,12 @@ const App = () => {
     const role = String(user?.role || "").toLowerCase();
     if (role === "admin") return <AdminLeadManagement />;
     return <LeadManagement />;
+  };
+  const CommissionsWrapper = () => {
+    const { user } = useAuth();
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return <AdminMyCommissions />;
+    return <MyCommissions />;
   };
 
   return (
@@ -363,7 +371,10 @@ const App = () => {
                   </ProtectedRoute>
                 }
               /> */}
-
+              <Route
+                path="/properties/openplot/:id"
+                element={<OpenPlotsDetails />}
+              />
               <Route
                 path="/properties/building/:buildingId"
                 element={
@@ -623,7 +634,7 @@ const App = () => {
                     allowedRoles={allRoles}
                     loading={rolesLoading}
                   >
-                    <MyCommissions />
+                    <CommissionsWrapper />
                   </ProtectedRoute>
                 }
               />

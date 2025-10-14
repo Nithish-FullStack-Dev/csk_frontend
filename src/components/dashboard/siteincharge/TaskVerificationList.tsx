@@ -556,7 +556,6 @@ const TaskVerificationList = ({
                     size="sm"
                     onClick={() => {
                       setSelectedTask(task);
-                      console.log("SELECTED TASK : ", task);
                       setVerificationDialogOpen(true);
                     }}
                   >

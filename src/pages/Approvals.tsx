@@ -33,6 +33,7 @@ import axios from "axios";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRBAC } from "@/config/RBAC";
 
 // Define an interface for the site visit request data for better type safety
 interface SiteVisitRequest {
@@ -119,7 +120,14 @@ const Approvals = () => {
     },
   });
 
-  if (approvalLoading) return <Loader />;
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Approvals" });
+
+  if (approvalLoading || isRolePermissionsLoading) return <Loader />;
   if (approvalError) {
     toast.error("Failed to fetch approval site visits.");
     console.error("Fetch site visit error:", approvalErr);
@@ -436,57 +444,69 @@ const Approvals = () => {
                                 </div>
 
                                 <div className="flex space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    className="flex-1 text-red-600 border-red-200"
-                                    onClick={() =>
-                                      handleAction(
-                                        selectedRequest._id,
-                                        "cancelled"
-                                      )
-                                    }
-                                    disabled={updateSiteVisitStatus.isPending}
-                                  >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Reject
-                                  </Button>
-                                  <Button
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                    onClick={() =>
-                                      handleAction(
-                                        selectedRequest._id,
-                                        "confirmed"
-                                      )
-                                    }
-                                    disabled={updateSiteVisitStatus.isPending}
-                                  >
-                                    <Check className="mr-2 h-4 w-4" />
-                                    Approve
-                                  </Button>
+                                  {userCanDeleteUser && (
+                                    <Button
+                                      variant="outline"
+                                      className="flex-1 text-red-600 border-red-200"
+                                      onClick={() =>
+                                        handleAction(
+                                          selectedRequest._id,
+                                          "cancelled"
+                                        )
+                                      }
+                                      disabled={updateSiteVisitStatus.isPending}
+                                    >
+                                      <X className="mr-2 h-4 w-4" />
+                                      Reject
+                                    </Button>
+                                  )}
+                                  {userCanAddUser && (
+                                    <Button
+                                      className="flex-1 bg-green-600 hover:bg-green-700"
+                                      onClick={() =>
+                                        handleAction(
+                                          selectedRequest._id,
+                                          "confirmed"
+                                        )
+                                      }
+                                      disabled={updateSiteVisitStatus.isPending}
+                                    >
+                                      <Check className="mr-2 h-4 w-4" />
+                                      Approve
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </DialogContent>
                           )}
                         </Dialog>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600"
-                          onClick={() => handleAction(request._id, "cancelled")}
-                          disabled={updateSiteVisitStatus.isPending}
-                        >
-                          <X className="mr-1 h-3 w-3" />
-                          Reject
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleAction(request._id, "confirmed")}
-                          disabled={updateSiteVisitStatus.isPending}
-                        >
-                          <Check className="mr-1 h-3 w-3" />
-                          Approve
-                        </Button>
+                        {userCanDeleteUser && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600"
+                            onClick={() =>
+                              handleAction(request._id, "cancelled")
+                            }
+                            disabled={updateSiteVisitStatus.isPending}
+                          >
+                            <X className="mr-1 h-3 w-3" />
+                            Reject
+                          </Button>
+                        )}
+                        {userCanAddUser && (
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() =>
+                              handleAction(request._id, "confirmed")
+                            }
+                            disabled={updateSiteVisitStatus.isPending}
+                          >
+                            <Check className="mr-1 h-3 w-3" />
+                            Approve
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>

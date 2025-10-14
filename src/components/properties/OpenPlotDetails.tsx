@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,20 +16,20 @@ import {
   Trash,
   Map,
   Building,
-  Calendar,
   IndianRupee,
   User,
-  Phone,
   FileText,
   MessageSquare,
   Check,
   X,
+  Image as ImageIcon,
+  MapPin,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
 
-function getStatusBadge(status: string) {
+export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
     Available: "bg-green-500",
     Sold: "bg-blue-500",
@@ -64,10 +64,52 @@ export function OpenPlotDetails({
 }: OpenPlotDetailsProps) {
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState("");
+
   const canEdit = user && ["owner", "admin"].includes(user.role);
+
+  const galleryImages = useMemo(() => {
+    const allImages = new Set<string>(plot.images || []);
+    if (plot.thumbnailUrl) {
+      allImages.add(plot.thumbnailUrl);
+    }
+    return Array.from(allImages);
+  }, [plot.images, plot.thumbnailUrl]);
+
+  const openLightbox = (imageSrc: string) => {
+    setCurrentImage(imageSrc);
+    setLightboxOpen(true);
+  };
+
+  // ✅ Converts a normal Google Maps URL → embeddable URL automatically
+  const getEmbeddableGoogleMapSrc = (url?: string): string => {
+    if (!url) return "";
+
+    // Already embed link
+    if (url.includes("/embed?pb=")) return url;
+
+    // Handle links like https://www.google.com/maps/place/Hyderabad/@17.385,78.486
+    if (url.includes("/maps/place/")) {
+      return url.replace("/maps/place/", "/maps/embed/place/");
+    }
+
+    // Handle links like https://goo.gl/maps/xxxxx or ?q=lat,lng
+    if (url.includes("goo.gl") || url.includes("?q=")) {
+      const queryMatch = url.match(/q=([^&]+)/);
+      const query = queryMatch ? decodeURIComponent(queryMatch[1]) : "";
+      return `https://www.google.com/maps?q=${query}&output=embed`;
+    }
+
+    // Fallback to search embed
+    return `https://www.google.com/maps?q=${encodeURIComponent(
+      url
+    )}&output=embed`;
+  };
 
   return (
     <div className="space-y-6">
+      {/* Back + Edit/Delete */}
       <div className="flex justify-between items-center">
         <Button variant="outline" size="sm" onClick={onBack}>
           <ChevronLeft className="mr-2 h-4 w-4" />
@@ -89,6 +131,7 @@ export function OpenPlotDetails({
         )}
       </div>
 
+      {/* Basic Info */}
       <Card>
         <div className="flex flex-col md:flex-row">
           {plot.thumbnailUrl && (
@@ -147,6 +190,7 @@ export function OpenPlotDetails({
         </div>
       </Card>
 
+      {/* Customer + Financial Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -170,78 +214,135 @@ export function OpenPlotDetails({
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <FileText className="mr-2 h-5 w-5" /> Legal & Other Info
+              <IndianRupee className="mr-2 h-5 w-5" /> Financials
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <p>
-              <strong>Approval:</strong> {plot.approval}
+              <strong>Price/Sq.Yard:</strong>{" "}
+              {formatCurrency(plot.pricePerSqYard)}
             </p>
             <p>
-              <strong>Corner Plot:</strong> {plot.isCornerPlot ? "Yes" : "No"}
+              <strong>Total Amount:</strong> {formatCurrency(plot.totalAmount)}
             </p>
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-1">
+                <span>
+                  Amount Received: {formatCurrency(plot.amountReceived)}
+                </span>
+                <span>
+                  {Math.round((plot.amountReceived / plot.totalAmount) * 100)}%
+                </span>
+              </div>
+              <Progress
+                value={(plot.amountReceived / plot.totalAmount) * 100}
+                className="h-2"
+              />
+            </div>
             <p>
-              <strong>Gated Community:</strong>{" "}
-              {plot.isGatedCommunity ? "Yes" : "No"}
-            </p>
-            <p>
-              <strong>Registration:</strong>{" "}
-              {getStatusBadge(plot.registrationStatus)}
-            </p>
-            <p className="flex items-center">
-              <strong>EMI Scheme:</strong>{" "}
-              {plot.emiScheme ? (
-                <>
-                  <Check className="ml-2 h-4 w-4 text-green-500" /> Available
-                </>
-              ) : (
-                <>
-                  <X className="ml-2 h-4 w-4 text-red-500" /> Not Available
-                </>
-              )}
-            </p>
-            <p className="flex items-start">
-              <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
-              {plot.remarks || "No remarks"}
+              <strong>Balance:</strong>{" "}
+              {formatCurrency(plot.totalAmount - plot.amountReceived)}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Google Maps */}
-      {plot.googleMapsLink && (
-        <Card className="mt-6">
+      {/* Legal Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center">
+            <FileText className="mr-2 h-5 w-5" /> Legal & Other Info
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p>
+            <strong>Approval:</strong> {plot.approval}
+          </p>
+          <p>
+            <strong>Corner Plot:</strong> {plot.isCornerPlot ? "Yes" : "No"}
+          </p>
+          <p>
+            <strong>Gated Community:</strong>{" "}
+            {plot.isGatedCommunity ? "Yes" : "No"}
+          </p>
+          <p>
+            <strong>Registration:</strong>{" "}
+            {getStatusBadge(plot.registrationStatus)}
+          </p>
+          <p className="flex items-center">
+            <strong>EMI Scheme:</strong>{" "}
+            {plot.emiScheme ? (
+              <>
+                <Check className="ml-2 h-4 w-4 text-green-500" /> Available
+              </>
+            ) : (
+              <>
+                <X className="ml-2 h-4 w-4 text-red-500" /> Not Available
+              </>
+            )}
+          </p>
+          <p className="flex items-start">
+            <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+            {plot.remarks || "No remarks"}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* 🖼️ Gallery - Bento Grid */}
+      {galleryImages.length > 0 && (
+        <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <Map className="mr-2 h-5 w-5" /> Location
+              <ImageIcon className="mr-2 h-5 w-5" /> Gallery
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {plot.googleMapsLink.includes("maps.google.com") ? (
-              <iframe
-                title="Plot Location"
-                src={plot.googleMapsLink}
-                className="w-full h-80 border-0 rounded-md"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            ) : (
-              <Button variant="outline" asChild className="w-full">
-                <a
-                  href={plot.googleMapsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center"
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-[150px]">
+              {galleryImages.map((image, index) => (
+                <div
+                  key={index}
+                  className={`relative cursor-pointer overflow-hidden rounded-lg shadow-sm ${
+                    index % 5 === 0 ? "col-span-2 row-span-2" : ""
+                  }`}
+                  onClick={() => openLightbox(image)}
                 >
-                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
-                </a>
-              </Button>
-            )}
+                  <img
+                    src={image}
+                    alt={`Plot image ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* 🗺️ Google Map Embed (free) */}
+      {plot.googleMapsLink ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <MapPin className="mr-2 h-5 w-5" /> Location Map
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <iframe
+              title="Plot Location"
+              src={getEmbeddableGoogleMapSrc(plot.googleMapsLink)}
+              className="w-full h-96 rounded-lg border"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </CardContent>
+        </Card>
+      ) : (
+        <p className="text-gray-500 italic">No map available for this plot.</p>
+      )}
+
+      {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -268,6 +369,17 @@ export function OpenPlotDetails({
               Delete Plot
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lightbox */}
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] p-0">
+          <img
+            src={currentImage}
+            alt="Full view of plot"
+            className="w-full h-full object-contain"
+          />
         </DialogContent>
       </Dialog>
     </div>

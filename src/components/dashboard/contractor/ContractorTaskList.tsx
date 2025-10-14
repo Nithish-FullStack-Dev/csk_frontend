@@ -156,7 +156,6 @@ const ContractorTaskList = () => {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
-        console.log(newLocations);
       } catch (err) {
         console.warn("GPS access denied or unavailable");
         newLocations.push({ latitude: 0, longitude: 0 }); // fallback or null

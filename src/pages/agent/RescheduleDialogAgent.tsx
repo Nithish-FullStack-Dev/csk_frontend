@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 export function RescheduleDialogAgent({
   open,
@@ -26,6 +28,7 @@ export function RescheduleDialogAgent({
   fetchAppointments,
   clients,
 }) {
+  const [isSaving, setisSaving] = useState(false);
   const { control, register, handleSubmit, reset } = useForm({
     defaultValues: {
       ...schedule,
@@ -47,6 +50,7 @@ export function RescheduleDialogAgent({
 
   const onSubmit = async (formData) => {
     try {
+      setisSaving(true);
       const payload = {
         ...formData,
         lead: formData.clientId, // backend expects `lead`
@@ -71,6 +75,8 @@ export function RescheduleDialogAgent({
         description: error?.response?.data?.error || "Failed to reschedule.",
         variant: "destructive",
       });
+    } finally {
+      setisSaving(false);
     }
   };
 
@@ -80,7 +86,7 @@ export function RescheduleDialogAgent({
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
         </DialogHeader>
-
+        <DialogDescription></DialogDescription>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input {...register("title")} placeholder="Title" required />
 
@@ -121,7 +127,9 @@ export function RescheduleDialogAgent({
             >
               Cancel
             </Button>
-            <Button type="submit">Update</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Updating" : "Update"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

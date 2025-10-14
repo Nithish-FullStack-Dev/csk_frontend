@@ -6,8 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Edit, Save, Upload, Plus, Trash2 } from "lucide-react";
 import axios from "axios";
+import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "@/pages/UserManagement";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "../Loader";
 
-interface AboutContent {
+export interface AboutContent {
   _id: string;
   mainTitle: string;
   paragraph1: string;
@@ -42,6 +48,7 @@ interface TeamMember {
 }
 
 const AboutSectionCMS = () => {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false); // About image loader
   const [thumbnailUploading, setThumbnailUploading] = useState(false); // Thumbnail loader
@@ -99,6 +106,17 @@ const AboutSectionCMS = () => {
   useEffect(() => {
     fetchAboutInfo();
   }, []);
+
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Content Management" });
+
+  if (isRolePermissionsLoading) {
+    return <Loader />;
+  }
 
   // About section image upload
   const handleAboutImageUpload = async (
@@ -290,16 +308,18 @@ const AboutSectionCMS = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            {isEditing ? (
+            {(userCanAddUser || userCanEditUser) && isEditing ? (
               <Button onClick={handleSave} size="sm" disabled={isAnyUploading}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
             ) : (
-              <Button onClick={() => setIsEditing(true)} size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              userCanEditUser && (
+                <Button onClick={() => setIsEditing(true)} size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )
             )}
           </div>
         </CardHeader>
@@ -578,7 +598,7 @@ const AboutSectionCMS = () => {
               </div>
             )}
           </div>
-          {isEditing && (
+          {(userCanEditUser || userCanAddUser) && isEditing && (
             <Button onClick={addTeamMember} size="sm" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
               Add Team Member
@@ -667,15 +687,17 @@ const AboutSectionCMS = () => {
                     </div>
 
                     {/* Remove button */}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeTeamMember(member.key)}
-                      className="w-full"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove
-                    </Button>
+                    {userCanDeleteUser && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeTeamMember(member.key)}
+                        className="w-full"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center space-y-3">

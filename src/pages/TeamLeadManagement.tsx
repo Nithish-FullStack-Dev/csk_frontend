@@ -22,6 +22,7 @@ import {
   Settings,
   BarChart3,
   Award,
+  IndianRupee,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useRBAC } from "@/config/RBAC";
 
 export interface TeamMember {
   _id: string;
@@ -251,14 +253,24 @@ const TeamLeadManagement = () => {
     },
   });
 
-  if (isLoading || isTeamMemLoading) return <Loader />;
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Team Management" });
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
+    return null;
   }
   if (teamMemError) {
     toast.error("Failed to fetch unassigned team members");
     console.error("fetch error:", isTeamMemErr);
+    return null;
   }
 
   const getStatusColor = (status: string) => {
@@ -373,15 +385,17 @@ const TeamLeadManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => {
-                setSelectedTeam(null); // Clear selectedTeam for "Add Member"
-                setDialogOpen(true);
-              }}
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            {userCanAddUser && (
+              <Button
+                onClick={() => {
+                  setSelectedTeam(null); // Clear selectedTeam for "Add Member"
+                  setDialogOpen(true);
+                }}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            )}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -426,9 +440,9 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  ${(totalTeamSales / 1000000).toFixed(1)}M
+                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
                 </span>
-                <DollarSign className="h-6 w-6 text-estate-gold" />
+                <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
             </CardContent>
           </Card>
@@ -486,16 +500,18 @@ const TeamLeadManagement = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedTeam(member);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
+                    {userCanEditUser && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedTeam(member);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -503,13 +519,13 @@ const TeamLeadManagement = () => {
                     <div>
                       <p className="text-muted-foreground">Sales</p>
                       <p className="font-semibold">
-                        ${(member.performance.sales / 1000).toFixed(0)}k
+                        ₹{(member.performance.sales / 1000).toFixed(0)}k
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
                       <p className="font-semibold">
-                        ${(member.performance.target / 1000).toFixed(0)}k
+                        ₹{(member.performance.target / 1000).toFixed(0)}k
                       </p>
                     </div>
                     <div>
@@ -721,36 +737,48 @@ const TeamLeadManagement = () => {
                 </Select>
               </div>
 
-              {["sales", "target", "deals", "leads", "conversionRate"].map(
-                (key) => (
-                  <div
-                    className="grid grid-cols-4 items-center gap-4"
-                    key={key}
-                  >
-                    <Label htmlFor={key} className="text-right capitalize">
-                      {key.replace(/([A-Z])/g, " $1")}
-                    </Label>
-                    <Input
-                      type="number"
-                      id={key}
-                      value={performance[key as keyof typeof performance]}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (value >= 0 || isNaN(value)) {
-                          handlePerformanceChange(key, value);
+              {["sales", "target", "deals", "leads"].map((key) => (
+                <div className="grid grid-cols-4 items-center gap-4" key={key}>
+                  <Label htmlFor={key} className="text-right capitalize">
+                    {key.replace(/([A-Z])/g, " ₹1")}
+                  </Label>
+                  <Input
+                    type="number"
+                    id={key}
+                    value={performance[key as keyof typeof performance]}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (value >= 0 || isNaN(value)) {
+                        handlePerformanceChange(key, value);
+
+                        // Auto-calculate conversion rate
+                        if (key === "deals" || key === "leads") {
+                          const updatedDeals =
+                            key === "deals" ? value : performance.deals || 0;
+                          const updatedLeads =
+                            key === "leads" ? value : performance.leads || 0;
+
+                          const newRate =
+                            updatedLeads > 0
+                              ? (updatedDeals / updatedLeads) * 100
+                              : 0;
+
+                          handlePerformanceChange(
+                            "conversionRate",
+                            parseFloat(newRate.toFixed(2))
+                          );
                         }
-                      }}
-                      onKeyDown={(e) => {
-                        if (["-", "e"].includes(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                      min={0}
-                      className="col-span-3"
-                    />
-                  </div>
-                )
-              )}
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (["-", "e"].includes(e.key)) e.preventDefault();
+                    }}
+                    min={0}
+                    className="col-span-3"
+                  />
+                </div>
+              ))}
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastActivity" className="text-right">
                   Last Activity
@@ -768,7 +796,7 @@ const TeamLeadManagement = () => {
             </div>
 
             <DialogFooter>
-              {selectedTeam && (
+              {userCanDeleteUser && selectedTeam && (
                 <Button variant="destructive">Remove Member</Button>
               )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>

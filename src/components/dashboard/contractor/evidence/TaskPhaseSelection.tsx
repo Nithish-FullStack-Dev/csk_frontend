@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/select";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 
-
 interface TaskPhaseSelectionProps {
   availableTasks;
   selectedTask: string;
@@ -42,12 +41,6 @@ const TaskPhaseSelection = ({
       setSelectedPhase(selectedTaskObj.phase);
     }
   }, [selectedTask, availableTasks, setSelectedPhase]);
-
-  // Debugging
-  useEffect(() => {
-    console.log("SelectedTask composite key:", selectedTask);
-    console.log("Matched task:", selectedTaskObj);
-  }, [selectedTask, selectedTaskObj]);
 
   return (
     <>

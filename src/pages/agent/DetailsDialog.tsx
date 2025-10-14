@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -12,6 +13,7 @@ export function DetailsDialog({ open, setOpen, schedule }) {
         <DialogHeader>
           <DialogTitle>Appointment Details</DialogTitle>
         </DialogHeader>
+        <DialogDescription></DialogDescription>
         <div className="space-y-2">
           <p>
             <strong>Title:</strong> {schedule?.title}
@@ -20,8 +22,7 @@ export function DetailsDialog({ open, setOpen, schedule }) {
             <strong>Client:</strong> {schedule?.client?.name}
           </p>
           <p>
-            <strong>Property:</strong>{" "}
-            {schedule?.property?.projectId?.basicInfo?.projectName}
+            <strong>Property:</strong> {schedule?.property?.projectName}
           </p>
           <p>
             <strong>Date:</strong>{" "}

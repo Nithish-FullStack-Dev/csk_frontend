@@ -46,8 +46,9 @@ const CompletedProjectsPage = () => {
             location?.mainPropertyImage ||
             "https://via.placeholder.com/400x300?text=No+Image",
           category: basic?.propertyType || "Unknown",
-          lat: location?.coordinates?.lat || 17.4457025, // Default to India's center coordinates
-          lng: location?.coordinates?.lng || 78.3770637,
+          // lat: location?.coordinates?.lat || 17.4457025,
+          // lng: location?.coordinates?.lng || 78.3770637,
+          googleMapsLocation: location?.googleMapsLocation || "",
         };
       });
       setCompletedProjects(completedProjectsFromDB);
@@ -243,24 +244,17 @@ const CompletedProjectsPage = () => {
 
                         {/* Location / Map */}
                         <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-full">
-                          {project.lat && project.lng ? (
+                          {project.googleMapsLocation ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
-                              <MapContainer
-                                key={`${project.lat}-${project.lng}`}
-                                center={[project.lat, project.lng]}
-                                zoom={15}
-                                scrollWheelZoom={true}
-                                dragging={true}
-                                style={{ width: "100%", height: "100%" }}
-                              >
-                                <TileLayer
-                                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                  attribution=""
-                                />
-                                <Marker position={[project.lat, project.lng]}>
-                                  <Popup>{project.title}</Popup>
-                                </Marker>
-                              </MapContainer>
+                              <iframe
+                                src={project.googleMapsLocation}
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                              ></iframe>
                             </div>
                           ) : (
                             <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">

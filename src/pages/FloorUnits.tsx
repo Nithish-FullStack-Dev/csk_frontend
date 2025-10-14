@@ -86,8 +86,6 @@ const FloorUnits = () => {
     enabled: !!buildingId && !!floorId,
   });
 
-  console.log(apartments);
-
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
     onSuccess: () => {
@@ -383,6 +381,8 @@ const FloorUnits = () => {
         apartment={selectedApartment}
         mode={dialogMode}
         onSave={handleSaveApartment}
+        isCreating={createUnitMutation.isPending}
+        isUpdating={updateUnitMutation.isPending}
       />
 
       <DeleteConfirmDialog

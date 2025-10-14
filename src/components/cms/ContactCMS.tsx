@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Edit, Save, Eye, Phone, Mail, MapPin, Clock } from "lucide-react";
 import axios from "axios";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "../Loader";
 
 const ContactCMS = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -29,7 +31,13 @@ const ContactCMS = () => {
 
     fetchContactInfo();
   }, []);
-
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Content Management" });
+  if (isRolePermissionsLoading) return <Loader />;
   const handleSave = async () => {
     try {
       await axios.post(
@@ -37,7 +45,6 @@ const ContactCMS = () => {
         contactInfo
       );
       setIsEditing(false);
-      console.log("Saved:", contactInfo);
     } catch (error) {
       console.error("Failed to save contact info:", error);
     }
@@ -72,25 +79,27 @@ const ContactCMS = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2 justify-center md:justify-end">
-            {isEditing ? (
-              <Button
-                onClick={handleSave}
-                size="sm"
-                className="w-full sm:w-auto"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setIsEditing(true)}
-                size="sm"
-                className="w-full sm:w-auto"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
+            {isEditing
+              ? (userCanAddUser || userCanEditUser) && (
+                  <Button
+                    onClick={handleSave}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
+                )
+              : userCanEditUser && (
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

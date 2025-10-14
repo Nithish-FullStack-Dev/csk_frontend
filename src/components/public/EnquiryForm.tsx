@@ -118,7 +118,6 @@ const ModernEnquiryForm: React.FC = () => {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setCurrentStep(2);
-      console.log(formData);
     } catch (error) {
       toast({
         title: "Submission Error",

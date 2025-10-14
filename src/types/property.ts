@@ -15,7 +15,7 @@ export type CustomerStatus = "Purchased" | "Inquiry" | "Blocked" | "Open";
 export type ProjectStatus = "ongoing" | "upcoming" | "completed";
 
 export interface PropertyDocument {
-  id: string;
+  _id: string;
   title: string;
   fileUrl: string;
   mimeType: string;

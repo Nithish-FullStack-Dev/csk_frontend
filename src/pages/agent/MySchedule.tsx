@@ -23,15 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
-// import { toast } from "sonner";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
 import { RescheduleDialog } from "./RescheduleDialog";
 import { DetailsDialog } from "./DetailsDialog";
-import { Label } from "@/components/ui/label";
 
 import {
   Select,
@@ -40,30 +39,135 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "@/components/Loader";
+import { useQuery } from "@tanstack/react-query";
+
+export const fetchProjects = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user-schedule/getBuildingNameForDropDown`,
+    { withCredentials: true }
+  );
+  return data.data || [];
+};
+
+export const fetchUnits = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user-schedule/getUnitsNameForDropDown`,
+    { withCredentials: true }
+  );
+  return data.data || [];
+};
+
+export const fetchSchedules = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
+    { withCredentials: true }
+  );
+  return data.schedules || [];
+};
+export const fetchContractor = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/contractor`,
+    { withCredentials: true }
+  );
+  return data.data || [];
+};
 
 const MySchedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date()); // Using April 10, 2025
-  const [view, setView] = useState<"day" | "calendar">("day");
-  const [appointments, setAppointments] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [properties, setProperties] = useState([]);
-  const [selectedProject, setSelectedProject] = useState("");
-  const [unit, setUnit] = useState("");
-  const [projects, setProjects] = useState([]);
-
   const [open, setOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isRescheduleOpen, setRescheduleOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
+  const [isSaving, setSaving] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
-  const [units, setUnits] = useState<string[]>([]);
 
   const { register, handleSubmit, setValue, reset } = useForm();
-  // const { register, handleSubmit, reset} = useForm();
+
+  // Fetch all projects
+  const {
+    data: projects = [],
+    isLoading: projectLoading,
+    isError: projectError,
+  } = useQuery({
+    queryKey: ["projects"],
+    queryFn: fetchProjects,
+  });
+
+  // Fetch all units once
+  const {
+    data: units = [],
+    isLoading: unitsLoading,
+    isError: unitsError,
+  } = useQuery({
+    queryKey: ["units"],
+    queryFn: fetchUnits,
+  });
+
+  // Fetch schedules
+  const {
+    data: schedules = [],
+    isLoading: schedulesLoading,
+    isError: schedulesError,
+    refetch: refetchSchedules,
+  } = useQuery({
+    queryKey: ["schedules"],
+    queryFn: fetchSchedules,
+  });
+  const {
+    data: clients = [],
+    isLoading: clientsLoading,
+    isError: clientsError,
+  } = useQuery({
+    queryKey: ["clients"],
+    queryFn: fetchContractor,
+  });
+
+  const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
+    roleSubmodule: "Inspection Schedule",
+  });
+  if (projectError || unitsError || schedulesError || clientsError) {
+    toast.error("Failed to load data. Please try again.");
+    return null;
+  }
+
+  if (
+    isRolePermissionsLoading ||
+    clientsLoading ||
+    schedulesLoading ||
+    unitsLoading ||
+    projectLoading
+  )
+    return <Loader />;
+
+  const processedSchedules = schedules.map((appt: any) => ({
+    ...appt,
+    date: new Date(appt.date),
+    startTime: new Date(appt.startTime),
+    endTime: new Date(appt.endTime),
+  }));
+
+  const todaysAppointments = processedSchedules.filter((appt) =>
+    date ? isSameDay(appt.date, date) : false
+  );
+
+  const filteredUnits = units.filter(
+    (unit) => unit.buildingId === selectedProjectId
+  );
+
+  const handlePreviousDay = () => {
+    if (date) setDate(subDays(date, 1));
+  };
+
+  const handleNextDay = () => {
+    if (date) setDate(addDays(date, 1));
+  };
 
   const onSubmit = async (formData) => {
     try {
+      setSaving(true);
       const payload = {
         title: formData.title,
         clientId: formData.clientId,
@@ -75,6 +179,7 @@ const MySchedule = () => {
         notes: formData.notes,
         date: formData.date,
         status: formData.status || "pending",
+        unit: formData.unit,
       };
 
       const response = await axios.post(
@@ -83,83 +188,22 @@ const MySchedule = () => {
         { withCredentials: true }
       );
 
-      toast({
-        title: "Success",
-        description: "Appointment created successfully.",
-      });
+      toast.error("Appointment created successfully.");
 
       reset(); // Clear form
       setOpen(false); // Close dialog
-      fetchAppointments();
-      // Optionally refetch your appointment list
+      refetchSchedules();
     } catch (error) {
       console.error("API Error:", error);
-      toast({
-        title: "Error",
-        description:
-          error?.response?.data?.error ||
-          "Something went wrong while saving appointment.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchAppointments = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
-        { withCredentials: true }
+      toast.error(
+        error?.response?.data?.error ||
+          "Something went wrong while saving appointment."
       );
-
-      const schedules = response.data.schedules || [];
-
-      const processedSchedules = schedules.map((appt) => ({
-        ...appt,
-        date: new Date(appt.date),
-        startTime: new Date(appt.startTime),
-        endTime: new Date(appt.endTime),
-      }));
-      console.log(processedSchedules);
-      setAppointments(processedSchedules);
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const fetchDropdownData = async () => {
-    try {
-      const clientsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/contractor`,
-        { withCredentials: true }
-      ); // Replace with your actual route
-      const projectRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
-
-      setClients(clientsRes.data.data);
-      setProjects(projectRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-    fetchDropdownData();
-  }, []);
-
-  const todaysAppointments = appointments.filter((appointment) =>
-    date ? isSameDay(appointment.date, date) : false
-  );
-
-  const handlePreviousDay = () => {
-    if (date) setDate(subDays(date, 1));
-  };
-
-  const handleNextDay = () => {
-    if (date) setDate(addDays(date, 1));
-  };
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -172,17 +216,19 @@ const MySchedule = () => {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Appointment
-              </Button>
+              {userCanAddUser && (
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Appointment
+                </Button>
+              )}
             </DialogTrigger>
 
             <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
               <DialogHeader>
                 <DialogTitle>New Appointment</DialogTitle>
               </DialogHeader>
-
+              <DialogDescription></DialogDescription>
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-4 mt-4"
@@ -213,20 +259,14 @@ const MySchedule = () => {
                     onChange={(e) => {
                       const projectId = e.target.value;
                       setSelectedProjectId(projectId);
-
-                      const project =
-                        projects.find((p) => p._id === projectId) || null;
-                      setUnits(project?.unitNames || []);
-                      setSelectedUnit(""); // reset unit on project change
-
-                      // update form value for backend
+                      setSelectedUnit("");
                       setValue("propertyId", projectId);
                     }}
                   >
                     <option value="">Select Project</option>
                     {projects.map((proj) => (
                       <option key={proj._id} value={proj._id}>
-                        {proj.projectTitle || proj.name || "Unnamed Project"}
+                        {proj.projectName || "Unnamed Project"}
                       </option>
                     ))}
                   </select>
@@ -237,14 +277,14 @@ const MySchedule = () => {
                     value={selectedUnit}
                     onChange={(e) => {
                       setSelectedUnit(e.target.value);
-                      setValue("unit", e.target.value); // update form field
+                      setValue("unit", e.target.value);
                     }}
                     disabled={!selectedProjectId}
                   >
                     <option value="">Select Unit</option>
-                    {units.map((unitName) => (
-                      <option key={unitName} value={unitName}>
-                        {unitName}
+                    {filteredUnits.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {`${u.unitType} Floor ${u.floorNumber}`}
                       </option>
                     ))}
                   </select>
@@ -296,14 +336,14 @@ const MySchedule = () => {
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
-                      setUnit("");
-                      setSelectedProject(null);
                       setSelectedUnit(null);
                     }}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -382,7 +422,7 @@ const MySchedule = () => {
 
                     return (
                       <div
-                        key={appointment.id}
+                        key={appointment._id}
                         className="flex gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex flex-col items-center justify-center w-16 text-center">
@@ -506,7 +546,7 @@ const MySchedule = () => {
                       open={isRescheduleOpen}
                       setOpen={setRescheduleOpen}
                       schedule={selectedSchedule}
-                      fetchAppointments={fetchAppointments}
+                      fetchAppointments={refetchSchedules}
                     />
                   )}
 

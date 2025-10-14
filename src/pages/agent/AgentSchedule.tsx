@@ -27,7 +27,6 @@ import {
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
 import { RescheduleDialog } from "./RescheduleDialog";
 import { DetailsDialog } from "./DetailsDialog";
 
@@ -38,66 +37,38 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { Lead } from "./LeadManagement";
+import { fetchAllLeads, fetchLeads, Lead } from "./LeadManagement";
 import { RescheduleDialogAgent } from "./RescheduleDialogAgent";
 import { useAuth } from "@/contexts/AuthContext";
 import AgentDetailsDialog from "./AgentDetailsDialog";
+import { useQuery } from "@tanstack/react-query";
+import Loader from "@/components/Loader";
+import { toast } from "sonner";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 const AgentSchedule = () => {
   const { user } = useAuth();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [appointments, setAppointments] = useState([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
 
   const [open, setOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isRescheduleOpen, setRescheduleOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { register, handleSubmit, setValue, reset } = useForm();
 
-  // 📌 Submit new appointment
-  const onSubmit = async (formData: any) => {
-    try {
-      const payload = {
-        title: formData.title,
-        lead: formData.leadId,
-        agent: user._id,
-        type: formData.type,
-        startTime: `${formData.date}T${formData.startTime}`,
-        endTime: `${formData.date}T${formData.endTime}`,
-        location: formData.location,
-        notes: formData.notes,
-        date: formData.date,
-        status: formData.status || "pending",
-      };
-      console.log(payload);
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/agent-schedule/addSchedules`,
-        payload,
-        { withCredentials: true }
-      );
+  const {
+    data: leads,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Lead[]>({
+    queryKey: ["leads"],
+    queryFn: fetchLeads,
+  });
 
-      toast({
-        title: "Success",
-        description: "Appointment created successfully.",
-      });
-
-      reset();
-      setOpen(false);
-      fetchAppointments();
-    } catch (error: any) {
-      console.error("API Error:", error);
-      toast({
-        title: "Error",
-        description:
-          error?.response?.data?.error || "Failed to save appointment",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // 📌 Fetch agent appointments
   const fetchAppointments = async () => {
     try {
       const res = await axios.get(
@@ -119,28 +90,57 @@ const AgentSchedule = () => {
     }
   };
 
-  // 📌 Fetch dropdown data (leads + projects)
-  const fetchDropdownData = async () => {
-    try {
-      const leadsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/leads/getLeadsById`,
-        { withCredentials: true }
-      );
-      setLeads(leadsRes.data);
-    } catch (err) {
-      console.error("Error fetching dropdown data:", err);
-    }
-  };
-
   useEffect(() => {
     fetchAppointments();
-    fetchDropdownData();
   }, []);
+
+  if (isError) {
+    toast.error("Failed to fetch leads");
+    console.error("Error fetching leads", error);
+  }
+
+  if (isLoading) return <Loader />;
 
   // 📌 Filter appointments by selected day
   const todaysAppointments = appointments.filter((appointment: any) =>
     date ? isSameDay(appointment.date, date) : false
   );
+
+  // 📌 Submit new appointment
+  const onSubmit = async (formData: any) => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        title: formData.title,
+        lead: formData.leadId,
+        agent: user._id,
+        type: formData.type,
+        startTime: `${formData.date}T${formData.startTime}`,
+        endTime: `${formData.date}T${formData.endTime}`,
+        location: formData.location,
+        notes: formData.notes,
+        date: formData.date,
+        status: formData.status || "pending",
+      };
+      console.log(payload);
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/agent-schedule/addSchedules`,
+        payload,
+        { withCredentials: true }
+      );
+
+      toast.success("Appointment created successfully.");
+
+      reset();
+      setOpen(false);
+      fetchAppointments();
+    } catch (error: any) {
+      console.error("API Error:", error);
+      toast.error(error?.response?.data?.error || "Failed to save appointment");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <MainLayout>
@@ -166,6 +166,7 @@ const AgentSchedule = () => {
               <DialogHeader>
                 <DialogTitle>New Appointment</DialogTitle>
               </DialogHeader>
+              <DialogDescription></DialogDescription>
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-4 mt-4"
@@ -244,7 +245,9 @@ const AgentSchedule = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
