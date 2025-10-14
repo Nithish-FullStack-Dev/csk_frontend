@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,10 +35,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils"; // Assuming you have a utility for class names
+import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
-import { OpenPlot } from "@/types/OpenPlots"; // Your OpenPlot type definition
 import { getCsrfToken, useAuth, User } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchContractors } from "./PropertyForm";
@@ -45,7 +46,11 @@ import {
   fetchAgents,
   fetchCustomers,
 } from "@/pages/CustomerManagement";
+import { OpenPlot } from "@/types/OpenPlots";
 
+/**
+ * Zod schema: kept original validation but added brochureUrl as optional
+ */
 export const openPlotFormSchema = z.object({
   memNo: z.string().min(1, "Membership number is required"),
   projectName: z.string().min(1, "Project name is required"),
@@ -82,12 +87,12 @@ export const openPlotFormSchema = z.object({
   amountReceived: z.coerce
     .number()
     .min(0, "Amount received is required and cannot be negative"),
-  balanceAmount: z.coerce.number().min(0, "Balance amount cannot be negative"), // Calculated, but good to validate
+  balanceAmount: z.coerce.number().min(0, "Balance amount cannot be negative"),
   googleMapsLink: z
     .string()
     .url("Must be a valid URL")
     .optional()
-    .or(z.literal("")), // Optional URL
+    .or(z.literal("")),
   approval: z.enum(
     ["DTCP", "HMDA", "Panchayat", "Municipality", "Unapproved", "Other"],
     { message: "Approval status is required" }
@@ -116,8 +121,8 @@ export const openPlotFormSchema = z.object({
   ),
   emiScheme: z.boolean(),
   remarks: z.string().optional().or(z.literal("")),
-  thumbnailUrl: z.string().optional().or(z.literal("")), // This will store the URL from upload
-  images: z.array(z.string()).optional(), // This will store URLs from upload
+  thumbnailUrl: z.string().optional().or(z.literal("")),
+  images: z.array(z.string()).optional(),
   listedDate: z.date({
     required_error: "Listed date is required",
     invalid_type_error: "Listed date must be a valid date",
@@ -126,13 +131,15 @@ export const openPlotFormSchema = z.object({
     required_error: "Available from date is required",
     invalid_type_error: "Available from date must be a valid date",
   }),
+  // **Added** brochureUrl so the form values can carry the brochure URL
+  brochureUrl: z.string().optional().or(z.literal("")),
 });
 
 export type OpenPlotFormValues = z.infer<typeof openPlotFormSchema>;
 
 interface OpenPlotFormProps {
   openPlot?: OpenPlot;
-  onSubmit: (data: OpenPlotFormValues) => void;
+  onSubmit: (data: any) => void; // parent expects the saved object; keep `any` if parent expects server object
   onCancel: () => void;
 }
 
@@ -141,14 +148,27 @@ export function OpenPlotForm({
   onSubmit,
   onCancel,
 }: OpenPlotFormProps) {
-  const { user } = useAuth(); // Assuming useAuth provides user role
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // files + previews
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(openPlot?.images || []);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     openPlot?.thumbnailUrl || ""
   );
+
+  // brochure file + preview (BuildingDialog style)
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
+  const [brochurePreview, setBrochurePreview] = useState<string | null>(
+    openPlot?.brochureUrl || null
+  );
+  // track whether user explicitly removed an existing brochure (so server gets cleared)
+  const [brochureRemoved, setBrochureRemoved] = useState(false);
+
+  // Keep track of created blob URLs so we can revoke them
+  const [createdBlobUrls, setCreatedBlobUrls] = useState<string[]>([]);
 
   const isEditing = !!openPlot;
 
@@ -164,7 +184,6 @@ export function OpenPlotForm({
     error: errorCustomers,
   } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
 
-  // Convert the openPlot data to form values if editing
   const defaultValues: Partial<OpenPlotFormValues> = openPlot
     ? {
         ...openPlot,
@@ -189,35 +208,37 @@ export function OpenPlotForm({
         agentId: openPlot.agentId?._id || null,
         remarks: openPlot.remarks || "",
         thumbnailUrl: openPlot.thumbnailUrl || "",
-        images: openPlot.images || [], // Ensure images is an array, even if empty
+        images: openPlot.images || [],
+        brochureUrl: openPlot.brochureUrl || "",
       }
     : {
-        memNo: "", // Explicitly initialize required strings
+        memNo: "",
         projectName: "",
         plotNo: "",
-        facing: "North", // Default enum value
+        facing: "North",
         extentSqYards: 0,
-        plotType: "Residential", // Default enum value
+        plotType: "Residential",
         pricePerSqYard: 0,
         totalAmount: 0,
         bookingAmount: 0,
         amountReceived: 0,
         balanceAmount: 0,
-        googleMapsLink: "", // Default to empty string
-        approval: "Unapproved", // Default enum value
+        googleMapsLink: "",
+        approval: "Unapproved",
         isCornerPlot: false,
         isGatedCommunity: false,
-        availabilityStatus: "Available", // Default enum value
-        customerId: null, // Default to empty string
-        customerContact: "", // Default to empty string
-        agentId: null, // Default to empty string
-        registrationStatus: "Not Started", // Default enum value
+        availabilityStatus: "Available",
+        customerId: null,
+        customerContact: "",
+        agentId: null,
+        registrationStatus: "Not Started",
         emiScheme: false,
-        remarks: "", // Default to empty string
-        thumbnailUrl: "", // Default to empty string
-        images: [], // Default to empty array
-        listedDate: undefined, // Let Zod handle the "required_error" for Dates if not picked
-        availableFrom: undefined, // Let Zod handle the "required_error" for Dates if not picked
+        remarks: "",
+        thumbnailUrl: "",
+        images: [],
+        listedDate: undefined,
+        availableFrom: undefined,
+        brochureUrl: "", // initialize brochureUrl
       };
 
   const form = useForm<OpenPlotFormValues>({
@@ -225,11 +246,10 @@ export function OpenPlotForm({
     defaultValues,
   });
 
-  // Watch form values for calculations
+  // watch calculated fields
   const totalAmount = form.watch("totalAmount");
   const amountReceived = form.watch("amountReceived");
 
-  // Recalculate balance amount when total or received amount changes
   useEffect(() => {
     const balance = (totalAmount || 0) - (amountReceived || 0);
     form.setValue("balanceAmount", balance >= 0 ? balance : 0, {
@@ -237,47 +257,110 @@ export function OpenPlotForm({
     });
   }, [totalAmount, amountReceived, form]);
 
-  if (loadingAgents || loadingCustomers) return <div>Loading...</div>;
-  if (errorAgents || errorCustomers) return <div>Error loading data</div>;
+  // ---------- FILE HANDLERS (thumbnail, images, brochure) ----------
 
-  // Handle file uploads for multiple plot images
+  const handleThumbnailUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setThumbnailFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setThumbnailPreview(previewUrl);
+    setCreatedBlobUrls((prev) => [...prev, previewUrl]);
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const newFiles = Array.from(files);
       setImageFiles((prev) => [...prev, ...newFiles]);
 
-      // Create preview URLs for the images
       const newUrls = newFiles.map((file) => URL.createObjectURL(file));
-      setImageUrls((prev) => [...prev, ...newUrls]); // Update local preview state
+      setImageUrls((prev) => [...prev, ...newUrls]);
+      setCreatedBlobUrls((prev) => [...prev, ...newUrls]);
     }
   };
 
-  // Handle thumbnail upload
-  const handleThumbnailUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setThumbnailFile(file);
-      const previewUrl = URL.createObjectURL(file);
-      setThumbnailPreview(previewUrl);
-    }
-  };
-
-  // Remove an image from preview and files
   const removeImage = (indexToRemove: number) => {
-    setImageUrls((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setImageUrls((prev) => {
+      const url = prev[indexToRemove];
+      if (url && url.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+        setCreatedBlobUrls((prevBlobs) => prevBlobs.filter((b) => b !== url));
+      }
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
     setImageFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  // Remove thumbnail from preview and file
   const removeThumbnail = () => {
+    if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(thumbnailPreview);
+      } catch (e) {}
+      setCreatedBlobUrls((prev) => prev.filter((b) => b !== thumbnailPreview));
+    }
     setThumbnailFile(null);
     setThumbnailPreview("");
-    // If you need to immediately update the form's thumbnail field, do it here.
   };
 
+  // ---------- NEW: brochure handlers (mirrors building dialog style) ----------
+  const handleBrochureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // require PDF (same as BuildingDialog). Adjust if you want images allowed too.
+    if (file.type !== "application/pdf") {
+      toast.error("Only PDF allowed for brochure");
+      return;
+    }
+
+    setBrochureFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setBrochurePreview(previewUrl);
+    setCreatedBlobUrls((prev) => [...prev, previewUrl]);
+    setBrochureRemoved(false); // user replaced/added brochure, not removed
+    toast.success("Brochure selected");
+  };
+
+  const removeBrochure = () => {
+    // If current preview is a blob url -> revoke it
+    if (brochurePreview && brochurePreview.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(brochurePreview);
+      } catch (e) {}
+      setCreatedBlobUrls((prev) => prev.filter((b) => b !== brochurePreview));
+    }
+    // Clear file + preview
+    setBrochureFile(null);
+    setBrochurePreview(null);
+
+    // If editing and there was an existing brochure on the openPlot, mark it as removed
+    if (openPlot?.brochureUrl) {
+      setBrochureRemoved(true);
+    } else {
+      setBrochureRemoved(false);
+    }
+  };
+
+  // cleanup on unmount: revoke all created blob URLs
+  useEffect(() => {
+    return () => {
+      createdBlobUrls.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {}
+      });
+    };
+  }, [createdBlobUrls]);
+  if (loadingAgents || loadingCustomers) return <div>Loading...</div>;
+  if (errorAgents || errorCustomers) return <div>Error loading data</div>;
+
+  // ---------- SUBMIT (keeps original flow but adds brochure upload & fixes onSubmit) ----------
   const handleSubmit = async (data: OpenPlotFormValues) => {
     if (!user || !["owner", "admin"].includes(user.role)) {
       toast.error("You don't have permission to perform this action.");
@@ -287,8 +370,8 @@ export function OpenPlotForm({
     try {
       const csrfToken = await getCsrfToken();
 
-      // 1. Upload new thumbnail (if a file is selected), otherwise keep the existing URL
-      let finalThumbnailUrl = thumbnailPreview; // Start with current preview (could be old URL or new preview URL)
+      // 1. Upload thumbnail (if a new file was selected). Otherwise keep existing URL.
+      let finalThumbnailUrl = thumbnailPreview; // could be existing or blob url
       if (thumbnailFile) {
         const thumbForm = new FormData();
         thumbForm.append("file", thumbnailFile);
@@ -306,9 +389,10 @@ export function OpenPlotForm({
         finalThumbnailUrl = thumbRes.data.url;
       }
 
+      // 2. Prepare final image URLs (filter out blob: and upload new files)
       let finalImageUrls: string[] = imageUrls.filter(
         (url) => !url.startsWith("blob:")
-      ); // Filter out client-side blob URLs
+      );
       if (imageFiles.length > 0) {
         for (const photo of imageFiles) {
           const formData = new FormData();
@@ -328,11 +412,37 @@ export function OpenPlotForm({
         }
       }
 
-      // Prepare the payload for the main API call
+      // 3. BROCHURE: Upload brochure file if selected, otherwise handle removal or keep existing
+      let finalBrochureUrl: string | null = openPlot?.brochureUrl || "";
+      if (brochureFile) {
+        const brochureForm = new FormData();
+        brochureForm.append("file", brochureFile);
+        const brochureRes = await axios.post(
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
+          brochureForm,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "X-CSRF-Token": csrfToken,
+            },
+            withCredentials: true,
+          }
+        );
+        finalBrochureUrl = brochureRes.data.url;
+      } else if (brochureRemoved) {
+        // user explicitly removed brochure -> clear on server
+        finalBrochureUrl = "";
+      } else {
+        // keep existing openPlot?.brochureUrl (already assigned)
+        finalBrochureUrl = openPlot?.brochureUrl || "";
+      }
+
+      // 4. Prepare the payload for the main API call
       const payload = {
         ...data,
         thumbnailUrl: finalThumbnailUrl,
         images: finalImageUrls,
+        brochureUrl: finalBrochureUrl,
         listedDate: data.listedDate?.toISOString(),
         availableFrom: data.availableFrom?.toISOString(),
         extentSqYards: Number(data.extentSqYards),
@@ -364,13 +474,19 @@ export function OpenPlotForm({
             config
           );
 
+      // Prefer common shapes: response.data.data (strapi style) or response.data
+      const saved = response.data?.data ?? response.data;
+
       toast.success(
         isEditing
           ? "Open Plot updated successfully!"
           : "New Open Plot added successfully!"
       );
-      onSubmit(data); // Call parent onSubmit after successful API submission
-      onCancel(); // Close the dialog
+
+      // IMPORTANT: pass the saved object back to parent — it contains actual brochureUrl
+      onSubmit(saved);
+
+      onCancel();
     } catch (error: any) {
       console.error(
         "Error submitting Open Plot form:",
@@ -386,6 +502,7 @@ export function OpenPlotForm({
     }
   };
 
+  // ---------- UI (preserved your layout + added brochure UI) ----------
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -973,10 +1090,7 @@ export function OpenPlotForm({
                         <SelectValue placeholder="Select customer" />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Clear selection option */}
                         <SelectItem value="none">No Selection</SelectItem>
-
-                        {/* List actual customer */}
                         {customers?.map((customer: Customer) => (
                           <SelectItem key={customer._id} value={customer._id}>
                             {customer.user?.name}
@@ -989,6 +1103,7 @@ export function OpenPlotForm({
                 </FormItem>
               )}
             />
+
             {/* Customer Contact */}
             <FormField
               control={form.control}
@@ -1026,10 +1141,7 @@ export function OpenPlotForm({
                         <SelectValue placeholder="Select agent" />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Clear selection option */}
                         <SelectItem value="none">No Selection</SelectItem>
-
-                        {/* List actual contractors */}
                         {agents?.map((agent: User) => (
                           <SelectItem key={agent._id} value={agent._id}>
                             {agent.name}
@@ -1170,6 +1282,69 @@ export function OpenPlotForm({
                   {form.formState.errors.images?.message}
                 </FormMessage>
               </div>
+            </div>
+          </div>
+
+          {/* ---------- NEW: Brochure Upload Section (BuildingDialog style) ---------- */}
+          <div className="pt-4">
+            <h3 className="text-lg font-medium">Project Brochure</h3>
+            <p className="text-sm text-muted-foreground">
+              Upload a PDF brochure for this plot (optional).
+            </p>
+          </div>
+          <Separator />
+          <div>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              {brochurePreview ? (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <a
+                      href={brochurePreview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      View Brochure
+                    </a>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {brochureFile
+                        ? brochureFile.name
+                        : openPlot?.brochureUrl
+                        ? openPlot.brochureUrl.split("/").pop()
+                        : ""}
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={removeBrochure}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="flex flex-col items-center justify-center h-28 cursor-pointer"
+                  onClick={() =>
+                    document.getElementById("brochureUpload")?.click()
+                  }
+                >
+                  <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">
+                    Click to upload project brochure (PDF)
+                  </p>
+                </div>
+              )}
+
+              <Input
+                id="brochureUpload"
+                type="file"
+                className="hidden"
+                accept="application/pdf"
+                onChange={handleBrochureUpload}
+              />
             </div>
           </div>
 
