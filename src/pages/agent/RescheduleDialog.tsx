@@ -1,23 +1,18 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 export function RescheduleDialog({
   open,
@@ -25,11 +20,11 @@ export function RescheduleDialog({
   schedule,
   fetchAppointments,
 }) {
-  const { control, register, handleSubmit, reset, setValue } = useForm({
+  console.log(schedule);
+  const [isUpadting, setisUpadting] = useState(false);
+  const { control, register, handleSubmit } = useForm({
     defaultValues: {
       ...schedule,
-      propertyId: schedule.propertyId,
-      clientId: schedule.clientId,
       date:
         typeof schedule.date === "string"
           ? schedule.date
@@ -41,12 +36,13 @@ export function RescheduleDialog({
 
   const onSubmit = async (formData) => {
     try {
+      setisUpadting(true);
       const payload = {
         ...formData,
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
       };
-
+      console.log(payload);
       await axios.put(
         `${import.meta.env.VITE_URL}/api/user-schedule/schedule/${
           schedule._id
@@ -66,6 +62,8 @@ export function RescheduleDialog({
         description: error?.response?.data?.error || "Failed to reschedule.",
         variant: "destructive",
       });
+    } finally {
+      setisUpadting(false);
     }
   };
 
@@ -75,7 +73,7 @@ export function RescheduleDialog({
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
         </DialogHeader>
-
+        <DialogDescription></DialogDescription>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input {...register("title")} placeholder="Title" required />
 
@@ -96,11 +94,7 @@ export function RescheduleDialog({
             control={control}
             render={({ field }) => (
               <Input
-                value={
-                  schedule?.property?.projectId?.basicInfo?.projectName ||
-                  schedule?.property?.projectTitle ||
-                  "Unknown Property"
-                }
+                value={schedule?.property?.projectName || "Unknown Property"}
                 disabled
                 readOnly
               />
@@ -120,7 +114,9 @@ export function RescheduleDialog({
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Update</Button>
+            <Button type="submit" disabled={isUpadting}>
+              {isUpadting ? "Updating..." : "Update"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
