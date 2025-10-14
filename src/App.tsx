@@ -102,6 +102,7 @@ import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
 import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
+import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 
 const queryClient = new QueryClient();
 
@@ -370,7 +371,10 @@ const App = () => {
                   </ProtectedRoute>
                 }
               /> */}
-
+              <Route
+                path="/properties/openplot/:id"
+                element={<OpenPlotsDetails />}
+              />
               <Route
                 path="/properties/building/:buildingId"
                 element={

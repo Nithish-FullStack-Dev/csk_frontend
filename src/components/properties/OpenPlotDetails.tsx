@@ -29,7 +29,7 @@ import { formatCurrency } from "@/lib/utils";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
 
-function getStatusBadge(status: string) {
+export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
     Available: "bg-green-500",
     Sold: "bg-blue-500",

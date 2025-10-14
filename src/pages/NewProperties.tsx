@@ -1,4 +1,3 @@
-// src/pages/NewProperties.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -15,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2,
-  Filter,
   Search,
   MapPin,
   Calendar,
@@ -35,13 +33,25 @@ import { toast } from "sonner";
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
-
-export const getAllBuildings = async () => {
+import { OpenPlot } from "@/types/OpenPlots";
+import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
+import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
+import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
+export const getAllBuildings = async (): Promise<Building[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
     { withCredentials: true }
   );
-  return data.data || []; // Assuming ApiResponse structure { status, data, message }
+  return data?.data || [];
+};
+
+export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
+    { withCredentials: true }
+  );
+  // Your backend returned { plots: [...] } earlier; fallback to data shapes
+  return data?.plots || data?.data || [];
 };
 
 const NewProperties = () => {
@@ -49,12 +59,13 @@ const NewProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // --- state for buildings UI ---
   const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Dialogs
+  // building dialogs & deletion
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
@@ -63,6 +74,20 @@ const NewProperties = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
 
+  // --- state for open plots UI ---
+  const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
+  const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
+  const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
+    undefined
+  );
+
+  // local copies for open plots (synced with react-query)
+  const [openPlots, setOpenPlots] = useState<OpenPlot[]>([]);
+  const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
+  const [selectedOpenPlot, setSelectedOpenPlot] = useState<
+    // New state for selected open plot
+    OpenPlot | undefined
+  >(undefined);
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
   const {
@@ -73,9 +98,153 @@ const NewProperties = () => {
   } = useQuery<Building[]>({
     queryKey: ["buildings"],
     queryFn: getAllBuildings,
+    staleTime: 1000 * 60,
   });
 
-  // Filtering logic
+  const {
+    data: openPlotsData,
+    isLoading: openPlotsLoading,
+    isError: openPlotsError,
+    error: openPlotsErr,
+  } = useQuery<OpenPlot[]>({
+    queryKey: ["openPlots"],
+    queryFn: getAllOpenPlots,
+    staleTime: 1000 * 60,
+  });
+
+  // ---------- Mutations ----------
+  const deleteBuilding = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      toast.success("Building deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || "Failed to delete building");
+    },
+  });
+
+  const createOpenPlotMutation = useMutation({
+    mutationFn: async (payload: Partial<OpenPlot>) => {
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`,
+        payload,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Open plot created");
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+      setDialogOpenPlot(false);
+      setCurrentOpenPlot(undefined);
+    },
+    onError: (err: any) => {
+      console.error("createOpenPlot error:", err?.response || err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 409) {
+          toast.error(
+            err.response?.data?.message || "Conflict while creating open plot"
+          );
+        } else {
+          toast.error(
+            err.response?.data?.message || "Failed to create open plot"
+          );
+        }
+      } else {
+        toast.error("Failed to create open plot");
+      }
+    },
+  });
+
+  const updateOpenPlotMutation = useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Partial<OpenPlot>;
+    }) => {
+      const { data } = await axios.put(
+        `${import.meta.env.VITE_URL}/api/openPlot/updateOpenPlot/${id}`,
+        payload,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Open plot updated");
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+      setDialogOpenPlot(false);
+      setCurrentOpenPlot(undefined);
+    },
+    onError: (err: any) => {
+      console.error("updateOpenPlot error:", err?.response || err);
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message || "Failed to update open plot"
+        );
+      } else {
+        toast.error("Failed to update open plot");
+      }
+    },
+  });
+
+  const deleteOpenPlotMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedOpenPlot) return;
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/openPlot/deleteOpenPlot/${
+          selectedOpenPlot._id
+        }`,
+        {
+          withCredentials: true,
+        }
+      );
+    },
+    onSuccess: () => {
+      toast.success("Open plot deleted");
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+    },
+    onError: (err: any) => {
+      console.error("deleteOpenPlot error:", err?.response || err);
+      toast.error(err?.response?.data?.message || "Failed to delete open plot");
+    },
+  });
+
+  // ---------- Effects ----------
+  // Sync react-query open plots to local state
+  useEffect(() => {
+    const list = openPlotsData || [];
+    setOpenPlots(list);
+    setFilteredOpenPlots(list);
+  }, [openPlotsData]);
+
+  // Errors -> toast (safe inside effects)
+  useEffect(() => {
+    if (buildError) {
+      toast.error((buildErr as any)?.message || "Failed to fetch buildings");
+      console.error(buildErr);
+    }
+  }, [buildError, buildErr]);
+
+  useEffect(() => {
+    if (openPlotsError) {
+      toast.error(
+        (openPlotsErr as any)?.message || "Failed to fetch open plots"
+      );
+      console.error(openPlotsErr);
+    }
+  }, [openPlotsError, openPlotsErr]);
+
+  // Filter buildings when inputs change
   useEffect(() => {
     let results = (buildings || []).slice();
     if (searchTerm) {
@@ -86,15 +255,14 @@ const NewProperties = () => {
           (b.location || "").toLowerCase().includes(lower)
       );
     }
-    if (typeFilter !== "all") {
+    if (typeFilter !== "all")
       results = results.filter((b) => b.propertyType === typeFilter);
-    }
-    if (statusFilter !== "all") {
+    if (statusFilter !== "all")
       results = results.filter((b) => b.constructionStatus === statusFilter);
-    }
     setFilteredBuildings(results);
   }, [searchTerm, typeFilter, statusFilter, buildings]);
 
+  // ---------- Handlers ----------
   const clearFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");
@@ -120,31 +288,6 @@ const NewProperties = () => {
     setDeleteDialogOpen(true);
   };
 
-  const deleteBuilding = useMutation({
-    mutationFn: async (id: string) => {
-      await axios.delete(
-        `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
-        { withCredentials: true }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["buildings"] });
-      toast.success("Building deleted successfully");
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to delete building");
-    },
-  });
-
-  if (buildError) {
-    toast.error(buildErr?.message || "Failed to fetch buildings");
-    console.error(buildErr);
-  }
-
-  if (buildingsLoading) {
-    return <Loader />;
-  }
-
   const handleDeleteConfirm = () => {
     if (!buildingToDelete) return;
     deleteBuilding.mutate(buildingToDelete);
@@ -156,19 +299,45 @@ const NewProperties = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      Completed: "bg-green-500",
-      "Under Construction": "bg-yellow-500",
-      Planned: "bg-blue-500",
-    };
-    return (
-      <Badge className={`${colors[status] || "bg-gray-500"} text-white`}>
-        {status}
-      </Badge>
-    );
+  // OpenPlot handlers
+  const handleOpenPlotSubmit = async (formData: any) => {
+    try {
+      setOpenPlotSubmitting(true);
+      if (currentOpenPlot && currentOpenPlot._id) {
+        await updateOpenPlotMutation.mutateAsync({
+          id: currentOpenPlot._id,
+          payload: formData,
+        });
+      } else {
+        await createOpenPlotMutation.mutateAsync(formData);
+      }
+      // react-query invalidation in mutation callbacks will refresh openPlotsData
+    } catch (err) {
+      console.error("handleOpenPlotSubmit error:", err);
+    } finally {
+      setOpenPlotSubmitting(false);
+    }
   };
 
+  const handleEditOpenPlot = (plot: OpenPlot, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentOpenPlot(plot);
+    setDialogOpenPlot(true);
+  };
+
+  const handleDeleteOpenPlot = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    // confirm quickly
+    if (!confirm("Delete this open plot?")) return;
+    deleteOpenPlotMutation.mutate();
+  };
+
+  // ---------- Loading UX ----------
+  if (buildingsLoading || openPlotsLoading) {
+    return <Loader />;
+  }
+
+  // ---------- Render ----------
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -183,14 +352,27 @@ const NewProperties = () => {
               Manage buildings and view details
             </p>
           </div>
+
           {canEdit && (
-            <Button onClick={handleAddBuilding}>
-              <Plus className="mr-2 h-4 w-4" /> Add Building
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                className="bg-estate-tomato hover:bg-estate-tomato/90"
+                onClick={() => {
+                  setCurrentOpenPlot(undefined);
+                  setDialogOpenPlot(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Open Plots
+              </Button>
+
+              <Button onClick={handleAddBuilding}>
+                <Plus className="mr-2 h-4 w-4" /> Add Building
+              </Button>
+            </div>
           )}
         </div>
 
-        {/* Filters + Grid */}
+        {/* Filters + Buildings Grid */}
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-4">
@@ -218,6 +400,7 @@ const NewProperties = () => {
                     Plot Development
                   </SelectItem>
                   <SelectItem value="Land Parcel">Land Parcel</SelectItem>
+                  <SelectItem value="Open Plot">Open Plot</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -385,20 +568,147 @@ const NewProperties = () => {
                 </Card>
               ))}
             </div>
-
-            {filteredBuildings.length === 0 && (
-              <div className="text-center py-12">
-                <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  No buildings found
-                </h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your filters
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* ---------- Open Plots Section ---------- */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">Open Plots</h2>
+            <div />
+          </div>
+
+          <Card>
+            <CardContent className="p-6">
+              {openPlots.length === 0 ? (
+                <div className="text-center py-12">
+                  <h3 className="text-lg font-semibold mb-2">
+                    No open plots found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Add open plots using the button above.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {openPlots.map((plot) => (
+                    <Card
+                      key={plot._id}
+                      className="overflow-hidden hover:shadow-lg transition cursor-pointer"
+                    >
+                      <div className="relative">
+                        {plot.thumbnailUrl ? (
+                          <img
+                            src={plot.thumbnailUrl}
+                            alt={plot.projectName}
+                            className="h-48 w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-48 bg-muted flex items-center justify-center">
+                            <Building2 className="h-10 w-10 opacity-20" />
+                          </div>
+                        )}
+                      </div>
+
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="font-semibold text-lg">
+                            {plot.projectName} — {plot.plotNo}
+                          </h3>
+                          {canEdit && (
+                            <div
+                              className="flex gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={(e) => handleEditOpenPlot(plot, e)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={(e) =>
+                                  handleDeleteOpenPlot(plot._id!, e)
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center text-sm text-muted-foreground mb-3">
+                          <MapPin className="h-4 w-4 mr-1" />{" "}
+                          {plot.googleMapsLink ? (
+                            <a
+                              className="underline"
+                              href={plot.googleMapsLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              View on map
+                            </a>
+                          ) : (
+                            plot.projectName
+                          )}
+                        </div>
+
+                        <div className="space-y-2 mb-4 text-sm">
+                          <div className="flex justify-between">
+                            <span>Extent (SqYards)</span>
+                            <span>{plot.extentSqYards}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Price / SqYard</span>
+                            <span>₹{plot.pricePerSqYard}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Total Amount</span>
+                            <span>₹{plot.totalAmount}</span>
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-3 text-sm space-y-2">
+                          <div className="flex justify-between">
+                            <span>Availability</span>
+                            <span>{plot.availabilityStatus}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Approval</span>
+                            <span>{plot.approval}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+
+                          >
+                            View Plot Details
+                          </Button>
+
+                          {/* <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() =>
+                          navigate(`/properties/building/${b._id}`)
+                        }
+                      >
+                        View More
+                      </Button> */}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
       </div>
 
       {/* Dialogs */}
@@ -416,6 +726,17 @@ const NewProperties = () => {
         onConfirm={handleDeleteConfirm}
         title="Delete Building"
         description="Are you sure you want to delete this building?"
+      />
+
+      {/* OpenPlot dialog (calls your existing component) */}
+      <OpenPlotDialog
+        open={dialogOpenPlot}
+        onOpenChange={(val: boolean) => {
+          setDialogOpenPlot(val);
+          if (!val) setCurrentOpenPlot(undefined);
+        }}
+        openPlot={currentOpenPlot}
+        onSubmit={handleOpenPlotSubmit}
       />
     </MainLayout>
   );

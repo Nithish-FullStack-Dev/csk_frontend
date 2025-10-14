@@ -66,6 +66,7 @@ export interface OpenPlot {
   images?: string[]; // Should be URLs returned by the backend
   listedDate: string; // Important: This is a string, but Zod schema expects Date.
   availableFrom: string; // Important: This is a string, but Zod schema expects Date.
+  
 }
 
 const sampleOpenPlots: OpenPlot[] = [];
