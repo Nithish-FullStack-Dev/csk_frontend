@@ -42,40 +42,15 @@ import {
 import { useRBAC } from "@/config/RBAC";
 import Loader from "@/components/Loader";
 import { useQuery } from "@tanstack/react-query";
-
-export const fetchProjects = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user-schedule/getBuildingNameForDropDown`,
-    { withCredentials: true }
-  );
-  return data.data || [];
-};
-
-export const fetchUnits = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user-schedule/getUnitsNameForDropDown`,
-    { withCredentials: true }
-  );
-  return data.data || [];
-};
-
-export const fetchSchedules = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
-    { withCredentials: true }
-  );
-  return data.schedules || [];
-};
-export const fetchContractor = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/contractor`,
-    { withCredentials: true }
-  );
-  return data.data || [];
-};
+import {
+  fetchContractor,
+  useProjects,
+  fetchSchedules,
+  fetchUnits,
+} from "@/utils/buildings/Projects";
 
 const MySchedule = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date()); // Using April 10, 2025
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [isRescheduleOpen, setRescheduleOpen] = useState(false);
@@ -91,10 +66,7 @@ const MySchedule = () => {
     data: projects = [],
     isLoading: projectLoading,
     isError: projectError,
-  } = useQuery({
-    queryKey: ["projects"],
-    queryFn: fetchProjects,
-  });
+  } = useProjects();
 
   // Fetch all units once
   const {
@@ -104,6 +76,7 @@ const MySchedule = () => {
   } = useQuery({
     queryKey: ["units"],
     queryFn: fetchUnits,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch schedules
@@ -115,6 +88,7 @@ const MySchedule = () => {
   } = useQuery({
     queryKey: ["schedules"],
     queryFn: fetchSchedules,
+    staleTime: 2 * 60 * 1000,
   });
   const {
     data: clients = [],
@@ -123,6 +97,7 @@ const MySchedule = () => {
   } = useQuery({
     queryKey: ["clients"],
     queryFn: fetchContractor,
+    staleTime: 2 * 60 * 1000,
   });
 
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({

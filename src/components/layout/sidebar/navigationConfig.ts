@@ -159,6 +159,7 @@ import {
   BarChart3,
   Car,
   CheckSquare,
+  CheckCircle,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -231,7 +232,7 @@ export const moduleToNavItem: Record<string, any> = {
   "Lead Management": { to: "/leads", icon: Users, label: "Lead Management" },
   Commissions: { to: "/commissions", icon: DollarSign, label: "Commissions" },
   Projects: { to: "/projects", icon: Briefcase, label: "Projects Overview" },
-  "Timeline Tracking": {
+  "Construction Timeline": {
     to: "/timeline",
     icon: Calendar,
     label: "Construction Timeline",
@@ -259,6 +260,11 @@ export const moduleToNavItem: Record<string, any> = {
   "Sales Overview": { to: "/sales", icon: BarChart3, label: "Sales Overview" },
   Operations: { to: "/operations", icon: Settings, label: "Operations" },
   Finances: { to: "/finances", icon: DollarSign, label: "Finances" },
+  "Task Verifications": {
+    to: "/verifications",
+    icon: CheckCircle,
+    label: "Task Verifications",
+  },
   "Budget Tracking": {
     to: "/budgets",
     icon: FileText,

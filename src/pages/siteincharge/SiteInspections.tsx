@@ -52,6 +52,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import axios from "axios";
 import { handleExportReport } from "./generateInspectionPDF";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Loader from "@/components/Loader";
+import {
+  fetchInspections,
+  useFloorUnits,
+  useProjects,
+  useUnits,
+} from "@/utils/buildings/Projects";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 interface SiteInspection {
   id: string;
@@ -84,11 +93,10 @@ const SiteInspections = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [newInspectionOpen, setNewInspectionOpen] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
-  const [siteInspections, setSiteInspections] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [selectedProject, setSelectedProject] = useState("");
+  const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [unit, setUnit] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [location, setLocation] = useState("");
@@ -102,7 +110,99 @@ const SiteInspections = () => {
     useState(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isInspection, setIsInspection] = useState(false);
+  const queryClient = useQueryClient();
+
+  const {
+    data: siteInspections,
+    isLoading: siteLoading,
+    error: siteError,
+    isError: siteIsError,
+  } = useQuery({
+    queryKey: ["inspections"],
+    queryFn: fetchInspections,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const {
+    data: projects,
+    isLoading: projectLoading,
+    error: dropdownError,
+    isError: dropdownIsError,
+  } = useProjects();
+
+  const {
+    data: floorUnits = [],
+    isLoading: floorUnitsLoading,
+    isError: floorUnitsError,
+    error: floorUnitsErrorMessage,
+  } = useFloorUnits(selectedProject);
+
+  const {
+    data: unitsByFloor,
+    isLoading: unitsByFloorLoading,
+    isError: unitsByFloorError,
+    error: unitsByFloorErrorMessage,
+  } = useUnits(selectedProject, selectedFloorUnit);
+
+  const createInspection = useMutation({
+    mutationFn: async () => {
+      const uploadedImageUrls: string[] = [];
+
+      for (const photo of photos) {
+        const formData = new FormData();
+        formData.append("file", photo);
+
+        try {
+          const res = await axios.post(
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
+            formData,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+          if (res.data.url) uploadedImageUrls.push(res.data.url);
+        } catch (err) {
+          console.error("Upload failed", err);
+        }
+      }
+
+      const inspectionData = {
+        title,
+        date,
+        project: selectedProject,
+        floorUnit: selectedFloorUnit,
+        unit,
+        type: selectedType,
+        location,
+        notes,
+        photos: uploadedImageUrls,
+      };
+
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/site-inspection/inspection/create`,
+        inspectionData,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(data.message);
+      setNewInspectionOpen(false);
+      fetchInspections();
+      setTitle("");
+      setDate("");
+      setSelectedProject("");
+      setUnit("");
+      setSelectedFloorUnit("");
+      setSelectedType("");
+      setLocation("");
+      setNotes("");
+      setPhotos([]);
+      queryClient.invalidateQueries({ queryKey: ["inspections"] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create inspection");
+      console.error("Inspection error:", error);
+    },
+  });
 
   const handleUpdateStatus = (inspection) => {
     setSelectedInspection(inspection);
@@ -115,38 +215,39 @@ const SiteInspections = () => {
     setOpenDialog(true);
   };
 
-  const fetchInspections = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/site-inspection/inspections`,
-        { withCredentials: true }
-      );
-      setSiteInspections(response.data.inspections || []);
-    } catch (error) {
-      console.error("Failed to fetch inspections:", error);
-    }
-  };
+  if (siteIsError) {
+    console.log("Failed to load inspection. Please try again.");
+    toast.error(siteError.message);
+    return null;
+  }
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
+  if (floorUnitsError) {
+    console.log("Failed to load floor units. Please try again.");
+    toast.error(floorUnitsErrorMessage.message);
+    return null;
+  }
 
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
+  if (unitsByFloorError) {
+    console.log("Failed to load units. Please try again.");
+    toast.error(unitsByFloorErrorMessage.message);
+    return null;
+  }
 
-  useEffect(() => {
-    fetchInspections();
-    fetchDropdownData();
-  }, []);
+  if (dropdownIsError) {
+    console.log("Failed to load dropdown data. Please try again.");
+    toast.error(dropdownError.message);
+    return null;
+  }
+
+  if (siteLoading) return <Loader />;
+
+  const selectedProjectName =
+    projects?.find((p) => p._id === projectFilter)?.projectName ||
+    (projectFilter === "all-projects" || !projectFilter
+      ? "All Projects"
+      : "Unknown");
 
   const filteredInspections = siteInspections.filter((inspection) => {
-    // Apply search query
     if (
       searchQuery &&
       !inspection.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -158,7 +259,7 @@ const SiteInspections = () => {
     if (
       projectFilter &&
       projectFilter !== "all-projects" &&
-      inspection.project !== projectFilter
+      inspection.project?._id !== projectFilter
     ) {
       return false;
     }
@@ -184,8 +285,6 @@ const SiteInspections = () => {
     return true;
   });
 
-  //const projects = Array.from(new Set(siteInspections.map(inspection => inspection.project)));
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -197,64 +296,9 @@ const SiteInspections = () => {
     setPhotos((prevPhotos) => prevPhotos.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsInspection(true);
-    // 1. Upload photos one-by-one
-    const uploadedImageUrls: string[] = [];
-    for (const photo of photos) {
-      const formData = new FormData();
-      formData.append("file", photo);
-
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        if (res.data.url) uploadedImageUrls.push(res.data.url);
-      } catch (err) {
-        console.error("Upload failed", err);
-      }
-    }
-
-    // 2. Create inspection object
-    const inspectionData = {
-      title,
-      date,
-      project: selectedProject,
-      unit,
-      type: selectedType,
-      location,
-      notes,
-      photos: uploadedImageUrls,
-    };
-
-    // 3. Send inspection data to backend
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/site-inspection/inspection/create`,
-        inspectionData,
-        { withCredentials: true }
-      );
-      toast.success("Inspection created successfully!");
-      setNewInspectionOpen(false); // close modal
-      fetchInspections();
-      setTitle("");
-      setDate("");
-      setSelectedProject("");
-      setUnit("");
-      setSelectedType("");
-      setLocation("");
-      setNotes("");
-    } catch (error) {
-      toast.error("Failed to create inspection.");
-      console.error("Inspection error:", error);
-    } finally {
-      setIsInspection(false);
-    }
+    createInspection.mutate();
   };
 
   return (
@@ -350,18 +394,14 @@ const SiteInspections = () => {
               <SelectTrigger className="w-fit">
                 <div className="flex items-center">
                   <Building className="h-4 w-4 mr-2" />
-                  <span>
-                    {projectFilter === "all-projects" || !projectFilter
-                      ? "All Projects"
-                      : projectFilter}
-                  </span>
+                  <span>{selectedProjectName}</span>
                 </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-projects">All Projects</SelectItem>
                 {projects.map((project, idx) => (
                   <SelectItem key={project._id || idx} value={project._id}>
-                    {project.projectTitle}
+                    {project.projectName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -424,6 +464,10 @@ const SiteInspections = () => {
               <DialogHeader>
                 <DialogTitle>Create New Inspection</DialogTitle>
               </DialogHeader>
+              <DialogDescription>
+                Fill in the details below to create a new site inspection
+                record.
+              </DialogDescription>
               <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -451,32 +495,126 @@ const SiteInspections = () => {
                     <Select
                       value={selectedProject}
                       onValueChange={setSelectedProject}
+                      disabled={projectLoading}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select project" />
+                        <SelectValue
+                          placeholder={
+                            projectLoading
+                              ? "Loading projects..."
+                              : "Select project"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {projects.map((project, idx) => (
-                          <SelectItem
-                            key={project._id || idx}
-                            value={project._id}
-                          >
-                            {project.projectTitle}
+                        {projectLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
                           </SelectItem>
-                        ))}
+                        ) : (
+                          projects &&
+                          projects.map((project, idx) => (
+                            <SelectItem
+                              key={project._id || idx}
+                              value={project._id}
+                            >
+                              {project.projectName}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="unit">Unit</Label>
-                    <Input
-                      id="unit"
+                    <Label htmlFor="unit">Floor Units</Label>
+                    <Select
+                      value={selectedFloorUnit}
+                      onValueChange={setSelectedFloorUnit}
+                      disabled={
+                        floorUnitsLoading ||
+                        !floorUnits ||
+                        floorUnits.length === 0
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            floorUnitsLoading
+                              ? "Loading Floor Units..."
+                              : !floorUnits || floorUnits.length === 0
+                              ? "No floor units available"
+                              : "Select Floor Unit"
+                          }
+                        />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {floorUnitsLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : !floorUnits || floorUnits.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No floor units available
+                          </SelectItem>
+                        ) : (
+                          floorUnits &&
+                          floorUnits?.map((floor, idx) => (
+                            <SelectItem
+                              key={floor._id || idx}
+                              value={floor._id}
+                            >
+                              floor no: {floor.floorNumber} ,{floor.unitType}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Units</Label>
+                    <Select
                       value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                      placeholder="Building/Unit identifier"
-                      required
-                    />
+                      onValueChange={setUnit}
+                      disabled={
+                        unitsByFloorLoading ||
+                        !unitsByFloor ||
+                        unitsByFloor.length === 0
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            unitsByFloorLoading
+                              ? "Loading Units..."
+                              : !unitsByFloor || unitsByFloor.length === 0
+                              ? "No units available"
+                              : "Select Unit"
+                          }
+                        />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {unitsByFloorLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : !unitsByFloor || unitsByFloor.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No units available
+                          </SelectItem>
+                        ) : (
+                          unitsByFloor &&
+                          unitsByFloor?.map((unit, idx) => (
+                            <SelectItem key={unit._id || idx} value={unit._id}>
+                              plot no:{unit.plotNo} ,{unit.propertyType}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="type">Inspection Type</Label>
@@ -582,12 +720,8 @@ const SiteInspections = () => {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    onClick={handleSubmit}
-                    disabled={isInspection}
-                  >
-                    {isInspection
+                  <Button type="submit" disabled={createInspection.isPending}>
+                    {createInspection.isPending
                       ? "Creating Inspection..."
                       : "Create Inspection"}
                   </Button>
@@ -629,13 +763,13 @@ const SiteInspections = () => {
                         <TableCell className="font-medium">
                           {inspection.title}
                           <div className="text-xs text-muted-foreground">
-                            {inspection.locations}
+                            {inspection.location}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {inspection?.project?.projectId?.basicInfo
-                            ?.projectName || "N/A"}{" "}
-                          / {inspection?.unit || "N/A"}
+                          {inspection?.project?.projectName || "N/A"} /{" "}
+                          {inspection?.floorUnit?.floorNumber || "N/A"}/{" "}
+                          {inspection?.unit?.propertyType || "N/A"}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -732,15 +866,18 @@ const SiteInspections = () => {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {inspection.locations}
+                      {inspection.location}
                     </p>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>
-                        Project:{" "}
-                        {inspection?.project?.projectId?.basicInfo
-                          ?.projectName || "N/A"}
+                        Project: {inspection?.project?.projectName || "N/A"}
                       </span>
-                      <span>Unit: {inspection?.unit || "N/A"}</span>
+                      <span>
+                        Unit: {inspection?.floorUnit?.floorNumber || "N/A"}
+                      </span>
+                      <span>
+                        Unit: {inspection?.unit?.propertyType || "N/A"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>
@@ -798,25 +935,32 @@ const SiteInspections = () => {
 
             {/* Inspection Details Dialog */}
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] max-w-[90vw] rounded-xl overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] max-w-[90vw] rounded-xl overflow-scroll">
                 <DialogHeader>
                   <DialogTitle>Inspection Details</DialogTitle>
                 </DialogHeader>
+                <DialogDescription>
+                  Detailed information about the selected inspection.
+                </DialogDescription>
                 {selectedInspection && (
                   <div className="space-y-4 text-sm">
                     <p>
                       <strong>Title:</strong> {selectedInspection.title}
                     </p>
                     <p>
-                      <strong>Location:</strong> {selectedInspection.locations}
+                      <strong>Location:</strong> {selectedInspection.location}
                     </p>
                     <p>
-                      <strong>Project:</strong>{" "}
-                      {selectedInspection?.project?.projectId?.basicInfo
-                        ?.projectName || "N/A"}
+                      <strong>Project: </strong>{" "}
+                      {selectedInspection?.project?.projectName || "N/A"}
                     </p>
                     <p>
-                      <strong>Unit:</strong> {selectedInspection.unit}
+                      <strong>Floor Unit: </strong>{" "}
+                      {selectedInspection.floorUnit?.floorNumber}
+                    </p>
+                    <p>
+                      <strong>Unit: </strong>{" "}
+                      {selectedInspection.unit?.propertyType}
                     </p>
                     <p>
                       <strong>Type:</strong> {selectedInspection.type}
@@ -859,6 +1003,9 @@ const SiteInspections = () => {
                   <DialogHeader>
                     <DialogTitle>Update Status</DialogTitle>
                   </DialogHeader>
+                  <DialogDescription>
+                    Update the status of the selected inspection.
+                  </DialogDescription>
                 </div>
                 <div className="grid gap-4 mt-4">
                   <div className="flex gap-2 justify-between">
@@ -912,6 +1059,9 @@ const SiteInspections = () => {
                 <DialogHeader>
                   <DialogTitle>Upload Photos</DialogTitle>
                 </DialogHeader>
+                <DialogDescription>
+                  Upload additional photos for this inspection.
+                </DialogDescription>
                 <div className="space-y-4">
                   <input
                     type="file"
