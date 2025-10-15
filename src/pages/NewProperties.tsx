@@ -38,6 +38,7 @@ import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
 import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
 import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
+
 export const getAllBuildings = async (): Promise<Building[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
@@ -343,6 +344,60 @@ const NewProperties = () => {
     await deleteOpenPlotMutation.mutateAsync();
     setSelectedOpenPlot(null); // Go back to the list view
   };
+
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) return toast.error("No brochure available to download.");
+
+    // Use a backend proxy to bypass browser CORS issues for authenticated downloads.
+    // This also keeps the Cloudinary URL private.
+    const proxyUrl = `${
+      import.meta.env.VITE_URL
+    }/api/download-proxy?url=${encodeURIComponent(
+      url
+    )}&filename=${encodeURIComponent(projectName || "brochure")}.pdf`;
+
+    // Navigate to the proxy URL to trigger the download.
+    window.location.href = proxyUrl;
+  };
+
+  const handleShare = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No brochure available to share");
+      return;
+    }
+
+    const shareData = {
+      title: projectName || "Brochure",
+      text: `Check out the brochure for ${projectName || "this project"}`,
+      url: url,
+    };
+
+    try {
+      // Use the modern Web Share API if available
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback for desktop: copy link to clipboard
+        await navigator.clipboard.writeText(url);
+        toast.success("Brochure link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Sharing failed:", error);
+      await navigator.clipboard.writeText(url);
+      toast.success("Brochure link copied to clipboard!");
+    }
+  };
+
   // ---------- Loading UX ----------
   if (buildingsLoading || openPlotsLoading) {
     return <Loader />;
@@ -558,31 +613,23 @@ const NewProperties = () => {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const link = document.createElement("a");
-                                  link.href = b.brochureUrl!;
-                                  link.download = `${
-                                    b.projectName || "brochure"
-                                  }.pdf`;
-                                  link.target = "_blank";
-                                  link.click();
-                                }}
+                                onClick={(e) =>
+                                  handleDownload(
+                                    e,
+                                    b.brochureUrl!,
+                                    b.projectName
+                                  )
+                                }
                                 title="Download Brochure"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(
-                                    b.brochureUrl || ""
-                                  );
-                                  toast.success("Brochure link copied!");
-                                }}
+                                onClick={(e) =>
+                                  handleShare(e, b.brochureUrl!, b.projectName)
+                                }
                                 title="Copy Share Link"
                               >
                                 <Share2 className="h-4 w-4" />
@@ -725,46 +772,33 @@ const NewProperties = () => {
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const link = document.createElement("a");
-                                      link.href = plot.brochureUrl!;
-                                      link.download = `${
-                                        plot.projectName || "brochure"
-                                      }.pdf`;
-                                      link.target = "_blank";
-                                      link.click();
-                                    }}
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName
+                                      )
+                                    }
                                     title="Download Brochure"
                                   >
                                     <Download className="h-4 w-4" />
                                   </Button>
-
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigator.clipboard.writeText(
-                                        plot.brochureUrl || ""
-                                      );
-                                      toast.success("Brochure link copied!");
-                                    }}
+                                    onClick={(e) =>
+                                      handleShare(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName
+                                      )
+                                    }
                                     title="Copy Share Link"
                                   >
                                     <Share2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               )}
-                              {/* <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() =>
-                          navigate(`/properties/building/${b._id}`)
-                        }
-                      >
-                        View More
-                      </Button> */}
                             </div>
                           </CardContent>
                         </Card>

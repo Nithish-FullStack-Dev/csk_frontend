@@ -17,6 +17,15 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import {
+  useAvaliableUnits,
+  useFloorUnits,
+  useProjects,
+  useUnits,
+} from "@/utils/buildings/Projects";
 
 // Assume these are props or states passed down from a parent component
 // You'll need to define and manage these in your parent component.
@@ -60,13 +69,54 @@ export function AddCustomerDialog({
   setSelectedProperty,
   purchasedFromAgent,
   setPurchasedFromAgent,
-  availableProperties, // Array of properties { _id, basicInfo: { projectName, plotNumber } }
   availableAgents, // Array of agents { _id, name }
   usersPurchased,
   selectedUser,
   setSelectedUser,
   handleSaveCustomer, // Function to handle saving the customer
 }) {
+  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
+  const [unit, setUnit] = useState("");
+
+  const {
+    data: projects,
+    isLoading: projectLoading,
+    error: dropdownError,
+    isError: dropdownIsError,
+  } = useProjects();
+
+  const {
+    data: floorUnits = [],
+    isLoading: floorUnitsLoading,
+    isError: floorUnitsError,
+    error: floorUnitsErrorMessage,
+  } = useFloorUnits(selectedProject);
+
+  const {
+    data: unitsByFloor,
+    isLoading: unitsByFloorLoading,
+    isError: unitsByFloorError,
+    error: unitsByFloorErrorMessage,
+  } = useAvaliableUnits(selectedProject, selectedFloorUnit);
+
+  if (floorUnitsError) {
+    console.log("Failed to load floor units. Please try again.");
+    toast.error(floorUnitsErrorMessage.message);
+    return null;
+  }
+
+  if (unitsByFloorError) {
+    console.log("Failed to load units. Please try again.");
+    toast.error(unitsByFloorErrorMessage.message);
+    return null;
+  }
+
+  if (dropdownIsError) {
+    console.log("Failed to load dropdown data. Please try again.");
+    toast.error(dropdownError.message);
+    return null;
+  }
   return (
     <Dialog
       onOpenChange={setIsAddCustomerDialogOpen}
@@ -101,22 +151,118 @@ export function AddCustomerDialog({
         <div className="grid gap-4 py-4">
           {/* Property Interest - required */}
           <div className="space-y-2">
-            <label htmlFor="propertyInterest" className="text-sm font-medium">
-              Property Interest *
-            </label>
+            <Label htmlFor="project">Project</Label>
             <Select
-              onValueChange={setSelectedProperty}
-              value={selectedProperty}
+              value={selectedProject}
+              onValueChange={setSelectedProject}
+              disabled={projectLoading}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Property" />
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    projectLoading ? "Loading projects..." : "Select project"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {availableProperties?.map((prop) => (
-                  <SelectItem key={prop._id} value={prop._id}>
-                    {prop.basicInfo.projectName} - {prop.basicInfo.plotNumber}
+                {projectLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
                   </SelectItem>
-                ))}
+                ) : (
+                  projects &&
+                  projects.map((project, idx) => (
+                    <SelectItem key={project._id || idx} value={project._id}>
+                      {project.projectName}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unit">Floor Units</Label>
+            <Select
+              value={selectedFloorUnit}
+              onValueChange={setSelectedFloorUnit}
+              disabled={
+                floorUnitsLoading || !floorUnits || floorUnits.length === 0
+              }
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    floorUnitsLoading
+                      ? "Loading Floor Units..."
+                      : !floorUnits || floorUnits.length === 0
+                      ? "No floor units available"
+                      : "Select Floor Unit"
+                  }
+                />
+              </SelectTrigger>
+
+              <SelectContent>
+                {floorUnitsLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : !floorUnits || floorUnits.length === 0 ? (
+                  <SelectItem value="empty" disabled>
+                    No floor units available
+                  </SelectItem>
+                ) : (
+                  floorUnits &&
+                  floorUnits?.map((floor, idx) => (
+                    <SelectItem key={floor._id || idx} value={floor._id}>
+                      floor no: {floor.floorNumber} ,{floor.unitType}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unit">Units</Label>
+            <Select
+              value={unit}
+              onValueChange={setUnit}
+              disabled={
+                unitsByFloorLoading ||
+                !unitsByFloor ||
+                unitsByFloor.length === 0
+              }
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    unitsByFloorLoading
+                      ? "Loading Units..."
+                      : !unitsByFloor || unitsByFloor.length === 0
+                      ? "No units available"
+                      : "Select Unit"
+                  }
+                />
+              </SelectTrigger>
+
+              <SelectContent>
+                {unitsByFloorLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : !unitsByFloor || unitsByFloor.length === 0 ? (
+                  <SelectItem value="empty" disabled>
+                    No units available
+                  </SelectItem>
+                ) : (
+                  unitsByFloor &&
+                  unitsByFloor?.map((unit, idx) => (
+                    <SelectItem key={unit._id || idx} value={unit._id}>
+                      plot no:{unit.plotNo} ,{unit.propertyType}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>

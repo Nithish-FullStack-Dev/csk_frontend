@@ -75,6 +75,30 @@ export const useUnits = (buildingId: string, floorId: string) => {
   });
 };
 
+export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
+  buildingId: string,
+  floorId: string
+) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
+    { withCredentials: true }
+  );
+  return data.data || [];
+};
+
+export const useAvaliableUnits = (buildingId: string, floorId: string) => {
+  return useQuery<Property[]>({
+    queryKey: ["avaliableUnits", buildingId, floorId],
+    queryFn: () =>
+      fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown(buildingId, floorId),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!buildingId && !!floorId,
+    placeholderData: [],
+  });
+};
+
 //! SITE INCHARGE
 export const fetchSchedules = async () => {
   const { data } = await axios.get(

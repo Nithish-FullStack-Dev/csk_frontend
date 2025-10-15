@@ -150,7 +150,6 @@ import {
   Users,
   FileText,
   Calendar,
-  DollarSign,
   Briefcase,
   Settings,
   MessageCircle,
@@ -159,7 +158,7 @@ import {
   BarChart3,
   Car,
   CheckSquare,
-  CheckCircle,
+  IndianRupee,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -198,7 +197,7 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "My Commissions": {
     to: "/commissions",
-    icon: DollarSign,
+    icon: IndianRupee,
     label: "My Commissions",
   },
   Documents: { to: "/documents", icon: FileText, label: "Documents" },
@@ -216,7 +215,7 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Payment Processing": {
     to: "/payments",
-    icon: DollarSign,
+    icon: IndianRupee,
     label: "Payment Processing",
   },
   "Budget Management": {
@@ -230,7 +229,7 @@ export const moduleToNavItem: Record<string, any> = {
     label: "Financial Reports",
   },
   "Lead Management": { to: "/leads", icon: Users, label: "Lead Management" },
-  Commissions: { to: "/commissions", icon: DollarSign, label: "Commissions" },
+  Commissions: { to: "/commissions", icon: IndianRupee, label: "Commissions" },
   Projects: { to: "/projects", icon: Briefcase, label: "Projects Overview" },
   "Construction Timeline": {
     to: "/timeline",
@@ -251,7 +250,7 @@ export const moduleToNavItem: Record<string, any> = {
   Materials: { to: "/materials", icon: FileText, label: "Materials" },
   "Labor Management": { to: "/labor", icon: Users, label: "Labor Management" },
   Invoices: { to: "/invoices", icon: FileText, label: "Invoices" },
-  Payments: { to: "/payments", icon: DollarSign, label: "Payments" },
+  Payments: { to: "/payments", icon: IndianRupee, label: "Payments" },
   "Business Analytics": {
     to: "/analytics",
     icon: BarChart3,
@@ -259,12 +258,7 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Sales Overview": { to: "/sales", icon: BarChart3, label: "Sales Overview" },
   Operations: { to: "/operations", icon: Settings, label: "Operations" },
-  Finances: { to: "/finances", icon: DollarSign, label: "Finances" },
-  "Task Verifications": {
-    to: "/verifications",
-    icon: CheckCircle,
-    label: "Task Verifications",
-  },
+  Finances: { to: "/finances", icon: IndianRupee, label: "Finances" },
   "Budget Tracking": {
     to: "/budgets",
     icon: FileText,
