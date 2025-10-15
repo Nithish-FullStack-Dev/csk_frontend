@@ -533,7 +533,10 @@ const AdminTeamAgent = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
+                  ₹
+                  {totalTeamSales.toLocaleString("en-IN", {
+                    maximumFractionDigits: 0,
+                  })}
                 </span>
                 <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
@@ -607,13 +610,19 @@ const AdminTeamAgent = () => {
                     <div>
                       <p className="text-muted-foreground">Sales</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.sales / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.sales.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.target / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.target.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>

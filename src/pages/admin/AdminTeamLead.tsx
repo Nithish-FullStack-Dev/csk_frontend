@@ -447,9 +447,12 @@ const AdminTeamLead = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">{`₹${(
-                  totalTeamSales / 1000000
-                ).toFixed(1)}M`}</span>
+                <span className="text-2xl font-bold">{`₹${totalTeamSales.toLocaleString(
+                  "en-IN",
+                  {
+                    maximumFractionDigits: 0,
+                  }
+                )}`}</span>
                 <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
             </CardContent>
@@ -549,15 +552,21 @@ const AdminTeamLead = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Sales</p>
-                      <p className="font-semibold">{`₹${(
-                        member.performance.sales / 1000
-                      ).toFixed(0)}k`}</p>
+                      <p className="font-semibold">{`₹${member.performance.sales.toLocaleString(
+                        "en-IN",
+                        {
+                          maximumFractionDigits: 0,
+                        }
+                      )}`}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
-                      <p className="font-semibold">{`₹${(
-                        member.performance.target / 1000
-                      ).toFixed(0)}k`}</p>
+                      <p className="font-semibold">{`₹${member.performance.target.toLocaleString(
+                        "en-IN",
+                        {
+                          maximumFractionDigits: 0,
+                        }
+                      )}`}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Deals</p>

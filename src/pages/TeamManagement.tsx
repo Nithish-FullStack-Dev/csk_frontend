@@ -117,10 +117,20 @@ const TeamManagement = () => {
   }, [editingMember]);
 
   const handlePerformanceChange = (field: string, value: string | number) => {
-    setPerformance((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setPerformance((prev) => {
+      let newPerformance = { ...prev, [field]: value };
+
+      if (field === "deals" || field === "leads") {
+        const deals =
+          field === "deals" ? Number(value) : Number(newPerformance.deals);
+        const leads =
+          field === "leads" ? Number(value) : Number(newPerformance.leads);
+        newPerformance.conversionRate =
+          leads > 0 ? Number(((deals / leads) * 100).toFixed(2)) : 0;
+      }
+
+      return newPerformance;
+    });
   };
 
   const fetchMyTeam = async (): Promise<TeamMember[]> => {
@@ -553,13 +563,19 @@ const TeamManagement = () => {
                     <div>
                       <p className="text-muted-foreground">Sales</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.sales / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.sales.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.target / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.target.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>
@@ -769,31 +785,44 @@ const TeamManagement = () => {
                 </Select>
               </div>
 
-              {["sales", "target", "deals", "leads", "conversionRate"].map(
-                (key) => (
-                  <div
-                    className="grid grid-cols-4 items-center gap-4"
-                    key={key}
-                  >
-                    <Label htmlFor={key} className="text-right capitalize">
-                      {key.replace(/([A-Z])/g, " ₹1")}
-                    </Label>
-                    <Input
-                      type="number"
-                      id={key}
-                      value={performance[key as keyof typeof performance]}
-                      onChange={(e) =>
-                        handlePerformanceChange(
-                          key,
-                          Math.max(0, Number(e.target.value))
-                        )
-                      }
-                      className="col-span-3"
-                      min={0}
-                    />
-                  </div>
-                )
-              )}
+              {[
+                { key: "sales", label: "Selling Price" },
+                { key: "target", label: "Target Price" },
+                { key: "deals", label: "Closed Deals" },
+                { key: "leads", label: "Interested Leads" },
+              ].map(({ key, label }) => (
+                <div className="grid grid-cols-4 items-center gap-4" key={key}>
+                  <Label htmlFor={key} className="text-right">
+                    {label}
+                  </Label>
+                  <Input
+                    type="number"
+                    id={key}
+                    value={performance[key as keyof typeof performance] ?? 0}
+                    onChange={(e) =>
+                      handlePerformanceChange(
+                        key,
+                        Math.max(0, Number(e.target.value))
+                      )
+                    }
+                    className="col-span-3"
+                    min={0}
+                  />
+                </div>
+              ))}
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="conversionRate" className="text-right">
+                  Conversion Rate
+                </Label>
+                <Input
+                  id="conversionRate"
+                  className="col-span-3"
+                  type="number"
+                  value={performance.conversionRate}
+                  readOnly
+                />
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastActivity" className="text-right">
                   Last Activity
