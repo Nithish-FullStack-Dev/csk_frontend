@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchLeads } from "./LeadManagement";
+import { fetchLeads } from "@/utils/leads/LeadConfig";
 import { Property } from "../public/PropertyInterfaces";
 import { useRBAC } from "@/config/RBAC";
 
