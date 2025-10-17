@@ -162,23 +162,23 @@ const BuildingDetails = () => {
   });
 
   const deleteBuildingMutation = useMutation({
-    mutationFn: (id: string) =>
-      axios.delete(
+    mutationFn: async (id: string) =>
+      await axios.delete(
         `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
         {
           withCredentials: true,
         }
       ),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Building deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      await queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      await queryClient.refetchQueries({ queryKey: ["buildings"] });
       navigate("/properties");
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Failed to delete building");
     },
   });
-
   // Handle errors
   useEffect(() => {
     if (buildError) {

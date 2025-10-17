@@ -5,7 +5,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { PropertyDetails } from "@/components/properties/PropertyDetails";
 import { Property } from "@/types/property";
 import { useQuery } from "@tanstack/react-query";
-import { fetchUnit } from "@/components/properties/ApartmentDialog";
+import { fetchUnit } from "@/utils/units/Methods";
 import { toast } from "sonner";
 
 const UnitDetails = () => {
