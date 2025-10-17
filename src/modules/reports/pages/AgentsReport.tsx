@@ -33,11 +33,11 @@ import { User } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import axios from "axios";
-import { fetchAllSiteVisits } from "@/pages/agent/SiteVisits";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchAllAgents, fetchAllLeads, Lead } from "@/utils/leads/LeadConfig";
+import { fetchAllSiteVisits } from "@/utils/site-visit/SiteVisitConfig";
 
 export interface SiteVisitData {
   _id: string;

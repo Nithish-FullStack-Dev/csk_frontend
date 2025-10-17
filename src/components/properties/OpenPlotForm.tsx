@@ -40,13 +40,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { getCsrfToken, useAuth, User } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchContractors } from "./PropertyForm";
-import {
-  Customer,
-  fetchAgents,
-  fetchCustomers,
-} from "@/pages/CustomerManagement";
 import { OpenPlot } from "@/types/OpenPlots";
+import { fetchAgents, fetchCustomers } from "@/utils/buildings/CustomerConfig";
+import { Customer } from "@/types/property";
 
 /**
  * Zod schema: kept original validation but added brochureUrl as optional

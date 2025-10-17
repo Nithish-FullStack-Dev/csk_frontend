@@ -25,13 +25,11 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RescheduleDialog } from "./RescheduleDialog";
 import { DetailsDialog } from "./DetailsDialog";
-
 import {
   Select,
   SelectTrigger,
@@ -42,12 +40,9 @@ import {
 import { useRBAC } from "@/config/RBAC";
 import Loader from "@/components/Loader";
 import { useQuery } from "@tanstack/react-query";
-import {
-  fetchContractor,
-  useProjects,
-  fetchSchedules,
-  fetchUnits,
-} from "@/utils/buildings/Projects";
+import { fetchContractor, fetchSchedules } from "@/utils/buildings/Projects";
+import PropertySelect from "@/hooks/PropertySelect";
+import { Label } from "@/components/ui/label";
 
 const MySchedule = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -56,28 +51,20 @@ const MySchedule = () => {
   const [isRescheduleOpen, setRescheduleOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
   const [isSaving, setSaving] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+
+  // Form states
+  const [title, setTitle] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
-
-  const { register, handleSubmit, setValue, reset } = useForm();
-
-  // Fetch all projects
-  const {
-    data: projects = [],
-    isLoading: projectLoading,
-    isError: projectError,
-  } = useProjects();
-
-  // Fetch all units once
-  const {
-    data: units = [],
-    isLoading: unitsLoading,
-    isError: unitsError,
-  } = useQuery({
-    queryKey: ["units"],
-    queryFn: fetchUnits,
-    staleTime: 2 * 60 * 1000,
-  });
+  const [formDate, setFormDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [location, setLocation] = useState("");
+  const [type, setType] = useState("");
+  const [notes, setNotes] = useState("");
+  const [status, setStatus] = useState("pending");
 
   // Fetch schedules
   const {
@@ -103,18 +90,13 @@ const MySchedule = () => {
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
     roleSubmodule: "Inspection Schedule",
   });
-  if (projectError || unitsError || schedulesError || clientsError) {
+
+  if (schedulesError || clientsError) {
     toast.error("Failed to load data. Please try again.");
     return null;
   }
 
-  if (
-    isRolePermissionsLoading ||
-    clientsLoading ||
-    schedulesLoading ||
-    unitsLoading ||
-    projectLoading
-  )
+  if (isRolePermissionsLoading || clientsLoading || schedulesLoading)
     return <Loader />;
 
   const processedSchedules = schedules.map((appt: any) => ({
@@ -128,10 +110,6 @@ const MySchedule = () => {
     date ? isSameDay(appt.date, date) : false
   );
 
-  const filteredUnits = units.filter(
-    (unit) => unit.buildingId === selectedProjectId
-  );
-
   const handlePreviousDay = () => {
     if (date) setDate(subDays(date, 1));
   };
@@ -140,21 +118,54 @@ const MySchedule = () => {
     if (date) setDate(addDays(date, 1));
   };
 
-  const onSubmit = async (formData) => {
+  const resetForm = () => {
+    setTitle("");
+    setClientId("");
+    setSelectedProject("");
+    setSelectedFloorUnit("");
+    setSelectedUnit("");
+    setFormDate("");
+    setStartTime("");
+    setEndTime("");
+    setLocation("");
+    setType("");
+    setNotes("");
+    setStatus("pending");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (
+      !title ||
+      !clientId ||
+      !selectedProject ||
+      !selectedFloorUnit ||
+      !selectedUnit ||
+      !formDate ||
+      !startTime ||
+      !endTime ||
+      !type
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
     try {
       setSaving(true);
       const payload = {
-        title: formData.title,
-        clientId: formData.clientId,
-        property: formData.propertyId,
-        type: formData.type,
-        startTime: `${formData.date}T${formData.startTime}`,
-        endTime: `${formData.date}T${formData.endTime}`,
-        location: formData.location,
-        notes: formData.notes,
-        date: formData.date,
-        status: formData.status || "pending",
-        unit: formData.unit,
+        title,
+        clientId,
+        property: selectedProject,
+        type,
+        startTime: `${formDate}T${startTime}`,
+        endTime: `${formDate}T${endTime}`,
+        location,
+        notes,
+        date: formDate,
+        status,
+        unit: selectedUnit,
+        floorUnit: selectedFloorUnit,
       };
 
       const response = await axios.post(
@@ -163,10 +174,10 @@ const MySchedule = () => {
         { withCredentials: true }
       );
 
-      toast.error("Appointment created successfully.");
+      toast.success("Appointment created successfully.");
 
-      reset(); // Clear form
-      setOpen(false); // Close dialog
+      resetForm();
+      setOpen(false);
       refetchSchedules();
     } catch (error) {
       console.error("API Error:", error);
@@ -204,106 +215,128 @@ const MySchedule = () => {
                 <DialogTitle>New Appointment</DialogTitle>
               </DialogHeader>
               <DialogDescription></DialogDescription>
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-4 mt-4"
-              >
+              <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input {...register("title")} placeholder="Title" required />
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title *</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Title"
+                      required
+                    />
+                  </div>
 
-                  <Select
-                    onValueChange={(value) => setValue("clientId", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Contractor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.isArray(clients) &&
-                        clients.map((client) => (
-                          <SelectItem key={client._id} value={client._id}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="clientId">Contractor *</Label>
+                    <Select value={clientId} onValueChange={setClientId}>
+                      <SelectTrigger id="clientId">
+                        <SelectValue placeholder="Select Contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(clients) &&
+                          clients.map((client) => (
+                            <SelectItem key={client._id} value={client._id}>
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  {/* Project Dropdown */}
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={selectedProjectId}
-                    onChange={(e) => {
-                      const projectId = e.target.value;
-                      setSelectedProjectId(projectId);
-                      setSelectedUnit("");
-                      setValue("propertyId", projectId);
-                    }}
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map((proj) => (
-                      <option key={proj._id} value={proj._id}>
-                        {proj.projectName || "Unnamed Project"}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Property Dropdown */}
+                  <PropertySelect
+                    index={0}
+                    selectedFloorUnit={selectedFloorUnit}
+                    selectedProject={selectedProject}
+                    selectedUnit={selectedUnit}
+                    setSelectedProject={setSelectedProject}
+                    setSelectedFloorUnit={setSelectedFloorUnit}
+                    setSelectedUnit={setSelectedUnit}
+                    useAvailable={false}
+                  />
 
-                  {/* Unit Dropdown */}
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={selectedUnit}
-                    onChange={(e) => {
-                      setSelectedUnit(e.target.value);
-                      setValue("unit", e.target.value);
-                    }}
-                    disabled={!selectedProjectId}
-                  >
-                    <option value="">Select Unit</option>
-                    {filteredUnits.map((u) => (
-                      <option key={u._id} value={u._id}>
-                        {`${u.unitType} Floor ${u.floorNumber}`}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Input type="date" {...register("date")} required />
-                  <Input type="time" {...register("startTime")} required />
-                  <Input type="time" {...register("endTime")} required />
-                  <Input {...register("location")} placeholder="Location" />
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date *</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time *</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time *</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Location"
+                    />
+                  </div>
                 </div>
 
-                <Select
-                  onValueChange={(value) => setValue("type", value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Mode of Engagement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="site_visit">Site Visit</SelectItem>
-                    <SelectItem value="consultation">Consultation</SelectItem>
-                    <SelectItem value="document">Document</SelectItem>
-                    <SelectItem value="meeting">Meeting</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Mode of Engagement *</Label>
+                  <Select value={type} onValueChange={setType} required>
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Select Mode of Engagement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="site_visit">Site Visit</SelectItem>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                      <SelectItem value="document">Document</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                <Textarea
-                  {...register("notes")}
-                  placeholder="Notes or Description"
-                  className="min-h-[100px]"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Notes or Description"
+                    className="min-h-[100px]"
+                  />
+                </div>
 
-                <Select
-                  onValueChange={(value) => setValue("status", value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status *</Label>
+                  <Select value={status} onValueChange={setStatus} required>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <DialogFooter className="flex justify-end gap-2">
                   <Button
@@ -311,7 +344,7 @@ const MySchedule = () => {
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
-                      setSelectedUnit(null);
+                      resetForm();
                     }}
                   >
                     Cancel
@@ -446,7 +479,7 @@ const MySchedule = () => {
                                 </AvatarFallback>
                               </Avatar>
                               <span className="text-sm">
-                                {appointment.client.name || "anonymous"}
+                                {appointment.client?.name || "anonymous"}
                               </span>
                               {appointment?.property?.projectId?.basicInfo
                                 ?.projectName && (
@@ -493,7 +526,7 @@ const MySchedule = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setSelectedSchedule(appointment); // pass the full appointment object
+                                  setSelectedSchedule(appointment);
                                   setRescheduleOpen(true);
                                 }}
                               >
