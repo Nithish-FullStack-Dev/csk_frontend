@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import {
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import axios from "axios";
-import { fetchLeads, Lead } from "../agent/LeadManagement";
+import { fetchLeads, Lead } from "@/utils/leads/LeadConfig";
 import { useAuth } from "@/contexts/AuthContext";
 // import  from "../agent/SiteVisits";
 import Loader from "@/components/Loader";

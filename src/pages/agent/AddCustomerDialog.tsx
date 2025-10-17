@@ -27,32 +27,6 @@ import {
   useUnits,
 } from "@/utils/buildings/Projects";
 
-// Assume these are props or states passed down from a parent component
-// You'll need to define and manage these in your parent component.
-// For example:
-// const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
-// const [bookingDate, setBookingDate] = useState("");
-// const [finalPrice, setFinalPrice] = useState("");
-// const [paymentPlan, setPaymentPlan] = useState("Down Payment");
-// const [paymentStatus, setPaymentStatus] = useState("Pending");
-// const [selectedProperty, setSelectedProperty] = useState(""); // This will store the property _id
-// const [purchasedFromAgent, setPurchasedFromAgent] = useState(""); // This will store the agent _id
-
-// Assume availableProperties and availableAgents are fetched or passed as props
-// const availableProperties = [{ _id: "prop1", basicInfo: { projectName: "Project A", plotNumber: "101" } }];
-// const availableAgents = [{ _id: "agent1", name: "Agent John Doe" }];
-// const isSalesManager = true; // Replace with actual user role check
-
-export interface CustomerPayload {
-  user: string; // user ID of the customer (selectedUser)
-  property: string; // property ID (selectedProperty)
-  bookingDate: string; // format: YYYY-MM-DD
-  finalPrice: number;
-  paymentPlan: "Down Payment" | "EMI" | "Full Payment";
-  paymentStatus: "Pending" | "In Progress" | "Completed";
-  purchasedFrom: string; // agent ID (purchasedFromAgent)
-}
-
 export function AddCustomerDialog({
   isSalesManager,
   isAddCustomerDialogOpen,
@@ -65,20 +39,20 @@ export function AddCustomerDialog({
   setPaymentPlan,
   paymentStatus,
   setPaymentStatus,
-  selectedProperty,
-  setSelectedProperty,
+  selectedProject,
+  setSelectedProject,
   purchasedFromAgent,
   setPurchasedFromAgent,
-  availableAgents, // Array of agents { _id, name }
+  availableAgents,
   usersPurchased,
   selectedUser,
   setSelectedUser,
-  handleSaveCustomer, // Function to handle saving the customer
+  handleSaveCustomer,
+  selectedFloorUnit,
+  setSelectedFloorUnit,
+  unit,
+  setUnit,
 }) {
-  const [selectedProject, setSelectedProject] = useState("");
-  const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
-  const [unit, setUnit] = useState("");
-
   const {
     data: projects,
     isLoading: projectLoading,
@@ -123,16 +97,18 @@ export function AddCustomerDialog({
       open={isAddCustomerDialogOpen}
     >
       <DialogTrigger asChild>
-        {isSalesManager && ( // Only show button if user is a Sales Manager
+        {isSalesManager && (
           <Button
             onClick={() => {
-              // Clear form states for new customer
               setBookingDate("");
               setFinalPrice("");
               setPaymentPlan("Down Payment");
               setPaymentStatus("Pending");
-              setSelectedProperty("");
+              setSelectedProject("");
               setPurchasedFromAgent("");
+              setSelectedFloorUnit("");
+              setUnit("");
+              setSelectedUser("");
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
