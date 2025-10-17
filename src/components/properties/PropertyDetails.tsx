@@ -1,4 +1,4 @@
-// src/pages/PropertyDetails.tsx
+// src/components/PropertyDetails.tsx
 import { useState } from "react";
 import { useNavigate, useNavigation, useParams } from "react-router-dom";
 import {
@@ -109,16 +109,11 @@ export function PropertyDetails({
       unitData: FormData;
     }) => updateUnit(unitId, unitData),
     onSuccess: (updatedUnit) => {
-      queryClient.setQueryData(
-        ["units", buildingId, floorId],
-        (oldData: any[] = []) =>
-          oldData.map((unit) =>
-            unit._id === updatedUnit._id ? updatedUnit : unit
-          )
-      );
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
 
       toast.success("Unit updated successfully");
-      setApartmentDialogOpen(false);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to update unit");
@@ -128,16 +123,13 @@ export function PropertyDetails({
   // DELETE UNIT
   const deleteUnitMutation = useMutation({
     mutationFn: deleteUnit,
-    onSuccess: (deletedUnitId: string) => {
-      queryClient.setQueryData(
-        ["units", buildingId, floorId],
-        (oldData: any[] = []) =>
-          oldData.filter((unit) => unit._id !== deletedUnitId)
-      );
-
+    onSuccess: () => {
       toast.success("Unit deleted successfully");
-      setDeleteDialogOpen(false);
-      setApartmentToDelete(null);
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+
+      navigate(`/buildings/${buildingId}`); // or navigate(-1)
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete unit");
@@ -201,9 +193,16 @@ export function PropertyDetails({
     <>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ChevronLeft className="mr-2 h-4 w-4" /> Back to All Properties
+          <Button
+            variant="outline"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(-1);
+            }}
+          >
+            Back to Building
           </Button>
+
           {canEdit && (
             <div className="flex md:flex-row flex-col gap-3">
               <Button
