@@ -31,30 +31,19 @@ import { BuildingDialog } from "@/components/properties/BuildingDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
 import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
 import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
 import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
-
-export const getAllBuildings = async (): Promise<Building[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
-    { withCredentials: true }
-  );
-  return data?.data || [];
-};
-
-export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
-    { withCredentials: true }
-  );
-  // Your backend returned { plots: [...] } earlier; fallback to data shapes
-  return data?.plots || data?.data || [];
-};
+import { getAllBuildings, getAllOpenPlots } from "@/utils/buildings/Projects";
 
 const NewProperties = () => {
   const { user } = useAuth();
@@ -82,10 +71,6 @@ const NewProperties = () => {
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
     undefined
   );
-
-  // local copies for open plots (synced with react-query)
-  const [openPlots, setOpenPlots] = useState<OpenPlot[]>([]);
-  const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
   const [selectedOpenPlot, setSelectedOpenPlot] = useState<OpenPlot | null>(
     null
   );
@@ -99,18 +84,20 @@ const NewProperties = () => {
   } = useQuery<Building[]>({
     queryKey: ["buildings"],
     queryFn: getAllBuildings,
-    staleTime: 1000 * 60,
+    staleTime: 600000,
+    placeholderData: keepPreviousData,
   });
 
   const {
-    data: openPlotsData,
+    data: openPlots,
     isLoading: openPlotsLoading,
     isError: openPlotsError,
     error: openPlotsErr,
   } = useQuery<OpenPlot[]>({
     queryKey: ["openPlots"],
     queryFn: getAllOpenPlots,
-    staleTime: 1000 * 60,
+    staleTime: 600000,
+    placeholderData: keepPreviousData,
   });
 
   // ---------- Mutations ----------
@@ -184,9 +171,7 @@ const NewProperties = () => {
       toast.success("Open plot updated");
       setDialogOpenPlot(false);
       setCurrentOpenPlot(undefined);
-      // Invalidate the query to refetch in the background
       queryClient.invalidateQueries({ queryKey: ["openPlots"] });
-      // Immediately update the detailed view with the fresh data from the server
       if (updatedData?.data) setSelectedOpenPlot(updatedData.data);
     },
     onError: (err: any) => {
@@ -223,32 +208,6 @@ const NewProperties = () => {
     },
   });
 
-  // ---------- Effects ----------
-  // Sync react-query open plots to local state
-  useEffect(() => {
-    const list = openPlotsData || [];
-    setOpenPlots(list);
-    setFilteredOpenPlots(list);
-  }, [openPlotsData]);
-
-  // Errors -> toast (safe inside effects)
-  useEffect(() => {
-    if (buildError) {
-      toast.error((buildErr as any)?.message || "Failed to fetch buildings");
-      console.error(buildErr);
-    }
-  }, [buildError, buildErr]);
-
-  useEffect(() => {
-    if (openPlotsError) {
-      toast.error(
-        (openPlotsErr as any)?.message || "Failed to fetch open plots"
-      );
-      console.error(openPlotsErr);
-    }
-  }, [openPlotsError, openPlotsErr]);
-
-  // Filter buildings when inputs change
   useEffect(() => {
     let results = (buildings || []).slice();
     if (searchTerm) {
@@ -266,7 +225,16 @@ const NewProperties = () => {
     setFilteredBuildings(results);
   }, [searchTerm, typeFilter, statusFilter, buildings]);
 
-  // ---------- Handlers ----------
+  if (openPlotsError) {
+    toast.error((openPlotsErr as any)?.message || "Failed to fetch open plots");
+    console.error(openPlotsErr);
+  }
+  if (buildError) {
+    toast.error((buildErr as any)?.message || "Failed to fetch buildings");
+    console.error(buildErr);
+  }
+
+  // ---------- Handlers ----------2
   const clearFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");

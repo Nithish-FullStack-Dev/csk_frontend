@@ -23,6 +23,7 @@ import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog
 import { toast } from "sonner";
 import axios from "axios";
 import Loader from "@/components/Loader";
+import { createUnit, updateUnit, fetchUnit } from "@/utils/units/Methods";
 
 const fetchUnits = async (buildingId: string, floorId: string) => {
   const { data } = await axios.get(
@@ -34,29 +35,29 @@ const fetchUnits = async (buildingId: string, floorId: string) => {
   return data.data as Property[];
 };
 
-const createUnit = async (unitData: FormData) => {
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_URL}/api/unit/createUnit`,
-    unitData,
-    {
-      withCredentials: true,
-      headers: { "Content-Type": "multipart/form-data" },
-    }
-  );
-  return data.data as Property;
-};
+// const createUnit = async (unitData: FormData) => {
+//   const { data } = await axios.post(
+//     `${import.meta.env.VITE_URL}/api/unit/createUnit`,
+//     unitData,
+//     {
+//       withCredentials: true,
+//       headers: { "Content-Type": "multipart/form-data" },
+//     }
+//   );
+//   return data.data as Property;
+// };
 
-const updateUnit = async (unitId: string, unitData: FormData) => {
-  const { data } = await axios.patch(
-    `${import.meta.env.VITE_URL}/api/unit/updateUnit/${unitId}`,
-    unitData,
-    {
-      withCredentials: true,
-      headers: { "Content-Type": "multipart/form-data" },
-    }
-  );
-  return data.data as Property;
-};
+// const updateUnit = async (unitId: string, unitData: FormData) => {
+//   const { data } = await axios.patch(
+//     `${import.meta.env.VITE_URL}/api/unit/updateUnit/${unitId}`,
+//     unitData,
+//     {
+//       withCredentials: true,
+//       headers: { "Content-Type": "multipart/form-data" },
+//     }
+//   );
+//   return data.data as Property;
+// };
 
 const deleteUnit = async (unitId: string) => {
   const { data } = await axios.delete(
@@ -84,6 +85,7 @@ const FloorUnits = () => {
     queryKey: ["units", buildingId, floorId],
     queryFn: () => fetchUnits(buildingId!, floorId!),
     enabled: !!buildingId && !!floorId,
+    staleTime: 2000,
   });
 
   const createUnitMutation = useMutation({
@@ -273,31 +275,31 @@ const FloorUnits = () => {
                               Mem. No: {apartment.memNo || "N/A"}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(apartment.status)}
-                            {canEdit && (
-                              <div className="flex gap-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    handleEditApartment(apartment, e)
-                                  }
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    handleDeleteClick(apartment._id, e)
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
+                          {/* <div className="flex items-center gap-2">
+                              {getStatusBadge(apartment.status)}
+                              {canEdit && (
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      handleEditApartment(apartment, e)
+                                    }
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      handleDeleteClick(apartment._id, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div> */}
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -385,13 +387,13 @@ const FloorUnits = () => {
         isUpdating={updateUnitMutation.isPending}
       />
 
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Unit"
-        description="Are you sure you want to delete this unit? This action cannot be undone."
-      />
+      {/* <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Unit"
+          description="Are you sure you want to delete this unit? This action cannot be undone."
+        /> */}
     </MainLayout>
   );
 };

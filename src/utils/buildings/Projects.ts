@@ -1,9 +1,26 @@
 import { Building, FloorUnit } from "@/types/building";
+import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 //! BUILDINGS, FLOOR AND UNITS
+export const getAllBuildings = async (): Promise<Building[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
+    { withCredentials: true }
+  );
+  return data?.data || [];
+};
+
+export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
+    { withCredentials: true }
+  );
+  // Your backend returned { plots: [...] } earlier; fallback to data shapes
+  return data?.plots || data?.data || [];
+};
 
 export const fetchUnits = async () => {
   const { data } = await axios.get(
@@ -34,8 +51,7 @@ export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
     { withCredentials: true }
   );
@@ -57,8 +73,7 @@ export const fetchUnitsForDropDownByBuildingId = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -80,8 +95,7 @@ export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );

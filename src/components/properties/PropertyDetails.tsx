@@ -1,6 +1,6 @@
 // src/pages/PropertyDetails.tsx
 import { useState } from "react";
-import { useNavigate, useNavigation } from "react-router-dom";
+import { useNavigate, useNavigation, useParams } from "react-router-dom";
 import {
   Check,
   Building,
@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -31,6 +32,12 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { Property } from "@/types/property";
 import { formatIndianCurrency } from "@/lib/formatCurrency";
+import { ApartmentDialog } from "./ApartmentDialog";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
+import { createUnit, deleteUnit, updateUnit } from "@/utils/units/Methods";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -67,9 +74,89 @@ export function PropertyDetails({
   onDelete,
   onBack,
 }: PropertyDetailsProps) {
+  const { buildingId, floorId } = useParams<{
+    buildingId: string;
+    floorId: string;
+  }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // CREATE UNIT
+  const createUnitMutation = useMutation({
+    mutationFn: createUnit,
+    onSuccess: (newUnit) => {
+      queryClient.setQueryData(
+        ["units", buildingId, floorId],
+        (oldData: any[] = []) => [...oldData, newUnit]
+      );
+
+      toast.success("Unit created successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to create unit");
+    },
+  });
+
+  // UPDATE UNIT
+  const updateUnitMutation = useMutation({
+    mutationFn: ({
+      unitId,
+      unitData,
+    }: {
+      unitId: string;
+      unitData: FormData;
+    }) => updateUnit(unitId, unitData),
+    onSuccess: (updatedUnit) => {
+      queryClient.setQueryData(
+        ["units", buildingId, floorId],
+        (oldData: any[] = []) =>
+          oldData.map((unit) =>
+            unit._id === updatedUnit._id ? updatedUnit : unit
+          )
+      );
+
+      toast.success("Unit updated successfully");
+      setApartmentDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update unit");
+    },
+  });
+
+  // DELETE UNIT
+  const deleteUnitMutation = useMutation({
+    mutationFn: deleteUnit,
+    onSuccess: (deletedUnitId: string) => {
+      queryClient.setQueryData(
+        ["units", buildingId, floorId],
+        (oldData: any[] = []) =>
+          oldData.filter((unit) => unit._id !== deletedUnitId)
+      );
+
+      toast.success("Unit deleted successfully");
+      setDeleteDialogOpen(false);
+      setApartmentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete unit");
+    },
+  });
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
+    useState(false);
+
+  const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState<
+    Property | undefined
+  >();
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
+    null
+  );
+
   const canEdit = user && ["owner", "admin"].includes(user.role);
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -79,6 +166,35 @@ export function PropertyDetails({
       month: "long",
       day: "numeric",
     });
+  };
+  const handleEditApartment = (apartment: Property, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedApartment(apartment);
+    setDialogMode("edit");
+    setApartmentDialogOpen(true);
+  };
+
+  const handleDeleteClick = (apartmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setApartmentToDelete(apartmentId);
+    setDeleteDialogOpen(true);
+  };
+  const handleDeleteConfirm = () => {
+    if (apartmentToDelete) {
+      deleteUnitMutation.mutate(apartmentToDelete);
+    }
+  };
+  const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
+    if (mode === "add") {
+      data.append("buildingId", buildingId!);
+      data.append("floorId", floorId!);
+      createUnitMutation.mutate(data);
+    } else if (selectedApartment?._id) {
+      updateUnitMutation.mutate({
+        unitId: selectedApartment._id,
+        unitData: data,
+      });
+    }
   };
 
   return (
@@ -90,13 +206,19 @@ export function PropertyDetails({
           </Button>
           {canEdit && (
             <div className="flex md:flex-row flex-col gap-3">
-              <Button size="sm" onClick={onEdit}>
+              <Button
+                size="sm"
+                onClick={(e) => handleEditApartment(property, e)}
+              >
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPropertyDeleteDialogOpen(true);
+                }}
               >
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </Button>
@@ -360,15 +482,22 @@ export function PropertyDetails({
         )}
       </div>
 
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <Dialog
+        open={propertyDeleteDialogOpen}
+        onOpenChange={setPropertyDeleteDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>Confirm Property Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this property? This action cannot
+              be undone.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2 mt-4">
             <Button
               variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
+              onClick={() => setPropertyDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
@@ -376,7 +505,7 @@ export function PropertyDetails({
               variant="destructive"
               onClick={() => {
                 onDelete();
-                setDeleteDialogOpen(false);
+                setPropertyDeleteDialogOpen(false);
               }}
             >
               Delete Property
@@ -384,6 +513,23 @@ export function PropertyDetails({
           </div>
         </DialogContent>
       </Dialog>
+      <ApartmentDialog
+        open={apartmentDialogOpen}
+        onOpenChange={setApartmentDialogOpen}
+        apartment={selectedApartment}
+        mode={dialogMode}
+        onSave={handleSaveApartment}
+        isCreating={createUnitMutation.isPending}
+        isUpdating={updateUnitMutation.isPending}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Unit"
+        description="Are you sure you want to delete this unit? This action cannot be undone."
+      />
     </>
   );
 }
