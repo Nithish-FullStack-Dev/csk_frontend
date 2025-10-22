@@ -5,7 +5,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,  
+  CardTitle,
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,14 +61,17 @@ import {
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { useAuth, User } from "@/contexts/AuthContext";
-import { Property } from "../public/PropertyInterfaces";
-import { Lead } from "./LeadManagement";
 import { Calendar } from "@/components/ui/calendar";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "../UserManagement";
+import { Lead } from "@/utils/leads/LeadConfig";
+import { Building, FloorUnit } from "@/types/building";
+import { Property } from "@/types/property";
 
 interface PopulatedLead extends Omit<Lead, "property" | "addedBy"> {
-  property: Property;
+  unit: Property;
+  property: Building;
+  floorUnit: FloorUnit;
   addedBy: User;
 }
 
@@ -83,7 +86,9 @@ interface Commission {
 }
 
 interface CommissionEligibleLead extends Lead {
-  property: Property;
+  property: Building;
+  unit: Property;
+  floorUnit: FloorUnit;
 }
 
 const fetchAllCommission = async (): Promise<Commission[]> => {
@@ -101,13 +106,7 @@ const fetchCommissionEligibleLeads = async (): Promise<
     `${import.meta.env.VITE_URL}/api/leads/getClosedLeads`,
     { withCredentials: true }
   );
-  return Array.isArray(data)
-    ? data
-    : data && Array.isArray(data.leads)
-    ? data.leads
-    : data && Array.isArray(data.data)
-    ? data.data
-    : [];
+  return data.data || [];
 };
 
 const MyCommissions = () => {
@@ -137,7 +136,7 @@ const MyCommissions = () => {
   } = useQuery<Commission[], Error>({
     queryKey: ["commissions"],
     queryFn: fetchAllCommission,
-    staleTime: 0,
+    staleTime: 10 * 60 * 1000,
   });
 
   const {
@@ -148,7 +147,7 @@ const MyCommissions = () => {
   } = useQuery<CommissionEligibleLead[], Error>({
     queryKey: ["commissionEligibleLeads"],
     queryFn: fetchCommissionEligibleLeads,
-    staleTime: 0,
+    staleTime: 10 * 60 * 1000,
   });
 
   const {
@@ -160,6 +159,7 @@ const MyCommissions = () => {
     queryKey: ["rolePermissions", user?.role],
     queryFn: () => fetchRolePermissions(user?.role as string),
     enabled: !!user?.role,
+    staleTime: 10 * 60 * 1000,
   });
 
   const addCommissionMutation = useMutation({
@@ -218,17 +218,14 @@ const MyCommissions = () => {
     },
   });
 
-  useEffect(() => {
-    if (isCommError) {
-      toast.error("Failed to fetch commissions.");
-    }
-  }, [isCommError, commErr]);
-
-  useEffect(() => {
-    if (isLeadsError) {
-      toast.error("Failed to fetch commission eligible leads.");
-    }
-  }, [isLeadsError, leadsErr]);
+  if (isCommError) {
+    toast.error("Failed to fetch commissions.");
+    console.log("Failed to fetch commissions.", commErr);
+  }
+  if (isLeadsError) {
+    toast.error("Failed to fetch commission eligible leads.");
+    console.log("Failed to fetch commission eligible leads.", leadsErr);
+  }
 
   if (isRolePermissionsError) {
     console.error("Error fetching role permissions:", rolePermissionsError);
@@ -379,11 +376,9 @@ const MyCommissions = () => {
 
       return [
         `"${commission.clientId.addedBy.name}"`, // Access client name from populated Lead's addedBy
-        `"${commission.clientId.property.basicInfo.projectName}"`, // Access property name from populated Lead's property
-        `"${commission.clientId.property.basicInfo.plotNumber}"`,
-        `"${commission.clientId.property.financialDetails.totalAmount.toLocaleString(
-          "en-IN"
-        )}"`,
+        `"${commission.clientId.property?.projectName}"`, // Access property name from populated Lead's property
+        `"${commission.clientId.unit?.plotNo}"`,
+        `"${commission.clientId?.unit?.totalAmount.toLocaleString("en-IN")}"`,
         `"${commission.commissionAmount}"`,
         `"${commission.commissionPercent}"`,
         `"${saleDateFormatted}"`,
@@ -714,30 +709,29 @@ const MyCommissions = () => {
                               <Avatar className="h-6 w-6">
                                 <AvatarImage
                                   src={
-                                    commission.clientId.addedBy?.avatar || ""
+                                    commission.clientId?.addedBy?.avatar || ""
                                   }
                                 />
                                 <AvatarFallback>
-                                  {commission.clientId.addedBy?.name
-                                    ? commission.clientId.addedBy.name[0]
+                                  {commission.clientId?.addedBy?.name
+                                    ? commission.clientId?.addedBy.name[0]
                                     : "N/A"}
                                 </AvatarFallback>
                               </Avatar>
                               <span className="font-medium">
-                                {commission.clientId.addedBy?.name || "N/A"}
+                                {commission.clientId?.addedBy?.name || "N/A"}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
                               <p>
-                                {commission.clientId.property?.basicInfo
-                                  ?.projectName || "N/A"}
+                                {commission.clientId.property?.projectName ||
+                                  "N/A"}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 Unit:{" "}
-                                {commission.clientId.property?.basicInfo
-                                  ?.plotNumber || "N/A"}
+                                {commission.clientId.unit?.plotNo || "N/A"}
                               </p>
                             </div>
                           </TableCell>
@@ -749,8 +743,7 @@ const MyCommissions = () => {
                               <p className="text-xs text-muted-foreground">
                                 {commission.commissionPercent} of ₹
                                 {(
-                                  commission.clientId.property?.financialDetails
-                                    ?.totalAmount || 0
+                                  commission.clientId.unit?.totalAmount || 0
                                 ).toLocaleString("en-IN")}
                               </p>
                             </div>
@@ -846,12 +839,9 @@ const MyCommissions = () => {
 
                       <div>
                         <span className="font-medium">Property:</span>{" "}
-                        {commission.clientId.property?.basicInfo?.projectName ||
-                          "N/A"}
+                        {commission.clientId.property?.projectName || "N/A"}
                         <p className="text-xs text-muted-foreground">
-                          Unit:{" "}
-                          {commission.clientId.property?.basicInfo
-                            ?.plotNumber || "N/A"}
+                          Unit: {commission.clientId.unit?.plotNo || "N/A"}
                         </p>
                       </div>
 
@@ -860,8 +850,7 @@ const MyCommissions = () => {
                         {commission.commissionAmount} (
                         {commission.commissionPercent} of ₹
                         {(
-                          commission.clientId.property?.financialDetails
-                            ?.totalAmount || 0
+                          commission.clientId.unit?.totalAmount || 0
                         ).toLocaleString("en-IN")}
                         )
                       </div>
@@ -970,15 +959,14 @@ const MyCommissions = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Property</p>
                       <p className="font-medium">
-                        {selectedCommission.clientId.property?.basicInfo
-                          ?.projectName || "N/A"}
+                        {selectedCommission.clientId.property?.projectName ||
+                          "N/A"}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Unit</p>
                       <p className="font-medium">
-                        {selectedCommission.clientId.property?.basicInfo
-                          ?.plotNumber || "N/A"}
+                        {selectedCommission.clientId.unit?.plotNo || "N/A"}
                       </p>
                     </div>
                     <div>
@@ -988,8 +976,7 @@ const MyCommissions = () => {
                       <p className="font-medium">
                         ₹
                         {(
-                          selectedCommission.clientId.property?.financialDetails
-                            ?.totalAmount || 0
+                          selectedCommission.clientId.unit?.totalAmount || 0
                         ).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -1128,8 +1115,8 @@ const MyCommissions = () => {
                         actualCommissionEligibleLeads.map((lead) => (
                           <SelectItem key={lead._id} value={lead._id}>
                             {lead.name || "N/A"} -{" "}
-                            {lead.property?.basicInfo?.projectName || "N/A"} (
-                            {lead.property?.basicInfo?.plotNumber || "N/A"})
+                            {lead.property?.projectName || "N/A"} (
+                            {lead.unit?.plotNo || "N/A"})
                           </SelectItem>
                         ))
                       ) : (

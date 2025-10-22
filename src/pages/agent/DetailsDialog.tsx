@@ -22,7 +22,20 @@ export function DetailsDialog({ open, setOpen, schedule }) {
             <strong>Client:</strong> {schedule?.client?.name}
           </p>
           <p>
-            <strong>Property:</strong> {schedule?.property?.projectName}
+            <strong>Property:</strong>{" "}
+            {schedule?.property?.projectName || "N/A"}
+          </p>
+          <p>
+            <strong>Floor:</strong>{" "}
+            {schedule?.floorUnit
+              ? `${schedule.floorUnit.floorNumber} / ${schedule.floorUnit.unitType}`
+              : "N/A"}
+          </p>
+          <p>
+            <strong>Apartment:</strong>{" "}
+            {schedule?.unit
+              ? `Plot No: ${schedule.unit.plotNo} (${schedule.unit.propertyType})`
+              : "N/A"}
           </p>
           <p>
             <strong>Date:</strong>{" "}
@@ -39,13 +52,13 @@ export function DetailsDialog({ open, setOpen, schedule }) {
             {schedule.endTime?.toISOString().split("T")[1]?.slice(0, 5)}
           </p>
           <p>
-            <strong>Location:</strong> {schedule?.location}
+            <strong>Location:</strong> {schedule?.location || "N/A"}
           </p>
           <p>
-            <strong>Status:</strong> {schedule?.status}
+            <strong>Status:</strong> {schedule?.status || "N/A"}
           </p>
           <p>
-            <strong>Notes:</strong> {schedule?.notes}
+            <strong>Notes:</strong> {schedule?.notes || "N/A"}
           </p>
         </div>
       </DialogContent>

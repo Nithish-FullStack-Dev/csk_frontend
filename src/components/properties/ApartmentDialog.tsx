@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { X, Upload } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { fetchUnit } from "@/utils/units/Methods";
 
 interface ApartmentDialogProps {
   open: boolean;
@@ -42,14 +43,6 @@ interface ApartmentDialogProps {
   isCreating?: boolean;
   isUpdating?: boolean;
 }
-
-export const fetchUnit = async (unitId: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/unit/getUnit/${unitId}`,
-    { withCredentials: true }
-  );
-  return data.data as Property;
-};
 
 export const ApartmentDialog = ({
   open,

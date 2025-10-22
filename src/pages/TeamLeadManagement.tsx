@@ -95,10 +95,18 @@ const TeamLeadManagement = () => {
   const queryClient = useQueryClient();
 
   const handlePerformanceChange = (field: string, value: string | number) => {
-    setPerformance((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setPerformance((prev) => {
+      let updated = { ...prev, [field]: value };
+
+      if (field === "deals" || field === "leads") {
+        const deals = field === "deals" ? Number(value) : Number(updated.deals);
+        const leads = field === "leads" ? Number(value) : Number(updated.leads);
+        updated.conversionRate =
+          leads > 0 ? Number(((deals / leads) * 100).toFixed(2)) : 0;
+      }
+
+      return updated;
+    });
   };
 
   const fetchMyTeam = async (): Promise<TeamMember[]> => {
@@ -253,6 +261,28 @@ const TeamLeadManagement = () => {
     },
   });
 
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/teamLead/deleteTeamLead/${id}`,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully!");
+      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
+      setDialogOpen(false);
+      setSelectedTeam(null);
+    },
+    onError: (err: any) => {
+      const errorMessage =
+        err.response?.data?.message || "Failed to remove team member.";
+      toast.error(errorMessage);
+    },
+  });
+
   const {
     isRolePermissionsLoading,
     userCanAddUser,
@@ -260,8 +290,6 @@ const TeamLeadManagement = () => {
     userCanEditUser,
   } = useRBAC({ roleSubmodule: "Team Management" });
 
-  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
-    return <Loader />;
   if (isError) {
     toast.error("Failed to fetch Team");
     console.error("fetch error:", error);
@@ -272,6 +300,9 @@ const TeamLeadManagement = () => {
     console.error("fetch error:", isTeamMemErr);
     return null;
   }
+
+  if (isLoading || isTeamMemLoading || isRolePermissionsLoading)
+    return <Loader />;
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -326,6 +357,17 @@ const TeamLeadManagement = () => {
       } else {
         toast.error("User not authenticated.");
       }
+    }
+  };
+
+  const handleDelete = () => {
+    if (!selectedTeam?._id) {
+      toast.error("No team member selected for removal.");
+      return;
+    }
+
+    if (confirm("Are you sure you want to remove this team member?")) {
+      deleteTeamMemberMutation.mutate(selectedTeam._id);
     }
   };
 
@@ -440,7 +482,10 @@ const TeamLeadManagement = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
+                  ₹
+                  {totalTeamSales.toLocaleString("en-IN", {
+                    maximumFractionDigits: 0,
+                  })}
                 </span>
                 <IndianRupee className="h-6 w-6 text-estate-gold" />
               </div>
@@ -519,13 +564,19 @@ const TeamLeadManagement = () => {
                     <div>
                       <p className="text-muted-foreground">Sales</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.sales / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.sales.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Target</p>
                       <p className="font-semibold">
-                        ₹{(member.performance.target / 1000).toFixed(0)}k
+                        ₹
+                        {member.performance.target.toLocaleString("en-IN", {
+                          maximumFractionDigits: 0,
+                        })}
                       </p>
                     </div>
                     <div>
@@ -643,36 +694,6 @@ const TeamLeadManagement = () => {
                   <p>• Lisa completed sales training</p>
                 </div>
               </div>
-
-              {/* <div className="space-y-2">
-                <h4 className="font-medium">Quick Actions</h4>
-                <div className="space-y-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Calendar className="mr-2 h-3 w-3" />
-                    Schedule Team Meeting
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <BarChart3 className="mr-2 h-3 w-3" />
-                    Generate Team Report
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Target className="mr-2 h-3 w-3" />
-                    Set Team Goals
-                  </Button>
-                </div>
-              </div> */}
             </div>
           </CardContent>
         </Card>
@@ -692,7 +713,7 @@ const TeamLeadManagement = () => {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="agent" className="text-right">
-                  Sales Agent
+                  Team Lead
                 </Label>
                 <Select
                   onValueChange={setSelectedAgentId}
@@ -703,7 +724,7 @@ const TeamLeadManagement = () => {
                     <SelectValue>
                       {availableAgents?.find(
                         (agent) => agent._id === selectedTeamLeadId
-                      )?.name || "Select a sales agent"}
+                      )?.name || "Select a team lead"}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -737,11 +758,17 @@ const TeamLeadManagement = () => {
                 </Select>
               </div>
 
-              {["sales", "target", "deals", "leads"].map((key) => (
+              {[
+                { key: "sales", label: "Selling Price" },
+                { key: "target", label: "Target Price" },
+                { key: "deals", label: "Closed Deals" },
+                { key: "leads", label: "Interested Leads" },
+              ].map(({ key, label }) => (
                 <div className="grid grid-cols-4 items-center gap-4" key={key}>
+                  {" "}
                   <Label htmlFor={key} className="text-right capitalize">
-                    {key.replace(/([A-Z])/g, " ₹1")}
-                  </Label>
+                    {label}
+                  </Label>{" "}
                   <Input
                     type="number"
                     id={key}
@@ -750,8 +777,6 @@ const TeamLeadManagement = () => {
                       const value = parseFloat(e.target.value);
                       if (value >= 0 || isNaN(value)) {
                         handlePerformanceChange(key, value);
-
-                        // Auto-calculate conversion rate
                         if (key === "deals" || key === "leads") {
                           const updatedDeals =
                             key === "deals" ? value : performance.deals || 0;
@@ -775,9 +800,24 @@ const TeamLeadManagement = () => {
                     }}
                     min={0}
                     className="col-span-3"
-                  />
+                  />{" "}
                 </div>
               ))}
+
+              {/* Render conversionRate as read-only */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                {" "}
+                <Label htmlFor="conversionRate" className="text-right">
+                  Conversion Rate{" "}
+                </Label>{" "}
+                <Input
+                  type="number"
+                  id="conversionRate"
+                  value={performance.conversionRate}
+                  readOnly
+                  className="col-span-3"
+                />
+              </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lastActivity" className="text-right">
@@ -797,7 +837,15 @@ const TeamLeadManagement = () => {
 
             <DialogFooter>
               {userCanDeleteUser && selectedTeam && (
-                <Button variant="destructive">Remove Member</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteTeamMemberMutation.isPending}
+                >
+                  {deleteTeamMemberMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Member"}
+                </Button>
               )}
               <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel

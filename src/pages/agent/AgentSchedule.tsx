@@ -37,7 +37,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchAllLeads, fetchLeads, Lead } from "./LeadManagement";
+import { fetchAllLeads, fetchLeads, Lead } from "@/utils/leads/LeadConfig";
 import { RescheduleDialogAgent } from "./RescheduleDialogAgent";
 import { useAuth } from "@/contexts/AuthContext";
 import AgentDetailsDialog from "./AgentDetailsDialog";

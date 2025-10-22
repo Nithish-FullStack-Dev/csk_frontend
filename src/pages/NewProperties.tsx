@@ -31,29 +31,19 @@ import { BuildingDialog } from "@/components/properties/BuildingDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { toast } from "sonner";
 import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
 import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
 import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
-export const getAllBuildings = async (): Promise<Building[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/building/getAllBuildings`,
-    { withCredentials: true }
-  );
-  return data?.data || [];
-};
-
-export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
-    { withCredentials: true }
-  );
-  // Your backend returned { plots: [...] } earlier; fallback to data shapes
-  return data?.plots || data?.data || [];
-};
+import { getAllBuildings, getAllOpenPlots } from "@/utils/buildings/Projects";
 
 const NewProperties = () => {
   const { user } = useAuth();
@@ -81,10 +71,6 @@ const NewProperties = () => {
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
     undefined
   );
-
-  // local copies for open plots (synced with react-query)
-  const [openPlots, setOpenPlots] = useState<OpenPlot[]>([]);
-  const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
   const [selectedOpenPlot, setSelectedOpenPlot] = useState<OpenPlot | null>(
     null
   );
@@ -98,18 +84,20 @@ const NewProperties = () => {
   } = useQuery<Building[]>({
     queryKey: ["buildings"],
     queryFn: getAllBuildings,
-    staleTime: 1000 * 60,
+    staleTime: 600000,
+    placeholderData: keepPreviousData,
   });
 
   const {
-    data: openPlotsData,
+    data: openPlots,
     isLoading: openPlotsLoading,
     isError: openPlotsError,
     error: openPlotsErr,
   } = useQuery<OpenPlot[]>({
     queryKey: ["openPlots"],
     queryFn: getAllOpenPlots,
-    staleTime: 1000 * 60,
+    staleTime: 600000,
+    placeholderData: keepPreviousData,
   });
 
   // ---------- Mutations ----------
@@ -183,9 +171,7 @@ const NewProperties = () => {
       toast.success("Open plot updated");
       setDialogOpenPlot(false);
       setCurrentOpenPlot(undefined);
-      // Invalidate the query to refetch in the background
       queryClient.invalidateQueries({ queryKey: ["openPlots"] });
-      // Immediately update the detailed view with the fresh data from the server
       if (updatedData?.data) setSelectedOpenPlot(updatedData.data);
     },
     onError: (err: any) => {
@@ -222,32 +208,6 @@ const NewProperties = () => {
     },
   });
 
-  // ---------- Effects ----------
-  // Sync react-query open plots to local state
-  useEffect(() => {
-    const list = openPlotsData || [];
-    setOpenPlots(list);
-    setFilteredOpenPlots(list);
-  }, [openPlotsData]);
-
-  // Errors -> toast (safe inside effects)
-  useEffect(() => {
-    if (buildError) {
-      toast.error((buildErr as any)?.message || "Failed to fetch buildings");
-      console.error(buildErr);
-    }
-  }, [buildError, buildErr]);
-
-  useEffect(() => {
-    if (openPlotsError) {
-      toast.error(
-        (openPlotsErr as any)?.message || "Failed to fetch open plots"
-      );
-      console.error(openPlotsErr);
-    }
-  }, [openPlotsError, openPlotsErr]);
-
-  // Filter buildings when inputs change
   useEffect(() => {
     let results = (buildings || []).slice();
     if (searchTerm) {
@@ -265,7 +225,16 @@ const NewProperties = () => {
     setFilteredBuildings(results);
   }, [searchTerm, typeFilter, statusFilter, buildings]);
 
-  // ---------- Handlers ----------
+  if (openPlotsError) {
+    toast.error((openPlotsErr as any)?.message || "Failed to fetch open plots");
+    console.error(openPlotsErr);
+  }
+  if (buildError) {
+    toast.error((buildErr as any)?.message || "Failed to fetch buildings");
+    console.error(buildErr);
+  }
+
+  // ---------- Handlers ----------2
   const clearFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");
@@ -343,6 +312,60 @@ const NewProperties = () => {
     await deleteOpenPlotMutation.mutateAsync();
     setSelectedOpenPlot(null); // Go back to the list view
   };
+
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) return toast.error("No brochure available to download.");
+
+    // Use a backend proxy to bypass browser CORS issues for authenticated downloads.
+    // This also keeps the Cloudinary URL private.
+    const proxyUrl = `${
+      import.meta.env.VITE_URL
+    }/api/download-proxy?url=${encodeURIComponent(
+      url
+    )}&filename=${encodeURIComponent(projectName || "brochure")}.pdf`;
+
+    // Navigate to the proxy URL to trigger the download.
+    window.location.href = proxyUrl;
+  };
+
+  const handleShare = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No brochure available to share");
+      return;
+    }
+
+    const shareData = {
+      title: projectName || "Brochure",
+      text: `Check out the brochure for ${projectName || "this project"}`,
+      url: url,
+    };
+
+    try {
+      // Use the modern Web Share API if available
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback for desktop: copy link to clipboard
+        await navigator.clipboard.writeText(url);
+        toast.success("Brochure link copied to clipboard!");
+      }
+    } catch (error) {
+      console.error("Sharing failed:", error);
+      await navigator.clipboard.writeText(url);
+      toast.success("Brochure link copied to clipboard!");
+    }
+  };
+
   // ---------- Loading UX ----------
   if (buildingsLoading || openPlotsLoading) {
     return <Loader />;
@@ -558,31 +581,23 @@ const NewProperties = () => {
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const link = document.createElement("a");
-                                  link.href = b.brochureUrl!;
-                                  link.download = `${
-                                    b.projectName || "brochure"
-                                  }.pdf`;
-                                  link.target = "_blank";
-                                  link.click();
-                                }}
+                                onClick={(e) =>
+                                  handleDownload(
+                                    e,
+                                    b.brochureUrl!,
+                                    b.projectName
+                                  )
+                                }
                                 title="Download Brochure"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(
-                                    b.brochureUrl || ""
-                                  );
-                                  toast.success("Brochure link copied!");
-                                }}
+                                onClick={(e) =>
+                                  handleShare(e, b.brochureUrl!, b.projectName)
+                                }
                                 title="Copy Share Link"
                               >
                                 <Share2 className="h-4 w-4" />
@@ -720,16 +735,38 @@ const NewProperties = () => {
                               >
                                 View Plot Details
                               </Button>
-
-                              {/* <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() =>
-                          navigate(`/properties/building/${b._id}`)
-                        }
-                      >
-                        View More
-                      </Button> */}
+                              {plot.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName
+                                      )
+                                    }
+                                    title="Download Brochure"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleShare(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName
+                                      )
+                                    }
+                                    title="Copy Share Link"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>

@@ -316,7 +316,7 @@ const ChatInterface = () => {
               <CardContent className="p-0 border-b">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="direct">Direct</TabsTrigger>
-                  <TabsTrigger value="groups">Groups</TabsTrigger>
+                  {/* <TabsTrigger value="groups">Groups</TabsTrigger> */}
                 </TabsList>
               </CardContent>
               <TabsContent value="direct" className="h-full mt-0">
@@ -375,11 +375,11 @@ const ChatInterface = () => {
                   ))}
                 </ScrollArea>
               </TabsContent>
-              <TabsContent value="groups" className="h-full mt-0">
+              {/* <TabsContent value="groups" className="h-full mt-0">
                 <div className="p-4 text-muted-foreground text-center">
                   Group chat functionality not yet implemented.
                 </div>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </Card>
 

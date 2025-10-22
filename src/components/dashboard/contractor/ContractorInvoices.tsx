@@ -53,34 +53,43 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Define interface for invoice type
-interface Invoice {
-  id: string;
-  to: string;
-  project: string;
-  issueDate: string;
-  dueDate: string;
-  amount: number;
-  sgst: number;
-  cgst: number;
-  totalAmount: number;
-  status: string;
-  paymentDate: string | null;
-  notes?: string;
-  task?: string;
-  unit: string;
-}
+import {
+  useFloorUnits,
+  useProjects,
+  useUnits,
+} from "@/utils/buildings/Projects";
+import { Building } from "@/types/building";
 
 // Define interface for invoice item type
 interface InvoiceItem {
-  id: string;
+  _id: string;
   description: string;
   quantity: number;
   unit: string;
   rate: number;
   amount: number;
   taxRate: number;
+}
+
+// Define interface for invoice type
+interface Invoice {
+  id: string;
+  to: string;
+  project: Building;
+  issueDate: string;
+  dueDate: string;
+  amount: number;
+  sgst: number;
+  cgst: number;
+  total: number;
+  status: string;
+  subtotal: number;
+  paymentDate: string | null;
+  notes?: string;
+  task?: string;
+  unit: string;
+  invoiceNumber?: string;
+  items: InvoiceItem[];
 }
 
 // Form schema
@@ -99,6 +108,7 @@ export const invoiceSchema = z.object({
   notes: z.string().optional(),
   task: z.string().optional(),
   unit: z.string(),
+  floorUnit: z.string(),
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceSchema>;
@@ -130,10 +140,35 @@ const ContractorInvoices = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [relatedToTask, setRelatedToTask] = useState(false);
   const [completedTasks, setCompletedTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
+  // const [projects, setProjects] = useState([]);
+  // const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState("");
+
+  const {
+    data: projects,
+    isLoading: projectLoading,
+    error: dropdownError,
+    isError: dropdownIsError,
+  } = useProjects();
+
+  const {
+    data: floorUnits = [],
+    isLoading: floorUnitsLoading,
+    isError: floorUnitsError,
+    error: floorUnitsErrorMessage,
+  } = useFloorUnits(selectedProject);
+
+  const {
+    data: unitsByFloor = [],
+    isLoading: unitsByFloorLoading,
+    isError: unitsByFloorError,
+    error: unitsByFloorErrorMessage,
+  } = useUnits(selectedProject, selectedFloorUnit);
 
   const fetchInvoices = async () => {
     try {
@@ -187,6 +222,7 @@ const ContractorInvoices = () => {
 
   const handleSubmit = async (data: InvoiceFormValues) => {
     try {
+      console.log(data);
       if (invoiceItems.length === 0) {
         toast.error("Please add at least one item to the invoice");
         return;
@@ -261,7 +297,7 @@ const ContractorInvoices = () => {
     const amount = data.quantity * data.rate;
 
     const newItem: InvoiceItem = {
-      id: (invoiceItems.length + 1).toString(),
+      _id: (invoiceItems.length + 1).toString(),
       description: data.description,
       quantity: data.quantity,
       unit: data.unit,
@@ -283,7 +319,7 @@ const ContractorInvoices = () => {
   };
 
   const removeInvoiceItem = (id: string) => {
-    setInvoiceItems(invoiceItems.filter((item) => item.id !== id));
+    setInvoiceItems(invoiceItems.filter((item) => item._id !== id));
   };
 
   const viewInvoice = (invoice: Invoice) => {
@@ -327,21 +363,21 @@ const ContractorInvoices = () => {
     )
     .reduce((total, invoice) => total + invoice.total, 0);
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
+  // const fetchDropdownData = async () => {
+  //   try {
+  //     const projectsRes = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/project/projects`,
+  //       { withCredentials: true }
+  //     );
 
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
+  //     setProjects(projectsRes.data);
+  //   } catch (error) {
+  //     console.error("Error fetching dropdown data:", error);
+  //   }
+  // };
+  // useEffect(() => {
+  //   fetchDropdownData();
+  // }, []);
 
   useEffect(() => {
     const fetchCompletedTasks = async () => {
@@ -359,10 +395,28 @@ const ContractorInvoices = () => {
     fetchCompletedTasks();
   }, []);
 
-  useEffect(() => {
-    const found = projects.find((proj) => proj._id === watchProject);
-    setSelectedProject(found || null);
-  }, [watchProject, projects]);
+  // useEffect(() => {
+  //   const found = projects.find((proj) => proj._id === watchProject);
+  //   setSelectedProject(found || null);
+  // }, [watchProject, projects]);
+
+  if (floorUnitsError) {
+    console.log("Failed to load floor units. Please try again.");
+    toast.error(floorUnitsErrorMessage.message);
+    return null;
+  }
+
+  if (unitsByFloorError) {
+    console.log("Failed to load units. Please try again.");
+    toast.error(unitsByFloorErrorMessage.message);
+    return null;
+  }
+
+  if (dropdownIsError) {
+    console.log("Failed to load dropdown data. Please try again.");
+    toast.error(dropdownError.message);
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -622,7 +676,7 @@ const ContractorInvoices = () => {
 
       {/* Create Invoice Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+        <DialogContent className=" max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>
@@ -638,22 +692,39 @@ const ContractorInvoices = () => {
                   name="project"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Project</FormLabel>
+                      <FormLabel>Building</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={selectedProject}
+                        onValueChange={setSelectedProject}
+                        disabled={projectLoading}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
+                            <SelectValue
+                              placeholder={
+                                projectLoading
+                                  ? "Loading projects..."
+                                  : "Select project"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project._id} value={project._id}>
-                              {project.projectTitle || "-"}
+                          {projectLoading ? (
+                            <SelectItem value="loading" disabled>
+                              Loading...
                             </SelectItem>
-                          ))}
+                          ) : (
+                            projects &&
+                            projects.map((project, idx) => (
+                              <SelectItem
+                                key={project._id || idx}
+                                value={project._id}
+                              >
+                                {project.projectName}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -666,24 +737,102 @@ const ContractorInvoices = () => {
                   name="unit"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Unit</FormLabel>
+                      <FormLabel>Floor Unit</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ""}
-                        disabled={!selectedProject}
+                        value={selectedFloorUnit}
+                        onValueChange={setSelectedFloorUnit}
+                        disabled={
+                          floorUnitsLoading ||
+                          !floorUnits ||
+                          floorUnits.length === 0
+                        }
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
+                            <SelectValue
+                              placeholder={
+                                floorUnitsLoading
+                                  ? "Loading Floor Units..."
+                                  : !floorUnits || floorUnits.length === 0
+                                  ? "No floor units available"
+                                  : "Select Floor Unit"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(selectedProject?.unitNames || []).map(
-                            (unitName) => (
-                              <SelectItem key={unitName} value={unitName}>
-                                {unitName}
+                          {floorUnitsLoading ? (
+                            <SelectItem value="loading" disabled>
+                              Loading...
+                            </SelectItem>
+                          ) : !floorUnits || floorUnits.length === 0 ? (
+                            <SelectItem value="empty" disabled>
+                              No floor units available
+                            </SelectItem>
+                          ) : (
+                            floorUnits &&
+                            floorUnits.map((floor, idx) => (
+                              <SelectItem
+                                key={floor._id || idx}
+                                value={floor._id}
+                              >
+                                Floor {floor.floorNumber}, {floor.unitType}
                               </SelectItem>
-                            )
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <Select
+                        value={selectedUnit}
+                        onValueChange={setSelectedUnit}
+                        disabled={
+                          unitsByFloorLoading ||
+                          !unitsByFloor ||
+                          unitsByFloor.length === 0
+                        }
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                unitsByFloorLoading
+                                  ? "Loading Units..."
+                                  : !unitsByFloor || unitsByFloor.length === 0
+                                  ? "No units available"
+                                  : "Select Unit"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {unitsByFloorLoading ? (
+                            <SelectItem value="loading" disabled>
+                              Loading...
+                            </SelectItem>
+                          ) : !unitsByFloor || unitsByFloor.length === 0 ? (
+                            <SelectItem value="empty" disabled>
+                              No units available
+                            </SelectItem>
+                          ) : (
+                            unitsByFloor &&
+                            unitsByFloor.map((unit, idx) => (
+                              <SelectItem
+                                key={unit._id || idx}
+                                value={unit._id}
+                              >
+                                Plot {unit.plotNo}, {unit.propertyType}
+                              </SelectItem>
+                            ))
                           )}
                         </SelectContent>
                       </Select>
@@ -838,7 +987,7 @@ const ContractorInvoices = () => {
               )}
 
               {/* Invoice Items */}
-              <div>
+              <div className="max-w-[90vw]">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium">Invoice Items</h3>
                   <Button
@@ -856,7 +1005,7 @@ const ContractorInvoices = () => {
                     started.
                   </div>
                 ) : (
-                  <div className="border rounded-md overflow-x-auto">
+                  <div className="border rounded-md overflow-scroll max-w-[90vw]">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -871,7 +1020,7 @@ const ContractorInvoices = () => {
                       </TableHeader>
                       <TableBody>
                         {invoiceItems.map((item) => (
-                          <TableRow key={item.id}>
+                          <TableRow key={item._id}>
                             <TableCell>{item.description}</TableCell>
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>{item.unit}</TableCell>
@@ -884,7 +1033,7 @@ const ContractorInvoices = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeInvoiceItem(item.id)}
+                                onClick={() => removeInvoiceItem(item._id)}
                               >
                                 Remove
                               </Button>
@@ -1205,8 +1354,9 @@ const ContractorInvoices = () => {
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Project:</p>
                     <p>
-                      {selectedInvoice.project.projectId.basicInfo
-                        .projectName || "-"}
+                      {selectedInvoice.project?.projectName +
+                        " / " +
+                        (selectedInvoice.unit || "-")}
                     </p>
                   </div>
                   {selectedInvoice.paymentDate && (
