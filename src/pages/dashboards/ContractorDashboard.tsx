@@ -70,6 +70,7 @@ import { Separator } from "@radix-ui/react-dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import ContractorDashboardStats from "./ContractorDashboardStats.tsx";
 import MainLayout from "@/components/layout/MainLayout.tsx";
+import { useNavigate } from "react-router-dom";
 
 const constructionPhases = [
   "site_mobilization",
@@ -208,6 +209,7 @@ const ContractorDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [completedTasks, setCompletedTasks] = useState([]);
+  const navigate = useNavigate();
 
   const mapStatus = (status: string): Task["status"] => {
     switch (status.toLowerCase()) {
@@ -489,9 +491,7 @@ const ContractorDashboard = () => {
 
           <Button
             className="bg-green-600 hover:bg-green-700"
-            onClick={() => {
-              setCreateDialogOpen(true);
-            }}
+            onClick={() => navigate("/invoices")}
           >
             <Receipt className="mr-2 h-4 w-4" />
             Create Invoice
