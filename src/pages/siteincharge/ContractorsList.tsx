@@ -52,21 +52,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
-
-interface Contractor {
-  _id: string;
-  name: string;
-  company: string;
-  specialization: string;
-  projects: string[];
-  contactPerson: string;
-  phone: string;
-  email: string;
-  status: "active" | "on_hold" | "inactive";
-  completedTasks: number;
-  totalTasks: number;
-  rating: 1 | 2 | 3 | 4 | 5;
-}
+import {
+  Contractor,
+  usefetchContractors,
+  usefetchProjectsForDropdown,
+} from "@/utils/project/ProjectConfig";
+import Loader from "@/components/Loader";
 
 const contractors: Contractor[] = [
   {
@@ -152,7 +143,7 @@ const ContractorsList = () => {
   const [specializationFilter, setSpecializationFilter] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [contractors, setContractors] = useState([]);
+  // const [contractors, setContractors] = useState([]);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [selectedContractor, setSelectedContractor] = useState(null);
@@ -160,7 +151,7 @@ const ContractorsList = () => {
   const [viewTasksDialogOpen, setViewTasksDialogOpen] = useState(false);
   const [contractorTasks, setContractorTasks] = useState([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
-  const [allProjects, setAllProjects] = useState([]);
+  // const [allProjects, setAllProjects] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
@@ -178,18 +169,35 @@ const ContractorsList = () => {
     priority: "medium",
   });
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
+  const {
+    data: allProjects = [],
+    isLoading: isLoadingProjects,
+    isError: isErrorProjects,
+    error: projectsDropdownError,
+  } = usefetchProjectsForDropdown();
 
-      setAllProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
+  const {
+    data: contractors = [],
+    isLoading: isLoadingContractors,
+    isError: isErrorContractors,
+    error: contractorsDropdownError,
+    refetch: refetchContractors,
+  } = usefetchContractors();
+
+  if (isErrorProjects) {
+    console.error(
+      "Error fetching projects for dropdown:",
+      projectsDropdownError
+    );
+    toast.error("Error fetching projects for dropdown");
+  }
+  if (isErrorContractors) {
+    console.error("Error fetching contractors:", contractorsDropdownError);
+    toast.error("Error fetching contractors");
+  }
+  if (isLoadingProjects || isLoadingContractors) return <Loader />;
+
+  const projects = Array.from(new Set(contractors.flatMap((c) => c.projects)));
 
   const filteredContractors = contractors.filter((contractor) => {
     // Apply search query
@@ -224,25 +232,7 @@ const ContractorsList = () => {
   const specializations = Array.from(
     new Set(contractors.map((c) => c.specialization))
   );
-  const projects = Array.from(new Set(contractors.flatMap((c) => c.projects)));
 
-  const fetchContractors = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/site-incharge/myContractors`,
-        {
-          withCredentials: true,
-        }
-      );
-      setContractors(response.data || []); // Assuming the response is an array
-    } catch (error) {
-      console.error("Error fetching contractors:", error);
-    }
-  };
-  useEffect(() => {
-    fetchContractors();
-    fetchDropdownData();
-  }, []);
   return (
     <MainLayout>
       <div className="space-y-6 md:p-8 p-2">
@@ -732,7 +722,7 @@ const ContractorsList = () => {
                       if (res) {
                         toast.success("Contractor assigned successfully");
                         setOpenDialog(false);
-                        fetchContractors();
+                        refetchContractors();
                         // optionally reset form
                       } else {
                         toast.error("Failed to assign contractor");
@@ -813,12 +803,14 @@ const ContractorsList = () => {
                     <option value="">Select Project</option>
                     {allProjects.map((proj) => (
                       <option key={proj._id} value={proj._id}>
-                        {proj.projectTitle || proj.name || "Unnamed Project"}
+                        {typeof proj.projectId === "object"
+                          ? proj.projectId?.projectName || "Unnamed Project"
+                          : proj.projectId}
                       </option>
                     ))}
                   </select>
 
-                  <select
+                  {/* <select
                     className="w-full border p-2 rounded"
                     value={formData.unit}
                     onChange={(e) =>
@@ -832,7 +824,7 @@ const ContractorsList = () => {
                         {unitName}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
 
                   <Input
                     placeholder="Task Title"
@@ -934,16 +926,8 @@ const ContractorsList = () => {
                             },
                             { withCredentials: true }
                           );
-
-                          // // Update local data (example: using setFilteredIssues if you maintain state)
-                          // setFilteredIssues(prev =>
-                          //   prev.map((i) =>
-                          //     i._id === selectedIssue._id ? { ...i, status: newStatus } : i
-                          //   )
-                          // )
-
                           setStatusDialogOpen(false);
-                          fetchContractors();
+                          refetchContractors();
                         } catch (err) {
                           console.error("Failed to update status", err);
                           // Optionally show error toast

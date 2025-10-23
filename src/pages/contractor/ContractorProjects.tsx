@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import ContractorProjectsOverview from "@/components/dashboard/contractor/ContractorProjectsOverview";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -13,15 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -40,11 +31,8 @@ import {
   BadgeIndianRupee,
   Users,
 } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { toast } from "sonner";
-import { Project } from "@/utils/project/ProjectConfig";
+import { Project, usefetchProjects } from "@/utils/project/ProjectConfig";
 import {
   useFloorUnits,
   useProjects,
@@ -52,89 +40,76 @@ import {
 } from "@/utils/buildings/Projects";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import Loader from "@/components/Loader";
 
-const projectSchema = z.object({
-  project: z.string().min(3, "Project name must be at least 3 characters"),
-  location: z.string().min(3, "Location is required"),
-  clientName: z.string().min(3, "Client name is required"),
-  floorUnit: z.string().min(3, "floor unit must be at least 3 characters"),
-  unit: z.string().min(3, "unit must be at least 3 characters"),
-  projectType: z.enum([
-    "Residential",
-    "Commercial",
-    "Industrial",
-    "Infrastructure",
-  ]),
-  startDate: z.string().min(1, "Start date is required"),
-  estimatedEndDate: z.string().min(1, "Estimated end date is required"),
-  estimatedBudget: z.coerce
-    .number()
-    .positive("Budget must be a positive number"),
-  description: z.string().optional(),
-  teamSize: z.coerce
-    .number()
-    .int()
-    .positive("Team size must be a positive integer"),
-});
+// Project form values type
+interface ProjectFormValues {
+  project: string;
+  clientName: string;
+  floorUnit: string;
+  unit: string;
+  startDate: string;
+  estimatedEndDate: string;
+  estimatedBudget: number;
+  description: string;
+  teamSize: number;
+  siteIncharge: User | string;
+}
 
-type ProjectFormValues = z.infer<typeof projectSchema>;
+// Validation function
+const validateForm = (formData: ProjectFormValues) => {
+  const errors: Partial<Record<keyof ProjectFormValues, string>> = {};
 
-// Sample project data
-const sampleProjects = [
-  {
-    _id: "1",
-    name: "Skyline Towers Construction",
-    location: "Downtown Metro City",
-    clientName: "CSK Realtors Ltd.",
-    projectType: "Residential",
-    startDate: "2023-06-01",
-    estimatedEndDate: "2024-12-15",
-    estimatedBudget: 7800000,
-    description:
-      "Construction of a 12-story residential tower with 48 premium apartments and amenities including gym, swimming pool, and community space.",
-    status: "In Progress",
-    completion: 35,
-    teamSize: 48,
-  },
-  {
-    _id: "2",
-    name: "Green Valley Villas Phase 1",
-    location: "East Metro City",
-    clientName: "CSK Realtors Ltd.",
-    projectType: "Residential",
-    startDate: "2023-02-15",
-    estimatedEndDate: "2023-12-30",
-    estimatedBudget: 4500000,
-    description:
-      "Development of 24 luxury villas in a gated community with landscaped gardens and community center.",
-    status: "In Progress",
-    completion: 75,
-    teamSize: 32,
-  },
-  {
-    _id: "3",
-    name: "Riverside Apartments Foundation",
-    location: "River District",
-    clientName: "CSK Realtors Ltd.",
-    projectType: "Residential",
-    startDate: "2023-09-01",
-    estimatedEndDate: "2024-05-30",
-    estimatedBudget: 2800000,
-    description:
-      "Foundation and structural work for the Riverside Apartments complex.",
-    status: "In Progress",
-    completion: 15,
-    teamSize: 24,
-  },
-];
+  if (formData.project.length < 3) {
+    errors.project = "Project name must be at least 3 characters";
+  }
+  if (formData.clientName.length < 3) {
+    errors.clientName = "Client name is required";
+  }
+  if (formData.floorUnit.length < 3) {
+    errors.floorUnit = "Floor unit must be at least 3 characters";
+  }
+  if (formData.unit.length < 3) {
+    errors.unit = "Unit must be at least 3 characters";
+  }
+  if (!formData.startDate) {
+    errors.startDate = "Start date is required";
+  }
+  if (!formData.estimatedEndDate) {
+    errors.estimatedEndDate = "Estimated end date is required";
+  }
+  if (formData.estimatedBudget <= 0) {
+    errors.estimatedBudget = "Budget must be a positive number";
+  }
+  if (formData.teamSize <= 0) {
+    errors.teamSize = "Team size must be a positive integer";
+  }
+
+  return errors;
+};
 
 const ContractorProjects = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
+  // const [projects, setProjects] = useState<Project[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [formData, setFormData] = useState<ProjectFormValues>({
+    project: "",
+    clientName: "",
+    floorUnit: "",
+    unit: "",
+    startDate: "",
+    estimatedEndDate: "",
+    estimatedBudget: 0,
+    description: "",
+    teamSize: 1,
+    siteIncharge: "",
+  });
+  const [formErrors, setFormErrors] = useState<
+    Partial<Record<keyof ProjectFormValues, string>>
+  >({});
   const query = useQueryClient();
 
   const {
@@ -158,13 +133,12 @@ const ContractorProjects = () => {
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
 
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectSchema),
-    defaultValues: {
-      projectType: "Residential",
-      teamSize: 1,
-    },
-  });
+  const {
+    data: projects,
+    isError: projectError,
+    error: projectErr,
+    isLoading: projectLoad,
+  } = usefetchProjects();
 
   const createProject = useMutation({
     mutationFn: async (payload: any) => {
@@ -179,35 +153,27 @@ const ContractorProjects = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message || "Project created successfully");
-      query.invalidateQueries({ queryKey: ["projects"] });
+      query.invalidateQueries({ queryKey: ["fetchProjects"] });
+      setDialogOpen(false);
+      setFormData({
+        project: "",
+        clientName: "",
+        floorUnit: "",
+        unit: "",
+        startDate: "",
+        estimatedEndDate: "",
+        estimatedBudget: 0,
+        description: "",
+        teamSize: 1,
+        siteIncharge: "",
+      });
+      setFormErrors({});
     },
     onError: (err) => {
       toast.error(err.message || "Failed to create project");
       console.log("Failed to create project", err);
     },
   });
-
-  const onSubmit = (data: ProjectFormValues) => {
-    const newProject: Project = {
-      projectId: data.project,
-      clientName: data.clientName,
-      startDate: data.startDate,
-      endDate: data.estimatedEndDate,
-      estimatedBudget: data.estimatedBudget,
-      description: data.description || "",
-      status: "New",
-      teamSize: data.teamSize,
-      floorUnit: data.floorUnit,
-      unit: data.unit,
-      siteIncharge: user.role === "site-incharge" ? user._id : null,
-    };
-
-    createProject.mutate(newProject);
-    setProjects([...projects, newProject]);
-    toast.success("Project added successfully!");
-    setDialogOpen(false);
-    form.reset();
-  };
 
   if (floorUnitsError) {
     console.log("Failed to load floor units. Please try again.");
@@ -226,6 +192,54 @@ const ContractorProjects = () => {
     toast.error(dropdownError.message);
     return null;
   }
+
+  if (projectError) {
+    console.log("Failed to load projects. Please try again.");
+    toast.error(
+      projectErr.message || "Failed to load projects. Please try again."
+    );
+    return null;
+  }
+
+  if (projectLoad) return <Loader />;
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
+    field: keyof ProjectFormValues
+  ) => {
+    const value = typeof e === "string" ? e : e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      [field]:
+        field === "estimatedBudget" || field === "teamSize"
+          ? Number(value)
+          : value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      const newProject: Project = {
+        projectId: formData.project,
+        clientName: formData.clientName,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.estimatedEndDate),
+        estimatedBudget: formData.estimatedBudget,
+        description: formData.description,
+        status: "New",
+        teamSize: formData.teamSize,
+        floorUnit: formData.floorUnit,
+        unit: formData.unit,
+        siteIncharge: user.role === "site_incharge" ? user._id : null,
+      };
+
+      createProject.mutate(newProject);
+    }
+  };
 
   return (
     <MainLayout>
@@ -251,10 +265,10 @@ const ContractorProjects = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{projects.length}</div>
+              <div className="text-2xl font-bold">{projects?.length}</div>
               <p className="text-xs text-muted-foreground">
-                {projects.filter((p) => p.status === "In Progress").length} in
-                progress, {projects.filter((p) => p.status === "New").length}{" "}
+                {projects?.filter((p) => p.status === "In Progress").length} in
+                progress, {projects?.filter((p) => p.status === "New").length}{" "}
                 new
               </p>
             </CardContent>
@@ -308,98 +322,105 @@ const ContractorProjects = () => {
 
         <h2 className="text-2xl font-semibold">Project List</h2>
         <div className="space-y-4">
-          {projects.map((project) => (
-            <Card key={project._id} className="overflow-hidden">
-              <div className="p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="text-xl font-semibold">
-                        {typeof project.projectId === "object" &&
-                          project?.projectId?.projectName}
-                      </h3>
-                      <Badge
-                        variant={
-                          project.status === "In Progress"
-                            ? "default"
-                            : "outline"
-                        }
-                      >
-                        {project?.status}
-                      </Badge>
+          {projects.map((project) => {
+            console.log(project);
+            return (
+              <Card key={project._id} className="overflow-hidden">
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="text-xl font-semibold">
+                          {typeof project.projectId === "object" &&
+                            project?.projectId?.projectName +
+                              " " +
+                              (typeof project.floorUnit === "object" &&
+                                " - \nFloor " +
+                                  project?.floorUnit?.floorNumber +
+                                  ", " +
+                                  project?.floorUnit?.unitType) +
+                              (typeof project.unit === "object" &&
+                                " - Plot " + project?.unit?.plotNo)}
+                        </h3>
+                        <Badge
+                          variant={
+                            project.status === "In Progress"
+                              ? "default"
+                              : "outline"
+                          }
+                        >
+                          {project?.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground mb-1">
+                        <Building className="mr-1 h-4 w-4" />
+                        <span>{project?.clientName}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Calendar className="mr-1 h-4 w-4" />
+                        <span>
+                          {project?.startDate?.toLocaleString("en-IN", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                        <ArrowRight className="mx-1 h-3 w-3" />
+                        <span>
+                          {project?.endDate?.toLocaleString("en-IN", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground mb-1">
-                      <Building className="mr-1 h-4 w-4" />
-                      <span>
-                        {/* {typeof project.clientName === "object" &&
-                          project?.clientName?.name} */}
-                        {project?.clientName}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="mr-1 h-4 w-4" />
-                      <span>
-                        {project?.startDate.toLocaleString("en-IN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
-                      <ArrowRight className="mx-1 h-3 w-3" />
-                      <span>
-                        {project?.endDate.toLocaleString("en-IN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
+                    <div className="text-right">
+                      <div className="flex items-center justify-end">
+                        <BadgeIndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-semibold">
+                          {project?.estimatedBudget?.toLocaleString()}
+                        </span>
+                      </div>
+                      {/* <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
+                        <Clock className="mr-1 h-4 w-4" />
+                        <span>
+                          {typeof project.floorUnit === "object" &&
+                            project?.floorUnit?.floorNumber}
+                          % completed
+                        </span>
+                      </div> */}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center justify-end">
-                      <BadgeIndianRupee className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold">
-                        {project.estimatedBudget.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
-                      <Clock className="mr-1 h-4 w-4" />
-                      <span>
-                        {typeof project.floorUnit === "object" &&
-                          project?.floorUnit?.floorNumber}
-                        % completed
-                      </span>
-                    </div>
+
+                  <Separator className="my-4" />
+
+                  <div className="text-sm text-muted-foreground">
+                    {project.description}
+                  </div>
+
+                  <div className="flex justify-end mt-4 space-x-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/contractor/timeline/${project._id}`}>
+                        View Timeline
+                      </a>
+                    </Button>
+                    <Button size="sm" asChild>
+                      <a href={`/contractor/tasks/${project._id}`}>
+                        Manage Tasks
+                      </a>
+                    </Button>
                   </div>
                 </div>
-
-                <Separator className="my-4" />
-
-                <div className="text-sm text-muted-foreground">
-                  {project.description}
-                </div>
-
-                <div className="flex justify-end mt-4 space-x-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`/contractor/timeline/${project._id}`}>
-                      View Timeline
-                    </a>
-                  </Button>
-                  <Button size="sm" asChild>
-                    <a href={`/contractor/tasks/${project._id}`}>
-                      Manage Tasks
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       </div>
 
       {/* Add Project Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]  max-h-[80vh] w-[90vw] overflow-y-scroll rounded-xl">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] w-[90vw] overflow-y-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Project</DialogTitle>
           </DialogHeader>
@@ -408,321 +429,266 @@ const ContractorProjects = () => {
             portfolio.
           </DialogDescription>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="project"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Building</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          setSelectedProject(value);
-                          field.onChange(value);
-                        }}
-                        disabled={projectLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                projectLoading
-                                  ? "Loading projects..."
-                                  : "Select project"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projectLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Loading...
-                            </SelectItem>
-                          ) : (
-                            projectsDropDown &&
-                            projectsDropDown.map((project, idx) => (
-                              <SelectItem
-                                key={project._id || idx}
-                                value={project._id}
-                              >
-                                {project.projectName}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="floorUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Floor Unit</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          setSelectedFloorUnit(value);
-                          field.onChange(value);
-                        }}
-                        disabled={
-                          floorUnitsLoading ||
-                          !floorUnits ||
-                          floorUnits.length === 0
-                        }
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                floorUnitsLoading
-                                  ? "Loading Floor Units..."
-                                  : !floorUnits || floorUnits.length === 0
-                                  ? "No floor units available"
-                                  : "Select Floor Unit"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {floorUnitsLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Loading...
-                            </SelectItem>
-                          ) : !floorUnits || floorUnits.length === 0 ? (
-                            <SelectItem value="empty" disabled>
-                              No floor units available
-                            </SelectItem>
-                          ) : (
-                            floorUnits &&
-                            floorUnits.map((floor, idx) => (
-                              <SelectItem
-                                key={floor._id || idx}
-                                value={floor._id}
-                              >
-                                Floor {floor.floorNumber}, {floor.unitType}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unit</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          setSelectedUnit(value);
-                          field.onChange(value);
-                        }}
-                        value={field.value}
-                        disabled={
-                          unitsByFloorLoading ||
-                          !unitsByFloor ||
-                          unitsByFloor.length === 0
-                        }
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                unitsByFloorLoading
-                                  ? "Loading Units..."
-                                  : !unitsByFloor || unitsByFloor.length === 0
-                                  ? "No units available"
-                                  : "Select Unit"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {unitsByFloorLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Loading...
-                            </SelectItem>
-                          ) : !unitsByFloor || unitsByFloor.length === 0 ? (
-                            <SelectItem value="empty" disabled>
-                              No units available
-                            </SelectItem>
-                          ) : (
-                            unitsByFloor &&
-                            unitsByFloor.map((unit, idx) => (
-                              <SelectItem
-                                key={unit._id || idx}
-                                value={unit._id}
-                              >
-                                Plot {unit?.plotNo}, {unit?.propertyType}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="clientName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter client name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* <FormField
-                  control={form.control}
-                  name="projectType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select project type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Residential">
-                            Residential
-                          </SelectItem>
-                          <SelectItem value="Commercial">Commercial</SelectItem>
-                          <SelectItem value="Industrial">Industrial</SelectItem>
-                          <SelectItem value="Infrastructure">
-                            Infrastructure
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
-
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="estimatedEndDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estimated End Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="estimatedBudget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estimated Budget (₹)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            className="pl-10"
-                            placeholder="5000000"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="teamSize"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Team Size</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="1"
-                          placeholder="10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter project details"
-                        className="min-h-[100px]"
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a brief description of the project scope and
-                      objectives
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Building</label>
+                <Select
+                  value={formData.project}
+                  onValueChange={(value) => {
+                    setSelectedProject(value);
+                    handleInputChange(value, "project");
+                  }}
+                  disabled={projectLoading}
                 >
-                  Cancel
-                </Button>
-                <Button type="submit">Add Project</Button>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        projectLoading
+                          ? "Loading projects..."
+                          : "Select project"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectLoading ? (
+                      <SelectItem value="loading" disabled>
+                        Loading...
+                      </SelectItem>
+                    ) : (
+                      projectsDropDown &&
+                      projectsDropDown.map((project, idx) => (
+                        <SelectItem
+                          key={project._id || idx}
+                          value={project._id}
+                        >
+                          {project.projectName}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {formErrors.project && (
+                  <p className="text-sm text-red-500">{formErrors.project}</p>
+                )}
               </div>
-            </form>
-          </Form>
+
+              <div>
+                <label className="text-sm font-medium">Floor Unit</label>
+                <Select
+                  value={formData.floorUnit}
+                  onValueChange={(value) => {
+                    setSelectedFloorUnit(value);
+                    handleInputChange(value, "floorUnit");
+                  }}
+                  disabled={
+                    floorUnitsLoading || !floorUnits || floorUnits.length === 0
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        floorUnitsLoading
+                          ? "Loading Floor Units..."
+                          : !floorUnits || floorUnits.length === 0
+                          ? "No floor units available"
+                          : "Select Floor Unit"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {floorUnitsLoading ? (
+                      <SelectItem value="loading" disabled>
+                        Loading...
+                      </SelectItem>
+                    ) : !floorUnits || floorUnits.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        No floor units available
+                      </SelectItem>
+                    ) : (
+                      floorUnits &&
+                      floorUnits.map((floor, idx) => (
+                        <SelectItem key={floor._id || idx} value={floor._id}>
+                          Floor {floor.floorNumber}, {floor.unitType}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {formErrors.floorUnit && (
+                  <p className="text-sm text-red-500">{formErrors.floorUnit}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Unit</label>
+                <Select
+                  value={formData.unit}
+                  onValueChange={(value) => {
+                    setSelectedUnit(value);
+                    handleInputChange(value, "unit");
+                  }}
+                  disabled={
+                    unitsByFloorLoading ||
+                    !unitsByFloor ||
+                    unitsByFloor.length === 0
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        unitsByFloorLoading
+                          ? "Loading Units..."
+                          : !unitsByFloor || unitsByFloor.length === 0
+                          ? "No units available"
+                          : "Select Unit"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitsByFloorLoading ? (
+                      <SelectItem value="loading" disabled>
+                        Loading...
+                      </SelectItem>
+                    ) : !unitsByFloor || unitsByFloor.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        No units available
+                      </SelectItem>
+                    ) : (
+                      unitsByFloor &&
+                      unitsByFloor.map((unit, idx) => (
+                        <SelectItem key={unit._id || idx} value={unit._id}>
+                          Plot {unit?.plotNo}, {unit?.propertyType}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {formErrors.unit && (
+                  <p className="text-sm text-red-500">{formErrors.unit}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Client Name</label>
+                <Input
+                  value={formData.clientName}
+                  onChange={(e) => handleInputChange(e, "clientName")}
+                  placeholder="Enter client name"
+                />
+                {formErrors.clientName && (
+                  <p className="text-sm text-red-500">
+                    {formErrors.clientName}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Start Date</label>
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => handleInputChange(e, "startDate")}
+                />
+                {formErrors.startDate && (
+                  <p className="text-sm text-red-500">{formErrors.startDate}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Estimated End Date
+                </label>
+                <Input
+                  type="date"
+                  value={formData.estimatedEndDate}
+                  onChange={(e) => handleInputChange(e, "estimatedEndDate")}
+                />
+                {formErrors.estimatedEndDate && (
+                  <p className="text-sm text-red-500">
+                    {formErrors.estimatedEndDate}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Estimated Budget (₹)
+                </label>
+                <div className="relative">
+                  <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="pl-10"
+                    type="number"
+                    value={formData.estimatedBudget}
+                    onChange={(e) => handleInputChange(e, "estimatedBudget")}
+                    placeholder="5000000"
+                  />
+                </div>
+                {formErrors.estimatedBudget && (
+                  <p className="text-sm text-red-500">
+                    {formErrors.estimatedBudget}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Team Size</label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={formData.teamSize}
+                  onChange={(e) => handleInputChange(e, "teamSize")}
+                  placeholder="10"
+                />
+                {formErrors.teamSize && (
+                  <p className="text-sm text-red-500">{formErrors.teamSize}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Project Description</label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange(e, "description")}
+                placeholder="Enter project details"
+                className="min-h-[100px]"
+              />
+              <p className="text-sm text-muted-foreground">
+                Provide a brief description of the project scope and objectives
+              </p>
+              {formErrors.description && (
+                <p className="text-sm text-red-500">{formErrors.description}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  setFormData({
+                    project: "",
+                    clientName: "",
+                    floorUnit: "",
+                    unit: "",
+                    startDate: "",
+                    estimatedEndDate: "",
+                    estimatedBudget: 0,
+                    description: "",
+                    teamSize: 1,
+                    siteIncharge: "",
+                  });
+                  setFormErrors({});
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Add Project</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </MainLayout>

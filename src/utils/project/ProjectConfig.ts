@@ -1,7 +1,7 @@
 import { User } from "@/contexts/AuthContext";
 import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 export interface Task {
@@ -44,12 +44,12 @@ export interface Project {
   units?: {
     [unitName: string]: Task[];
   };
-  deadline?: string | Date;
+  deadline?: Date;
   priority?: string;
   type?: string;
-  startDate?: string | Date | null;
-  endDate?: string | Date | null;
-  teamSize?: number | null;
+  startDate?: Date;
+  endDate?: Date;
+  teamSize?: number;
   estimatedBudget?: number;
   description?: string;
   budget?: number;
@@ -57,6 +57,21 @@ export interface Project {
   assignedContractors?: {
     [unitName: string]: (User | string)[];
   };
+}
+
+export interface Contractor {
+  _id: string;
+  name: string;
+  company: string;
+  specialization: string;
+  projects: string[];
+  contactPerson: string;
+  phone: string;
+  email: string;
+  status: "active" | "on_hold" | "inactive";
+  completedTasks: number;
+  totalTasks: number;
+  rating: 1 | 2 | 3 | 4 | 5;
 }
 
 export const fetchProjects = async () => {
@@ -67,11 +82,47 @@ export const fetchProjects = async () => {
   return projectsRes.data;
 };
 
+export const fetchProjectsForDropdown = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/projectsDropdown`,
+    { withCredentials: true }
+  );
+  return data.data;
+};
+
+export const fetchContractors = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/site-incharge/myContractors`,
+    {
+      withCredentials: true,
+    }
+  );
+  return data;
+};
+
 export const usefetchProjects = () => {
   return useQuery<Project[]>({
-    queryKey: ["projects"],
+    queryKey: ["fetchProjects"],
     queryFn: fetchProjects,
     staleTime: 2 * 60 * 1000,
-    placeholderData: [],
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const usefetchProjectsForDropdown = () => {
+  return useQuery<Project[]>({
+    queryKey: ["ProjectsForDropdown"],
+    queryFn: fetchProjectsForDropdown,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const usefetchContractors = () => {
+  return useQuery<Contractor[]>({
+    queryKey: ["fetchContractors"],
+    queryFn: fetchContractors,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 };
