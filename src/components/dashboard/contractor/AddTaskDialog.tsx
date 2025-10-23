@@ -21,6 +21,7 @@ import {
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
+import PropertySelect from "@/hooks/PropertySelect";
 
 interface AddTaskDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -75,7 +76,9 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
   const [availableUnits, setAvailableUnits] = useState<
     { id: string; name: string }[]
   >([]);
-  const [selectedProject, setSelectedProject] = useState();
+  const [selectedProject, setSelectedProject] = useState("");
+  const [floorUnit, setFloorUnit] = useState("");
+  const [selectedUnit, setSelectedUnit] = useState("");
 
   const fetchDropdownData = async () => {
     try {
@@ -189,42 +192,15 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           />
         </div>
 
-        <div className="grid gap-2">
-          <Label>Project</Label>
-          <select
-            className="w-full border p-2 rounded cursor-pointer hover:shadow-sm"
-            onChange={(e) => {
-              const selectedId = e.target.value;
-              const project = projects.find((p) => p._id === selectedId);
-              setProjectId(project._id);
-              setSelectedProject(project);
-            }}
-          >
-            <option value="">Select Project</option>
-            {projects.map((proj) => (
-              <option key={proj._id} value={proj._id}>
-                {proj.projectTitle || proj.name || "Unnamed Project"}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid gap-2">
-          <Label>Unit</Label>
-          <select
-            className="w-full border p-2 rounded cursor-pointer hover:shadow-sm disabled:cursor-not-allowed"
-            onChange={(e) => setUnit(e.target.value)}
-            disabled={!selectedProject}
-          >
-            <option value="">Select Unit</option>
-            {selectedProject &&
-              selectedProject?.unitNames?.map((unitName) => (
-                <option key={unitName} value={unitName}>
-                  {unitName}
-                </option>
-              ))}
-          </select>
-        </div>
+        <PropertySelect
+          selectedFloorUnit={floorUnit}
+          setSelectedFloorUnit={setFloorUnit}
+          selectedProject={selectedProject}
+          setSelectedProject={setSelectedProject}
+          selectedUnit={unit}
+          setSelectedUnit={setUnit}
+          useAvailable={false}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">

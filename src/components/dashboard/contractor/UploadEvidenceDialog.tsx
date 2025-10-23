@@ -32,6 +32,7 @@ import {
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 type StatusType = "in_progress" | "completed" | "pending_review";
 import { XCircle, Upload, Camera, FileImage } from "lucide-react";
+import PropertySelect from "@/hooks/PropertySelect";
 
 interface UploadEvidenceDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -56,7 +57,7 @@ const UploadEvidenceDialog = ({
     "in_progress" | "completed" | "pending_review"
   >("in_progress");
   const [photos, setPhotos] = useState<File[]>([]);
-  const [projectInfo, setProjectInfo] = useState([]);
+  const [floorUnit, setFloorUnit] = useState("");
   const [availableTasks, setAvailableTasks] = useState<TaskData[]>([]);
   const [selectedPhase, setSelectedPhase] = useState<string>("");
   const [photoCaptions, setPhotoCaptions] = useState<string[]>([]);
@@ -174,6 +175,7 @@ const UploadEvidenceDialog = ({
       id: `pe${Date.now()}`,
       title,
       project: selectedProject,
+      floorUnit,
       unit: selectedUnit,
       task: selectedTask
         ? tasks.find((t) => t.id === selectedTask)?.title || ""
@@ -233,52 +235,15 @@ const UploadEvidenceDialog = ({
         /> */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="project">Project</Label>
-            <Select
-              value={selectedProject}
-              onValueChange={setSelectedProject}
-              required
-            >
-              <SelectTrigger id="project">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.name} value={project.name}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="unit">Unit/Block</Label>
-            <Select
-              value={selectedUnit}
-              onValueChange={setSelectedUnit}
-              required
-              disabled={!selectedProject}
-            >
-              <SelectTrigger id="unit">
-                <SelectValue
-                  placeholder={
-                    selectedProject
-                      ? "Select unit/block"
-                      : "Select a project first"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {availableUnits.map((unit) => (
-                  <SelectItem key={unit} value={unit}>
-                    {unit}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PropertySelect
+            selectedFloorUnit={floorUnit}
+            setSelectedFloorUnit={setFloorUnit}
+            selectedProject={selectedProject}
+            selectedUnit={selectedUnit}
+            setSelectedProject={setSelectedProject}
+            setSelectedUnit={setSelectedUnit}
+            useAvailable={false}
+          />
         </div>
 
         <div className="space-y-2">
