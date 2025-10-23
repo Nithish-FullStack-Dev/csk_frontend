@@ -407,11 +407,11 @@ const NewProperties = () => {
                       setDialogOpenPlot(true);
                     }}
                   >
-                    <Plus className="mr-2 h-4 w-4" /> Add Open Plots
+                    <Plus className="mr-2 h-4 w-4" /> Add Open Plot
                   </Button>
 
                   <Button onClick={handleAddBuilding}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Building
+                    <Plus className="mr-2 h-4 w-4" /> Add Property
                   </Button>
                 </div>
               )}

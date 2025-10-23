@@ -211,7 +211,7 @@ const OpenPlotsDetails = () => {
   // --- END MODIFIED GALLERY IMAGES LOGIC ---
 
   const developer = {
-    name: "Elite Homes Pvt. Ltd.",
+    name: "CSK Real Estate",
     experience: "15+ years of experience",
     projects: "Delivered 50+ successful projects",
   };
@@ -254,10 +254,10 @@ const OpenPlotsDetails = () => {
             <h1 className="text-4xl md:text-5xl font-md font-vidaloka mb-3 leading-tight drop-shadow-lg text-gold-100">
               {title}
             </h1>
-            <p className="text-xl md:text-2xl flex items-center font-medium drop-shadow-md text-gold-300">
+            {/* <p className="text-xl md:text-2xl flex items-center font-medium drop-shadow-md text-gold-300">
               <MapPin className="mr-3 h-6 w-6 text-gold-400" />
               {location}
-            </p>
+            </p> */}
           </div>
         </div>
       </section>
@@ -457,9 +457,9 @@ const OpenPlotsDetails = () => {
               {/* Price & CTA */}
               <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
                 <CardContent className="p-6 text-center space-y-5">
-                  <div className="text-4xl font-extrabold text-gold-700">
+                  {/* <div className="text-4xl font-extrabold text-gold-700">
                     {price}
-                  </div>
+                  </div> */}
                   <div className="space-y-3">
                     <Button
                       className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
