@@ -51,7 +51,8 @@ export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
     { withCredentials: true }
   );
@@ -73,7 +74,8 @@ export const fetchUnitsForDropDownByBuildingId = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -95,7 +97,8 @@ export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -119,7 +122,7 @@ export const fetchSchedules = async () => {
     `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
     { withCredentials: true }
   );
-  return data.schedules || [];
+  return data.data || [];
 };
 
 export const fetchContractor = async () => {

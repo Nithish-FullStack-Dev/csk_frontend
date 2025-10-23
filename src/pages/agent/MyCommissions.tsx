@@ -218,17 +218,14 @@ const MyCommissions = () => {
     },
   });
 
-  useEffect(() => {
-    if (isCommError) {
-      toast.error("Failed to fetch commissions.");
-    }
-  }, [isCommError, commErr]);
-
-  useEffect(() => {
-    if (isLeadsError) {
-      toast.error("Failed to fetch commission eligible leads.");
-    }
-  }, [isLeadsError, leadsErr]);
+  if (isCommError) {
+    toast.error("Failed to fetch commissions.");
+    console.log("Failed to fetch commissions.", commErr);
+  }
+  if (isLeadsError) {
+    toast.error("Failed to fetch commission eligible leads.");
+    console.log("Failed to fetch commission eligible leads.", leadsErr);
+  }
 
   if (isRolePermissionsError) {
     console.error("Error fetching role permissions:", rolePermissionsError);

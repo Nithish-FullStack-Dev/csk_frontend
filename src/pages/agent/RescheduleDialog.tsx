@@ -9,10 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function RescheduleDialog({
   open,
@@ -21,36 +20,73 @@ export function RescheduleDialog({
   fetchAppointments,
 }) {
   console.log(schedule);
-  const [isUpadting, setisUpadting] = useState(false);
-  const { control, register, handleSubmit } = useForm({
-    defaultValues: {
-      ...schedule,
-      date:
-        typeof schedule.date === "string"
-          ? schedule.date
-          : schedule.date?.toISOString().split("T")[0],
-      startTime: schedule.startTime?.toISOString().split("T")[1]?.slice(0, 5),
-      endTime: schedule.endTime?.toISOString().split("T")[1]?.slice(0, 5),
-    },
+  const [formData, setFormData] = useState({
+    title: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    location: "",
+    notes: "",
+    status: "",
+    type: "",
+    property: "",
+    floorUnit: "",
+    unit: "",
+    client: "",
   });
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const onSubmit = async (formData) => {
+  // ✅ Populate form when schedule changes
+  useEffect(() => {
+    if (schedule) {
+      setFormData({
+        title: schedule.title || "",
+        date:
+          typeof schedule.date === "string"
+            ? schedule.date
+            : schedule.date?.toISOString().split("T")[0] || "",
+        startTime: schedule.startTime
+          ? new Date(schedule.startTime).toTimeString().slice(0, 5)
+          : "",
+        endTime: schedule.endTime
+          ? new Date(schedule.endTime).toTimeString().slice(0, 5)
+          : "",
+        location: schedule.location || "",
+        notes: schedule.notes || "",
+        status: schedule.status,
+        type: schedule.type,
+        property: schedule.property?._id || "",
+        floorUnit: schedule.floorUnit?._id || "",
+        unit: schedule.unit?._id || "",
+        client: schedule.client?._id || "",
+      });
+    }
+  }, [schedule]);
+
+  // ✅ Handle input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Handle submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      setisUpadting(true);
+      setIsUpdating(true);
+
       const payload = {
         ...formData,
         startTime: `${formData.date}T${formData.startTime}`,
         endTime: `${formData.date}T${formData.endTime}`,
       };
-      console.log(payload);
+
       await axios.put(
         `${import.meta.env.VITE_URL}/api/user-schedule/schedule/${
           schedule._id
         }`,
         payload,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       toast({ title: "Success", description: "Appointment rescheduled." });
@@ -63,7 +99,7 @@ export function RescheduleDialog({
         variant: "destructive",
       });
     } finally {
-      setisUpadting(false);
+      setIsUpdating(false);
     }
   };
 
@@ -72,50 +108,101 @@ export function RescheduleDialog({
       <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
         <DialogHeader>
           <DialogTitle>Reschedule Appointment</DialogTitle>
+          <DialogDescription>
+            Update the date, time, or notes for this appointment.
+          </DialogDescription>
         </DialogHeader>
-        <DialogDescription></DialogDescription>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input {...register("title")} placeholder="Title" required />
 
-          <Controller
-            name="clientId"
-            control={control}
-            render={({ field }) => (
-              <Input
-                value={schedule?.client?.name || "Unknown Client"}
-                disabled
-                readOnly
-              />
-            )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Editable Fields */}
+          <Input
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="Title"
+            required
           />
 
-          <Controller
-            name="propertyId"
-            control={control}
-            render={({ field }) => (
-              <Input
-                value={schedule?.property?.projectName || "Unknown Property"}
-                disabled
-                readOnly
-              />
-            )}
+          {/* Read-only details */}
+          <Input
+            value={schedule?.client?.name || "Unknown Client"}
+            disabled
+            readOnly
           />
 
+          <Input
+            value={schedule?.property?.projectName || "Unknown Property"}
+            disabled
+            readOnly
+          />
+
+          <Input
+            value={
+              schedule?.floorUnit
+                ? `${schedule.floorUnit.floorNumber} / ${schedule.floorUnit.unitType}`
+                : "N/A"
+            }
+            disabled
+            readOnly
+          />
+
+          <Input
+            value={
+              schedule?.unit
+                ? `Plot No: ${schedule.unit.plotNo} (${schedule.unit.propertyType})`
+                : "N/A"
+            }
+            disabled
+            readOnly
+          />
+
+          {/* Date & Time */}
           <div className="grid grid-cols-2 gap-2">
-            <Input type="date" {...register("date")} />
-            <Input type="time" {...register("startTime")} />
-            <Input type="time" {...register("endTime")} />
+            <Input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              type="time"
+              name="startTime"
+              value={formData.startTime}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              type="time"
+              name="endTime"
+              value={formData.endTime}
+              onChange={handleChange}
+              required
+            />
           </div>
 
-          <Textarea {...register("location")} placeholder="Location" />
-          <Textarea {...register("notes")} placeholder="Notes" />
+          {/* Notes & Location */}
+          <Textarea
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            placeholder="Location"
+          />
 
+          <Textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            placeholder="Notes"
+          />
+
+          {/* Buttons */}
           <DialogFooter className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isUpadting}>
-              {isUpadting ? "Updating..." : "Update"}
+            <Button type="submit" disabled={isUpdating}>
+              {isUpdating ? "Updating..." : "Update"}
             </Button>
           </DialogFooter>
         </form>

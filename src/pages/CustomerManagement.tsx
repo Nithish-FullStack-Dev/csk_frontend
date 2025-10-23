@@ -1,13 +1,5 @@
 import MainLayout from "@/components/layout/MainLayout";
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,84 +31,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
-import { Property } from "./public/PropertyInterfaces"; // Assuming this path and interface
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth, User } from "@/contexts/AuthContext"; // Assuming this path and User interface
-
-// Removed PropertiesWrapper interface as it's not needed based on backend response
-
-// Interface for a single property entry within a Customer's 'properties' array
-export interface CustomerPropertyDetail {
-  _id?: string; // Optional for new entries, present for existing ones
-  property: string | Property; // Can be ID string or populated Property object
-  bookingDate: string; // Storing as string for form input type="date"
-  finalPrice: number;
-  paymentPlan: "Down Payment" | "EMI" | "Full Payment";
-  paymentStatus: "Pending" | "In Progress" | "Completed";
-  documents?: string[]; // Array of Document IDs
-}
-
-// Main Customer interface
-export interface Customer {
-  _id: string;
-  user: User; // The actual customer user (should be an existing user)
-  purchasedFrom: User; // The agent who sold it
-  properties: CustomerPropertyDetail[]; // Array of purchased properties
-  createdAt: string;
-  updatedAt: string;
-}
-
-// --- API Calls ---
-
-export const fetchCustomers = async (): Promise<Customer[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
-    {
-      withCredentials: true,
-    }
-  );
-  return data.data || [];
-};
-
-// Updated fetchProperties to return Property[] directly
-const fetchProperties = async (): Promise<Property[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/properties/available`,
-    {
-      withCredentials: true,
-    }
-  );
-  return data.data || []; // Now expects data.data to be Property[]
-};
-
-export const fetchAgents = async (): Promise<User[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getAllAgents`,
-    {
-      withCredentials: true,
-    }
-  );
-  return data || [];
-};
-
-// New API call to fetch users who can be selected as customers
-const fetchAllCustomer_purchased = async (): Promise<User[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`,
-    {
-      withCredentials: true,
-    }
-  );
-  return data || [];
-};
+import { useAuth, User } from "@/contexts/AuthContext";
+import { Customer, CustomerPropertyDetail } from "@/types/property";
+import {
+  fetchAgents,
+  fetchAllCustomer_purchased,
+  fetchCustomers,
+} from "@/utils/buildings/CustomerConfig";
+import PropertySelect from "@/hooks/PropertySelect";
 
 const CustomerManagement: React.FC = () => {
-  const { user } = useAuth(); // Get current user from auth context
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-
   const isSalesManager = user && user?.role === "sales_manager";
 
-  // --- State for Dialog and Form ---
   const [isCustomerFormDialogOpen, setIsCustomerFormDialogOpen] =
     useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -128,9 +57,17 @@ const CustomerManagement: React.FC = () => {
   const [purchasedFromAgentId, setPurchasedFromAgentId] = useState<string>("");
   const [customerProperties, setCustomerProperties] = useState<
     CustomerPropertyDetail[]
-  >([]); // Array to hold multiple property details
-
-  // --- React Query Hooks ---
+  >([
+    {
+      property: "",
+      bookingDate: "",
+      finalPrice: 0,
+      paymentPlan: "Down Payment",
+      paymentStatus: "Pending",
+      floorUnit: "",
+      unit: "",
+    },
+  ]);
 
   const {
     data: customers,
@@ -141,19 +78,7 @@ const CustomerManagement: React.FC = () => {
     queryKey: ["customers"],
     queryFn: fetchCustomers,
     staleTime: 0,
-    enabled: !!user?._id, // Only fetch if user is logged in
-  });
-
-  // Updated useQuery to expect Property[] directly
-  const {
-    data: availableProperties,
-    isLoading: isLoadingProperties,
-    isError: isErrorProperties,
-    error: propertiesError,
-  } = useQuery<Property[]>({
-    queryKey: ["properties"],
-    queryFn: fetchProperties,
-    staleTime: 0,
+    enabled: !!user?._id,
   });
 
   const {
@@ -164,7 +89,7 @@ const CustomerManagement: React.FC = () => {
   } = useQuery<User[]>({
     queryKey: ["agents"],
     queryFn: fetchAgents,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
   });
 
   const {
@@ -175,18 +100,16 @@ const CustomerManagement: React.FC = () => {
   } = useQuery<User[]>({
     queryKey: ["availableCustomersForSelection"],
     queryFn: fetchAllCustomer_purchased,
-    staleTime: 0,
+    staleTime: 2 * 60 * 1000,
   });
-
-  // --- Mutations ---
 
   const addCustomerMutation = useMutation({
     mutationFn: async (newCustomerData: {
-      user: string; // User ID
-      purchasedFrom: string; // Agent ID
+      user: string;
+      purchasedFrom: string;
       properties: (Omit<CustomerPropertyDetail, "_id" | "property"> & {
         property: string;
-      })[]; // Array of property details
+      })[];
     }) => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
@@ -200,7 +123,7 @@ const CustomerManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({
         queryKey: ["availableCustomersForSelection"],
-      }); // Invalidate if a new user becomes a customer
+      });
       setIsCustomerFormDialogOpen(false);
       resetForm();
     },
@@ -226,7 +149,6 @@ const CustomerManagement: React.FC = () => {
       };
     }) => {
       const { data } = await axios.put(
-        // Changed from patch to put as per your schema update
         `${import.meta.env.VITE_URL}/api/customer/updateCustomer/${customerId}`,
         updatedCustomerData,
         { withCredentials: true }
@@ -246,8 +168,6 @@ const CustomerManagement: React.FC = () => {
     },
   });
 
-  // --- Form Logic ---
-
   const resetForm = () => {
     setSelectedCustomer(null);
     setCustomerUserId("");
@@ -259,28 +179,33 @@ const CustomerManagement: React.FC = () => {
         finalPrice: 0,
         paymentPlan: "Down Payment",
         paymentStatus: "Pending",
+        floorUnit: "",
+        unit: "",
       },
-    ]); // Always start with one empty property field for new entry
+    ]);
   };
 
-  // Effect to populate form when editing an existing customer
   useEffect(() => {
     if (selectedCustomer) {
       setCustomerUserId(selectedCustomer.user._id);
       setPurchasedFromAgentId(selectedCustomer.purchasedFrom._id);
-      // Map existing properties for editing
       setCustomerProperties(
         selectedCustomer.properties.map((prop) => ({
           ...prop,
           property:
             typeof prop.property === "string"
               ? prop.property
-              : prop.property._id, // Ensure it's an ID
-          bookingDate: new Date(prop.bookingDate).toISOString().split("T")[0], // Format for input type="date"
+              : prop.property._id,
+          floorUnit:
+            typeof prop.floorUnit === "string"
+              ? prop.floorUnit
+              : prop.floorUnit._id,
+          unit: typeof prop.unit === "string" ? prop.unit : prop.unit._id,
+          bookingDate: new Date(prop.bookingDate).toISOString().split("T")[0],
         }))
       );
     } else {
-      resetForm(); // Reset form when dialog opens for adding new customer
+      resetForm();
     }
   }, [selectedCustomer]);
 
@@ -293,6 +218,8 @@ const CustomerManagement: React.FC = () => {
         finalPrice: 0,
         paymentPlan: "Down Payment",
         paymentStatus: "Pending",
+        floorUnit: "",
+        unit: "",
       },
     ]);
   };
@@ -317,7 +244,6 @@ const CustomerManagement: React.FC = () => {
   };
 
   const handleSaveCustomer = async () => {
-    // Validation
     if (!customerUserId) {
       toast.error("Please select an existing customer.");
       return;
@@ -330,11 +256,16 @@ const CustomerManagement: React.FC = () => {
       toast.error("At least one property detail is required.");
       return;
     }
-
     for (const prop of customerProperties) {
-      if (!prop.property || !prop.bookingDate || !prop.finalPrice) {
+      if (
+        !prop.property ||
+        !prop.bookingDate ||
+        !prop.finalPrice ||
+        !prop.floorUnit ||
+        !prop.unit
+      ) {
         toast.error(
-          "All property details (Property, Booking Date, Final Price) are required."
+          "All property details (Project, Floor Unit, Unit, Booking Date, Final Price) are required."
         );
         return;
       }
@@ -344,41 +275,38 @@ const CustomerManagement: React.FC = () => {
       }
     }
 
-    // Prepare data for API
     const propertiesToSend = customerProperties.map((prop) => ({
       property:
-        typeof prop.property === "string" ? prop.property : prop.property._id, // Ensure it's an ID
+        typeof prop.property === "string" ? prop.property : prop.property._id,
       bookingDate: prop.bookingDate,
       finalPrice: prop.finalPrice,
       paymentPlan: prop.paymentPlan,
       paymentStatus: prop.paymentStatus,
       documents: prop.documents || [],
+      floorUnit:
+        typeof prop.floorUnit === "string"
+          ? prop.floorUnit
+          : prop.floorUnit._id,
+      unit: typeof prop.unit === "string" ? prop.unit : prop.unit._id,
     }));
 
     const customerData = {
-      user: customerUserId, // This will always be an existing user's ID
+      user: customerUserId,
       purchasedFrom: purchasedFromAgentId,
       properties: propertiesToSend,
     };
 
     if (selectedCustomer) {
-      // Update existing customer
       updateCustomerMutation.mutate({
         customerId: selectedCustomer._id,
         updatedCustomerData: customerData,
       });
     } else {
-      // Add new customer
       addCustomerMutation.mutate(customerData);
     }
   };
 
-  if (
-    isLoadingCustomers ||
-    isLoadingProperties ||
-    isLoadingAgents ||
-    isLoadingCustomersForSelection
-  ) {
+  if (isLoadingCustomers || isLoadingAgents || isLoadingCustomersForSelection) {
     return <Loader />;
   }
 
@@ -386,10 +314,7 @@ const CustomerManagement: React.FC = () => {
     toast.error("Failed to load customers.");
     console.error("Customers fetch error:", customersError);
   }
-  if (isErrorProperties) {
-    toast.error("Failed to load properties.");
-    console.error("Properties fetch error:", propertiesError);
-  }
+
   if (isErrorAgents) {
     toast.error("Failed to load agents.");
     console.error("Agents fetch error:", agentsError);
@@ -404,21 +329,23 @@ const CustomerManagement: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 md:p-6 p-1">
+      <div className="space-y-6 md:p-6 p-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">Customer Management</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Customer Management
+            </h1>
+            <p className="text-gray-500 mt-1">
               Manage your customer base and their property purchase details.
             </p>
           </div>
           {isSalesManager && (
             <Button
               onClick={() => {
-                setSelectedCustomer(null); // Clear selected customer for add mode
+                setSelectedCustomer(null);
                 setIsCustomerFormDialogOpen(true);
               }}
-              className="mt-4 md:mt-0"
+              className="mt-4 md:mt-0  text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
               Add New Customer
@@ -426,130 +353,22 @@ const CustomerManagement: React.FC = () => {
           )}
         </div>
 
-        {/* Customer Table */}
-        <div className="rounded-md border">
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[150px]">Customer Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Purchased From (Agent)</TableHead>
-                  <TableHead className="min-w-[250px]">Properties</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers?.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No customers found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  customers?.map((customer) => (
-                    <TableRow key={customer._id}>
-                      <TableCell className="font-medium">
-                        {customer.user?.name || "N/A"}
-                      </TableCell>
-                      <TableCell>{customer.user?.email || "N/A"}</TableCell>
-                      <TableCell>{customer.user?.phone || "N/A"}</TableCell>
-                      <TableCell>
-                        {customer.purchasedFrom?.name || "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          {customer.properties.map((prop, index) => (
-                            <Card
-                              key={prop._id || index}
-                              className="p-3 shadow-sm bg-gray-50"
-                            >
-                              <CardHeader className="p-0 pb-1">
-                                <CardTitle className="text-sm font-semibold flex items-center">
-                                  <Building className="h-3 w-3 mr-1 text-blue-600" />
-                                  {typeof prop.property === "object" &&
-                                  prop.property?.basicInfo?.projectName
-                                    ? `${prop.property.basicInfo.projectName} - ${prop.property.basicInfo.plotNumber}`
-                                    : "Property N/A"}
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="p-0 text-xs text-muted-foreground">
-                                <p className="flex items-center">
-                                  <CalendarDays className="h-3 w-3 mr-1" />{" "}
-                                  Booking:{" "}
-                                  {new Date(
-                                    prop.bookingDate
-                                  ).toLocaleDateString()}
-                                </p>
-                                <p className="flex items-center">
-                                  <DollarSign className="h-3 w-3 mr-1" /> Price:
-                                  ${prop.finalPrice?.toLocaleString()}
-                                </p>
-                                <p className="flex items-center">
-                                  <span className="mr-1">Plan:</span>{" "}
-                                  <Badge
-                                    variant="secondary"
-                                    className="px-1 py-0.5 text-xs"
-                                  >
-                                    {prop.paymentPlan}
-                                  </Badge>
-                                </p>
-                                <p className="flex items-center">
-                                  <span className="mr-1">Status:</span>{" "}
-                                  <Badge
-                                    className={`px-1 py-0.5 text-xs ${
-                                      prop.paymentStatus === "Completed"
-                                        ? "bg-green-100 text-green-800"
-                                        : prop.paymentStatus === "In Progress"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                  >
-                                    {prop.paymentStatus}
-                                  </Badge>
-                                </p>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {isSalesManager && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedCustomer(customer);
-                              setIsCustomerFormDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Mobile Card Layout */}
-          <div className="block md:hidden space-y-4 p-2">
+        {/* Customer Cards */}
+        <div className="rounded-lg border border-gray-200 shadow-sm p-4">
+          {/* Desktop Card Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {customers?.length === 0 ? (
-              <p className="text-center text-muted-foreground">
+              <p className="text-center text-gray-500 col-span-full">
                 No customers found.
               </p>
             ) : (
               customers?.map((customer) => (
-                <Card key={customer._id} className="p-4 shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold">
+                <Card
+                  key={customer._id}
+                  className="p-6 shadow-md border border-gray-100 rounded-lg"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-lg text-gray-900">
                       {customer.user?.name || "N/A"}
                     </h3>
                     {isSalesManager && (
@@ -560,45 +379,152 @@ const CustomerManagement: React.FC = () => {
                           setSelectedCustomer(customer);
                           setIsCustomerFormDialogOpen(true);
                         }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <p className="flex items-center">
+                      <span className="mr-2">📧</span>{" "}
+                      {customer.user?.email || "N/A"}
+                    </p>
+                    <p className="flex items-center">
+                      <span className="mr-2">📱</span>{" "}
+                      {customer.user?.phone || "N/A"}
+                    </p>
+                    <p className="flex items-center">
+                      <span className="mr-2">🧑‍💼</span> Agent:{" "}
+                      {customer.purchasedFrom?.name || "N/A"}
+                    </p>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {customer.properties.map((prop, index) => (
+                      <Card
+                        key={prop._id || index}
+                        className="p-4 bg-gray-50 border border-gray-100 rounded-lg"
+                      >
+                        <p className="font-medium text-sm text-gray-800 flex items-center">
+                          <Building className="h-4 w-4 mr-2 text-blue-600" />
+                          {typeof prop.property === "object" &&
+                          typeof prop.unit === "object" &&
+                          typeof prop.floorUnit === "object" &&
+                          prop.property?.projectName
+                            ? `${prop.property?.projectName} - ${prop.floorUnit?.floorNumber} - ${prop.unit?.plotNo}`
+                            : "Property N/A"}
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center">
+                          <CalendarDays className="h-4 w-4 mr-2 text-gray-500" />
+                          Booking:{" "}
+                          {new Date(prop.bookingDate).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center mb-2">
+                          <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
+                          Price: ${prop.finalPrice?.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center mb-2">
+                          <span className="mr-2">Plan:</span>
+                          <Badge
+                            variant="secondary"
+                            className="px-2 py-1 text-xs bg-blue-100 text-blue-800"
+                          >
+                            {prop.paymentPlan}
+                          </Badge>
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center mb-2">
+                          <span className="mr-2">Status:</span>
+                          <Badge
+                            className={`px-2 py-1 text-xs ${
+                              prop.paymentStatus === "Completed"
+                                ? "bg-green-100 text-green-800"
+                                : prop.paymentStatus === "In Progress"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {prop.paymentStatus}
+                          </Badge>
+                        </p>
+                      </Card>
+                    ))}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Mobile Card Layout */}
+          <div className="block md:hidden space-y-4">
+            {customers?.length === 0 ? (
+              <p className="text-center text-gray-500">No customers found.</p>
+            ) : (
+              customers?.map((customer) => (
+                <Card
+                  key={customer._id}
+                  className="p-4 shadow-md border border-gray-100 rounded-lg"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-semibold text-gray-900">
+                      {customer.user?.name || "N/A"}
+                    </h3>
+                    {isSalesManager && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setIsCustomerFormDialogOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-600">
                     📧 {customer.user?.email || "N/A"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-600">
                     📱 {customer.user?.phone || "N/A"}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-600">
                     🧑‍💼 Agent: {customer.purchasedFrom?.name || "N/A"}
                   </p>
-
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-4 space-y-3">
                     {customer.properties.map((prop, index) => (
-                      <Card key={prop._id || index} className="p-2 bg-gray-50">
-                        <p className="font-medium text-sm">
+                      <Card
+                        key={prop._id || index}
+                        className="p-3 bg-gray-50 border border-gray-100 rounded-lg"
+                      >
+                        <p className="font-medium text-sm text-gray-800">
                           🏠{" "}
                           {typeof prop.property === "object" &&
-                          prop.property?.basicInfo?.projectName
-                            ? `${prop.property.basicInfo.projectName} - ${prop.property.basicInfo.plotNumber}`
+                          typeof prop.unit === "object" &&
+                          typeof prop.floorUnit === "object" &&
+                          prop.property?.projectName
+                            ? `${prop.property?.projectName} - ${prop.floorUnit?.floorNumber} - ${prop.unit?.plotNo}`
                             : "Property N/A"}
                         </p>
-                        <p className="text-xs">
+                        <p className="text-xs text-gray-600">
                           📅 {new Date(prop.bookingDate).toLocaleDateString()}
                         </p>
-                        <p className="text-xs">
+                        <p className="text-xs text-gray-600">
                           💰 ${prop.finalPrice?.toLocaleString()}
                         </p>
-                        <p className="text-xs">
+                        <p className="text-xs text-gray-600">
                           Plan:{" "}
-                          <Badge variant="secondary">{prop.paymentPlan}</Badge>
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-100 text-blue-800"
+                          >
+                            {prop.paymentPlan}
+                          </Badge>
                         </p>
-                        <p className="text-xs">
+                        <p className="text-xs text-gray-600">
                           Status:{" "}
                           <Badge
-                            className={`px-1 py-0.5 text-xs ${
+                            className={`px-2 py-1 text-xs ${
                               prop.paymentStatus === "Completed"
                                 ? "bg-green-100 text-green-800"
                                 : prop.paymentStatus === "In Progress"
@@ -623,27 +549,36 @@ const CustomerManagement: React.FC = () => {
           open={isCustomerFormDialogOpen}
           onOpenChange={setIsCustomerFormDialogOpen}
         >
-          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-            <DialogHeader>
-              <DialogTitle>
+          <DialogContent className="md:w-[700px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl bg-white shadow-2xl">
+            <DialogHeader className="bg-white border-b border-gray-100">
+              <DialogTitle className="text-2xl font-bold text-gray-900">
                 {selectedCustomer ? "Edit Customer" : "Add New Customer"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-gray-500">
                 {selectedCustomer
                   ? "Update customer details and their purchased properties."
                   : "Select an existing user to associate as a customer and add their property purchase details."}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="space-y-6 py-6">
               {/* Customer User Selection */}
               <div className="space-y-2">
-                <Label htmlFor="customerUser">Customer *</Label>
+                <Label
+                  htmlFor="customerUser"
+                  className="text-sm font-medium text-gray-700 flex items-center"
+                >
+                  <Building className="h-4 w-4 mr-2 text-blue-600" />
+                  Customer <span className="text-red-500 ml-1">*</span>
+                </Label>
                 <Select
                   value={customerUserId}
                   onValueChange={setCustomerUserId}
                   disabled={!!selectedCustomer}
                 >
-                  <SelectTrigger id="customerUser">
+                  <SelectTrigger
+                    id="customerUser"
+                    className="border-gray-300 focus:ring-blue-500"
+                  >
                     <SelectValue placeholder="Select an existing customer" />
                   </SelectTrigger>
                   <SelectContent>
@@ -664,14 +599,22 @@ const CustomerManagement: React.FC = () => {
 
               {/* Purchased From Agent */}
               <div className="space-y-2">
-                <Label htmlFor="purchasedFromAgent">
-                  Purchased From (Agent) *
+                <Label
+                  htmlFor="purchasedFromAgent"
+                  className="text-sm font-medium text-gray-700 flex items-center"
+                >
+                  <Building className="h-4 w-4 mr-2 text-blue-600" />
+                  Purchased From (Agent){" "}
+                  <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Select
                   value={purchasedFromAgentId}
                   onValueChange={setPurchasedFromAgentId}
                 >
-                  <SelectTrigger id="purchasedFromAgent">
+                  <SelectTrigger
+                    id="purchasedFromAgent"
+                    className="border-gray-300 focus:ring-blue-500"
+                  >
                     <SelectValue placeholder="Select agent" />
                   </SelectTrigger>
                   <SelectContent>
@@ -685,160 +628,161 @@ const CustomerManagement: React.FC = () => {
               </div>
 
               {/* Dynamic Property Details */}
-              <h3 className="text-lg font-semibold mt-4">Property Details</h3>
-              {customerProperties.map((prop, index) => (
-                <div
-                  key={index}
-                  className="border p-4 rounded-md relative space-y-3"
-                >
-                  {customerProperties.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-2 right-2 h-6 w-6 text-red-500 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => handleRemovePropertyField(index)}
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <div className="space-y-2">
-                    <Label>Property *</Label>
-                    <Select
-                      value={
-                        typeof prop.property === "string"
-                          ? prop.property
-                          : prop.property?._id || ""
-                      }
-                      onValueChange={(value) =>
-                        handlePropertyChange(index, "property", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Property" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Filter out properties where 'property' or 'property._id' is missing before mapping */}
-                        {availableProperties?.filter(
-                          (p) =>
-                            p._id &&
-                            p.basicInfo?.projectName &&
-                            p.basicInfo?.plotNumber
-                        ).length === 0 ? (
-                          <SelectItem
-                            value="no-properties-placeholder"
-                            disabled
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Property Details
+                </h3>
+                {customerProperties.map((prop, index) => (
+                  <Card
+                    key={index}
+                    className="p-6 bg-gray-50 border border-gray-200 rounded-lg shadow-sm relative"
+                  >
+                    {customerProperties.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-700"
+                        onClick={() => handleRemovePropertyField(index)}
+                      >
+                        <XCircle className="h-5 w-5" />
+                      </Button>
+                    )}
+                    <div className="space-y-4">
+                      {/* Property Selection */}
+                      <PropertySelect
+                        index={index}
+                        selectedProject={prop.property}
+                        setSelectedProject={(value) =>
+                          handlePropertyChange(index, "property", value)
+                        }
+                        selectedFloorUnit={prop.floorUnit}
+                        setSelectedFloorUnit={(value) =>
+                          handlePropertyChange(index, "floorUnit", value)
+                        }
+                        selectedUnit={prop.unit}
+                        setSelectedUnit={(value) =>
+                          handlePropertyChange(index, "unit", value)
+                        }
+                        useAvailable={true}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700 flex items-center">
+                            <CalendarDays className="h-4 w-4 mr-2 text-blue-600" />
+                            Booking Date{" "}
+                            <span className="text-red-500 ml-1">*</span>
+                          </Label>
+                          <Input
+                            type="date"
+                            value={prop.bookingDate}
+                            onChange={(e) =>
+                              handlePropertyChange(
+                                index,
+                                "bookingDate",
+                                e.target.value
+                              )
+                            }
+                            className="border-gray-300 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700 flex items-center">
+                            <DollarSign className="h-4 w-4 mr-2 text-blue-600" />
+                            Final Price{" "}
+                            <span className="text-red-500 ml-1">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 5000000"
+                            value={prop.finalPrice || ""}
+                            onChange={(e) =>
+                              handlePropertyChange(
+                                index,
+                                "finalPrice",
+                                Math.max(0, Number(e.target.value))
+                              )
+                            }
+                            min={0}
+                            className="border-gray-300 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Payment Plan
+                          </Label>
+                          <Select
+                            value={prop.paymentPlan}
+                            onValueChange={(
+                              value: "Down Payment" | "EMI" | "Full Payment"
+                            ) =>
+                              handlePropertyChange(index, "paymentPlan", value)
+                            }
                           >
-                            No properties available
-                          </SelectItem>
-                        ) : (
-                          availableProperties
-                            ?.filter(
-                              (p) =>
-                                p._id &&
-                                p.basicInfo?.projectName &&
-                                p.basicInfo?.plotNumber
-                            )
-                            .map((p) => (
-                              <SelectItem key={p._id} value={p._id}>
-                                {`${p.basicInfo.projectName} - ${p.basicInfo.plotNumber}`}
+                            <SelectTrigger className="border-gray-300 focus:ring-blue-500">
+                              <SelectValue placeholder="Select Plan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Down Payment">
+                                Down Payment
                               </SelectItem>
-                            ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Booking Date *</Label>
-                      <Input
-                        type="date"
-                        value={prop.bookingDate}
-                        onChange={(e) =>
-                          handlePropertyChange(
-                            index,
-                            "bookingDate",
-                            e.target.value
-                          )
-                        }
-                      />
+                              <SelectItem value="EMI">EMI</SelectItem>
+                              <SelectItem value="Full Payment">
+                                Full Payment
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Payment Status
+                          </Label>
+                          <Select
+                            value={prop.paymentStatus}
+                            onValueChange={(
+                              value: "Pending" | "In Progress" | "Completed"
+                            ) =>
+                              handlePropertyChange(
+                                index,
+                                "paymentStatus",
+                                value
+                              )
+                            }
+                          >
+                            <SelectTrigger className="border-gray-300 focus:ring-blue-500">
+                              <SelectValue placeholder="Select Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Pending">Pending</SelectItem>
+                              <SelectItem value="In Progress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="Completed">
+                                Completed
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Final Price *</Label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 5000000"
-                        value={prop.finalPrice || ""}
-                        onChange={(e) =>
-                          handlePropertyChange(
-                            index,
-                            "finalPrice",
-                            Math.max(0, Number(e.target.value))
-                          )
-                        }
-                        max={0}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Payment Plan</Label>
-                      <Select
-                        value={prop.paymentPlan}
-                        onValueChange={(
-                          value: "Down Payment" | "EMI" | "Full Payment"
-                        ) => handlePropertyChange(index, "paymentPlan", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Plan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Down Payment">
-                            Down Payment
-                          </SelectItem>
-                          <SelectItem value="EMI">EMI</SelectItem>
-                          <SelectItem value="Full Payment">
-                            Full Payment
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Payment Status</Label>
-                      <Select
-                        value={prop.paymentStatus}
-                        onValueChange={(
-                          value: "Pending" | "In Progress" | "Completed"
-                        ) =>
-                          handlePropertyChange(index, "paymentStatus", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="In Progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <Button
-                variant="outline"
-                onClick={handleAddPropertyField}
-                className="w-full"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Another Property
-              </Button>
+                  </Card>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={handleAddPropertyField}
+                  className="w-full "
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Another Property
+                </Button>
+              </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className=" bg-white  ">
               <Button
                 variant="outline"
                 onClick={() => setIsCustomerFormDialogOpen(false)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-100"
               >
                 Cancel
               </Button>
@@ -847,8 +791,9 @@ const CustomerManagement: React.FC = () => {
                 disabled={
                   addCustomerMutation.isPending ||
                   updateCustomerMutation.isPending ||
-                  !customerUserId // Disable if no customer is selected
+                  !customerUserId
                 }
+                className=" text-white"
               >
                 {selectedCustomer
                   ? updateCustomerMutation.isPending

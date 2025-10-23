@@ -746,7 +746,7 @@ const TeamManagement = () => {
                 <Select
                   onValueChange={setAgentId}
                   value={agentId}
-                  disabled={isEditing} // Disable agent selection when editing
+                  disabled={isEditing}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select an agent" />
@@ -754,7 +754,7 @@ const TeamManagement = () => {
                   <SelectContent>
                     {availableAgents?.map((agent) => (
                       <SelectItem key={agent._id} value={agent._id}>
-                        {agent.name} ({agent.email})
+                        {agent?.name} ({agent?.email})
                       </SelectItem>
                     ))}
                   </SelectContent>

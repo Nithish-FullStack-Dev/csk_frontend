@@ -37,107 +37,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchLeads } from "@/utils/leads/LeadConfig";
-import { Property } from "../public/PropertyInterfaces";
+import { fetchAllLeads, fetchLeads, Lead } from "@/utils/leads/LeadConfig";
 import { useRBAC } from "@/config/RBAC";
-
-// API Calls
-const createSiteVisit = async (bookDetails: any) => {
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_URL}/api/siteVisit/bookSite`,
-    bookDetails,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-export const fetchAllSiteVisits = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/siteVisit/getAllSiteVis`,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-export const useBookSiteVisit = () => {
-  return useMutation({
-    mutationFn: createSiteVisit,
-  });
-};
-
-const fetchAllVehicles = async (): Promise<Vehicle[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/cars/getAllCars`,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-const fetchAllLeads = async (): Promise<Lead[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
-    { withCredentials: true }
-  );
-  return data.leads;
-};
-
-// Interfaces
-interface Vehicle {
-  _id: string;
-  model: string;
-  type: string;
-  capacity: number;
-  licensePlate: string;
-  fuelLevel: string;
-  lastService: string;
-  status: "available" | "booked" | "assigned";
-}
-
-interface Lead {
-  _id: string;
-  name: string;
-  email: string;
-  property: Property;
-  notes: string;
-}
-
-export interface SiteVisitData {
-  _id: string;
-  clientId: Lead;
-  vehicleId: Vehicle;
-  date: string;
-  time: string;
-  status: "confirmed" | "pending" | "completed" | "cancelled";
-  notes?: string;
-  bookedBy: string | User;
-  priority: "high" | "medium" | "low";
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface VisitCardProps {
-  visit: SiteVisitData;
-  buttonText?: string;
-  buttonVariant?: "default" | "outline";
-  showNotes?: boolean;
-  onViewDetails?: (visit: SiteVisitData) => void; // Added for detail view
-}
-
-interface ClientSelectionItemProps {
-  client: Lead;
-  onClick: (client: Lead) => void;
-  isSelected: boolean;
-}
-
-interface SiteVisitPayload {
-  clientId: string;
-  vehicleId: string;
-  bookedBy: string;
-  priority: string;
-  date: string;
-  time: string;
-  notes?: string;
-}
+import {
+  ClientSelectionItemProps,
+  fetchAllSiteVisits,
+  fetchAllVehicles,
+  SiteVisitData,
+  SiteVisitPayload,
+  useBookSiteVisit,
+  Vehicle,
+  VisitCardProps,
+} from "@/utils/site-visit/SiteVisitConfig";
 
 const SiteVisits = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -207,9 +118,9 @@ const SiteVisits = () => {
     isError: agentError,
     error: agentErr,
   } = useQuery<SiteVisitData[]>({
-    queryKey: ["siteVisitOfAgent", user?._id], // Include user ID in query key
+    queryKey: ["siteVisitOfAgent", user?._id],
     queryFn: fetchSiteVisitsOfAgent,
-    enabled: !!user?._id && isAgent, // Only run if user is agent and user ID exists
+    enabled: !!user?._id && isAgent,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
@@ -531,7 +442,9 @@ const SiteVisits = () => {
                         <span className="font-medium text-gray-800">
                           Property:{" "}
                         </span>
-                        {selectedClient.property.basicInfo.projectName}
+                        {selectedClient.property?.projectName}/{" "}
+                        {selectedClient.floorUnit?.floorNumber}/{" "}
+                        {selectedClient.unit?.propertyType}
                       </div>
                       <div className="text-sm text-gray-600">
                         <span className="font-medium text-gray-800">
@@ -741,7 +654,7 @@ const SiteVisits = () => {
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={undefined} />
                       <AvatarFallback>
-                        {selectedVisit.clientId.name
+                        {selectedVisit.clientId?.name
                           ?.split(" ")
                           .map((word) => word[0])
                           .join("")
@@ -757,7 +670,7 @@ const SiteVisits = () => {
                       </p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" />{" "}
-                        {selectedVisit.clientId.property.basicInfo.projectName}
+                        {selectedVisit.clientId.property?.projectName}
                       </p>
                     </div>
                   </div>
@@ -920,7 +833,7 @@ const VisitCard = ({
               <p className="font-medium">{visit?.clientId?.name}</p>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
-                {visit?.clientId?.property.basicInfo.projectName}
+                {visit?.clientId?.property?.projectName}
               </div>
             </div>
           </div>
