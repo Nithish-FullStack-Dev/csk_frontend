@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -334,6 +335,9 @@ export const ApartmentDialog = ({
           <DialogTitle>
             {mode === "add" ? "Add New Unit" : "Edit Unit"}
           </DialogTitle>
+          <DialogDescription>
+            Fill in the apartment details below.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

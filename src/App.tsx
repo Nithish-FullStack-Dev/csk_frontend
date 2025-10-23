@@ -105,14 +105,14 @@ import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 
 const queryClient = new QueryClient({
-  defaultOptions:{
-    queries:{
+  defaultOptions: {
+    queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnMount:false,
+      refetchOnMount: false,
       refetchInterval: false,
-      refetchOnWindowFocus:false,
-    }
-  }
+      refetchOnWindowFocus: false,
+    },
+  },
 });
 
 const PROPERTIES = [
@@ -210,7 +210,14 @@ const App = () => {
               />
               <Route
                 path="/public/upcoming-projects"
-                element={<UpcomingProjectsPage />}
+                element={
+                  <ProtectedRoute
+                    allowedRoles={allRoles}
+                    loading={rolesLoading}
+                  >
+                    <UpcomingProjectsPage />
+                  </ProtectedRoute>
+                }
               />
               <Route path="/public/open-plots" element={<OpenPlotsPage />} />
               <Route path="/public/contact" element={<ContactPage />} />

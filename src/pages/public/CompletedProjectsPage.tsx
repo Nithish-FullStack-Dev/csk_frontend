@@ -20,52 +20,63 @@ import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { useCompletedProperties } from "@/utils/public/Config";
+import CircleLoader from "@/components/CircleLoader";
+import { Building } from "@/types/building";
 
 const CompletedProjectsPage = () => {
-  const [completedProjects, setCompletedProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  // const [completedProjects, setCompletedProjects] = useState([]);
 
-  const fetchCompletedProperties = async () => {
-    if (loading) return;
-    try {
-      setLoading(true);
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/properties/completed-properties`
-      );
-      const completedProjectsFromDB: Property[] = data.map((item: any) => {
-        const basic = item.basicInfo || {};
-        const finance = item.financialDetails || {};
-        const location = item.locationInfo || {};
-        return {
-          id: item._id,
-          title: basic?.projectName || "Untitled Project",
-          price: finance?.totalAmount?.toString()?.slice(0, 2) || "00",
-          location: location?.googleMapsLocation || "Not specified",
-          image:
-            location?.mainPropertyImage ||
-            "https://via.placeholder.com/400x300?text=No+Image",
-          category: basic?.propertyType || "Unknown",
-          // lat: location?.coordinates?.lat || 17.4457025,
-          // lng: location?.coordinates?.lng || 78.3770637,
-          googleMapsLocation: location?.googleMapsLocation || "",
-        };
-      });
-      setCompletedProjects(completedProjectsFromDB);
-      setIsError(false);
-    } catch (error) {
-      console.error("Failed to completed properties:", error);
-      toast.error("Failed to load Completed properties.");
-      setIsError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchCompletedProperties = async () => {
+  //   if (loading) return;
+  //   try {
+  //     setLoading(true);
+  //     const { data } = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/properties/completed-properties`
+  //     );
+  //     const completedProjectsFromDB: Property[] = data.map((item: any) => {
+  //       const basic = item.basicInfo || {};
+  //       const finance = item.financialDetails || {};
+  //       const location = item.locationInfo || {};
+  //       return {
+  //         id: item._id,
+  //         title: basic?.projectName || "Untitled Project",
+  //         price: finance?.totalAmount?.toString()?.slice(0, 2) || "00",
+  //         location: location?.googleMapsLocation || "Not specified",
+  //         image:
+  //           location?.mainPropertyImage ||
+  //           "https://via.placeholder.com/400x300?text=No+Image",
+  //         category: basic?.propertyType || "Unknown",
+  //         // lat: location?.coordinates?.lat || 17.4457025,
+  //         // lng: location?.coordinates?.lng || 78.3770637,
+  //         googleMapsLocation: location?.googleMapsLocation || "",
+  //       };
+  //     });
+  //     setCompletedProjects(completedProjectsFromDB);
+  //     setIsError(false);
+  //   } catch (error) {
+  //     console.error("Failed to completed properties:", error);
+  //     toast.error("Failed to load Completed properties.");
+  //     setIsError(true);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const {
+    data: completedProjects,
+    isLoading: completedPropertiesLoading,
+    isError: completedPropertiesError,
+    error: completedPropertiesErr,
+    refetch,
+  } = useCompletedProperties();
 
-  useEffect(() => {
-    fetchCompletedProperties();
-    // window.scrollTo(0, 0);
-  }, []);
+  if (completedPropertiesError) {
+    toast.error(completedPropertiesErr.message);
+    console.log("Upcoming properties error:", completedPropertiesErr);
+  }
+  if (completedPropertiesLoading) {
+    return <CircleLoader />;
+  }
 
   const stats = [
     {
@@ -188,22 +199,22 @@ const CompletedProjectsPage = () => {
               </p>
             </div>
 
-            {loading ? (
+            {completedPropertiesLoading ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-gray-600 animate-pulse">
                   Please wait...
                 </h1>
               </div>
-            ) : isError ? (
+            ) : completedPropertiesError ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-red-500 mb-4">
                   Something went wrong...
                 </h1>
                 <button
-                  onClick={fetchCompletedProperties}
-                  disabled={loading}
+                  onClick={() => refetch()}
+                  disabled={completedPropertiesLoading}
                   className={`px-4 py-2 flex items-center justify-center gap-2 rounded transition ${
-                    loading
+                    completedPropertiesLoading
                       ? "bg-gray-400 cursor-not-allowed text-white"
                       : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
@@ -219,8 +230,11 @@ const CompletedProjectsPage = () => {
                   whileInView="show"
                   viewport={{ once: true, amount: 0.3 }}
                 >
-                  {completedProjects.map((project) => (
-                    <CardContainer key={project.id} className="inter-var">
+                  {completedProjects?.data?.map((project: Building, idx) => (
+                    <CardContainer
+                      key={project._id || idx}
+                      className="inter-var"
+                    >
                       <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full max-w-sm sm:max-w-md md:max-w-lg h-auto min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
                         {/* Image */}
                         <CardItem
@@ -228,8 +242,8 @@ const CompletedProjectsPage = () => {
                           className="w-full mt-4 rounded-xl overflow-hidden"
                         >
                           <img
-                            src={project.image}
-                            alt={project.title}
+                            src={project?.thumbnailUrl}
+                            alt={project?.projectName}
                             className="h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                           />
                         </CardItem>
@@ -239,15 +253,20 @@ const CompletedProjectsPage = () => {
                           translateZ={30}
                           className="text-xl font-bold text-neutral-900 dark:text-white mt-3"
                         >
-                          {project.title}
+                          {project?.projectName}
                         </CardItem>
 
                         {/* Location / Map */}
-                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-full">
+                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                          <div className="flex items-center mb-1">
+                            {/* <MapPin className="h-4 w-4 mr-1" />
+                                             <span>{project.location}</span> */}
+                          </div>
+                          {/* Map */}
                           {project.googleMapsLocation ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
                               <iframe
-                                src={project.googleMapsLocation}
+                                src={project?.googleMapsLocation}
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
@@ -259,7 +278,7 @@ const CompletedProjectsPage = () => {
                           ) : (
                             <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
                               <p className="text-gray-500 text-sm">
-                                Location map not available
+                                No map available
                               </p>
                             </div>
                           )}
@@ -270,20 +289,12 @@ const CompletedProjectsPage = () => {
                           translateZ={20}
                           className="text-sm text-gray-600 mt-2 line-clamp-2"
                         >
-                          Category: {project.category}
-                        </CardItem>
-
-                        {/* Price */}
-                        <CardItem
-                          translateZ={30}
-                          className="text-lg font-bold text-indigo-700 mt-3"
-                        >
-                          ₹{project.price} Lakhs onwards
+                          Category: {project?.propertyType}
                         </CardItem>
 
                         {/* Buttons */}
                         <div className="mt-3 space-y-2 flex flex-col">
-                          <Link to={`/public/project/${project.id}`}>
+                          <Link to={`/public/project/${project._id}`}>
                             <CardItem
                               translateZ={40}
                               as="button"
@@ -292,15 +303,6 @@ const CompletedProjectsPage = () => {
                               View Details
                             </CardItem>
                           </Link>
-
-                          <CardItem
-                            translateZ={40}
-                            as="button"
-                            className="w-full px-4 py-2 rounded-full text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
-                          >
-                            Schedule Site Visit
-                            <Calendar className="ml-2 h-4 w-4" />
-                          </CardItem>
                         </div>
                       </CardBody>
                     </CardContainer>

@@ -10,10 +10,10 @@ export interface Building {
   projectName: string;
   location: string;
   propertyType:
-    | "Villa Complex"
-    | "Apartment Complex"
-    | "Plot Development"
-    | "Land Parcel";
+  | "Villa Complex"
+  | "Apartment Complex"
+  | "Plot Development"
+  | "Land Parcel";
   totalUnits: number;
   availableUnits: number;
   soldUnits: number;
@@ -30,6 +30,7 @@ export interface Building {
   googleMapsLocation?: string;
   brochureUrl?: string | null;
   brochureFileId?: string | null;
+  createdAt?: string;
 }
 
 export interface FloorUnit {

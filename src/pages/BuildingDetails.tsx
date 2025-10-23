@@ -498,16 +498,28 @@ const BuildingDetails = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" asChild className="w-full">
+              <div className="relative w-full h-64 overflow-hidden rounded-lg">
+                <iframe
+                  src={building?.googleMapsLocation}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Google Maps"
+                ></iframe>
+              </div>
+
+              <p className="mt-4 text-center text-blue-600 hover:underline cursor-pointer">
                 <a
-                  href={building.googleMapsLocation}
+                  href={building?.googleMapsLocation}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center"
                 >
-                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
+                  View on Google Maps
                 </a>
-              </Button>
+              </p>
             </CardContent>
           </Card>
         )}

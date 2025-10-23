@@ -35,6 +35,10 @@ import Autoplay from "embla-carousel-autoplay";
 
 // --- Skeleton Loader Import ---
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton.tsx";
+// import { usePropertyById } from "@/utils/public/Config.ts";
+import { toast } from "sonner";
+import CircleLoader from "@/components/CircleLoader.tsx";
+import { usePropertyById } from "@/utils/public/Config.ts";
 
 // --- Horizontal line for better separation ---
 
@@ -47,8 +51,7 @@ const ProjectDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
-  const [property, setProperty] = useState<Property | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -74,32 +77,20 @@ const ProjectDetailsPage = () => {
     // Add more mappings as needed based on your amenities data
   };
 
-  const fetchPropertyById = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/properties/getPropertyById/${id}`
-      );
-      if (data) {
-        setProperty(data);
-        setError(null);
-      } else {
-        setProperty(null);
-        setError("Property not found.");
-      }
-    } catch (err) {
-      console.error("Error while fetching property by id ", err);
-      setError("Failed to load property details. Please try again later.");
-      setProperty(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: property,
+    isLoading: propertyByIdLoading,
+    isError: propertyByIdError,
+    error: propertyByIdErr,
+    refetch,
+  } = usePropertyById(id);
 
   useEffect(() => {
-    fetchPropertyById();
-    window.scrollTo(0, 0);
-  }, [id]);
+    if (propertyByIdErr?.message) {
+      toast.error(propertyByIdErr.message);
+      console.log("Ongoing properties error:", propertyByIdErr);
+    }
+  }, [propertyByIdErr]);
 
   const handleSiteVisitSubmit = (data: any) => {
     console.log("Site visit scheduled:", data);
@@ -111,7 +102,7 @@ const ProjectDetailsPage = () => {
     setLightboxOpen(true);
   };
 
-  if (loading) {
+  if (propertyByIdLoading) {
     return (
       <PublicLayout>
         <PropertyDetailsSkeleton />
@@ -160,35 +151,35 @@ const ProjectDetailsPage = () => {
     { name: "Swimming Pool", icon: Bath },
   ];
 
-  const title = property.basicInfo.projectName;
-  const location =
-    property.locationInfo?.googleMapsLocation || "Location Not Specified";
-  const status = property.basicInfo.projectStatus;
-  const category = property.basicInfo.propertyType;
-  const description =
-    property.locationInfo?.remarks ||
-    "No description available for this property.";
-  const price = property.financialDetails.totalAmount.toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
-  });
-  const completionDate = property.constructionDetails?.deliveryDate
-    ? new Date(property.constructionDetails.deliveryDate).toLocaleDateString()
-    : "N/A";
+  // const title = property?.projectName;
+  // const location =
+  //   property?.googleMapsLocation || "Location Not Specified";
+  // const status = property?.projectName;
+  // const category = property?.propertyType;
+  // const description =
+  //   property?. ||
+  //   "No description available for this property.";
+  // const price = property.financialDetails.totalAmount.toLocaleString("en-IN", {
+  //   style: "currency",
+  //   currency: "INR",
+  // });
+  // const completionDate = property.constructionDetails?.deliveryDate
+  //   ? new Date(property.constructionDetails.deliveryDate).toLocaleDateString()
+  //   : "N/A";
 
-  const totalUnits = property.basicInfo.plotNumber
-    ? `Unit ${property.basicInfo.plotNumber}`
-    : "N/A";
-  const floors =
-    property.basicInfo.propertyType === "Apartment" ? "Multiple" : "N/A";
-  const unitSize = `${property.basicInfo.Extent} Sq. units`;
-  const launched = property.createdAt
-    ? new Date(property.createdAt).toLocaleDateString()
-    : "N/A";
-  const possession = completionDate;
-  const approved = property.constructionDetails?.municipalPermission
-    ? "Approved"
-    : "Pending";
+  // const totalUnits = property.basicInfo.plotNumber
+  //   ? `Unit ${property.basicInfo.plotNumber}`
+  //   : "N/A";
+  // const floors =
+  //   property.basicInfo.propertyType === "Apartment" ? "Multiple" : "N/A";
+  // const unitSize = `${property.basicInfo.Extent} Sq. units`;
+  // const launched = property.createdAt
+  //   ? new Date(property.createdAt).toLocaleDateString()
+  //   : "N/A";
+  // const possession = completionDate;
+  // const approved = property.constructionDetails?.municipalPermission
+  //   ? "Approved"
+  //   : "Pending";
 
   // --- MODIFIED GALLERY IMAGES LOGIC ---
   let allGalleryImages: string[] = [];
@@ -201,22 +192,13 @@ const ProjectDetailsPage = () => {
   // 2. Add images from additionalPropertyImages (ensure no duplicates if both overlap)
   // For simplicity, we'll just add them. If strict de-duplication is needed,
   // you might use a Set or filter before spreading.
-  if (
-    property.locationInfo?.additionalPropertyImages &&
-    property.locationInfo.additionalPropertyImages.length > 0
-  ) {
-    allGalleryImages = [
-      ...allGalleryImages,
-      ...property.locationInfo.additionalPropertyImages,
-    ];
+  if (property?.images && property?.images.length > 0) {
+    allGalleryImages = [...allGalleryImages, ...property?.images];
   }
 
   // 3. If no other images, use mainPropertyImage as a fallback for the gallery
-  if (
-    allGalleryImages.length === 0 &&
-    property.locationInfo?.mainPropertyImage
-  ) {
-    allGalleryImages.push(property.locationInfo.mainPropertyImage);
+  if (allGalleryImages.length === 0 && property?.thumbnailUrl) {
+    allGalleryImages.push(property?.thumbnailUrl);
   }
 
   // Ensure allGalleryImages only contains unique values if you fear duplicates from backend
@@ -235,13 +217,14 @@ const ProjectDetailsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-50 to-gray-100">
       {/* Hero Section */}
+
       <section className="relative h-96 md:h-[500px] overflow-hidden">
         <img
           src={
-            property.locationInfo?.mainPropertyImage ||
+            property?.thumbnailUrl ||
             "https://via.placeholder.com/1500x800/2C3E50/E8B923?text=Luxury+Property"
           }
-          alt={title}
+          alt={property?.projectName}
           className="w-full h-full object-cover brightness-75"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 to-transparent flex items-end">
@@ -262,15 +245,15 @@ const ProjectDetailsPage = () => {
                 variant="outline"
                 className="text-white border-gold-400 bg-transparent hover:bg-gold-500 hover:text-navy-900 transition-colors"
               >
-                {category}
+                {property?.propertyType}
               </Badge>
             </div>
             <h1 className="text-4xl md:text-5xl font-md font-vidaloka mb-3 leading-tight drop-shadow-lg text-gold-100">
-              {title}
+              {property?.projectName}
             </h1>
             <p className="text-xl md:text-2xl flex items-center font-medium drop-shadow-md text-gold-300">
               <MapPin className="mr-3 h-6 w-6 text-gold-400" />
-              {location}
+              {property?.location}
             </p>
           </div>
         </div>
@@ -291,7 +274,7 @@ const ProjectDetailsPage = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-navy-700 leading-relaxed text-base">
-                    {description}
+                    {property?.description}
                   </p>
                 </CardContent>
               </Card>
@@ -308,7 +291,6 @@ const ProjectDetailsPage = () => {
                     {dummyAmenities.map((amenity) =>
                       renderAmenity(amenity.name)
                     )}
-                    {/* You would ideally map through property.amenities here */}
                   </div>
                 </CardContent>
               </Card>
@@ -326,50 +308,55 @@ const ProjectDetailsPage = () => {
                       <Building className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Total Units:</span>{" "}
-                        {totalUnits}
+                        {property?.totalUnits}
                       </p>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    {/* <div className="flex items-center space-x-3">
                       <Ruler className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Unit Size:</span>{" "}
-                        {unitSize}
+                        {property?.}
                       </p>
-                    </div>
+                    </div> */}
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Launch Date:</span>{" "}
-                        {launched}
+                        {new Date(property?.createdAt).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Possession:</span>{" "}
-                        {possession}
+                        {new Date(property?.completionDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center space-x-3">
-                      {approved === "Approved" ? (
+                      {property?.municipalPermission ? (
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       ) : (
                         <XCircle className="h-5 w-5 text-red-500" />
                       )}
                       <p className="text-navy-700">
                         <span className="font-semibold">Approval:</span>{" "}
-                        {approved}
+                        {property?.municipalPermission ? "Approved" : "Pending"}
                       </p>
                     </div>
-                    {property.basicInfo.facingDirection && (
-                      <div className="flex items-center space-x-3">
-                        <LandPlot className="h-5 w-5 text-gold-600" />
-                        <p className="text-navy-700">
-                          <span className="font-semibold">Facing:</span>{" "}
-                          {property.basicInfo.facingDirection}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -392,7 +379,9 @@ const ProjectDetailsPage = () => {
                                 <AspectRatio ratio={16 / 9}>
                                   <img
                                     src={image}
-                                    alt={`${title} ${index + 1}`}
+                                    alt={`${property?.projectName} ${
+                                      index + 1
+                                    }`}
                                     className="w-full h-full object-cover rounded-lg cursor-pointer shadow-md"
                                     onClick={() => openLightbox(image)}
                                   />
@@ -420,7 +409,7 @@ const ProjectDetailsPage = () => {
                           <AspectRatio key={index} ratio={16 / 9}>
                             <img
                               src={image}
-                              alt={`${title} ${index + 1}`}
+                              alt={`${property?.projectName} ${index + 1}`}
                               className="w-full h-full object-cover rounded-lg cursor-pointer transform hover:scale-105 transition-transform duration-300 shadow-md"
                               onClick={() => openLightbox(image)}
                             />
@@ -433,7 +422,7 @@ const ProjectDetailsPage = () => {
               )}
 
               {/* Location Map Placeholder */}
-              {property.locationInfo?.googleMapsLocation && (
+              {property?.googleMapsLocation && (
                 <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
                   <CardHeader>
                     <CardTitle className="text-2xl font-md font-vidaloka text-navy-800">
@@ -443,7 +432,7 @@ const ProjectDetailsPage = () => {
                   <CardContent>
                     <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-sm italic overflow-hidden">
                       <iframe
-                        src={property.locationInfo.googleMapsLocation}
+                        src={property?.googleMapsLocation}
                         width="100%"
                         height="250"
                         style={{ border: 0 }}
@@ -454,7 +443,7 @@ const ProjectDetailsPage = () => {
                     </div>
                     <p className="mt-4 text-center text-gold-600 hover:underline cursor-pointer">
                       <a
-                        href={property.locationInfo.googleMapsLocation}
+                        href={property?.googleMapsLocation}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -471,9 +460,9 @@ const ProjectDetailsPage = () => {
               {/* Price & CTA */}
               <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
                 <CardContent className="p-6 text-center space-y-5">
-                  <div className="text-4xl font-extrabold text-gold-700">
-                    {price}
-                  </div>
+                  {/* <div className="text-4xl font-extrabold text-gold-700">
+                    {property?.priceRange?.min}
+                  </div> */}
                   <div className="space-y-3">
                     <Button
                       className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
@@ -518,6 +507,7 @@ const ProjectDetailsPage = () => {
                           : "bg-orange-500"
                       }`}
                     >
+                      {property?.constructionStatus}
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </Badge>
                   </div>
@@ -526,13 +516,20 @@ const ProjectDetailsPage = () => {
                       Completion:
                     </span>
                     <span className="text-navy-800 font-semibold">
-                      {completionDate}
+                      {new Date(property?.completionDate).toLocaleDateString(
+                        "en-IN",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b last:border-b-0 border-navy-100">
                     <span className="text-navy-700 font-medium">Type:</span>
                     <span className="text-navy-800 font-semibold">
-                      {category}
+                      {property?.propertyType}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b last:border-b-0 border-navy-100">
@@ -540,7 +537,7 @@ const ProjectDetailsPage = () => {
                       Units Available:
                     </span>
                     <span className="text-green-600 font-bold">
-                      {property.customerInfo?.propertyStatus === "Available"
+                      {property?.constructionStatus === "Completed"
                         ? "Available"
                         : "Limited/Sold Out"}
                     </span>
@@ -580,7 +577,7 @@ const ProjectDetailsPage = () => {
         open={siteVisitOpen}
         onOpenChange={setSiteVisitOpen}
         onSubmit={handleSiteVisitSubmit}
-        projectName={title}
+        projectName={property?.projectName}
       />
 
       {/* Lightbox for image gallery */}

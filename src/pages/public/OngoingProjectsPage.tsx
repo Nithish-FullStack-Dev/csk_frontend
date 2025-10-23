@@ -24,52 +24,65 @@ import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import {
+  fetchOngoingProperties,
+  useOngoingProperties,
+} from "@/utils/public/Config";
+import Loader from "@/components/Loader";
+import { Building } from "@/types/building";
+import CircleLoader from "@/components/CircleLoader";
+import { Badge } from "@/components/ui/badge";
 
 const OngoingProjectsPage = () => {
-  const [ongoingProjects, setOngoingProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  // const [ongoingProjects, setOngoingProjects] = useState([]);
 
-  const fetchOngoingProperties = async () => {
-    if (loading) return;
-    try {
-      setLoading(true);
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/properties/ongoing-properties`
-      );
-      const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
-        const basic = item.basicInfo || {};
-        const finance = item.financialDetails || {};
-        const location = item.locationInfo || {};
-        return {
-          id: item._id,
-          title: basic?.projectName,
-          launchDate: "Coming Soon",
-          price: finance.totalAmount.toString().slice(0, 2),
-          location: location?.googleMapsLocation,
-          image: location?.mainPropertyImage,
-          category: basic?.propertyType,
-          preBooking: basic.preBooking,
-          lat: location?.coordinates?.lat || 17.4457025,
-          lng: location?.coordinates?.lng || 78.3770637,
-          googleMapsLocation: location?.googleMapsLocation || "",
-        };
-      });
-      setOngoingProjects(ongoingProjectsFromDB);
-      setIsError(false);
-    } catch (error) {
-      console.error("Failed to ongoing properties:", error);
-      setIsError(true);
-      toast.error("Failed to load ongoing properties.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchOngoingProperties = async () => {
+  //   if (loading) return;
+  //   try {
+  //     setLoading(true);
+  //     const { data } = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/properties/ongoing-properties`
+  //     );
+  //     const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
+  //       const basic = item.basicInfo || {};
+  //       const finance = item.financialDetails || {};
+  //       const location = item.locationInfo || {};
+  //       return {
+  //         id: item._id,
+  //         title: basic?.projectName,
+  //         launchDate: "Coming Soon",
+  //         price: finance.totalAmount.toString().slice(0, 2),
+  //         location: location?.googleMapsLocation,
+  //         image: location?.mainPropertyImage,
+  //         category: basic?.propertyType,
+  //         preBooking: basic.preBooking,
+  //         lat: location?.coordinates?.lat || 17.4457025,
+  //         lng: location?.coordinates?.lng || 78.3770637,
+  //         googleMapsLocation: location?.googleMapsLocation || "",
+  //       };
+  //     });
+  //     setOngoingProjects(ongoingProjectsFromDB);
+  //     setIsError(false);
+  //   } catch (error) {
+  //     console.error("Failed to ongoing properties:", error);
+  //     setIsError(true);
+  //     toast.error("Failed to load ongoing properties.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const {
+    data: ongoingProperties,
+    isLoading: OngoingPropertiesLoading,
+    isError: OngoingPropertiesError,
+    error: OngoingPropertiesErr,
+    refetch,
+  } = useOngoingProperties();
 
-  useEffect(() => {
-    fetchOngoingProperties();
-    // window.scrollTo(0, 0);
-  }, []);
+  if (OngoingPropertiesError) {
+    toast.error(OngoingPropertiesErr.message);
+    console.log("Ongoing properties error:", OngoingPropertiesErr);
+  }
 
   const projectProgress = [
     { name: "Sunrise Heights", progress: 75, expectedCompletion: "Dec 2024" },
@@ -90,7 +103,9 @@ const OngoingProjectsPage = () => {
     backgroundLight: "#F0F8FF", // AliceBlue
     backgroundDark: "#191970", // MidnightBlue
   };
-
+  if (OngoingPropertiesLoading) {
+    return <CircleLoader />;
+  }
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -210,19 +225,19 @@ const OngoingProjectsPage = () => {
               </p>
             </div>
 
-            {loading ? (
+            {OngoingPropertiesLoading ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-gray-600 animate-pulse">
                   Please wait...
                 </h1>
               </div>
-            ) : isError ? (
+            ) : OngoingPropertiesError ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-red-500 mb-4">
                   Something went wrong...
                 </h1>
                 <button
-                  onClick={fetchOngoingProperties}
+                  onClick={() => refetch()}
                   className="px-4 py-2 flex items-center justify-center gap-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
                 >
                   retry
@@ -230,8 +245,8 @@ const OngoingProjectsPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10">
-                {ongoingProjects.map((project, index) => (
-                  <CardContainer key={project.id} className="inter-var">
+                {ongoingProperties?.data?.map((project: Building, idx) => (
+                  <CardContainer key={project._id || idx} className="inter-var">
                     <CardBody className="bg-white dark:bg-black border border-gray-200 dark:border-white/[0.1] rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem] h-auto min-h-[28rem] sm:min-h-[30rem] md:min-h-[32rem] lg:min-h-[35rem] p-6 group/card shadow-xl flex flex-col justify-between relative">
                       {/* Image */}
                       <CardItem
@@ -239,8 +254,8 @@ const OngoingProjectsPage = () => {
                         className="w-full mt-1 rounded-xl overflow-hidden"
                       >
                         <img
-                          src={project.image}
-                          alt={project.title}
+                          src={project?.thumbnailUrl}
+                          alt={project?.projectName}
                           className="h-48 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl transition-transform duration-500 ease-out group-hover/card:scale-105"
                         />
                       </CardItem>
@@ -249,7 +264,7 @@ const OngoingProjectsPage = () => {
                         translateZ={30}
                         className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white "
                       >
-                        {project.title}
+                        {project?.projectName}
                       </CardItem>
                       {/* Location with Map */}
                       <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
@@ -261,7 +276,7 @@ const OngoingProjectsPage = () => {
                         {project.googleMapsLocation ? (
                           <div className="w-full h-32 rounded-lg overflow-hidden">
                             <iframe
-                              src={project.googleMapsLocation}
+                              src={project?.googleMapsLocation}
                               width="100%"
                               height="100%"
                               style={{ border: 0 }}
@@ -273,23 +288,41 @@ const OngoingProjectsPage = () => {
                         ) : (
                           <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
                             <p className="text-gray-500 text-sm">
-                              Location map not available
+                              No map available
                             </p>
                           </div>
                         )}
                       </CardItem>
-
-                      {/* Price */}
+                      <CardItem translateZ={40} className="mt-4">
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          {/* <div>
+                            <Calendar className="inline mr-1 h-4 w-4" />
+                            Launch: {project?.completionDate}
+                          </div> */}
+                          <div>
+                            <MapPin className="inline mr-1 h-4 w-4" />
+                            {project?.location}
+                          </div>
+                        </div>
+                      </CardItem>
+                      <CardItem translateZ={50} className="m-2">
+                        <Badge variant="outline" className="text-xs py-1 px-2">
+                          {project?.propertyType}
+                        </Badge>
+                      </CardItem>
+                      {/* Price
                       <CardItem
                         translateZ={30}
                         className="text-base sm:text-lg font-bold text-indigo-700 mt-1"
                       >
-                        ₹{project.price} Lakhs onwards
-                      </CardItem>
+                        ₹{project?.priceRange?.min} - ₹
+                        {project?.priceRange?.max}
+                        Lakhs onwards
+                      </CardItem> */}
 
                       {/* Buttons */}
                       <div className="mt-2 space-y-2">
-                        <Link to={`/public/project/${project.id}`}>
+                        <Link to={`/public/project/${project._id}`}>
                           <CardItem
                             translateZ={40}
                             as="button"
