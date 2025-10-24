@@ -54,10 +54,13 @@ import {
 import { toast } from "react-hot-toast";
 import {
   Contractor,
+  usefetchContractorDropDown,
   usefetchContractors,
   usefetchProjectsForDropdown,
 } from "@/utils/project/ProjectConfig";
 import Loader from "@/components/Loader";
+import { Label } from "@/components/ui/label";
+import { User } from "@/contexts/AuthContext";
 
 const contractors: Contractor[] = [
   {
@@ -153,18 +156,11 @@ const ContractorsList = () => {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   // const [allProjects, setAllProjects] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
-    company: "",
-    specialization: "",
-    phone: "",
-    email: "",
-    status: "active",
+    contractor: "",
     project: "",
     taskTitle: "",
-    unit: "",
     deadline: "",
     priority: "medium",
   });
@@ -184,6 +180,13 @@ const ContractorsList = () => {
     refetch: refetchContractors,
   } = usefetchContractors();
 
+  const {
+    data: contractorDropDown = [],
+    isLoading: isLoadingContractorProjects,
+    isError: isErrorContractorProjects,
+    error: contractorProjectsDropdownError,
+  } = usefetchContractorDropDown();
+
   if (isErrorProjects) {
     console.error(
       "Error fetching projects for dropdown:",
@@ -194,6 +197,13 @@ const ContractorsList = () => {
   if (isErrorContractors) {
     console.error("Error fetching contractors:", contractorsDropdownError);
     toast.error("Error fetching contractors");
+  }
+  if (isErrorContractorProjects) {
+    console.error(
+      "Error fetching contractor projects:",
+      contractorProjectsDropdownError
+    );
+    toast.error("Error fetching contractor projects");
   }
   if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
@@ -704,7 +714,10 @@ const ContractorsList = () => {
                 <DialogHeader>
                   <DialogTitle>Add Contractor Details</DialogTitle>
                 </DialogHeader>
-
+                <DialogDescription>
+                  Fill in the details below to assign a new contractor to a
+                  project.
+                </DialogDescription>
                 <form
                   className="space-y-4"
                   onSubmit={async (e) => {
@@ -733,98 +746,70 @@ const ContractorsList = () => {
                     }
                   }}
                 >
-                  <Input
-                    placeholder="Name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                  <Input
-                    placeholder="Company"
-                    value={formData.company}
-                    onChange={(e) =>
-                      setFormData({ ...formData, company: e.target.value })
-                    }
-                  />
-                  <Input
-                    placeholder="Specialization"
-                    value={formData.specialization}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        specialization: e.target.value,
-                      })
-                    }
-                  />
-                  <Input
-                    placeholder="Phone Number"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                  />
-                  <Input
-                    placeholder="Email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                  />
+                  <div>
+                    <Label htmlFor="contractor">Select Contractor</Label>
+                    <Select
+                      value={formData.contractor}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, contractor: value })
+                      }
+                    >
+                      <SelectTrigger className="w-full border p-2 rounded">
+                        <SelectValue placeholder="Select Contractor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isLoadingContractorProjects ? (
+                          <SelectItem value="loading">Loading...</SelectItem>
+                        ) : !contractorDropDown.data ||
+                          contractorDropDown.data.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            {contractorDropDown.message ||
+                              "No contractors available"}
+                          </SelectItem>
+                        ) : (
+                          contractorDropDown &&
+                          contractorDropDown.data?.map(
+                            (contractor: User, idx) => (
+                              <SelectItem
+                                key={contractor?._id || idx}
+                                value={contractor?._id}
+                              >
+                                {contractor?.name}
+                              </SelectItem>
+                            )
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  <div>
+                    <Label htmlFor="project">Select Project</Label>
 
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={formData.project}
-                    onChange={(e) => {
-                      const selectedId = e.target.value;
-                      const project = allProjects.find(
-                        (p) => p._id === selectedId
-                      );
-                      setFormData({
-                        ...formData,
-                        project: selectedId,
-                        unit: "",
-                      }); // reset unit when project changes
-                      setSelectedProject(project);
-                    }}
-                  >
-                    <option value="">Select Project</option>
-                    {allProjects.map((proj) => (
-                      <option key={proj._id} value={proj._id}>
-                        {typeof proj.projectId === "object"
-                          ? proj.projectId?.projectName || "Unnamed Project"
-                          : proj.projectId}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* <select
-                    className="w-full border p-2 rounded"
-                    value={formData.unit}
-                    onChange={(e) =>
-                      setFormData({ ...formData, unit: e.target.value })
-                    }
-                    disabled={!selectedProject}
-                  >
-                    <option value="">Select Unit</option>
-                    {selectedProject?.unitNames?.map((unitName) => (
-                      <option key={unitName} value={unitName}>
-                        {unitName}
-                      </option>
-                    ))}
-                  </select> */}
+                    <Select
+                      value={formData.project}
+                      onValueChange={(value) => {
+                        setFormData({
+                          ...formData,
+                          project: value,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full border p-2 rounded">
+                        <SelectValue placeholder="Select Project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allProjects.map((proj) => (
+                          <SelectItem key={proj._id} value={proj._id}>
+                            {typeof proj.projectId === "object"
+                              ? proj.projectId?.projectName || "Unnamed Project"
+                              : proj.projectId}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* Task Title Input */}
 
                   <Input
                     placeholder="Task Title"
@@ -853,17 +838,21 @@ const ContractorsList = () => {
                     <label className="block text-sm font-medium mt-4">
                       Priority
                     </label>
-                    <select
-                      className="w-full border p-2 rounded"
+                    <Select
                       value={formData.priority}
-                      onChange={(e) =>
-                        setFormData({ ...formData, priority: e.target.value })
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, priority: value })
                       }
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
+                      <SelectTrigger className="w-full border p-2 rounded">
+                        <SelectValue placeholder="Select Priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="flex justify-end gap-2 pt-4">
@@ -950,7 +939,9 @@ const ContractorsList = () => {
                 <DialogHeader>
                   <DialogTitle>Contractor Details</DialogTitle>
                 </DialogHeader>
-
+                <DialogDescription>
+                  Detailed information about the contractor
+                </DialogDescription>
                 {selectedContractor && (
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
@@ -1074,21 +1065,25 @@ const ContractorsList = () => {
                   <div className="grid gap-4">
                     {contractorTasks.map((task, index) => (
                       <Card
-                        key={index}
+                        key={task?._id || index}
                         className="border rounded-lg shadow-sm p-4"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                           <div className="space-y-1">
-                            <h4 className="font-semibold">{task.title}</h4>
+                            <h4 className="font-semibold">{task?.title}</h4>
                             <p className="text-sm text-muted-foreground">
-                              <strong>Project:</strong> {task.projectName}{" "}
-                              &nbsp;&nbsp;
-                              <strong>Unit:</strong> {task.unit}
+                              <strong>Project:</strong> {task?.projectName}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <strong>floorNumber:</strong> {task?.floorNumber}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <strong>unitType:</strong> {task?.unitType}
                             </p>
                             <p className="text-sm">
-                              <strong>Status:</strong>{" "}
+                              <strong>priority:</strong>{" "}
                               <Badge variant="outline" className="capitalize">
-                                {task.status}
+                                {task?.priority}
                               </Badge>
                             </p>
                           </div>

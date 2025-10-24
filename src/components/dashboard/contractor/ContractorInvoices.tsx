@@ -68,6 +68,7 @@ import {
   InvoiceItem,
 } from "@/utils/invoices/InvoiceConfig";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import CircleLoader from "@/components/CircleLoader";
 
 export const invoiceSchema = z.object({
   project: z.string().min(2, "Project is required"),
@@ -454,15 +455,7 @@ const ContractorInvoices = () => {
     return null;
   }
 
-  if (
-    isRolePermissionsLoading ||
-    invoiceLoading ||
-    completedTasksLoading ||
-    projectLoading ||
-    floorUnitsLoading ||
-    unitsByFloorLoading
-  )
-    return <Loader />;
+  if (invoiceLoading || completedTasksLoading) return <CircleLoader />;
 
   return (
     <div className="space-y-6">
@@ -524,6 +517,8 @@ const ContractorInvoices = () => {
           </CardContent>
         </Card>
       </div>
+
+      {isRolePermissionsLoading && <CircleLoader />}
 
       {/* Search and Actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">

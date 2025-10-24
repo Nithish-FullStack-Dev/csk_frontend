@@ -323,7 +323,6 @@ const ContractorProjects = () => {
         <h2 className="text-2xl font-semibold">Project List</h2>
         <div className="space-y-4">
           {projects.map((project) => {
-            console.log(project);
             return (
               <Card key={project._id} className="overflow-hidden">
                 <div className="p-6">
@@ -354,24 +353,33 @@ const ContractorProjects = () => {
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground mb-1">
                         <Building className="mr-1 h-4 w-4" />
-                        <span>{project?.clientName}</span>
+                        <span>
+                          {typeof project.projectId === "object" &&
+                            project?.projectId?.location}
+                        </span>
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="mr-1 h-4 w-4" />
                         <span>
-                          {project?.startDate?.toLocaleString("en-IN", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(project?.startDate)?.toLocaleDateString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
                         </span>
                         <ArrowRight className="mx-1 h-3 w-3" />
                         <span>
-                          {project?.endDate?.toLocaleString("en-IN", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                          {new Date(project?.endDate)?.toLocaleDateString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )}
                         </span>
                       </div>
                     </div>

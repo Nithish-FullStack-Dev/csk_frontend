@@ -100,6 +100,16 @@ export const fetchContractors = async () => {
   return data;
 };
 
+export const fetchContractorProjects = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/contractorDropdown`,
+    {
+      withCredentials: true,
+    }
+  );
+  return data;
+};
+
 export const usefetchProjects = () => {
   return useQuery<Project[]>({
     queryKey: ["fetchProjects"],
@@ -122,6 +132,15 @@ export const usefetchContractors = () => {
   return useQuery<Contractor[]>({
     queryKey: ["fetchContractors"],
     queryFn: fetchContractors,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const usefetchContractorDropDown = () => {
+  return useQuery({
+    queryKey: ["ContractorProjects"],
+    queryFn: fetchContractorProjects,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
