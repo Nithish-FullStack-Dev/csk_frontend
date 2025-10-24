@@ -321,50 +321,59 @@ const NewProperties = () => {
     e.stopPropagation();
     if (!url) return toast.error("No brochure available to download.");
 
-    // Use a backend proxy to bypass browser CORS issues for authenticated downloads.
-    // This also keeps the Cloudinary URL private.
-    const proxyUrl = `${
-      import.meta.env.VITE_URL
-    }/api/download-proxy?url=${encodeURIComponent(
-      url
-    )}&filename=${encodeURIComponent(projectName || "brochure")}.pdf`;
-
-    // Navigate to the proxy URL to trigger the download.
-    window.location.href = proxyUrl;
-  };
-
-  const handleShare = async (
-    e: React.MouseEvent,
-    url?: string | null,
-    projectName?: string | null
-  ) => {
-    e.stopPropagation();
-    if (!url) {
-      toast.error("No brochure available to share");
-      return;
-    }
-
-    const shareData = {
-      title: projectName || "Brochure",
-      text: `Check out the brochure for ${projectName || "this project"}`,
-      url: url,
-    };
-
     try {
-      // Use the modern Web Share API if available
-      if (navigator.share && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback for desktop: copy link to clipboard
-        await navigator.clipboard.writeText(url);
-        toast.success("Brochure link copied to clipboard!");
-      }
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in new tab so browser handles download; the server streams the file
+      window.open(proxyUrl, "_blank");
+      toast.success("Download starting...");
     } catch (error) {
-      console.error("Sharing failed:", error);
-      await navigator.clipboard.writeText(url);
-      toast.success("Brochure link copied to clipboard!");
+      console.error("Download error:", error);
+      toast.error("Failed to download brochure.");
     }
   };
+  // const handleShare = async (
+  //   e: React.MouseEvent,
+  //   url?: string | null,
+  //   projectName?: string | null
+  // ) => {
+  //   e.stopPropagation();
+  //   if (!url) {
+  //     toast.error("No brochure available to share");
+  //     return;
+  //   }
+
+  //   try {
+  //     const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+  //     const genUrl = `${API_BASE}/api/generate-signed-url?url=${encodeURIComponent(
+  //       url
+  //     )}&ttlSeconds=600`;
+
+  //     const resp = await fetch(genUrl, { credentials: "include" }); // include cookies if auth required
+  //     if (!resp.ok) throw new Error("Failed to get signed url");
+  //     const data = await resp.json();
+  //     const signedUrl = data.signedUrl;
+
+  //     if (navigator.share) {
+  //       await navigator.share({
+  //         title: projectName || "Brochure",
+  //         text: `Check this brochure: ${projectName || ""}`,
+  //         url: signedUrl,
+  //       });
+  //       toast.success("Shared!");
+  //       return;
+  //     }
+
+  //     await navigator.clipboard.writeText(signedUrl);
+  //     toast.success("Signed link copied to clipboard!");
+  //   } catch (err) {
+  //     console.error("Share error:", err);
+  //     toast.error("Failed to share brochure");
+  //   }
+  // };
 
   // ---------- Loading UX ----------
   if (buildingsLoading || openPlotsLoading) {
@@ -575,7 +584,6 @@ const NewProperties = () => {
                           >
                             View More
                           </Button>
-
                           {b.brochureUrl && (
                             <div className="flex gap-2">
                               <Button
@@ -592,7 +600,7 @@ const NewProperties = () => {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                              <Button
+                              {/* <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={(e) =>
@@ -601,7 +609,7 @@ const NewProperties = () => {
                                 title="Copy Share Link"
                               >
                                 <Share2 className="h-4 w-4" />
-                              </Button>
+                              </Button> */}
                             </div>
                           )}
                         </div>
@@ -751,7 +759,7 @@ const NewProperties = () => {
                                   >
                                     <Download className="h-4 w-4" />
                                   </Button>
-                                  <Button
+                                  {/* <Button
                                     variant="outline"
                                     size="icon"
                                     onClick={(e) =>
@@ -764,7 +772,7 @@ const NewProperties = () => {
                                     title="Copy Share Link"
                                   >
                                     <Share2 className="h-4 w-4" />
-                                  </Button>
+                                  </Button> */}
                                 </div>
                               )}
                             </div>
