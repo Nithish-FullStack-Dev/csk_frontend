@@ -49,6 +49,7 @@ interface Amenity {
 
 const ProjectDetailsPage = () => {
   const { id } = useParams();
+  console.log(id);
   const navigate = useNavigate();
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
 
@@ -83,14 +84,12 @@ const ProjectDetailsPage = () => {
     isError: propertyByIdError,
     error: propertyByIdErr,
     refetch,
-  } = usePropertyById(id);
-
-  useEffect(() => {
-    if (propertyByIdErr?.message) {
-      toast.error(propertyByIdErr.message);
-      console.log("Ongoing properties error:", propertyByIdErr);
-    }
-  }, [propertyByIdErr]);
+  } = usePropertyById(id); // make sure 'id' is passed as a dependency
+  console.log(property);
+  if (propertyByIdError) {
+    toast.error(propertyByIdErr.message);
+    console.log("Ongoing properties error:", propertyByIdErr);
+  }
 
   const handleSiteVisitSubmit = (data: any) => {
     console.log("Site visit scheduled:", data);
@@ -151,60 +150,21 @@ const ProjectDetailsPage = () => {
     { name: "Swimming Pool", icon: Bath },
   ];
 
-  // const title = property?.projectName;
-  // const location =
-  //   property?.googleMapsLocation || "Location Not Specified";
-  // const status = property?.projectName;
-  // const category = property?.propertyType;
-  // const description =
-  //   property?. ||
-  //   "No description available for this property.";
-  // const price = property.financialDetails.totalAmount.toLocaleString("en-IN", {
-  //   style: "currency",
-  //   currency: "INR",
-  // });
-  // const completionDate = property.constructionDetails?.deliveryDate
-  //   ? new Date(property.constructionDetails.deliveryDate).toLocaleDateString()
-  //   : "N/A";
-
-  // const totalUnits = property.basicInfo.plotNumber
-  //   ? `Unit ${property.basicInfo.plotNumber}`
-  //   : "N/A";
-  // const floors =
-  //   property.basicInfo.propertyType === "Apartment" ? "Multiple" : "N/A";
-  // const unitSize = `${property.basicInfo.Extent} Sq. units`;
-  // const launched = property.createdAt
-  //   ? new Date(property.createdAt).toLocaleDateString()
-  //   : "N/A";
-  // const possession = completionDate;
-  // const approved = property.constructionDetails?.municipalPermission
-  //   ? "Approved"
-  //   : "Pending";
-
-  // --- MODIFIED GALLERY IMAGES LOGIC ---
   let allGalleryImages: string[] = [];
 
-  // 1. Add images from property.images
   if (property.images && property.images.length > 0) {
     allGalleryImages = [...allGalleryImages, ...property.images];
   }
 
-  // 2. Add images from additionalPropertyImages (ensure no duplicates if both overlap)
-  // For simplicity, we'll just add them. If strict de-duplication is needed,
-  // you might use a Set or filter before spreading.
   if (property?.images && property?.images.length > 0) {
     allGalleryImages = [...allGalleryImages, ...property?.images];
   }
 
-  // 3. If no other images, use mainPropertyImage as a fallback for the gallery
   if (allGalleryImages.length === 0 && property?.thumbnailUrl) {
     allGalleryImages.push(property?.thumbnailUrl);
   }
 
-  // Ensure allGalleryImages only contains unique values if you fear duplicates from backend
-  // For now, we'll assume the backend provides clean arrays.
   const galleryImages = allGalleryImages;
-  // --- END MODIFIED GALLERY IMAGES LOGIC ---
 
   const developer = {
     name: "Elite Homes Pvt. Ltd.",
@@ -213,6 +173,31 @@ const ProjectDetailsPage = () => {
   };
 
   const showCarousel = galleryImages.length > 3;
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No brochure available to download.");
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in a new tab so the backend redirects to a signed Cloudinary URL and browser downloads
+      window.open(proxyUrl, "_blank", "noopener,noreferrer");
+      toast.success("Download starting...");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to download brochure.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy-50 to-gray-100">
@@ -240,6 +225,7 @@ const ProjectDetailsPage = () => {
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
+                {property?.constructionStatus}
               </Badge>
               <Badge
                 variant="outline"
@@ -480,6 +466,13 @@ const ProjectDetailsPage = () => {
                     <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      onClick={(e) =>
+                        handleDownload(
+                          e,
+                          property?.brochureUrl ?? null,
+                          property?.projectName
+                        )
+                      }
                     >
                       <Mail className="mr-3 h-5 w-5" />
                       Get Brochure

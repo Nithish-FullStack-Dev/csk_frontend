@@ -36,6 +36,7 @@ import Autoplay from "embla-carousel-autoplay";
 // --- Skeleton Loader Import ---
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
 import { OpenPlot } from "@/components/public/OpenPlotInterface";
+import { toast } from "sonner";
 
 // --- Horizontal line for better separation ---
 
@@ -214,6 +215,31 @@ const OpenPlotsDetails = () => {
     name: "CSK Real Estate",
     experience: "15+ years of experience",
     projects: "Delivered 50+ successful projects",
+  };
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No brochure available to download.");
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in a new tab so browser handles the download (server redirects to signed Cloudinary URL)
+      window.open(proxyUrl, "_blank", "noopener,noreferrer");
+      toast.success("Download starting...");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to download brochure.");
+    }
   };
 
   const showCarousel = galleryImages.length > 3;
@@ -477,6 +503,13 @@ const OpenPlotsDetails = () => {
                     <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      onClick={(e) =>
+                        handleDownload(
+                          e,
+                          openPlot?.brochureUrl,
+                          openPlot?.projectName
+                        )
+                      }
                     >
                       <Mail className="mr-3 h-5 w-5" />
                       Get Brochure
