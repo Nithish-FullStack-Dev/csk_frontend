@@ -66,6 +66,7 @@ import {
   fetchInvoices,
   Invoice,
   InvoiceItem,
+  useFetchInvoices,
 } from "@/utils/invoices/InvoiceConfig";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
@@ -134,11 +135,7 @@ const ContractorInvoices = () => {
     isLoading: invoiceLoading,
     isError: invoiceError,
     error: fetchError,
-  } = useQuery({
-    queryKey: ["invoice"],
-    queryFn: fetchInvoices,
-    staleTime: 2 * 60 * 1000,
-  });
+  } = useFetchInvoices();
 
   const {
     data: completedTasks = [],
@@ -171,29 +168,6 @@ const ContractorInvoices = () => {
     isError: unitsByFloorError,
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
-
-  // const fetchInvoices = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const response = await axios.get(
-  //       `${import.meta.env.VITE_URL}/api/invoices`,
-  //       {
-  //         withCredentials: true,
-  //       }
-  //     );
-  //     setInvoices(response.data);
-  //     setError("");
-  //   } catch (err) {
-  //     console.error("Failed to fetch invoices", err);
-  //     setError("Failed to fetch invoices");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchInvoices();
-  // }, []);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -379,9 +353,9 @@ const ContractorInvoices = () => {
     (total, invoice) => total + invoice.total,
     0
   );
-  const paidInvoicesAmount = invoices
-    .filter((invoice) => invoice.status === "paid")
-    .reduce((total, invoice) => total + invoice.totalAmount, 0);
+  // const paidInvoicesAmount = invoices
+  //   .filter((invoice) => invoice.status === "paid")
+  //   .reduce((total, invoice) => total + invoice.totalAmount, 0);
   const pendingInvoicesAmount = invoices
     .filter(
       (invoice) => invoice.status === "pending" || invoice.status === "overdue"
