@@ -74,9 +74,9 @@ const CompletedProjectsPage = () => {
     toast.error(completedPropertiesErr.message);
     console.log("Upcoming properties error:", completedPropertiesErr);
   }
-  if (completedPropertiesLoading) {
-    return <CircleLoader />;
-  }
+  // if (completedPropertiesLoading) {
+  //   return <CircleLoader />;
+  // }
 
   const stats = [
     {

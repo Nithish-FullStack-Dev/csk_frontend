@@ -35,8 +35,6 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const UpcomingProjectsPage = () => {
-  // const [upcomingProjects, setUpcomingProjects] = useState<Building[]>([]);
-
   const {
     data: upcomingProjects,
     isLoading: upcomingPropertiesLoading,
@@ -185,7 +183,13 @@ const UpcomingProjectsPage = () => {
               </p>
             </div>
 
-            {upcomingPropertiesError ? (
+            {upcomingPropertiesLoading ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-gray-600 animate-pulse">
+                  Please wait...
+                </h1>
+              </div>
+            ) : upcomingPropertiesError ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-red-500 mb-4">
                   Something went wrong...

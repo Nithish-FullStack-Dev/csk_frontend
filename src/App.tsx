@@ -115,26 +115,6 @@ const queryClient = new QueryClient({
   },
 });
 
-const PROPERTIES = [
-  "admin",
-  "owner",
-  "agent",
-  "sales_manager",
-  "team_lead",
-  "customer_purchased",
-];
-const OWNER_ADMIN = ["admin", "owner"];
-const ADMIN_SALES = ["admin", "sales_manager"];
-const ADMIN = ["admin"];
-const OWNER = ["owner"];
-const AGENT = ["agent", "admin"];
-const LEAD = ["team_lead", "admin"];
-const SALES = ["sales_manager", "admin"];
-const SITE = ["site_incharge", "admin"];
-const CONTRACTOR = ["contractor", "admin"];
-const ACCOUNTANT = ["accountant", "admin"];
-const CUSTOMER_PURCHASED = ["customer_purchased"];
-
 const App = () => {
   const [allRoles, setAllRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
@@ -210,14 +190,7 @@ const App = () => {
               />
               <Route
                 path="/public/upcoming-projects"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
-                    <UpcomingProjectsPage />
-                  </ProtectedRoute>
-                }
+                element={<UpcomingProjectsPage />}
               />
               <Route path="/public/open-plots" element={<OpenPlotsPage />} />
               <Route path="/public/contact" element={<ContactPage />} />

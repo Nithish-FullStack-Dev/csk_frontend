@@ -125,10 +125,6 @@ const OpenPlotsPage = () => {
     show: { y: 0, opacity: 1, transition: { duration: 0.6, ease: easeOut } },
   };
 
-  useEffect(() => {
-    // window.scrollTo(0, 0);
-  }, []);
-
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gray-100">

@@ -1,76 +1,25 @@
 import PublicLayout from "@/components/layout/PublicLayout";
-import PropertyListingCard from "@/components/public/PropertyListingCard";
 import {
   Construction,
   Clock,
-  TrendingUp,
   Shield,
   Hammer,
-  House,
-  Rocket,
   DollarSign,
   MapPin,
   Calendar,
-} from "lucide-react"; // Added more icons for fun!
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { url } from "inspector";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import { Link } from "react-router-dom";
-import axios from "axios";
-import { Property } from "@/types/property";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import {
-  fetchOngoingProperties,
-  useOngoingProperties,
-} from "@/utils/public/Config";
-import Loader from "@/components/Loader";
+import { useOngoingProperties } from "@/utils/public/Config";
 import { Building } from "@/types/building";
-import CircleLoader from "@/components/CircleLoader";
 import { Badge } from "@/components/ui/badge";
 
 const OngoingProjectsPage = () => {
-  // const [ongoingProjects, setOngoingProjects] = useState([]);
-
-  // const fetchOngoingProperties = async () => {
-  //   if (loading) return;
-  //   try {
-  //     setLoading(true);
-  //     const { data } = await axios.get(
-  //       `${import.meta.env.VITE_URL}/api/properties/ongoing-properties`
-  //     );
-  //     const ongoingProjectsFromDB: Property[] = data.map((item: any) => {
-  //       const basic = item.basicInfo || {};
-  //       const finance = item.financialDetails || {};
-  //       const location = item.locationInfo || {};
-  //       return {
-  //         id: item._id,
-  //         title: basic?.projectName,
-  //         launchDate: "Coming Soon",
-  //         price: finance.totalAmount.toString().slice(0, 2),
-  //         location: location?.googleMapsLocation,
-  //         image: location?.mainPropertyImage,
-  //         category: basic?.propertyType,
-  //         preBooking: basic.preBooking,
-  //         lat: location?.coordinates?.lat || 17.4457025,
-  //         lng: location?.coordinates?.lng || 78.3770637,
-  //         googleMapsLocation: location?.googleMapsLocation || "",
-  //       };
-  //     });
-  //     setOngoingProjects(ongoingProjectsFromDB);
-  //     setIsError(false);
-  //   } catch (error) {
-  //     console.error("Failed to ongoing properties:", error);
-  //     setIsError(true);
-  //     toast.error("Failed to load ongoing properties.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const {
     data: ongoingProperties,
     isLoading: OngoingPropertiesLoading,
@@ -103,9 +52,7 @@ const OngoingProjectsPage = () => {
     backgroundLight: "#F0F8FF", // AliceBlue
     backgroundDark: "#191970", // MidnightBlue
   };
-  if (OngoingPropertiesLoading) {
-    return <CircleLoader />;
-  }
+
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
