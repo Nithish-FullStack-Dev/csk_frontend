@@ -2,15 +2,15 @@ import { Building } from "@/types/building";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
+
 export async function fetchPropertyById(id: string) {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getBuildingById/${id}`,
     { withCredentials: true }
-
   );
-  return data.data
+  console.log('fetchPropertyById response:', data);
+  return data.data;
 }
-
 export async function fetchUpcomingProperties() {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getUpcomingBuilding`,
@@ -48,10 +48,11 @@ export async function fetchOpenPlots() {
 
 export const usePropertyById = (id: string) => {
   return useQuery<Building>({
-    queryKey: ['propertyById'],
+    queryKey: ['propertyById', id],
     queryFn: () => fetchPropertyById(id),
     staleTime: Infinity,
     placeholderData: keepPreviousData,
+    enabled: !!id,
 
   })
 }
