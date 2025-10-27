@@ -96,7 +96,28 @@ const BuildingDetails = () => {
     queryFn: () => getFloorsByBuildingId(buildingId!),
     enabled: !!buildingId,
   });
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) return toast.error("No brochure available to download.");
 
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in new tab so browser handles download; the server streams the file
+      window.open(proxyUrl, "_blank");
+      toast.success("Download starting...");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download brochure.");
+    }
+  };
   const {
     data: building,
     isLoading: buildingLoading,
@@ -382,8 +403,15 @@ const BuildingDetails = () => {
               {building.brochureUrl && (
                 <Button variant="outline" asChild className="mt-4">
                   <a
-                    href={building.brochureUrl}
-                    target="_blank"
+                    // href={building.brochureUrl}
+                    onClick={(e) =>
+                      handleDownload(
+                        e,
+                        building.brochureUrl,
+                        building.projectName
+                      )
+                    }
+                    // target="_blank"
                     rel="noopener noreferrer"
                   >
                     <FileText className="mr-2 h-4 w-4" /> Download Project

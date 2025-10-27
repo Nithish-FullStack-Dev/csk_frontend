@@ -78,9 +78,12 @@ const UnitDetails = () => {
           property={apartment}
           onBack={handleBack}
           onDelete={handleDelete}
-          onEdit={() => {
-            console.log("Edit unit", unitId);
-          }}
+          // onEdit={() => {
+          //   console.log("Edit unit", unitId);
+          // }}
+          buildingId={buildingId}
+          floorId={floorId}
+          unitId={unitId}
         />
       )}
     </MainLayout>
