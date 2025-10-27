@@ -167,6 +167,7 @@ import {
   CheckCircle,
   ReceiptIndianRupee,
   Gauge,
+  ListTodo,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -215,7 +216,7 @@ export const moduleToNavItem: Record<string, any> = {
     label: "Construction Progress",
   },
   "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
-  // "Task Management": { to: "/tasks", icon: FileText, label: "Task Management" },
+  "Task Management": { to: "/tasks", icon: ListTodo, label: "Task Management" },
   "Invoice Management": {
     to: "/invoices",
     icon: FileText,

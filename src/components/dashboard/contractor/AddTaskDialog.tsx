@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import {
   DialogContent,
@@ -21,99 +21,35 @@ import {
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
-import PropertySelect from "@/hooks/PropertySelect";
+import { usefetchProjectsForDropdown } from "@/utils/project/ProjectConfig";
 
 interface AddTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   fetchTasks: () => Promise<void>;
 }
 
-interface Project {
-  id: string;
-  name: string;
-  units: { id: string; name: string }[];
-}
-
-// Sample projects data (in a real app, this would come from an API)
-const sampleProjects: Project[] = [
-  {
-    id: "p1",
-    name: "Riverside Tower",
-    units: [
-      { id: "u1", name: "Block A" },
-      { id: "u2", name: "Block B" },
-      { id: "u3", name: "Block C" },
-    ],
-  },
-  {
-    id: "p2",
-    name: "Valley Heights",
-    units: [
-      { id: "u4", name: "Unit 1" },
-      { id: "u5", name: "Unit 2" },
-      { id: "u6", name: "Unit 3" },
-    ],
-  },
-  {
-    id: "p3",
-    name: "Green Villa",
-    units: [
-      { id: "u7", name: "Villa 1" },
-      { id: "u8", name: "Villa 2" },
-    ],
-  },
-];
-
 const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [unit, setUnit] = useState("");
   const [phase, setPhase] = useState("");
   const [priority, setPriority] = useState("medium");
   const [deadline, setDeadline] = useState<Date | undefined>(new Date());
-  const [projects, setProjects] = useState([]);
-  const [availableUnits, setAvailableUnits] = useState<
-    { id: string; name: string }[]
-  >([]);
+
   const [selectedProject, setSelectedProject] = useState("");
   const [floorUnit, setFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
-
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
-
-  // Update available units when project changes
-  useEffect(() => {
-    if (projectId) {
-      const selectedProject = sampleProjects.find((p) => p.id === projectId);
-      if (selectedProject) {
-        setAvailableUnits(selectedProject.units);
-        setUnit(""); // Reset unit selection
-      }
-    } else {
-      setAvailableUnits([]);
-      setUnit("");
-    }
-  }, [projectId]);
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+    error: projectsErrorDetails,
+  } = usefetchProjectsForDropdown();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !description || !projectId || !unit || !phase || !deadline) {
+    if (!title || !description || !selectedProject || !phase || !deadline) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -124,8 +60,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
         {
           title,
           description,
-          projectId,
-          unit,
+          projectId: selectedProject,
           phase,
           priority,
           deadline,
@@ -140,14 +75,15 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
 
         fetchTasks();
 
+        // Reset form
         setTitle("");
         setDescription("");
-        setProjectId("");
-        setUnit("");
+        setSelectedProject("");
+        setFloorUnit("");
+        setSelectedUnit("");
         setPhase("");
         setPriority("medium");
         setDeadline(new Date());
-
         onOpenChange(false);
       } else {
         toast.error("Failed to create task");
@@ -157,6 +93,17 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
       toast.error("Server error while creating task");
     }
   };
+
+  if (projectsError) {
+    return (
+      <div>
+        Error loading projects:{" "}
+        {projectsErrorDetails instanceof Error
+          ? projectsErrorDetails.message
+          : "Unknown error"}
+      </div>
+    );
+  }
 
   return (
     <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
@@ -169,6 +116,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+        {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title">Task Title</Label>
           <Input
@@ -180,6 +128,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           />
         </div>
 
+        {/* Description */}
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Textarea
@@ -192,16 +141,39 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           />
         </div>
 
-        <PropertySelect
-          selectedFloorUnit={floorUnit}
-          setSelectedFloorUnit={setFloorUnit}
-          selectedProject={selectedProject}
-          setSelectedProject={setSelectedProject}
-          selectedUnit={unit}
-          setSelectedUnit={setUnit}
-          useAvailable={false}
-        />
+        {/* Project Select */}
+        <div className="space-y-2">
+          <Label htmlFor="project">Project</Label>
+          <Select
+            value={selectedProject}
+            onValueChange={setSelectedProject}
+            required
+            disabled={projectsLoading}
+          >
+            <SelectTrigger id="project">
+              <SelectValue
+                placeholder={projectsLoading ? "Loading..." : "Select project"}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {projectsLoading ? (
+                <SelectItem value="">Loading...</SelectItem>
+              ) : (
+                projects?.map((p: any) => (
+                  <SelectItem key={p?._id} value={p?._id}>
+                    {p.projectId?.projectName +
+                      " floor no: " +
+                      p?.floorUnit?.floorNumber +
+                      " unit: " +
+                      p?.unit?.plotNo || "Unnamed Project"}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
 
+        {/* Phase & Priority */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="phase">Construction Phase</Label>
@@ -234,6 +206,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           </div>
         </div>
 
+        {/* Deadline */}
         <div className="space-y-2">
           <Label>Deadline</Label>
           <div className="border rounded-md p-2">

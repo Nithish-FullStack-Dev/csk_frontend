@@ -61,6 +61,7 @@ import {
 import Loader from "@/components/Loader";
 import { Label } from "@/components/ui/label";
 import { User } from "@/contexts/AuthContext";
+import { set } from "date-fns";
 
 const contractors: Contractor[] = [
   {
@@ -164,6 +165,7 @@ const ContractorsList = () => {
     deadline: "",
     priority: "medium",
   });
+  const [isContractorAdding, setIsContractorAdding] = useState(false);
 
   const {
     data: allProjects = [],
@@ -723,8 +725,7 @@ const ContractorsList = () => {
                   onSubmit={async (e) => {
                     e.preventDefault();
                     try {
-                      console.log("ADDING........");
-                      console.log(formData);
+                      setIsContractorAdding(true);
                       const res = await axios.post(
                         `${
                           import.meta.env.VITE_URL
@@ -743,6 +744,9 @@ const ContractorsList = () => {
                     } catch (err) {
                       console.error(err);
                       toast.error("Something went wrong");
+                      setIsContractorAdding(false);
+                    } finally {
+                      setIsContractorAdding(false);
                     }
                   }}
                 >
@@ -862,7 +866,11 @@ const ContractorsList = () => {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit">Add Contractor</Button>
+                    <Button type="submit" disabled={isContractorAdding}>
+                      {isContractorAdding
+                        ? "Adding Contractor..."
+                        : "Add Contractor"}
+                    </Button>
                   </div>
                 </form>
               </DialogContent>

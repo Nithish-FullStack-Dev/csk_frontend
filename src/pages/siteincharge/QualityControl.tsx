@@ -58,6 +58,7 @@ import { X } from "lucide-react";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Image as ImageIcon, AlertCircle } from "lucide-react";
+import PropertySelect from "@/hooks/PropertySelect";
 
 interface QualityIssue {
   id: string;
@@ -178,6 +179,7 @@ const QualityControl = () => {
   const [photos, setPhotos] = useState<File[]>([]);
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
   const [isUploading, setIsuploading] = useState(false);
+  const [selectedFloorUnit, setSelectedFloorUnit] = useState(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -545,55 +547,14 @@ const QualityControl = () => {
                     />
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label>Project</Label>
-                    <Select
-                      value={formData.project}
-                      onValueChange={(selectedId) => {
-                        const project = projects.find(
-                          (p) => p._id === selectedId
-                        );
-                        setFormData({
-                          ...formData,
-                          project: selectedId,
-                          unit: "", // reset unit when project changes
-                        });
-                        setSelectedProject(project);
-                      }}
-                    >
-                      <SelectTrigger className="w-full border p-2 rounded">
-                        <SelectValue placeholder="Select Project" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((proj) => (
-                          <SelectItem key={proj._id} value={proj._id}>
-                            {proj.projectTitle ||
-                              proj.name ||
-                              "Unnamed Project"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label>Unit</Label>
-                    <select
-                      className="w-full border p-2 rounded"
-                      value={formData.unit}
-                      onChange={(e) =>
-                        setFormData({ ...formData, unit: e.target.value })
-                      }
-                      disabled={!selectedProject}
-                    >
-                      <option value="">Select Unit</option>
-                      {selectedProject?.unitNames?.map((unitName, idx) => (
-                        <option key={idx} value={unitName}>
-                          {unitName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <PropertySelect
+                    selectedFloorUnit={selectedFloorUnit}
+                    selectedProject={selectedProject}
+                    selectedUnit={selectedUnit}
+                    setSelectedFloorUnit={setSelectedFloorUnit}
+                    setSelectedProject={setSelectedProject}
+                    setSelectedUnit={setSelectedUnit}
+                  />
 
                   <div className="grid gap-2">
                     <Label>Contractor</Label>

@@ -79,6 +79,8 @@ interface Task {
   _id: string;
   unit: string;
   phase: string;
+  floorNumber: string;
+  plotNo: string;
   status:
     | "pending verification"
     | "In progress"
@@ -210,6 +212,8 @@ const ContractorTaskList = () => {
         title: task.taskTitle,
         project: task.projectName,
         unit: task.unit,
+        floorNumber: task.floorNumber,
+        plotNo: task.plotNo,
         phase: task.constructionPhase,
         status: mapStatus(task.status), // normalize status if needed
         deadline: task.deadline,
@@ -452,12 +456,13 @@ const ContractorTaskList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.map((task) => {
+            {filteredTasks.map((task, idx) => {
               return (
-                <TableRow key={task.id}>
+                <TableRow key={task._id || idx}>
                   <TableCell className="font-medium">{task.title}</TableCell>
                   <TableCell>
-                    {task.project} / {task.unit}
+                    {task?.project}, floorNo: {task?.floorNumber} unit:{" "}
+                    {task?.plotNo}
                   </TableCell>
                   <TableCell>{task.phase}</TableCell>
                   <TableCell>
@@ -562,9 +567,9 @@ const ContractorTaskList = () => {
           </TableBody>
         </Table>
         <div className="space-y-4 lg:hidden block">
-          {filteredTasks.map((task) => (
+          {filteredTasks.map((task, idx) => (
             <div
-              key={task.id}
+              key={task._id || idx}
               className="border rounded-md p-4 shadow-sm bg-white"
             >
               {/* Task Title */}
@@ -698,7 +703,10 @@ const ContractorTaskList = () => {
             <div className="space-y-1.5">
               <p className="text-sm text-muted-foreground">Unit / Block</p>
               <p className="font-medium text-base">
-                {selectedTask?.unit || "N/A"}
+                {"floorNo: " +
+                  selectedTask?.floorNumber +
+                  " unit: " +
+                  selectedTask?.plotNo || "N/A"}
               </p>
             </div>
 
@@ -1014,7 +1022,8 @@ const ContractorTaskList = () => {
             <div className="space-y-1.5">
               <p className="text-sm text-muted-foreground">Unit / Block</p>
               <p className="font-medium text-base">
-                {selectedTask?.unit || "N/A"}
+                {selectedTask?.floorNumber + " unit: " + selectedTask?.plotNo ||
+                  "N/A"}
               </p>
             </div>
 
