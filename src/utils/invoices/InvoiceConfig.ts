@@ -1,5 +1,6 @@
 import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 export interface InvoiceItem {
@@ -46,4 +47,12 @@ export const fetchCompletedTasks = async () => {
     { withCredentials: true }
   );
   return res.data.tasks;
+};
+
+export const useFetchInvoices = () => {
+  return useQuery<Invoice[]>({
+    queryKey: ["invoice"],
+    queryFn: fetchInvoices,
+    staleTime: 2 * 60 * 1000,
+  });
 };

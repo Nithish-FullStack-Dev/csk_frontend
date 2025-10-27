@@ -4,6 +4,17 @@ import { Property } from "@/types/property";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
+export const mapPriority = (priority: string): "high" | "medium" | "low" => {
+  switch (priority?.toLowerCase()) {
+    case "high":
+      return "high";
+    case "medium":
+      return "medium";
+    default:
+      return "low";
+  }
+};
+
 export interface Task {
   _id?: string;
   contractor: User | string;
@@ -29,6 +40,12 @@ export interface Task {
   noteBySiteIncharge?: string;
   priority?: string;
   description?: string;
+  status?:
+    | "pending verification"
+    | "approved"
+    | "completed"
+    | "rejected"
+    | "in progress";
 }
 
 export interface Project {
@@ -74,6 +91,18 @@ export interface Contractor {
   rating: 1 | 2 | 3 | 4 | 5;
 }
 
+interface UpcomingTask {
+  id: string;
+  title: string;
+  project: string;
+  unit: string;
+  deadline: string;
+  daysRemaining: number;
+  priority: "high" | "medium" | "low";
+  unitType?: string;
+  floorNumber?: string;
+}
+
 export const fetchProjects = async () => {
   const projectsRes = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/projects`,
@@ -110,8 +139,38 @@ export const fetchContractorProjects = async () => {
   return data;
 };
 
+export const fetchTasks = async () => {
+  const response = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/tasks`,
+    { withCredentials: true }
+  );
+
+  const today = new Date();
+  return response.data
+    .filter((task: any) => task.status !== "completed")
+    .map((task: any, index: number) => {
+      const deadline = new Date(task.deadline);
+      const daysRemaining = Math.ceil(
+        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      return {
+        id: task._id || index.toString(),
+        title: task.taskTitle,
+        project: task.projectName,
+        unit: task.unit,
+        deadline: task.deadline,
+        daysRemaining,
+        priority: mapPriority(task.priority),
+        unitType: task.unitType,
+        floorNumber: task.floorNumber,
+      };
+    })
+    .sort((a, b) => a.daysRemaining - b.daysRemaining);
+};
+
 export const usefetchProjects = () => {
-  return useQuery<Project[]>({
+  return useQuery({
     queryKey: ["fetchProjects"],
     queryFn: fetchProjects,
     staleTime: 2 * 60 * 1000,
@@ -141,6 +200,15 @@ export const usefetchContractorDropDown = () => {
   return useQuery({
     queryKey: ["ContractorProjects"],
     queryFn: fetchContractorProjects,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useFetchTasks = () => {
+  return useQuery<UpcomingTask[]>({
+    queryKey: ["formattedTasks"],
+    queryFn: fetchTasks,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
