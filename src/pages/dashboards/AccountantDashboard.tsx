@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useAuth } from "@/contexts/AuthContext";
+import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import StatCard from "@/components/dashboard/StatCard";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
@@ -35,6 +35,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  fetchInvoices,
+  fetchPayments,
+  fetchRecentInvoices,
+} from "@/utils/accountant/AccountantConfig";
 
 // Sample activities data (since /api/activities is unavailable)
 const recentActivities = [
@@ -92,19 +97,19 @@ const AccountantDashboard = () => {
   >([]);
 
   // Fetch CSRF token
-  const getCsrfToken = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/csrf-token`,
-        { withCredentials: true }
-      );
-      return response.data.csrfToken;
-    } catch (error) {
-      console.error("Failed to fetch CSRF token:", error);
-      toast.error("Failed to fetch CSRF token");
-      return null;
-    }
-  };
+  // const getCsrfToken = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/csrf-token`,
+  //       { withCredentials: true }
+  //     );
+  //     return response.data.csrfToken;
+  //   } catch (error) {
+  //     console.error("Failed to fetch CSRF token:", error);
+  //     toast.error("Failed to fetch CSRF token");
+  //     return null;
+  //   }
+  // };
 
   // Format currency
   const formatCurrency = (value) => {
@@ -174,47 +179,46 @@ const AccountantDashboard = () => {
     }
   };
 
-  // Fetch recent invoices
-  const fetchRecentInvoices = async () => {
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/invoices?limit=3&sort=-issueDate`,
-        { withCredentials: true }
-      );
-      setRecentInvoices(data);
-    } catch (error) {
-      console.error("Failed to fetch recent invoices:", error);
-      toast.error("Failed to fetch recent invoices");
-    }
-  };
+  // const fetchRecentInvoices = async () => {
+  //   try {
+  //     const { data } = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/invoices?limit=3&sort=-issueDate`,
+  //       { withCredentials: true }
+  //     );
+  //     setRecentInvoices(data);
+  //   } catch (error) {
+  //     console.error("Failed to fetch recent invoices:", error);
+  //     toast.error("Failed to fetch recent invoices");
+  //   }
+  // };
 
   // Fetch all invoices
-  const fetchInvoices = async () => {
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/invoices`,
-        { withCredentials: true }
-      );
-      setInvoices(data);
-    } catch (error) {
-      console.error("Failed to fetch invoices:", error);
-      toast.error("Failed to fetch invoices");
-    }
-  };
+  // const fetchInvoices = async () => {
+  //   try {
+  //     const { data } = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/invoices`,
+  //       { withCredentials: true }
+  //     );
+  //     setInvoices(data);
+  //   } catch (error) {
+  //     console.error("Failed to fetch invoices:", error);
+  //     toast.error("Failed to fetch invoices");
+  //   }
+  // };
 
   // Fetch payments
-  const fetchPayments = async () => {
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/payments/accountant`,
-        { withCredentials: true }
-      );
-      setPayments(data);
-    } catch (error) {
-      console.error("Failed to fetch payments:", error);
-      toast.error("Failed to fetch payments");
-    }
-  };
+  // const fetchPayments = async () => {
+  //   try {
+  //     const { data } = await axios.get(
+  //       `${import.meta.env.VITE_URL}/api/payments/accountant`,
+  //       { withCredentials: true }
+  //     );
+  //     setPayments(data);
+  //   } catch (error) {
+  //     console.error("Failed to fetch payments:", error);
+  //     toast.error("Failed to fetch payments");
+  //   }
+  // };
 
   // Fetch reports (placeholder, as endpoint is not defined)
   const fetchReports = async () => {
@@ -390,13 +394,13 @@ const AccountantDashboard = () => {
                 />
                 <StatCard
                   title="Monthly Revenue"
-                  value={formatCurrency(monthlyRevenue)}
+                  value={formatCurrency(monthlyRevenue.toFixed(1))}
                   icon={<CreditCard className="h-6 w-6 text-estate-teal" />}
                   trend={{ value: 8.4, isPositive: true }}
                 />
                 <StatCard
                   title="Overdue Payments"
-                  value={formatCurrency(overduePayments)}
+                  value={formatCurrency(overduePayments.toFixed(1))}
                   icon={<Receipt className="h-6 w-6 text-estate-error" />}
                   trend={{ value: 2.1, isPositive: false }}
                 />

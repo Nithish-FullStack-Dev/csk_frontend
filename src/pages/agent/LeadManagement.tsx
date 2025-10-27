@@ -251,7 +251,7 @@ const LeadManagement = () => {
     const leadUnit = lead.unit as Property;
     const propertySearchName = leadUnit
       ? `${leadUnit.projectName} - ${leadUnit.plotNo}`
-      : leadPropertyId || "";
+      : leadPropertyId || ""; 
 
     const matchesSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
