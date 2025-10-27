@@ -413,7 +413,7 @@ const TeamManagement = () => {
           <div>
             <h1 className="text-3xl font-bold">Team Management</h1>
             <p className="text-muted-foreground">
-              Manage your sales team and track their performance
+              Manage your team lead team and track their performance
             </p>
           </div>
           <div className="flex md:items-center items-start space-x-2 mt-4 md:mt-0 md:flex-row flex-col gap-5">

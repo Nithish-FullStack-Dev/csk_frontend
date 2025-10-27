@@ -330,7 +330,7 @@ const AdminTeamLead = () => {
       performance: normalizedPerformance,
     };
 
-    await addTeamMemberMutation.mutateAsync(payload);
+    // await addTeamMemberMutation.mutateAsync(payload);
   };
 
   const handleDelete = (memberId: string) => {
