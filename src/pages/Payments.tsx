@@ -670,37 +670,39 @@ const Payments = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="font-semibold">Invoice Number</p>
-                        <p>{selectedPayment.invoice.invoiceNumber}</p>
+                        <p>{selectedPayment?.invoice?.invoiceNumber}</p>
                       </div>
                       <div>
                         <p className="font-semibold">Project / Unit</p>
                         <p>
                           {
-                            selectedPayment.invoice.project.projectId
-                              .projectName
+                            selectedPayment?.invoice?.project?.projectId
+                              ?.projectName
                           }{" "}
-                          / {selectedPayment.invoice.unit}
+                          / {selectedPayment?.invoice?.unit}
                         </p>
                       </div>
                       <div>
                         <p className="font-semibold">Paid By</p>
                         <p>
-                          {selectedPayment.accountant?.name || "Accountant"}
+                          {selectedPayment?.accountant?.name || "Accountant"}
                         </p>
                       </div>
                       <div>
                         <p className="font-semibold">Payment Method</p>
-                        <p>{selectedPayment.invoice.paymentMethod}</p>
+                        <p>{selectedPayment?.invoice?.paymentMethod}</p>
                       </div>
                       <div>
                         <p className="font-semibold">Amount</p>
-                        <p>₹{selectedPayment.invoice.total.toLocaleString()}</p>
+                        <p>
+                          ₹{selectedPayment?.invoice?.total?.toLocaleString()}
+                        </p>
                       </div>
                       <div>
                         <p className="font-semibold">Payment Date</p>
                         <p>
                           {new Date(
-                            selectedPayment.invoice.paymentDate
+                            selectedPayment?.invoice?.paymentDate
                           ).toLocaleDateString()}
                         </p>
                       </div>
@@ -711,19 +713,19 @@ const Payments = () => {
                     <div className="text-xs text-muted-foreground">
                       Issued on:{" "}
                       {new Date(
-                        selectedPayment.invoice.issueDate
+                        selectedPayment?.invoice?.issueDate
                       ).toLocaleDateString()}{" "}
                       <br />
                       Due Date:{" "}
                       {new Date(
-                        selectedPayment.invoice.dueDate
+                        selectedPayment?.invoice?.dueDate
                       ).toLocaleDateString()}
                     </div>
 
-                    {selectedPayment.invoice.notes && (
+                    {selectedPayment?.invoice?.notes && (
                       <div className="mt-2">
                         <p className="font-semibold">Notes</p>
-                        <p>{selectedPayment.invoice.notes}</p>
+                        <p>{selectedPayment?.invoice?.notes}</p>
                       </div>
                     )}
                   </div>
@@ -747,21 +749,21 @@ const Payments = () => {
                       <div>
                         <h3 className="font-bold text-xl">INVOICE</h3>
                         <p className="text-muted-foreground">
-                          {selectedPayment.invoice.invoiceNumber}
+                          {selectedPayment?.invoice?.invoiceNumber}
                         </p>
                       </div>
                       <Badge
                         className={`${
-                          selectedPayment.invoice.status === "Paid"
+                          selectedPayment?.invoice?.status === "Paid"
                             ? "bg-green-100 text-green-800"
-                            : selectedPayment.invoice.status === "Pending"
+                            : selectedPayment?.invoice?.status === "Pending"
                             ? "bg-blue-100 text-blue-800"
-                            : selectedPayment.invoice.status === "Overdue"
+                            : selectedPayment?.invoice?.status === "Overdue"
                             ? "bg-red-100 text-red-800"
                             : "bg-gray-100 text-gray-800"
                         } text-sm py-1 px-3`}
                       >
-                        {selectedPayment.invoice.status}
+                        {selectedPayment?.invoice?.status}
                       </Badge>
                     </div>
 
@@ -778,7 +780,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment.invoice.issueDate
+                              selectedPayment?.invoice?.issueDate
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -792,7 +794,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment.invoice.issueDate
+                              selectedPayment?.invoice?.issueDate
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -805,8 +807,8 @@ const Payments = () => {
                             Project:
                           </p>
                           <p>
-                            {selectedPayment.invoice.project.projectId
-                              .projectName || "-"}
+                            {selectedPayment?.invoice?.project?.projectId
+                              ?.projectName || "-"}
                           </p>
                         </div>
                         {selectedPayment.invoice.paymentDate && (
@@ -816,7 +818,7 @@ const Payments = () => {
                             </p>
                             <p>
                               {new Date(
-                                selectedPayment.invoice.paymentDate
+                                selectedPayment?.invoice?.paymentDate
                               ).toLocaleDateString("en-GB", {
                                 day: "2-digit",
                                 month: "2-digit",
@@ -842,17 +844,17 @@ const Payments = () => {
                         </TableHeader>
                         <TableBody>
                           {/* Use sample items when viewing an invoice */}
-                          {selectedPayment.invoice.items.map((item) => (
-                            <TableRow key={item._id}>
-                              <TableCell>{item.description}</TableCell>
+                          {selectedPayment?.invoice?.items.map((item) => (
+                            <TableRow key={item?._id}>
+                              <TableCell>{item?.description}</TableCell>
                               <TableCell>
-                                {item.quantity} {item.unit}
+                                {item?.quantity} {item?.unit}
                               </TableCell>
                               <TableCell>
-                                ₹{item.rate.toLocaleString()}
+                                ₹{item?.rate.toLocaleString()}
                               </TableCell>
                               <TableCell>
-                                ₹{item.amount.toLocaleString()}
+                                ₹{item?.amount.toLocaleString()}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -867,32 +869,33 @@ const Payments = () => {
                             Subtotal:
                           </span>
                           <span>
-                            ₹{selectedPayment.invoice.subtotal.toLocaleString()}
+                            ₹
+                            {selectedPayment?.invoice?.subtotal.toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            SGST ({selectedPayment.invoice.sgst}%):
+                            SGST ({selectedPayment?.invoice?.sgst}%):
                           </span>
                           <span>
                             ₹
                             {(
                               selectedPayment.invoice.subtotal *
-                              (selectedPayment.invoice.sgst / 100)
+                              (selectedPayment?.invoice?.sgst / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            CGST ({selectedPayment.invoice.cgst}%):
+                            CGST ({selectedPayment?.invoice?.cgst}%):
                           </span>
                           <span>
                             ₹
                             {(
-                              selectedPayment.invoice.subtotal *
-                              (selectedPayment.invoice.cgst / 100)
+                              selectedPayment?.invoice?.subtotal *
+                              (selectedPayment?.invoice?.cgst / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
@@ -902,17 +905,17 @@ const Payments = () => {
                         <div className="flex justify-between font-bold">
                           <span>Total Amount:</span>
                           <span>
-                            ₹{selectedPayment.invoice.total.toLocaleString()}
+                            ₹{selectedPayment?.invoice?.total.toLocaleString()}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {selectedPayment.invoice.notes && (
+                    {selectedPayment?.invoice?.notes && (
                       <div>
                         <h4 className="text-sm font-medium">Notes:</h4>
                         <p className="text-muted-foreground">
-                          {selectedPayment.invoice.notes}
+                          {selectedPayment?.invoice?.notes}
                         </p>
                       </div>
                     )}
@@ -953,8 +956,8 @@ const Payments = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {invoices.map((invoice) => (
-                        <SelectItem key={invoice._id} value={invoice._id}>
-                          {invoice.invoiceNumber}
+                        <SelectItem key={invoice?._id} value={invoice?._id}>
+                          {invoice?.invoiceNumber}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1022,7 +1025,8 @@ const Payments = () => {
                   <div>
                     <Label htmlFor="invoiceId">Invoice Number</Label>
                     <p>
-                      {selectedPayment && selectedPayment.invoice.invoiceNumber}
+                      {selectedPayment &&
+                        selectedPayment?.invoice?.invoiceNumber}
                     </p>
                   </div>
 
@@ -1037,12 +1041,12 @@ const Payments = () => {
                         <SelectValue placeholder="Select invoice item" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedPayment?.invoice.items.map((item, index) => (
+                        {selectedPayment?.invoice?.items.map((item, index) => (
                           <SelectItem
                             key={index}
-                            value={item._id || index.toString()}
+                            value={item?._id || index.toString()}
                           >
-                            {item.description}
+                            {item?.description}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -222,9 +222,9 @@ export const BuildingDialog = ({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === "add" ? "Add Building" : "Edit Building"}
+            {mode === "add" ? "Add Property" : "Edit Property"}
           </DialogTitle>
-          <DialogDescription>Manage building details</DialogDescription>
+          <DialogDescription>Manage Property details</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
