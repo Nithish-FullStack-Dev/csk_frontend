@@ -64,50 +64,12 @@ import { useAuth, User } from "@/contexts/AuthContext";
 import { Calendar } from "@/components/ui/calendar";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "../UserManagement";
-import { Lead } from "@/utils/leads/LeadConfig";
-import { Building, FloorUnit } from "@/types/building";
-import { Property } from "@/types/property";
-
-interface PopulatedLead extends Omit<Lead, "property" | "addedBy"> {
-  unit: Property;
-  property: Building;
-  floorUnit: FloorUnit;
-  addedBy: User;
-}
-
-interface Commission {
-  _id: string;
-  clientId: PopulatedLead;
-  commissionAmount: string;
-  commissionPercent: string;
-  saleDate: Date;
-  paymentDate?: Date;
-  status: "pending" | "paid";
-}
-
-interface CommissionEligibleLead extends Lead {
-  property: Building;
-  unit: Property;
-  floorUnit: FloorUnit;
-}
-
-const fetchAllCommission = async (): Promise<Commission[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/commission/getAllCommissions`,
-    { withCredentials: true }
-  );
-  return Array.isArray(data) ? data : [];
-};
-
-const fetchCommissionEligibleLeads = async (): Promise<
-  CommissionEligibleLead[]
-> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getClosedLeads`,
-    { withCredentials: true }
-  );
-  return data.data || [];
-};
+import {
+  Commission,
+  CommissionEligibleLead,
+  fetchAllCommission,
+  fetchCommissionEligibleLeads,
+} from "@/utils/leads/CommissionConfig";
 
 const MyCommissions = () => {
   const { user } = useAuth();
