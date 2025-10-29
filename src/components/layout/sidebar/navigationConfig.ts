@@ -159,6 +159,15 @@ import {
   Car,
   CheckSquare,
   IndianRupee,
+  AlertTriangle,
+  Camera,
+  Construction,
+  Hammer,
+  Receipt,
+  CheckCircle,
+  ReceiptIndianRupee,
+  Gauge,
+  ListTodo,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -203,11 +212,11 @@ export const moduleToNavItem: Record<string, any> = {
   Documents: { to: "/documents", icon: FileText, label: "Documents" },
   "Construction Progress": {
     to: "/progress",
-    icon: Building,
+    icon: Gauge,
     label: "Construction Progress",
   },
   "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
-  // "Task Management": { to: "/tasks", icon: FileText, label: "Task Management" },
+  "Task Management": { to: "/tasks", icon: ListTodo, label: "Task Management" },
   "Invoice Management": {
     to: "/invoices",
     icon: FileText,
@@ -238,18 +247,23 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Quality Control": {
     to: "/quality",
-    icon: FileText,
+    icon: AlertTriangle,
     label: "Quality Control",
   },
   "Site Inspections": {
     to: "/inspections",
-    icon: FileText,
+    icon: Camera,
     label: "Site Inspections",
   },
   Contractors: { to: "/contractors", icon: Users, label: "Contractors" },
-  Materials: { to: "/materials", icon: FileText, label: "Materials" },
-  "Labor Management": { to: "/labor", icon: Users, label: "Labor Management" },
-  Invoices: { to: "/invoices", icon: FileText, label: "Invoices" },
+  Materials: { to: "/materials", icon: Construction, label: "Materials" },
+  "Labor Management": { to: "/labor", icon: Hammer, label: "Labor Management" },
+  Invoices: { to: "/invoices", icon: ReceiptIndianRupee, label: "Invoices" },
+  "Task Verifications": {
+    to: "/verifications",
+    icon: CheckCircle,
+    label: "Task Verifications",
+  },
   Payments: { to: "/payments", icon: IndianRupee, label: "Payments" },
   "Business Analytics": {
     to: "/analytics",
@@ -265,7 +279,7 @@ export const moduleToNavItem: Record<string, any> = {
     label: "Budget Tracking",
   },
   "Tax Documents": { to: "/taxes", icon: FileText, label: "Tax Documents" },
-  Reports: { to: "/reports", icon: FileText, label: "Reports" },
+  Reports: { to: "/reports", icon: BarChart3, label: "Reports" },
   "Customer Management": {
     to: "/customer",
     icon: BarChart3,
@@ -273,7 +287,7 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Photo Evidence": {
     to: "/evidence",
-    icon: FileText,
+    icon: Camera,
     label: "Photo Evidence",
   },
 };

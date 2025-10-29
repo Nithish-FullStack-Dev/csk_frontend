@@ -38,18 +38,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Filter,
   Search,
-  Plus,
   MoreHorizontal,
-  Calendar,
   PhoneCall,
   Mail,
   MapPin,
-  FileText,
   ChevronRight,
-  Loader2,
-  Download,
 } from "lucide-react";
 import axios from "axios";
 import { format, formatDistanceToNow, set } from "date-fns";
@@ -63,195 +57,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
-import { Property } from "../public/PropertyInterfaces";
 import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "../UserManagement";
-import { AddCustomerDialog, CustomerPayload } from "../agent/AddCustomerDialog";
-
-export interface Lead {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: "hot" | "warm" | "cold";
-  source: string;
-  property: string | Property;
-  propertyStatus:
-    | "New"
-    | "Assigned"
-    | "Follow up"
-    | "In Progress"
-    | "Closed"
-    | "Rejected";
-  addedBy: User;
-  lastContact: string;
-  notes: string;
-  createdAt: string;
-}
-
-export const fetchLeads = async () => {
-  try {
-    const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
-      { withCredentials: true }
-    );
-    return Array.isArray(data) ? data : data.leads || [];
-  } catch (error) {
-    return [];
-  }
-};
-
-export const fetchAllLeads = async () => {
-  try {
-    const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
-      { withCredentials: true }
-    );
-    console.log("API Response:", data);
-    return Array.isArray(data) ? data : data.leads || [];
-  } catch (error) {
-    console.error("Error fetching leads:", error);
-    return [];
-  }
-};
-
-const saveLead = async (
-  payload: Omit<
-    Lead,
-    "_id" | "lastContact" | "addedBy" | "propertyStatus" | "createdAt"
-  >
-) => {
-  const dataToSend = {
-    ...payload,
-    property:
-      typeof payload.property === "object"
-        ? payload.property._id
-        : payload.property,
-  };
-
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_URL}/api/leads/saveLead`,
-    dataToSend,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-const saveCustomer = async (payload: CustomerPayload) => {
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
-    payload,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-const updateLead = async (payload: Lead) => {
-  const { _id, ...updateData } = payload;
-  const dataToSend = {
-    ...updateData,
-    property:
-      typeof updateData.property === "object"
-        ? updateData.property._id
-        : updateData.property,
-  };
-
-  const { data } = await axios.put(
-    `${import.meta.env.VITE_URL}/api/leads/updateLead/${_id}`,
-    dataToSend,
-    { withCredentials: true }
-  );
-  return data;
-};
-
-const fetchAllcustomers = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`
-  );
-  return data;
-};
-
-export const fetchAllAgents = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getAllAgents`
-  );
-  return data;
-};
-
-const fetchAllCustomer_purchased = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`
-  );
-  return data;
-};
-
-export const useSaveLead = () => {
-  return useMutation({
-    mutationFn: saveLead,
-  });
-};
-
-export const useSaveCustomer = () => {
-  return useMutation({
-    mutationFn: saveCustomer,
-  });
-};
-
-export const useUpdateLead = () => {
-  return useMutation({
-    mutationFn: updateLead,
-  });
-};
+import { AddCustomerDialog } from "../agent/AddCustomerDialog";
+import {
+  useAvaliableUnits,
+  useFloorUnits,
+  useProjects,
+} from "@/utils/buildings/Projects";
+import {
+  fetchAllAgents,
+  fetchAllCustomer_purchased,
+  fetchAllLeads,
+  fetchLeads,
+  Lead,
+  useSaveLead,
+  useUpdateLead,
+} from "@/utils/leads/LeadConfig";
+import { Property } from "@/types/property";
+import CircleLoader from "@/components/CircleLoader";
 
 const AdminLeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [isAddLeadDialogOpen, setIsAddLeadDialogOpen] = useState(false);
-  const [isEditLeadDialogOpen, setIsEditLeadDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
   const { user } = useAuth();
-
-  // Form states for adding/editing leads
-  const [status, setStatus] = useState<Lead["status"] | "">("");
-  const [propertyStatus, setPropertyStatus] = useState<
-    Lead["propertyStatus"] | ""
-  >("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [source, setSource] = useState("");
-  const [property, setProperty] = useState(""); // This state should hold the string ID
-  const [notes, setNote] = useState("");
-
-  // Form states for the new customer
-  const [bookingDate, setBookingDate] = useState("");
-  const [finalPrice, setFinalPrice] = useState("");
-  const [paymentPlan, setPaymentPlan] = useState("Down Payment");
-  const [paymentStatus, setPaymentStatus] = useState("Pending");
-  const [selectedProperty, setSelectedProperty] = useState("");
-  const [selectedUser, setSelectedUser] = useState("");
-  const [purchasedFromAgent, setPurchasedFromAgent] = useState("");
-
-  const [availableAgents, setAvailableAgents] = useState<User[]>([]);
-  const [availableCustomer, setAvailableCustomer] = useState<User[]>([]);
-  const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
-
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [loading, setloading] = useState(false);
-  const [updating, setupdating] = useState(false);
-
-  const { mutate: submitLead } = useSaveLead();
-  const { mutate: editLead } = useUpdateLead();
-  const { mutate: submitCustomer } = useSaveCustomer();
-  const isSalesManager = user.role === "sales_manager";
-  type LeadInput = Omit<
-    Lead,
-    "_id" | "lastContact" | "addedBy" | "propertyStatus" | "createdAt"
-  >;
 
   const {
     data: leadData,
@@ -259,30 +91,8 @@ const AdminLeadManagement = () => {
     isError,
     error,
   } = useQuery<Lead[]>({
-    queryKey: [isSalesManager ? "allLeads" : "leads"],
-    queryFn: isSalesManager ? fetchAllLeads : fetchLeads,
-    staleTime: 0,
-  });
-
-  const {
-    data: agents,
-    isLoading: agentsLoad,
-    isError: agentError,
-    error: agentErr,
-  } = useQuery<User[]>({
-    queryKey: ["agents"],
-    queryFn: fetchAllAgents,
-    staleTime: 0,
-  });
-
-  const {
-    data: customer_purchased,
-    isLoading: CustomerLoad,
-    isError: customerError,
-    error: customerErr,
-  } = useQuery<User[]>({
-    queryKey: ["customer_purchased"],
-    queryFn: fetchAllCustomer_purchased,
+    queryKey: ["allLeads"],
+    queryFn: fetchAllLeads,
     staleTime: 0,
   });
 
@@ -297,69 +107,9 @@ const AdminLeadManagement = () => {
     enabled: !!user?.role,
   });
 
-  const { data: properties = [] } = useQuery<Property[]>({
-    queryKey: ["available-properties"],
-    queryFn: async () => {
-      const res = await fetch(
-        `${import.meta.env.VITE_URL}/api/leads/getLeadProp`
-      );
-      const json = await res.json();
-      return json.properties;
-    },
-  });
-
-  const availableProperties = properties.filter((prop) =>
-    ["Available", "Upcoming", "Under Construction"].includes(
-      prop.customerInfo?.propertyStatus
-    )
-  );
-
-  // Effect to populate form fields when a lead is selected for editing
-  useEffect(() => {
-    if (leadToEdit) {
-      setName(leadToEdit.name);
-      setEmail(leadToEdit.email);
-      setPhone(leadToEdit.phone);
-      setSource(leadToEdit.source);
-      setProperty(
-        typeof leadToEdit.property === "object"
-          ? leadToEdit.property._id
-          : leadToEdit.property
-      );
-      setStatus(leadToEdit.status);
-      setPropertyStatus(leadToEdit.propertyStatus);
-      setNote(leadToEdit.notes);
-      setIsEditLeadDialogOpen(true); // Open the edit dialog
-    } else {
-      setName("");
-      setEmail("");
-      setPhone("");
-      setSource("");
-      setProperty("");
-      setStatus("");
-      setNote("");
-    }
-  }, [leadToEdit]);
-
-  useEffect(() => {
-    if (agents) setAvailableAgents(agents);
-  }, [agents]);
-
-  useEffect(() => {
-    if (customer_purchased) setAvailableCustomer(customer_purchased);
-  }, [customer_purchased]);
-
   if (isError) {
     toast.error("Failed to fetch leads");
     console.error("Error fetching leads", error);
-  }
-  if (agentError) {
-    toast.error("Failed to fetch agents");
-    console.error("Error fetching agents", agentErr);
-  }
-  if (customerError) {
-    toast.error("Failed to fetch customer");
-    console.error("Error fetching customer_purchased", customerErr);
   }
 
   if (isRolePermissionsError) {
@@ -367,146 +117,26 @@ const AdminLeadManagement = () => {
     toast.error("Failed to load role permissions");
   }
 
-  if (isLoading || agentsLoad || CustomerLoad || isRolePermissionsLoading) {
+  if (isRolePermissionsLoading) {
     return <Loader />;
   }
 
-  const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.write
-  );
-  const userCanEditUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.edit
-  );
-  const userCanDeleteUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.delete
-  );
-
-  // Filter leads based on search and tab
   const filteredLeads = (leadData || []).filter((lead: Lead) => {
-    // Get the property display name for search purposes
     const leadPropertyId =
-      typeof lead.property === "object" ? lead.property._id : lead.property;
-    const interestedProperty = availableProperties.find(
-      (prop) => prop._id === leadPropertyId
-    );
-    const propertySearchName = interestedProperty
-      ? `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`
-      : typeof lead.property === "string"
-      ? lead.property
-      : ""; // Use empty string if it's an object but not found, or not a string
+      typeof lead.property === "object" ? lead.property?._id : lead.property;
+    const leadUnit = lead.unit as Property;
+    const propertySearchName = leadUnit
+      ? `${leadUnit.projectName} - ${leadUnit.plotNo}`
+      : leadPropertyId || "";
 
     const matchesSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      propertySearchName.toLowerCase().includes(searchTerm.toLowerCase()); // Search by display name or ID if property is string
+      propertySearchName.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (activeTab === "all") return matchesSearch;
     return matchesSearch && lead.status === activeTab;
   });
-
-  const handleSaveLead = async () => {
-    setloading(true);
-    if (!name || !email || !source || !status || !phone) {
-      toast.error("Please fill all required fields");
-      setloading(false);
-      return;
-    }
-    const payload: LeadInput = {
-      name,
-      email,
-      source,
-      property,
-      status: status as Lead["status"],
-      notes,
-      phone,
-    };
-    submitLead(payload, {
-      onSuccess: (res) => {
-        toast.success("Lead saved successfully!");
-        console.log(res.lead);
-        queryClient.invalidateQueries({
-          queryKey: ["leads"],
-          refetchType: "active",
-        });
-        setIsAddLeadDialogOpen(false); // Close the add dialog
-      },
-      onError: (err) => {
-        toast.error("Failed to save lead.");
-        console.error(err);
-      },
-    });
-
-    // Clear form states after submission attempt
-    setName("");
-    setEmail("");
-    setSource("");
-    setProperty("");
-    setStatus("");
-    setNote("");
-    setPhone("");
-    setloading(false);
-  };
-
-  const handleUpdateLead = async () => {
-    if (!leadToEdit) return;
-    setupdating(true);
-    if (!name || !email || !source || !status || !phone) {
-      toast.error("Please fill all required fields");
-      setupdating(false);
-      return;
-    }
-    const payload: Lead = {
-      ...leadToEdit,
-      name,
-      email,
-      source,
-      property,
-      status: status as Lead["status"],
-      propertyStatus: propertyStatus as Lead["propertyStatus"],
-      notes,
-      phone,
-    };
-
-    editLead(payload, {
-      onSuccess: (res) => {
-        toast.success("Lead updated successfully!");
-        console.log(res.lead);
-        queryClient.invalidateQueries({
-          queryKey: isSalesManager ? ["allLeads"] : ["leads"],
-          refetchType: "active",
-        });
-        setIsEditLeadDialogOpen(false);
-        setLeadToEdit(null); // Clear the lead being edited
-      },
-      onError: (err) => {
-        toast.error("Failed to update lead.");
-        console.error(err);
-      },
-    });
-    setupdating(false);
-  };
-
-  const handleSaveCustomer = () => {
-    const payload: CustomerPayload = {
-      user: selectedUser,
-      property: selectedProperty,
-      bookingDate,
-      finalPrice: Number(finalPrice),
-      paymentPlan: paymentPlan as "Down Payment" | "EMI" | "Full Payment",
-      paymentStatus: paymentStatus as "Pending" | "In Progress" | "Completed",
-      purchasedFrom: purchasedFromAgent,
-    };
-    submitCustomer(payload, {
-      onSuccess: (res) => {
-        toast.success("Customer saved successfully!");
-        setIsAddCustomerDialogOpen(false); // Close the add dialog
-      },
-      onError: (err) => {
-        toast.error("Failed to save customer.");
-        console.error(err);
-      },
-    });
-  };
 
   return (
     <MainLayout>
@@ -517,33 +147,6 @@ const AdminLeadManagement = () => {
             <p className="text-muted-foreground">
               Track and manage your sales leads
             </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            {isSalesManager && (
-              <AddCustomerDialog
-                isSalesManager={isSalesManager}
-                isAddCustomerDialogOpen={isAddCustomerDialogOpen}
-                setIsAddCustomerDialogOpen={setIsAddCustomerDialogOpen}
-                bookingDate={bookingDate}
-                setBookingDate={setBookingDate}
-                finalPrice={finalPrice}
-                setFinalPrice={setFinalPrice}
-                paymentPlan={paymentPlan}
-                setPaymentPlan={setPaymentPlan}
-                paymentStatus={paymentStatus}
-                setPaymentStatus={setPaymentStatus}
-                selectedProperty={selectedProperty}
-                setSelectedProperty={setSelectedProperty}
-                purchasedFromAgent={purchasedFromAgent}
-                setPurchasedFromAgent={setPurchasedFromAgent}
-                availableProperties={availableProperties}
-                availableAgents={availableAgents}
-                selectedUser={selectedUser}
-                setSelectedUser={setSelectedUser}
-                usersPurchased={availableCustomer}
-                handleSaveCustomer={handleSaveCustomer}
-              />
-            )}
           </div>
         </div>
 
@@ -587,7 +190,9 @@ const AdminLeadManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.length === 0 ? (
+                {isLoading ? (
+                  <CircleLoader />
+                ) : filteredLeads.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6}>
                       <div className="text-center py-12 text-gray-500">
@@ -618,28 +223,10 @@ const AdminLeadManagement = () => {
                       Rejected: "bg-red-100 text-red-800",
                     };
 
-                    // Determine property name
-                    const leadPropertyId =
-                      typeof lead.property === "object"
-                        ? lead.property._id
-                        : lead.property;
-                    const interestedProperty = availableProperties.find(
-                      (prop) => prop._id === leadPropertyId
-                    );
-                    let propertyDisplayName = "N/A";
-                    if (interestedProperty) {
-                      propertyDisplayName = `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
-                    } else if (
-                      typeof lead.property === "object" &&
-                      "basicInfo" in lead.property
-                    ) {
-                      propertyDisplayName = `${lead.property.basicInfo.projectName} - ${lead.property.basicInfo.plotNumber}`;
-                    } else if (
-                      typeof lead.property === "string" &&
-                      lead.property
-                    ) {
-                      propertyDisplayName = lead.property;
-                    }
+                    const leadUnit = lead.unit as Property;
+                    const propertyDisplayName = leadUnit
+                      ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                      : "N/A";
 
                     return (
                       <TableRow key={lead._id}>
@@ -666,7 +253,7 @@ const AdminLeadManagement = () => {
                           <Badge
                             className={
                               statusColors[
-                                lead?.status as keyof typeof statusColors
+                                lead.status as keyof typeof statusColors
                               ]
                             }
                           >
@@ -674,13 +261,16 @@ const AdminLeadManagement = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {propertyDisplayName}
+                          {typeof lead?.property === "object" &&
+                            lead?.property?.projectName +
+                              " / " +
+                              propertyDisplayName}
                         </TableCell>
                         <TableCell>
                           <Badge
                             className={
                               propertyStatusColors[
-                                lead?.propertyStatus as keyof typeof propertyStatusColors
+                                lead.propertyStatus as keyof typeof propertyStatusColors
                               ]
                             }
                           >
@@ -688,7 +278,7 @@ const AdminLeadManagement = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {lead?.lastContact
+                          {lead.lastContact
                             ? formatDistanceToNow(new Date(lead.lastContact), {
                                 addSuffix: true,
                               })
@@ -710,18 +300,17 @@ const AdminLeadManagement = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <a href={`tel:${user.phone}`}>
+                                <a href={`tel:${lead.phone}`}>
                                   <DropdownMenuItem>
                                     <PhoneCall className="mr-2 h-4 w-4" /> Call
                                   </DropdownMenuItem>
                                 </a>
                                 <a
                                   href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                    user.email
+                                    lead.email
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex-1"
                                 >
                                   <DropdownMenuItem>
                                     <Mail className="mr-2 h-4 w-4" /> Email
@@ -767,27 +356,10 @@ const AdminLeadManagement = () => {
                     Rejected: "bg-red-100 text-red-800",
                   };
 
-                  const leadPropertyId =
-                    typeof lead.property === "object"
-                      ? lead.property._id
-                      : lead.property;
-                  const interestedProperty = availableProperties.find(
-                    (prop) => prop._id === leadPropertyId
-                  );
-                  let propertyDisplayName = "N/A";
-                  if (interestedProperty) {
-                    propertyDisplayName = `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
-                  } else if (
-                    typeof lead.property === "object" &&
-                    "basicInfo" in lead.property
-                  ) {
-                    propertyDisplayName = `${lead.property.basicInfo.projectName} - ${lead.property.basicInfo.plotNumber}`;
-                  } else if (
-                    typeof lead.property === "string" &&
-                    lead.property
-                  ) {
-                    propertyDisplayName = lead.property;
-                  }
+                  const leadUnit = lead.unit as Property;
+                  const propertyDisplayName = leadUnit
+                    ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                    : "N/A";
 
                   return (
                     <div
@@ -816,7 +388,7 @@ const AdminLeadManagement = () => {
                         <Badge
                           className={
                             statusColors[
-                              lead?.status as keyof typeof statusColors
+                              lead.status as keyof typeof statusColors
                             ]
                           }
                         >
@@ -832,7 +404,7 @@ const AdminLeadManagement = () => {
                         <Badge
                           className={
                             propertyStatusColors[
-                              lead?.propertyStatus as keyof typeof propertyStatusColors
+                              lead.propertyStatus as keyof typeof propertyStatusColors
                             ]
                           }
                         >
@@ -842,7 +414,7 @@ const AdminLeadManagement = () => {
                       <div className="flex justify-between">
                         <span className="font-medium">Last Contact:</span>
                         <span>
-                          {lead?.lastContact
+                          {lead.lastContact
                             ? formatDistanceToNow(new Date(lead.lastContact), {
                                 addSuffix: true,
                               })
@@ -865,31 +437,27 @@ const AdminLeadManagement = () => {
                               variant="outline"
                               className="flex-1 flex items-center justify-center"
                             >
-                              <MoreHorizontal className="h-4 w-4 mr-1" />{" "}
+                              <MoreHorizontal className="h-4 w-4 mr-1" />
                               Actions
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <PhoneCall className="mr-2 h-4 w-4" /> Call
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Mail className="mr-2 h-4 w-4" /> Email
-                            </DropdownMenuItem>
-                            {!isSalesManager && (
-                              <DropdownMenuItem
-                                onClick={() => navigate("/visits")}
-                              >
-                                <Calendar className="mr-2 h-4 w-4" /> Schedule
-                                Visit
+                            <a href={`tel:${lead.phone}`}>
+                              <DropdownMenuItem>
+                                <PhoneCall className="mr-2 h-4 w-4" /> Call
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setLeadToEdit(lead)}
+                            </a>
+                            <a
+                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                lead.email
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <FileText className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Mail className="mr-2 h-4 w-4" /> Email
+                              </DropdownMenuItem>
+                            </a>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -916,10 +484,10 @@ const AdminLeadManagement = () => {
             <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Lead Details</DialogTitle>
-                <DialogDescription>
-                  You can see the lead details below
-                </DialogDescription>
               </DialogHeader>
+              <DialogDescription>
+                View the details of the selected lead.
+              </DialogDescription>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-14 w-14">
@@ -958,34 +526,17 @@ const AdminLeadManagement = () => {
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>
                         {(() => {
-                          // Determine the ID, handling if selectedLead.property is already an object
-                          const propertyId =
-                            typeof selectedLead.property === "object"
-                              ? selectedLead.property._id
-                              : selectedLead.property;
-
-                          const interestedProperty = availableProperties.find(
-                            (prop) => prop._id === propertyId
-                          );
-
-                          if (interestedProperty) {
-                            return `${interestedProperty.basicInfo.projectName} - ${interestedProperty.basicInfo.plotNumber}`;
-                          } else if (
-                            typeof selectedLead.property === "object" &&
-                            selectedLead.property !== null &&
-                            "basicInfo" in selectedLead.property
-                          ) {
-                            // If selectedLead.property is already the full object, use its basicInfo
-                            return `${selectedLead.property.basicInfo.projectName} - ${selectedLead.property.basicInfo.plotNumber}`;
-                          }
-                          return "N/A"; // Fallback
+                          const leadUnit = selectedLead.unit as Property;
+                          return leadUnit
+                            ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                            : "N/A";
                         })()}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {isSalesManager && (
+                {
                   <div>
                     <p className="text-sm font-medium mb-1">Lead Added By</p>
                     <p className="text-sm">
@@ -1006,7 +557,7 @@ const AdminLeadManagement = () => {
                       )}
                     </p>
                   </div>
-                )}
+                }
 
                 <div>
                   <p className="text-sm font-medium mb-1">Notes</p>
@@ -1016,184 +567,6 @@ const AdminLeadManagement = () => {
               <DialogFooter>
                 <Button variant="outline" onClick={() => setSelectedLead(null)}>
                   Close
-                </Button>
-                {!isSalesManager && (
-                  <Button onClick={() => navigate("/visits")}>
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Schedule Site Visit
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Edit Lead Dialog */}
-        {leadToEdit && (
-          <Dialog
-            open={isEditLeadDialogOpen}
-            onOpenChange={setIsEditLeadDialogOpen}
-          >
-            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-              <DialogHeader>
-                <DialogTitle>Edit Lead</DialogTitle>
-                <DialogDescription>
-                  Update the details for {leadToEdit.name}. All fields marked
-                  with * are required.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="editName" className="text-sm font-medium">
-                      Name *
-                    </label>
-                    <Input
-                      id="editName"
-                      placeholder="Full name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="editEmail" className="text-sm font-medium">
-                      Email *
-                    </label>
-                    <Input
-                      id="editEmail"
-                      type="email"
-                      placeholder="Email address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="editPhone" className="text-sm font-medium">
-                      Phone *
-                    </label>
-                    <Input
-                      id="editPhone"
-                      placeholder="Phone number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="editSource" className="text-sm font-medium">
-                      Source *
-                    </label>
-                    <Input
-                      id="editSource"
-                      placeholder="Lead source"
-                      onChange={(e) => setSource(e.target.value)}
-                      value={source}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="property" className="text-sm font-medium">
-                    Property Interest
-                  </label>
-                  <Select
-                    onValueChange={(value) => setProperty(value)}
-                    value={property} // Value will be the string ID
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select Property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableProperties.map((prop) => (
-                        <SelectItem key={prop._id} value={prop._id}>
-                          {prop.basicInfo.projectName} -{" "}
-                          {prop.basicInfo.plotNumber}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="editStatus" className="text-sm font-medium">
-                    Status
-                  </label>
-                  <Select
-                    value={status}
-                    onValueChange={(value) =>
-                      setStatus(value as "hot" | "warm" | "cold" | "")
-                    }
-                  >
-                    <SelectTrigger
-                      id="editStatus"
-                      className="w-[150px] border px-3 py-2 rounded-md"
-                    >
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hot">Hot</SelectItem>
-                      <SelectItem value="warm">Warm</SelectItem>
-                      <SelectItem value="cold">Cold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {isSalesManager && (
-                  <div className="space-y-2">
-                    <label htmlFor="editStatus" className="text-sm font-medium">
-                      Property Status
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      when this lead is{" "}
-                      <span className="font-medium">closed</span> — no further
-                      status updates allowed.
-                    </p>
-                    <Select
-                      disabled={leadToEdit?.propertyStatus === "Closed"}
-                      value={propertyStatus}
-                      onValueChange={(value: Lead["propertyStatus"]) =>
-                        setPropertyStatus(value)
-                      }
-                    >
-                      <SelectTrigger
-                        id="editStatus"
-                        className="w-[150px] border px-3 py-2 rounded-md"
-                      >
-                        <SelectValue placeholder="Select Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Assigned">Assigned</SelectItem>
-                        <SelectItem value="Follow up">Follow up</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Closed">Closed</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  <label htmlFor="editNotes" className="text-sm font-medium">
-                    Notes
-                  </label>
-                  <Input
-                    id="editNotes"
-                    placeholder="Additional notes"
-                    onChange={(e) => setNote(e.target.value)}
-                    value={notes}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditLeadDialogOpen(false);
-                    setLeadToEdit(null); // Clear the lead being edited
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateLead} disabled={updating}>
-                  {updating ? "Updating Changes..." : "Update Changes"}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -96,7 +96,28 @@ const BuildingDetails = () => {
     queryFn: () => getFloorsByBuildingId(buildingId!),
     enabled: !!buildingId,
   });
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) return toast.error("No brochure available to download.");
 
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in new tab so browser handles download; the server streams the file
+      window.open(proxyUrl, "_blank");
+      toast.success("Download starting...");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download brochure.");
+    }
+  };
   const {
     data: building,
     isLoading: buildingLoading,
@@ -382,8 +403,15 @@ const BuildingDetails = () => {
               {building.brochureUrl && (
                 <Button variant="outline" asChild className="mt-4">
                   <a
-                    href={building.brochureUrl}
-                    target="_blank"
+                    // href={building.brochureUrl}
+                    onClick={(e) =>
+                      handleDownload(
+                        e,
+                        building.brochureUrl,
+                        building.projectName
+                      )
+                    }
+                    // target="_blank"
                     rel="noopener noreferrer"
                   >
                     <FileText className="mr-2 h-4 w-4" /> Download Project
@@ -498,16 +526,28 @@ const BuildingDetails = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" asChild className="w-full">
+              <div className="relative w-full h-64 overflow-hidden rounded-lg">
+                <iframe
+                  src={building?.googleMapsLocation}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Google Maps"
+                ></iframe>
+              </div>
+
+              <p className="mt-4 text-center text-blue-600 hover:underline cursor-pointer">
                 <a
-                  href={building.googleMapsLocation}
+                  href={building?.googleMapsLocation}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center"
                 >
-                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
+                  View on Google Maps
                 </a>
-              </Button>
+              </p>
             </CardContent>
           </Card>
         )}

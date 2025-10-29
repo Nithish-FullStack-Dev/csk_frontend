@@ -245,7 +245,7 @@ const FloorUnits = () => {
             <Card
               key={apartment._id || idx}
               className="hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/properties/unit/${apartment._id}`)}
+              onClick={() => navigate(`/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`)}
             >
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -363,7 +363,9 @@ const FloorUnits = () => {
 
                       <Button
                         onClick={() =>
-                          navigate(`/properties/unit/${apartment._id}`)
+                          navigate(
+                            `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`
+                          )
                         }
                       >
                         View Full Details

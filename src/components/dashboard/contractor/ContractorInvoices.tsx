@@ -58,41 +58,19 @@ import {
   useProjects,
   useUnits,
 } from "@/utils/buildings/Projects";
-import { Building } from "@/types/building";
+import { DialogDescription } from "@radix-ui/react-dialog";
+import { useRBAC } from "@/config/RBAC";
+import Loader from "@/components/Loader";
+import {
+  fetchCompletedTasks,
+  fetchInvoices,
+  Invoice,
+  InvoiceItem,
+  useFetchInvoices,
+} from "@/utils/invoices/InvoiceConfig";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import CircleLoader from "@/components/CircleLoader";
 
-// Define interface for invoice item type
-interface InvoiceItem {
-  _id: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  rate: number;
-  amount: number;
-  taxRate: number;
-}
-
-// Define interface for invoice type
-interface Invoice {
-  id: string;
-  to: string;
-  project: Building;
-  issueDate: string;
-  dueDate: string;
-  amount: number;
-  sgst: number;
-  cgst: number;
-  total: number;
-  status: string;
-  subtotal: number;
-  paymentDate: string | null;
-  notes?: string;
-  task?: string;
-  unit: string;
-  invoiceNumber?: string;
-  items: InvoiceItem[];
-}
-
-// Form schema
 export const invoiceSchema = z.object({
   project: z.string().min(2, "Project is required"),
   issueDate: z.string().min(1, "Issue date is required"),
@@ -130,7 +108,7 @@ type InvoiceItemFormValues = z.infer<typeof invoiceItemSchema>;
 
 const ContractorInvoices = () => {
   const { user } = useAuth();
-  const [invoices, setInvoices] = useState([]);
+  // const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewInvoiceDialogOpen, setViewInvoiceDialogOpen] = useState(false);
@@ -139,15 +117,36 @@ const ContractorInvoices = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [relatedToTask, setRelatedToTask] = useState(false);
-  const [completedTasks, setCompletedTasks] = useState([]);
-  // const [projects, setProjects] = useState([]);
-  // const [selectedProject, setSelectedProject] = useState(null);
+  // const [completedTasks, setCompletedTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const query = useQueryClient();
+
+  const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
+    roleSubmodule: "Invoices",
+  });
+
+  const {
+    data: invoices = [],
+    isLoading: invoiceLoading,
+    isError: invoiceError,
+    error: fetchError,
+  } = useFetchInvoices();
+
+  const {
+    data: completedTasks = [],
+    isLoading: completedTasksLoading,
+    isError: completedTasksError,
+    error: completedTasksFetchError,
+  } = useQuery({
+    queryKey: ["completeTask"],
+    queryFn: fetchCompletedTasks,
+    staleTime: 2 * 60 * 1000,
+  });
 
   const {
     data: projects,
@@ -169,29 +168,6 @@ const ContractorInvoices = () => {
     isError: unitsByFloorError,
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
-
-  const fetchInvoices = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/invoices`,
-        {
-          withCredentials: true,
-        }
-      );
-      setInvoices(response.data);
-      setError("");
-    } catch (err) {
-      console.error("Failed to fetch invoices", err);
-      setError("Failed to fetch invoices");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -220,12 +196,10 @@ const ContractorInvoices = () => {
     mode: "onChange",
   });
 
-  const handleSubmit = async (data: InvoiceFormValues) => {
-    try {
-      console.log(data);
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (data: InvoiceFormValues) => {
       if (invoiceItems.length === 0) {
-        toast.error("Please add at least one item to the invoice");
-        return;
+        throw new Error("Please add at least one item to the invoice");
       }
 
       // Calculate subtotal
@@ -251,23 +225,22 @@ const ContractorInvoices = () => {
         subtotal,
         total: totalAmount,
         unit: data.unit,
+        floorUnit: data.floorUnit,
       };
 
-      // API call using axios
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
         { withCredentials: true }
       );
 
-      const createdInvoice = response.data;
-
+      return response.data;
+    },
+    onSuccess: async (createdInvoice) => {
       toast.success(
         `Invoice ${createdInvoice.invoiceNumber || "created"} successfully`
       );
-
-      fetchInvoices();
-      // Reset form
+      await query.invalidateQueries({ queryKey: ["invoice"] });
       form.reset({
         project: "",
         issueDate: new Date().toISOString().split("T")[0],
@@ -276,16 +249,26 @@ const ContractorInvoices = () => {
           .split("T")[0],
         sgst: 9,
         cgst: 9,
+        floorUnit: "",
+        unit: "",
+        task: null,
+        notes: "",
       });
-
       setInvoiceItems([]);
       setCreateDialogOpen(false);
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error("Invoice creation error:", error);
       toast.error(
-        error?.response?.data?.error || "Failed to create invoice. Try again."
+        error?.response?.data?.error ||
+          error?.message ||
+          "Failed to create invoice. Try again."
       );
-    }
+    },
+  });
+
+  const handleSubmit = (data: InvoiceFormValues) => {
+    createInvoiceMutation.mutate(data);
   };
 
   const addInvoiceItem = (
@@ -297,7 +280,6 @@ const ContractorInvoices = () => {
     const amount = data.quantity * data.rate;
 
     const newItem: InvoiceItem = {
-      _id: (invoiceItems.length + 1).toString(),
       description: data.description,
       quantity: data.quantity,
       unit: data.unit,
@@ -330,10 +312,27 @@ const ContractorInvoices = () => {
   // Filter invoices based on search and active tab
   let filteredInvoices = [];
   if (Array.isArray(filteredInvoices)) {
-    filteredInvoices = invoices.filter((invoice) => {
+    filteredInvoices = invoices?.filter((invoice: Invoice) => {
       const matchesSearch =
-        invoice._id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.project.toLowerCase().includes(searchQuery.toLowerCase());
+        invoice?.invoiceNumber
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase()) ||
+        invoice?.project.projectName
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase()) ||
+        invoice?.floorUnit?.floorNumber
+          .toString()
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase()) ||
+        invoice?.floorUnit?.unitType
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase()) ||
+        invoice?.unit?.plotNo
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase()) ||
+        invoice?.unit?.propertyType
+          ?.toLowerCase()
+          ?.includes(searchQuery?.toLowerCase());
 
       if (activeTab === "all") return matchesSearch;
       if (activeTab === "paid")
@@ -354,9 +353,9 @@ const ContractorInvoices = () => {
     (total, invoice) => total + invoice.total,
     0
   );
-  const paidInvoicesAmount = invoices
-    .filter((invoice) => invoice.status === "paid")
-    .reduce((total, invoice) => total + invoice.totalAmount, 0);
+  // const paidInvoicesAmount = invoices
+  //   .filter((invoice) => invoice.status === "paid")
+  //   .reduce((total, invoice) => total + invoice.totalAmount, 0);
   const pendingInvoicesAmount = invoices
     .filter(
       (invoice) => invoice.status === "pending" || invoice.status === "overdue"
@@ -379,26 +378,38 @@ const ContractorInvoices = () => {
   //   fetchDropdownData();
   // }, []);
 
-  useEffect(() => {
-    const fetchCompletedTasks = async () => {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
-          { withCredentials: true }
-        );
-        setCompletedTasks(res.data.tasks);
-      } catch (err) {
-        console.error("Error fetching completed tasks:", err);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchCompletedTasks = async () => {
+  //     try {
+  //       const res = await axios.get(
+  //         `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
+  //         { withCredentials: true }
+  //       );
+  //       setCompletedTasks(res.data.tasks);
+  //     } catch (err) {
+  //       console.error("Error fetching completed tasks:", err);
+  //     }
+  //   };
 
-    fetchCompletedTasks();
-  }, []);
+  //   fetchCompletedTasks();
+  // }, []);
 
   // useEffect(() => {
   //   const found = projects.find((proj) => proj._id === watchProject);
   //   setSelectedProject(found || null);
   // }, [watchProject, projects]);
+
+  if (completedTasksError) {
+    console.log("Failed to load completed tasks. Please try again.");
+    toast.error(completedTasksFetchError.message);
+    return null;
+  }
+
+  if (invoiceError) {
+    console.log("Failed to load invoices. Please try again.");
+    toast.error(fetchError.message);
+    return null;
+  }
 
   if (floorUnitsError) {
     console.log("Failed to load floor units. Please try again.");
@@ -417,6 +428,8 @@ const ContractorInvoices = () => {
     toast.error(dropdownError.message);
     return null;
   }
+
+  if (invoiceLoading || completedTasksLoading) return <CircleLoader />;
 
   return (
     <div className="space-y-6">
@@ -479,6 +492,8 @@ const ContractorInvoices = () => {
         </Card>
       </div>
 
+      {isRolePermissionsLoading && <CircleLoader />}
+
       {/* Search and Actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="relative flex-1">
@@ -490,9 +505,11 @@ const ContractorInvoices = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Create Invoice
-        </Button>
+        {userCanAddUser && (
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Create Invoice
+          </Button>
+        )}
       </div>
 
       {/* Tabs for filtering */}
@@ -538,62 +555,73 @@ const ContractorInvoices = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice?._id}>
-                    <TableCell className="font-medium">
-                      {invoice.invoiceNumber}
-                    </TableCell>
-                    <TableCell>
-                      {invoice.project.projectId.basicInfo.projectName +
-                        " / " +
-                        (invoice.unit || "-")}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                        {invoice.total.toLocaleString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`${
-                          invoice.status === "Paid"
-                            ? "bg-green-100 text-green-800"
-                            : invoice.status === "Pending"
-                            ? "bg-blue-100 text-blue-800"
-                            : invoice.status === "Overdue"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {invoice.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => viewInvoice(invoice)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredInvoices.map((invoice, idx) => {
+                  return (
+                    <TableRow key={invoice?._id || idx}>
+                      <TableCell className="font-medium">
+                        {invoice.invoiceNumber}
+                      </TableCell>
+                      <TableCell>
+                        {invoice?.project?.projectName +
+                          " / " +
+                          (invoice?.floorUnit?.floorNumber || "-") +
+                          " " +
+                          invoice?.floorUnit?.unitType +
+                          " / " +
+                          (invoice?.unit?.propertyType || "-") +
+                          " " +
+                          (invoice?.unit?.plotNo || "-")}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(invoice.issueDate).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "2-digit",
+                          }
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "2-digit",
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                          {invoice.total.toLocaleString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`${
+                            invoice.status === "Paid"
+                              ? "bg-green-100 text-green-800"
+                              : invoice.status === "Pending"
+                              ? "bg-blue-100 text-blue-800"
+                              : invoice.status === "Overdue"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {invoice.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => viewInvoice(invoice)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -606,9 +634,9 @@ const ContractorInvoices = () => {
               No invoices found.
             </div>
           ) : (
-            filteredInvoices.map((invoice) => (
+            filteredInvoices.map((invoice, idx) => (
               <div
-                key={invoice.id}
+                key={invoice?._id || idx}
                 className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
               >
                 <div className="flex justify-between items-center">
@@ -630,9 +658,13 @@ const ContractorInvoices = () => {
 
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Project:</span>{" "}
-                  {invoice.project.projectId.basicInfo.projectName +
+                  {invoice?.project?.projectName +
                     " / " +
-                    (invoice.unit || "-")}
+                    (invoice?.floorUnit?.floorNumber || "-") +
+                    (invoice?.floorUnit?.unitType || "-") +
+                    " / " +
+                    (invoice?.unit?.propertyType || "-") +
+                    (invoice?.unit?.plotNo || "-")}
                 </p>
 
                 <p className="text-sm text-gray-600">
@@ -680,6 +712,9 @@ const ContractorInvoices = () => {
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>
+          <DialogDescription>
+            Fill in the details below to create a new invoice.
+          </DialogDescription>
 
           <Form {...form}>
             <form
@@ -694,8 +729,11 @@ const ContractorInvoices = () => {
                     <FormItem>
                       <FormLabel>Building</FormLabel>
                       <Select
-                        value={selectedProject}
-                        onValueChange={setSelectedProject}
+                        value={field.value}
+                        onValueChange={(value) => {
+                          setSelectedProject(value);
+                          field.onChange(value);
+                        }}
                         disabled={projectLoading}
                       >
                         <FormControl>
@@ -734,13 +772,16 @@ const ContractorInvoices = () => {
 
                 <FormField
                   control={form.control}
-                  name="unit"
+                  name="floorUnit"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Floor Unit</FormLabel>
                       <Select
-                        value={selectedFloorUnit}
-                        onValueChange={setSelectedFloorUnit}
+                        value={field.value}
+                        onValueChange={(value) => {
+                          setSelectedFloorUnit(value);
+                          field.onChange(value);
+                        }}
                         disabled={
                           floorUnitsLoading ||
                           !floorUnits ||
@@ -793,8 +834,11 @@ const ContractorInvoices = () => {
                     <FormItem>
                       <FormLabel>Unit</FormLabel>
                       <Select
-                        value={selectedUnit}
-                        onValueChange={setSelectedUnit}
+                        onValueChange={(value) => {
+                          setSelectedUnit(value);
+                          field.onChange(value);
+                        }}
+                        value={field.value}
                         disabled={
                           unitsByFloorLoading ||
                           !unitsByFloor ||
@@ -830,7 +874,7 @@ const ContractorInvoices = () => {
                                 key={unit._id || idx}
                                 value={unit._id}
                               >
-                                Plot {unit.plotNo}, {unit.propertyType}
+                                Plot {unit?.plotNo}, {unit?.propertyType}
                               </SelectItem>
                             ))
                           )}
@@ -1019,8 +1063,8 @@ const ContractorInvoices = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {invoiceItems.map((item) => (
-                          <TableRow key={item._id}>
+                        {invoiceItems.map((item, idx) => (
+                          <TableRow key={item._id || idx}>
                             <TableCell>{item.description}</TableCell>
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>{item.unit}</TableCell>
@@ -1278,7 +1322,14 @@ const ContractorInvoices = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Invoice</Button>
+                <Button
+                  type="submit"
+                  disabled={createInvoiceMutation.isPending}
+                >
+                  {createInvoiceMutation.isPending
+                    ? "Creating Invoice"
+                    : "Create Invoice"}
+                </Button>
               </div>
             </form>
           </Form>
@@ -1294,7 +1345,7 @@ const ContractorInvoices = () => {
           <DialogContent className="w-full md:max-w-[800px] max-w-[95vw] max-h-[90vh] overflow-auto rounded-xl p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-lg md:text-xl font-semibold">
-                Invoice {selectedInvoice.id}
+                Invoice {selectedInvoice._id}
               </DialogTitle>
             </DialogHeader>
 
@@ -1356,7 +1407,13 @@ const ContractorInvoices = () => {
                     <p>
                       {selectedInvoice.project?.projectName +
                         " / " +
-                        (selectedInvoice.unit || "-")}
+                        (selectedInvoice?.floorUnit?.floorNumber || "-") +
+                        " " +
+                        (selectedInvoice?.floorUnit?.unitType || "-") +
+                        " / " +
+                        (selectedInvoice?.unit?.propertyType || "-") +
+                        " " +
+                        (selectedInvoice?.unit?.plotNo || "-")}
                     </p>
                   </div>
                   {selectedInvoice.paymentDate && (

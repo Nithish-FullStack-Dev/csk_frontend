@@ -4,11 +4,12 @@ export interface PhotoEvidence {
   id: string;
   title: string;
   project: string;
+  floorUnit?: string;
   unit: string;
   task: string;
   date: string;
   category: string;
-  status: 'completed' | 'in_progress' | 'pending_review';
+  status: "completed" | "in_progress" | "pending_review";
   images: { url: string; caption: string }[];
 }
 
@@ -29,16 +30,16 @@ export interface TaskData {
 export const defaultProjects: ProjectData[] = [
   {
     name: "Riverside Tower",
-    units: ["Block A", "Block B", "Block C", "Block D"]
+    units: ["Block A", "Block B", "Block C", "Block D"],
   },
   {
     name: "Valley Heights",
-    units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5"]
+    units: ["Unit 1", "Unit 2", "Unit 3", "Unit 4", "Unit 5"],
   },
   {
     name: "Green Villa",
-    units: ["Villa 1", "Villa 2", "Villa 3"]
-  }
+    units: ["Villa 1", "Villa 2", "Villa 3"],
+  },
 ];
 
 export const defaultTasks: TaskData[] = [
@@ -47,20 +48,20 @@ export const defaultTasks: TaskData[] = [
     title: "Foundation concrete pouring",
     project: "Riverside Tower",
     unit: "Block A",
-    phase: "groundwork_foundation"
+    phase: "groundwork_foundation",
   },
   {
     id: "task2",
     title: "Wall framing",
     project: "Valley Heights",
     unit: "Unit 3",
-    phase: "structural_framework"
+    phase: "structural_framework",
   },
   {
     id: "task3",
     title: "Electrical installation",
     project: "Green Villa",
     unit: "Villa 2",
-    phase: "electrical_works"
-  }
+    phase: "electrical_works",
+  },
 ];

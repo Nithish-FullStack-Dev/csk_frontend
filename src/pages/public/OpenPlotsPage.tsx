@@ -24,43 +24,30 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Property } from "@/types/property";
 import { OpenPlot } from "@/types/OpenPlots";
+import { useOpenPlots } from "@/utils/public/Config";
+import CircleLoader from "@/components/CircleLoader";
 
 const OpenPlotsPage = () => {
   const navigate = useNavigate();
-  const [plotProjects, setPlotProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  // const [plotProjects, setPlotProjects] = useState([]);
+  // const [loading, setLoading] = useState(false);
+  // const [isError, setIsError] = useState(false);
 
-  const fetchOpenPlots = async () => {
-    if (loading) return;
-    try {
-      setLoading(true);
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`
-      );
-      const projectsWithCoords: OpenPlot[] = data.plots.map(
-        (item: OpenPlot) => {
-          return {
-            ...item,
-            googleMapsLocation: item.googleMapsLink || "",
-          };
-        }
-      );
+  const {
+    data: plotProjects,
+    isLoading: openPlotsLoading,
+    isError: openPlotsError,
+    error: openPlotsErr,
+    refetch,
+  } = useOpenPlots();
 
-      setPlotProjects(projectsWithCoords);
-      setIsError(false);
-    } catch (error) {
-      console.error("Failed to fetch open plots:", error);
-      toast.error("Failed to load open plots.");
-      setIsError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOpenPlots();
-  }, []);
+  if (openPlotsError) {
+    toast.error(openPlotsErr.message);
+    console.log("Upcoming properties error:", openPlotsErr);
+  }
+  if (openPlotsLoading) {
+    return <CircleLoader />;
+  }
   const amenities = [
     {
       icon: TreePine,
@@ -137,10 +124,6 @@ const OpenPlotsPage = () => {
     hidden: { y: 20, opacity: 0 },
     show: { y: 0, opacity: 1, transition: { duration: 0.6, ease: easeOut } },
   };
-
-  useEffect(() => {
-    // window.scrollTo(0, 0);
-  }, []);
 
   return (
     <PublicLayout>
@@ -246,19 +229,19 @@ const OpenPlotsPage = () => {
               </p>
             </div>
 
-            {loading ? (
+            {openPlotsLoading ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-gray-600 animate-pulse">
                   Please wait...
                 </h1>
               </div>
-            ) : isError ? (
+            ) : openPlotsError ? (
               <div className="text-center py-10">
                 <h1 className="text-lg text-red-500 mb-4">
                   Something went wrong...
                 </h1>
                 <button
-                  onClick={fetchOpenPlots}
+                  onClick={() => refetch()}
                   className="px-4 py-2 flex items-center justify-center gap-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
                 >
                   retry
@@ -271,7 +254,7 @@ const OpenPlotsPage = () => {
                 whileInView="show"
                 viewport={{ once: true, amount: 0.3 }}
               >
-                {plotProjects.map((plot: OpenPlot) => (
+                {plotProjects?.plots?.map((plot: OpenPlot) => (
                   <CardContainer key={plot._id} className="inter-var">
                     <CardBody
                       className="
@@ -292,8 +275,8 @@ const OpenPlotsPage = () => {
                       {/* Image */}
                       <CardItem translateZ={80} className="w-full mt-3">
                         <img
-                          src={plot.thumbnailUrl}
-                          alt={plot.projectName}
+                          src={plot?.thumbnailUrl}
+                          alt={plot?.projectName}
                           className="h-44 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
                         />
                       </CardItem>
@@ -303,7 +286,7 @@ const OpenPlotsPage = () => {
                         translateZ={30}
                         className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
                       >
-                        {plot.projectName}
+                        {plot?.projectName}
                       </CardItem>
                       {/* Info */}
                       <div className="mt-3 space-y-1">
@@ -314,10 +297,10 @@ const OpenPlotsPage = () => {
                                              <span>{project.location}</span> */}
                           </div>
                           {/* Map */}
-                          {plot.googleMapsLink ? (
+                          {plot?.googleMapsLink ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
                               <iframe
-                                src={plot.googleMapsLink}
+                                src={plot?.googleMapsLink}
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
@@ -339,15 +322,15 @@ const OpenPlotsPage = () => {
                           translateZ={20}
                           className="text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                         >
-                          Plot Type: {plot.plotType || "-"}
+                          Plot Type: {plot?.plotType || "-"}
                         </CardItem>
 
-                        <CardItem
+                        {/* <CardItem
                           translateZ={20}
                           className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400"
                         >
                           ₹{plot.totalAmount.toLocaleString()}
-                        </CardItem>
+                        </CardItem> */}
                       </div>
 
                       {/* Button */}
@@ -359,7 +342,7 @@ const OpenPlotsPage = () => {
                           <CardItem
                             translateZ={30}
                             as="button"
-                            className="w-full px-4 py-2 rounded-full bg-black dark:bg-white text-white dark:text-black text-xs sm:text-sm font-medium transition-colors hover:opacity-90"
+                            className="w-full px-4 py-2 rounded-full bg-slate-600 dark:bg-white text-white dark:text-black text-xs sm:text-sm font-medium transition-colors hover:opacity-90"
                           >
                             View Details
                           </CardItem>

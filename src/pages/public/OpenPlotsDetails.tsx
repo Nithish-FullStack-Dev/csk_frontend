@@ -36,6 +36,7 @@ import Autoplay from "embla-carousel-autoplay";
 // --- Skeleton Loader Import ---
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
 import { OpenPlot } from "@/components/public/OpenPlotInterface";
+import { toast } from "sonner";
 
 // --- Horizontal line for better separation ---
 
@@ -211,9 +212,34 @@ const OpenPlotsDetails = () => {
   // --- END MODIFIED GALLERY IMAGES LOGIC ---
 
   const developer = {
-    name: "Elite Homes Pvt. Ltd.",
+    name: "CSK Real Estate",
     experience: "15+ years of experience",
     projects: "Delivered 50+ successful projects",
+  };
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No brochure available to download.");
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      // Open in a new tab so browser handles the download (server redirects to signed Cloudinary URL)
+      window.open(proxyUrl, "_blank", "noopener,noreferrer");
+      toast.success("Download starting...");
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to download brochure.");
+    }
   };
 
   const showCarousel = galleryImages.length > 3;
@@ -254,10 +280,10 @@ const OpenPlotsDetails = () => {
             <h1 className="text-4xl md:text-5xl font-md font-vidaloka mb-3 leading-tight drop-shadow-lg text-gold-100">
               {title}
             </h1>
-            <p className="text-xl md:text-2xl flex items-center font-medium drop-shadow-md text-gold-300">
+            {/* <p className="text-xl md:text-2xl flex items-center font-medium drop-shadow-md text-gold-300">
               <MapPin className="mr-3 h-6 w-6 text-gold-400" />
               {location}
-            </p>
+            </p> */}
           </div>
         </div>
       </section>
@@ -457,9 +483,9 @@ const OpenPlotsDetails = () => {
               {/* Price & CTA */}
               <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
                 <CardContent className="p-6 text-center space-y-5">
-                  <div className="text-4xl font-extrabold text-gold-700">
+                  {/* <div className="text-4xl font-extrabold text-gold-700">
                     {price}
-                  </div>
+                  </div> */}
                   <div className="space-y-3">
                     <Button
                       className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
@@ -477,6 +503,13 @@ const OpenPlotsDetails = () => {
                     <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      onClick={(e) =>
+                        handleDownload(
+                          e,
+                          openPlot?.brochureUrl,
+                          openPlot?.projectName
+                        )
+                      }
                     >
                       <Mail className="mr-3 h-5 w-5" />
                       Get Brochure

@@ -203,15 +203,30 @@ const Payments = () => {
   }, []);
 
   const filteredPayments = payments.filter((payment) => {
+    const invoice = payment?.invoice;
+    // if invoice is missing, skip this payment
+    if (!invoice) return false;
+
+    // match payment method (support array or string)
     const matchesMethod = filters.paymentMethod
-      ? payment.invoice.paymentMethod === filters.paymentMethod
+      ? Array.isArray(invoice.paymentMethod)
+        ? invoice.paymentMethod.includes(filters.paymentMethod)
+        : invoice.paymentMethod === filters.paymentMethod
       : true;
 
-    const paymentDate = new Date(payment.invoice.paymentDate);
-    const matchesDateRange =
-      filters.startDate && filters.endDate
-        ? paymentDate >= filters.startDate && paymentDate <= filters.endDate
-        : true;
+    // match date range only when filters.startDate & filters.endDate exist AND invoice.paymentDate exists
+    let matchesDateRange = true;
+    if (filters.startDate && filters.endDate && invoice.paymentDate) {
+      const paymentDate = new Date(invoice.paymentDate);
+
+      // normalize range to include full days (optional but usually desired)
+      const start = new Date(filters.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+
+      matchesDateRange = paymentDate >= start && paymentDate <= end;
+    }
 
     return matchesMethod && matchesDateRange;
   });
@@ -221,7 +236,7 @@ const Payments = () => {
       "Payment ID": payment.paymentNumber,
       Reference: payment.invoice.invoiceNumber,
       Property:
-        payment.invoice.project.projectId.basicInfo.projectName +
+        payment?.invoice.project?.projectId?.projectName +
         " / " +
         payment.invoice.unit,
       Amount: payment.invoice.total,
@@ -390,45 +405,74 @@ const Payments = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredPayments.map((payment) => (
-                      <TableRow key={payment._id}>
+                      <TableRow key={payment?._id}>
+                        {/* Payment Number */}
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <Receipt className="h-4 w-4 text-muted-foreground" />
-                            {payment.paymentNumber}
+                            {payment?.paymentNumber || "-"}
                           </div>
                         </TableCell>
-                        <TableCell>{payment.invoice.invoiceNumber}</TableCell>
+
+                        {/* Invoice Number */}
                         <TableCell>
-                          {payment.invoice.project.projectId.basicInfo
-                            .projectName +
-                            " / " +
-                            payment.invoice.unit}
+                          {payment?.invoice?.invoiceNumber || "-"}
                         </TableCell>
-                        {/* <TableCell>{payment.client}</TableCell> */}
+
+                        {/* Project Name / Unit */}
                         <TableCell>
-                          ₹{payment.invoice.total.toLocaleString()}
+                          {payment?.invoice?.project?.projectName +
+                            " / floor Number -" +
+                            payment?.invoice?.floorUnit?.floorNumber +
+                            "/ Plot No -" +
+                            payment?.invoice?.unit?.plotNo}
+                          {/* {payment?.invoice?.project?.projectId?.projectName ||
+                          payment?.invoice?.unit?.unitName
+                            ? `${
+                                payment.invoice?.project?.projectId
+                                  ?.projectName || "-"
+                              } / ${payment.invoice?.unit?.unitName || "-"}`
+                            : "-"} */}
                         </TableCell>
+
+                        {/* Total Amount */}
+                        <TableCell>
+                          ₹
+                          {payment?.invoice?.total
+                            ? payment.invoice.total.toLocaleString()
+                            : "0"}
+                        </TableCell>
+
+                        {/* Payment Method(s) */}
                         <TableCell className="space-x-1">
-                          {Array.isArray(payment.invoice.paymentMethod) ? (
+                          {Array.isArray(payment?.invoice?.paymentMethod) ? (
                             [...new Set(payment.invoice.paymentMethod)].map(
                               (method: string, index: number) => (
                                 <span
                                   key={index}
                                   className="inline-block bg-muted px-2 py-1 text-xs rounded-md text-muted-foreground"
                                 >
-                                  {method.toUpperCase()}
+                                  {method?.toUpperCase() || "-"}
                                 </span>
                               )
                             )
                           ) : (
-                            <span>{payment.invoice.paymentMethod}</span>
+                            <span>
+                              {payment?.invoice?.paymentMethod || "-"}
+                            </span>
                           )}
                         </TableCell>
+
+                        {/* Payment Date */}
                         <TableCell>
-                          {new Date(
-                            payment.invoice.paymentDate
-                          ).toLocaleDateString()}
+                          {payment?.invoice?.paymentDate
+                            ? new Date(
+                                payment.invoice.paymentDate
+                              ).toLocaleDateString()
+                            : "-"}
                         </TableCell>
+
+                        {/* Actions */}
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -441,14 +485,17 @@ const Payments = () => {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
+
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
                               <DropdownMenuItem
                                 onClick={() => handleViewReceipt(payment)}
                               >
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
+
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedPayment(payment);
@@ -458,6 +505,7 @@ const Payments = () => {
                                 <FileText className="mr-2 h-4 w-4" />
                                 View Invoice
                               </DropdownMenuItem>
+
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedPayment(payment);
@@ -467,7 +515,9 @@ const Payments = () => {
                                 <Printer className="mr-2 h-4 w-4" />
                                 Print Receipt
                               </DropdownMenuItem>
+
                               <DropdownMenuSeparator />
+
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedPayment(payment);
@@ -508,34 +558,40 @@ const Payments = () => {
                     <div className="mt-2 space-y-1 text-sm">
                       <div>
                         <span className="font-semibold">Reference: </span>
-                        {payment.invoice.invoiceNumber}
+                        {payment.invoice?.invoiceNumber || "N/A"}
                       </div>
+
                       <div>
                         <span className="font-semibold">Property: </span>
-                        {payment.invoice.project.projectId.basicInfo
-                          .projectName +
-                          " / " +
-                          payment.invoice.unit}
+                        {payment.invoice?.project?.projectId?.projectName
+                          ? `${
+                              payment.invoice.project.projectId.projectName
+                            } / ${payment.invoice?.unit || "N/A"}`
+                          : "N/A"}
                       </div>
+
                       <div>
                         <span className="font-semibold">Amount: </span>₹
-                        {payment.invoice.total.toLocaleString()}
+                        {payment.invoice?.total
+                          ? payment.invoice.total.toLocaleString()
+                          : "0"}
                       </div>
+
                       <div>
                         <span className="font-semibold">Method: </span>
-                        {Array.isArray(payment.invoice.paymentMethod) ? (
+                        {Array.isArray(payment.invoice?.paymentMethod) ? (
                           [...new Set(payment.invoice.paymentMethod)].map(
                             (method: string, index: number) => (
                               <span
                                 key={index}
                                 className="inline-block bg-muted px-2 py-1 text-xs rounded-md text-muted-foreground mr-1"
                               >
-                                {method.toUpperCase()}
+                                {method?.toUpperCase() || "N/A"}
                               </span>
                             )
                           )
                         ) : (
-                          <span>{payment.invoice.paymentMethod}</span>
+                          <span>{payment.invoice?.paymentMethod || "N/A"}</span>
                         )}
                       </div>
                     </div>
@@ -614,37 +670,39 @@ const Payments = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="font-semibold">Invoice Number</p>
-                        <p>{selectedPayment.invoice.invoiceNumber}</p>
+                        <p>{selectedPayment?.invoice?.invoiceNumber}</p>
                       </div>
                       <div>
                         <p className="font-semibold">Project / Unit</p>
                         <p>
                           {
-                            selectedPayment.invoice.project.projectId.basicInfo
-                              .projectName
+                            selectedPayment?.invoice?.project?.projectId
+                              ?.projectName
                           }{" "}
-                          / {selectedPayment.invoice.unit}
+                          / {selectedPayment?.invoice?.unit}
                         </p>
                       </div>
                       <div>
                         <p className="font-semibold">Paid By</p>
                         <p>
-                          {selectedPayment.accountant?.name || "Accountant"}
+                          {selectedPayment?.accountant?.name || "Accountant"}
                         </p>
                       </div>
                       <div>
                         <p className="font-semibold">Payment Method</p>
-                        <p>{selectedPayment.invoice.paymentMethod}</p>
+                        <p>{selectedPayment?.invoice?.paymentMethod}</p>
                       </div>
                       <div>
                         <p className="font-semibold">Amount</p>
-                        <p>₹{selectedPayment.invoice.total.toLocaleString()}</p>
+                        <p>
+                          ₹{selectedPayment?.invoice?.total?.toLocaleString()}
+                        </p>
                       </div>
                       <div>
                         <p className="font-semibold">Payment Date</p>
                         <p>
                           {new Date(
-                            selectedPayment.invoice.paymentDate
+                            selectedPayment?.invoice?.paymentDate
                           ).toLocaleDateString()}
                         </p>
                       </div>
@@ -655,19 +713,19 @@ const Payments = () => {
                     <div className="text-xs text-muted-foreground">
                       Issued on:{" "}
                       {new Date(
-                        selectedPayment.invoice.issueDate
+                        selectedPayment?.invoice?.issueDate
                       ).toLocaleDateString()}{" "}
                       <br />
                       Due Date:{" "}
                       {new Date(
-                        selectedPayment.invoice.dueDate
+                        selectedPayment?.invoice?.dueDate
                       ).toLocaleDateString()}
                     </div>
 
-                    {selectedPayment.invoice.notes && (
+                    {selectedPayment?.invoice?.notes && (
                       <div className="mt-2">
                         <p className="font-semibold">Notes</p>
-                        <p>{selectedPayment.invoice.notes}</p>
+                        <p>{selectedPayment?.invoice?.notes}</p>
                       </div>
                     )}
                   </div>
@@ -691,21 +749,21 @@ const Payments = () => {
                       <div>
                         <h3 className="font-bold text-xl">INVOICE</h3>
                         <p className="text-muted-foreground">
-                          {selectedPayment.invoice.invoiceNumber}
+                          {selectedPayment?.invoice?.invoiceNumber}
                         </p>
                       </div>
                       <Badge
                         className={`${
-                          selectedPayment.invoice.status === "Paid"
+                          selectedPayment?.invoice?.status === "Paid"
                             ? "bg-green-100 text-green-800"
-                            : selectedPayment.invoice.status === "Pending"
+                            : selectedPayment?.invoice?.status === "Pending"
                             ? "bg-blue-100 text-blue-800"
-                            : selectedPayment.invoice.status === "Overdue"
+                            : selectedPayment?.invoice?.status === "Overdue"
                             ? "bg-red-100 text-red-800"
                             : "bg-gray-100 text-gray-800"
                         } text-sm py-1 px-3`}
                       >
-                        {selectedPayment.invoice.status}
+                        {selectedPayment?.invoice?.status}
                       </Badge>
                     </div>
 
@@ -722,7 +780,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment.invoice.issueDate
+                              selectedPayment?.invoice?.issueDate
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -736,7 +794,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment.invoice.issueDate
+                              selectedPayment?.invoice?.issueDate
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -749,8 +807,8 @@ const Payments = () => {
                             Project:
                           </p>
                           <p>
-                            {selectedPayment.invoice.project.projectId.basicInfo
-                              .projectName || "-"}
+                            {selectedPayment?.invoice?.project?.projectId
+                              ?.projectName || "-"}
                           </p>
                         </div>
                         {selectedPayment.invoice.paymentDate && (
@@ -760,7 +818,7 @@ const Payments = () => {
                             </p>
                             <p>
                               {new Date(
-                                selectedPayment.invoice.paymentDate
+                                selectedPayment?.invoice?.paymentDate
                               ).toLocaleDateString("en-GB", {
                                 day: "2-digit",
                                 month: "2-digit",
@@ -786,17 +844,17 @@ const Payments = () => {
                         </TableHeader>
                         <TableBody>
                           {/* Use sample items when viewing an invoice */}
-                          {selectedPayment.invoice.items.map((item) => (
-                            <TableRow key={item._id}>
-                              <TableCell>{item.description}</TableCell>
+                          {selectedPayment?.invoice?.items.map((item) => (
+                            <TableRow key={item?._id}>
+                              <TableCell>{item?.description}</TableCell>
                               <TableCell>
-                                {item.quantity} {item.unit}
+                                {item?.quantity} {item?.unit}
                               </TableCell>
                               <TableCell>
-                                ₹{item.rate.toLocaleString()}
+                                ₹{item?.rate.toLocaleString()}
                               </TableCell>
                               <TableCell>
-                                ₹{item.amount.toLocaleString()}
+                                ₹{item?.amount.toLocaleString()}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -811,32 +869,33 @@ const Payments = () => {
                             Subtotal:
                           </span>
                           <span>
-                            ₹{selectedPayment.invoice.subtotal.toLocaleString()}
+                            ₹
+                            {selectedPayment?.invoice?.subtotal.toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            SGST ({selectedPayment.invoice.sgst}%):
+                            SGST ({selectedPayment?.invoice?.sgst}%):
                           </span>
                           <span>
                             ₹
                             {(
                               selectedPayment.invoice.subtotal *
-                              (selectedPayment.invoice.sgst / 100)
+                              (selectedPayment?.invoice?.sgst / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            CGST ({selectedPayment.invoice.cgst}%):
+                            CGST ({selectedPayment?.invoice?.cgst}%):
                           </span>
                           <span>
                             ₹
                             {(
-                              selectedPayment.invoice.subtotal *
-                              (selectedPayment.invoice.cgst / 100)
+                              selectedPayment?.invoice?.subtotal *
+                              (selectedPayment?.invoice?.cgst / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
@@ -846,17 +905,17 @@ const Payments = () => {
                         <div className="flex justify-between font-bold">
                           <span>Total Amount:</span>
                           <span>
-                            ₹{selectedPayment.invoice.total.toLocaleString()}
+                            ₹{selectedPayment?.invoice?.total.toLocaleString()}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {selectedPayment.invoice.notes && (
+                    {selectedPayment?.invoice?.notes && (
                       <div>
                         <h4 className="text-sm font-medium">Notes:</h4>
                         <p className="text-muted-foreground">
-                          {selectedPayment.invoice.notes}
+                          {selectedPayment?.invoice?.notes}
                         </p>
                       </div>
                     )}
@@ -897,8 +956,8 @@ const Payments = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {invoices.map((invoice) => (
-                        <SelectItem key={invoice._id} value={invoice._id}>
-                          {invoice.invoiceNumber}
+                        <SelectItem key={invoice?._id} value={invoice?._id}>
+                          {invoice?.invoiceNumber}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -966,7 +1025,8 @@ const Payments = () => {
                   <div>
                     <Label htmlFor="invoiceId">Invoice Number</Label>
                     <p>
-                      {selectedPayment && selectedPayment.invoice.invoiceNumber}
+                      {selectedPayment &&
+                        selectedPayment?.invoice?.invoiceNumber}
                     </p>
                   </div>
 
@@ -981,12 +1041,12 @@ const Payments = () => {
                         <SelectValue placeholder="Select invoice item" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedPayment?.invoice.items.map((item, index) => (
+                        {selectedPayment?.invoice?.items.map((item, index) => (
                           <SelectItem
                             key={index}
-                            value={item._id || index.toString()}
+                            value={item?._id || index.toString()}
                           >
-                            {item.description}
+                            {item?.description}
                           </SelectItem>
                         ))}
                       </SelectContent>

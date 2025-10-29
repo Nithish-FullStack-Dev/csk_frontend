@@ -105,35 +105,15 @@ import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 
 const queryClient = new QueryClient({
-  defaultOptions:{
-    queries:{
+  defaultOptions: {
+    queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnMount:false,
+      refetchOnMount: false,
       refetchInterval: false,
-      refetchOnWindowFocus:false,
-    }
-  }
+      refetchOnWindowFocus: false,
+    },
+  },
 });
-
-const PROPERTIES = [
-  "admin",
-  "owner",
-  "agent",
-  "sales_manager",
-  "team_lead",
-  "customer_purchased",
-];
-const OWNER_ADMIN = ["admin", "owner"];
-const ADMIN_SALES = ["admin", "sales_manager"];
-const ADMIN = ["admin"];
-const OWNER = ["owner"];
-const AGENT = ["agent", "admin"];
-const LEAD = ["team_lead", "admin"];
-const SALES = ["sales_manager", "admin"];
-const SITE = ["site_incharge", "admin"];
-const CONTRACTOR = ["contractor", "admin"];
-const ACCOUNTANT = ["accountant", "admin"];
-const CUSTOMER_PURCHASED = ["customer_purchased"];
 
 const App = () => {
   const [allRoles, setAllRoles] = useState([]);
@@ -407,7 +387,7 @@ const App = () => {
                 }
               />
               <Route
-                path="/properties/unit/:unitId"
+                path="/properties/building/:buildingId/floor/:floorId/unit/:unitId"
                 element={
                   <ProtectedRoute
                     allowedRoles={allRoles}
