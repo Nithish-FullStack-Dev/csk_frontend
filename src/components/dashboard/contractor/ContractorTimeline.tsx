@@ -1,180 +1,232 @@
-
-import React from 'react';
-import { Calendar, Clock, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+// src/pages/ContractorTimeline.tsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+interface Task {
+  _id: string;
+  title: string;
+  contractor: string;
+  statusForContractor: string;
+  statusForSiteIncharge: string;
+  deadline: string;
+  progressPercentage: number;
+  constructionPhase: string;
+  priority?: string;
+  description?: string;
+  submittedByContractorOn?: string;
+}
+
+interface Project {
+  _id: string;
+  projectId: {
+    _id: string;
+    projectName: string;
+    location: string;
+  };
+  floorUnit: {
+    _id: string;
+    floorNumber: number;
+    unitType: string;
+  };
+  unit: {
+    _id: string;
+    plotNo: string;
+    propertyType: string;
+  };
+  startDate: string;
+  endDate: string;
+  status: string;
+  units: Record<string, Task[]>;
+  description?: string;
+}
 
 interface TimelineItem {
   id: string;
   title: string;
   project: string;
   unit: string;
-  date: string;
   startDate: string;
   endDate: string;
-  status: 'completed' | 'in_progress' | 'upcoming' | 'delayed';
-  type: 'milestone' | 'task' | 'inspection';
-  dependency?: string;
-  description: string;
+  status: string;
+  type: string;
+  description?: string;
 }
 
-// Sample timeline data
-const timelineData: TimelineItem[] = [
-  {
-    id: 't1',
-    title: 'Foundation Completion',
-    project: 'Riverside Tower',
-    unit: 'Block A',
-    date: '2025-04-10',
-    startDate: '2025-03-20',
-    endDate: '2025-04-10',
-    status: 'completed',
-    type: 'milestone',
-    description: 'Complete foundation work including concrete curing'
-  },
-  {
-    id: 't2',
-    title: 'Structural Framework Begin',
-    project: 'Riverside Tower',
-    unit: 'Block A',
-    date: '2025-04-12',
-    startDate: '2025-04-12',
-    endDate: '2025-05-15',
-    status: 'in_progress',
-    type: 'task',
-    dependency: 't1',
-    description: 'Begin structural column formwork and reinforcement'
-  },
-  {
-    id: 't3',
-    title: 'Quality Inspection',
-    project: 'Riverside Tower',
-    unit: 'Block A',
-    date: '2025-04-20',
-    startDate: '2025-04-20',
-    endDate: '2025-04-20',
-    status: 'upcoming',
-    type: 'inspection',
-    dependency: 't2',
-    description: 'First floor column and beam inspection'
-  },
-  {
-    id: 't4',
-    title: 'Concrete Pouring - First Floor',
-    project: 'Riverside Tower',
-    unit: 'Block A',
-    date: '2025-04-25',
-    startDate: '2025-04-25',
-    endDate: '2025-04-27',
-    status: 'upcoming',
-    type: 'task',
-    dependency: 't3',
-    description: 'Pour concrete for first floor columns and beams'
-  },
-  {
-    id: 't5',
-    title: 'Foundation Work',
-    project: 'Valley Heights',
-    unit: 'Unit 4',
-    date: '2025-04-05',
-    startDate: '2025-03-25',
-    endDate: '2025-04-05',
-    status: 'delayed',
-    type: 'task',
-    description: 'Foundation work delayed due to unexpected soil condition'
-  },
-  {
-    id: 't6',
-    title: 'Masonry Work Begin',
-    project: 'Green Villa',
-    unit: 'Villa 2',
-    date: '2025-04-15',
-    startDate: '2025-04-15',
-    endDate: '2025-04-30',
-    status: 'upcoming',
-    type: 'task',
-    description: 'Start brickwork for ground floor walls'
-  }
-];
-
-const statusColors = {
-  completed: 'bg-green-100 text-green-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  upcoming: 'bg-purple-100 text-purple-800',
-  delayed: 'bg-red-100 text-red-800'
+const statusColors: Record<string, string> = {
+  completed: "bg-green-100 text-green-800",
+  "In progress": "bg-blue-100 text-blue-800",
+  upcoming: "bg-purple-100 text-purple-800",
+  delayed: "bg-red-100 text-red-800",
+  "pending verification": "bg-yellow-100 text-yellow-800",
 };
 
-const typeIcons = {
+const typeIcons: Record<string, JSX.Element> = {
   milestone: <CheckCircle className="h-4 w-4 mr-1" />,
   task: <Clock className="h-4 w-4 mr-1" />,
-  inspection: <Loader2 className="h-4 w-4 mr-1" />
+  inspection: <Loader2 className="h-4 w-4 mr-1" />,
 };
 
-const ContractorTimeline = () => {
-  const sortedTimeline = [...timelineData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  
-  // Group timeline items by project
-  const groupedByProject: Record<string, TimelineItem[]> = sortedTimeline.reduce((groups, item) => {
-    if (!groups[item.project]) {
-      groups[item.project] = [];
-    }
-    groups[item.project].push(item);
-    return groups;
-  }, {} as Record<string, TimelineItem[]>);
+const ContractorTimeline: React.FC = () => {
+  // const [timelineData, setTimelineData] = useState<TimelineItem[]>([]);
+  // const [loading, setLoading] = useState(true);
+
+  const {
+    data: timelineData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<TimelineItem[]>({
+    queryKey: ["timeline"],
+    queryFn: async () => {
+      const { data } = await axios.get<Project[]>(
+        `${import.meta.env.VITE_URL}/api/project/projects`,
+        {
+          withCredentials: true,
+        }
+      );
+      const transformed: TimelineItem[] = [];
+
+      data.forEach((project) => {
+        Object.entries(project?.units || {}).forEach(([unitId, tasks]) => {
+          tasks.forEach((task) => {
+            transformed.push({
+              id: task._id,
+              title: task.title,
+              project: project.projectId?.projectName || "Unnamed Project",
+              unit: project.unit?.plotNo || "N/A",
+              startDate: project.startDate,
+              endDate: task.deadline,
+              status:
+                task.statusForContractor ||
+                task.statusForSiteIncharge ||
+                "upcoming",
+              type: "task",
+              description: project?.description || "No description",
+            });
+          });
+        });
+      });
+
+      // Sort by date
+      return transformed.sort(
+        (a, b) =>
+          new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      );
+    },
+  });
+
+  if (isError) {
+    toast.error(error.message);
+    console.log("Failed to load time line projects", error);
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+        <span className="ml-2 text-gray-600">Loading timeline...</span>
+      </div>
+    );
+  }
+
+  if (!timelineData.length) {
+    return (
+      <div className="text-center text-gray-500 py-10">
+        No project tasks available.
+      </div>
+    );
+  }
+  const groupedByProject: Record<string, TimelineItem[]> = timelineData?.reduce(
+    (groups, item) => {
+      if (!groups[item.project]) {
+        groups[item.project] = [];
+      }
+      groups[item.project].push(item);
+      return groups;
+    },
+    {} as Record<string, TimelineItem[]>
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'in_progress':
+      case "In progress":
         return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'upcoming':
+      case "upcoming":
         return <Calendar className="h-4 w-4 text-purple-500" />;
-      case 'delayed':
+      case "delayed":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case "pending verification":
+        return <Loader2 className="h-4 w-4 text-yellow-500" />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {Object.entries(groupedByProject).map(([project, items]) => (
-        <div key={project} className="space-y-3">
-          <h3 className="font-semibold text-lg">{project}</h3>
+        <div key={project} className="space-y-4">
+          <h3 className="font-semibold text-lg text-gray-800">{project}</h3>
           <div className="space-y-3 pl-4 border-l-2 border-gray-200">
             {items.map((item) => (
               <div key={item.id} className="relative">
-                <div className="absolute w-3 h-3 rounded-full bg-estate-blue -left-[1.65rem] top-2"></div>
-                <div className="p-4 border rounded-lg">
+                <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[1.65rem] top-2"></div>
+                <div className="p-4 border rounded-lg hover:shadow-md transition">
                   <div className="flex flex-wrap justify-between mb-2">
                     <div className="flex items-center">
                       <h4 className="font-medium text-md mr-2">{item.title}</h4>
-                      <Badge variant="secondary" className={`${statusColors[item.status]}`}>
+                      <Badge
+                        variant="secondary"
+                        className={`${
+                          statusColors[item.status] || "bg-gray-100"
+                        }`}
+                      >
                         {getStatusIcon(item.status)}
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        {item.status.charAt(0).toUpperCase() +
+                          item.status.slice(1)}
                       </Badge>
                     </div>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="capitalize">
                       {typeIcons[item.type]}
-                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                      {item.type}
                     </Badge>
                   </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+
+                  <p className="text-sm text-gray-600 mb-2">
+                    {item.description}
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500">
                     <div>
-                      <span className="text-muted-foreground">Unit:</span> {item.unit}
+                      <span className="font-medium text-gray-700">Unit:</span>{" "}
+                      {item.unit}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Date:</span> {new Date(item.date).toLocaleDateString()}
+                      <span className="font-medium text-gray-700">Start:</span>{" "}
+                      {new Date(item.startDate).toLocaleDateString()}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Start:</span> {new Date(item.startDate).toLocaleDateString()}
+                      <span className="font-medium text-gray-700">End:</span>{" "}
+                      {new Date(item.endDate).toLocaleDateString()}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">End:</span> {new Date(item.endDate).toLocaleDateString()}
+                      <span className="font-medium text-gray-700">
+                        Project:
+                      </span>{" "}
+                      {item.project}
                     </div>
                   </div>
                 </div>

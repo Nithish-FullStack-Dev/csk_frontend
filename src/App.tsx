@@ -387,7 +387,7 @@ const App = () => {
                 }
               />
               <Route
-                path="/properties/unit/:unitId"
+                path="/properties/building/:buildingId/floor/:floorId/unit/:unitId"
                 element={
                   <ProtectedRoute
                     allowedRoles={allRoles}

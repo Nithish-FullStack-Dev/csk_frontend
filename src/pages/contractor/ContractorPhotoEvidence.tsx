@@ -1,4 +1,4 @@
-// ContractorPhotoEvidencePage.tsx (modified to use API data)
+// ContractorPhotoEvidencePage.tsx
 
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -49,6 +49,17 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
+/* New imports used by the edit dialog */
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 const statusColors: Record<string, string> = {
   completed: "bg-green-100 text-green-800",
   in_progress: "bg-amber-100 text-amber-800",
@@ -66,6 +77,11 @@ const ContractorPhotoEvidencePage = () => {
   const [photoDetailsOpen, setPhotoDetailsOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
 
+  /* Edit dialog state */
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
   // Fetch data from API
   useEffect(() => {
     const fetchTasks = async () => {
@@ -78,22 +94,35 @@ const ContractorPhotoEvidencePage = () => {
         ); // Adjust path if needed
         const tasks = res.data || [];
 
+        // The backend's getUserTasks() already transforms nested project.units -> task list
+        // Map tasks to the shape used by your UI (include projectId so we can update with projectId + taskId)
         const transformed = tasks
-          .filter((task) => task.contractorUploadedPhotos.length > 0)
-          .map((task) => ({
-            id: task._id,
+          .filter(
+            (task: any) => (task.contractorUploadedPhotos || []).length > 0
+          )
+          .map((task: any) => ({
+            id: task._id || task._id, // task id
             title: task.evidenceTitleByContractor || "Photo Submission",
             task: task.taskTitle || "Untitled Task",
             project: task.projectName,
+            projectId: task.projectId || task.projectId, // important for update endpoint
             unit: task.unit,
             category: task.constructionPhase || "",
             date: task.submittedByContractorOn || task.deadline || new Date(),
             status:
-              task.status?.toLowerCase().replace(/\s/g, "_") || "in_progress",
-            images: task.contractorUploadedPhotos.map((url) => ({
-              url,
-              caption: "",
-            })),
+              (task.status &&
+                String(task.status).toLowerCase().replace(/\s/g, "_")) ||
+              (task.status === undefined &&
+                (task.statusForContractor || task.statusForSiteIncharge)) ||
+              "in_progress",
+            images: (task.contractorUploadedPhotos || []).map(
+              (url: string) => ({
+                url,
+                caption: "",
+              })
+            ),
+            notes: task.noteBySiteIncharge || "", // optional notes field
+            rawTask: task, // keep original payload if needed
           }));
 
         setPhotoList(transformed);
@@ -109,8 +138,10 @@ const ContractorPhotoEvidencePage = () => {
     const filtered = photoList.filter((photo) => {
       const matchesSearch =
         searchQuery === "" ||
-        photo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        photo.task.toLowerCase().includes(searchQuery.toLowerCase());
+        (photo.title &&
+          photo.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (photo.task &&
+          photo.task.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesProject =
         projectFilter === "" ||
@@ -150,13 +181,12 @@ const ContractorPhotoEvidencePage = () => {
     if (photo) handlePhotoClick(photo);
   };
 
-  const downloadAllImages = async (photo) => {
+  const downloadAllImages = async (photo: any) => {
     const loadingToast = toast.loading(
       `Preparing download for "${photo.title}"...`
     );
 
     try {
-      console.log("trying...........");
       const zip = new JSZip();
       const folder = zip.folder(photo.title || "photo-evidence")!;
 
@@ -170,7 +200,6 @@ const ContractorPhotoEvidencePage = () => {
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       saveAs(zipBlob, `${photo.title || "photo-evidence"}.zip`);
-      console.log("ready...........");
 
       toast.success("Download ready!", { id: loadingToast });
     } catch (error) {
@@ -178,6 +207,88 @@ const ContractorPhotoEvidencePage = () => {
       toast.error("Failed to download images.", { id: loadingToast });
     }
   };
+
+  // ---------- Edit flow ----------
+
+  const openEditDialog = (photo: any) => {
+    // prefill edit fields from the photo
+    setEditingPhoto({
+      ...photo,
+      // ensure category and status types expected
+      category: photo.category || "",
+      status: photo.status || "in_progress",
+      title: photo.title || "",
+      notes: photo.notes || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedFields: {
+    title: string;
+    category: string;
+    status: string;
+    notes?: string;
+  }) => {
+    if (!editingPhoto) return;
+
+    setSavingEdit(true);
+
+    // Update local state immediately for offline/fast UX
+    setPhotoList((prev) =>
+      prev.map((p) =>
+        p.id === editingPhoto.id
+          ? {
+              ...p,
+              title: updatedFields.title,
+              category: updatedFields.category,
+              status: updatedFields.status,
+              notes: updatedFields.notes,
+            }
+          : p
+      )
+    );
+
+    // Prepare payload for backend (matches updateTaskByIdForContractor)
+    // Your backend accepts fields like evidenceTitleByContractor, constructionPhase, status
+    const payload: any = {
+      evidenceTitleByContractor: updatedFields.title,
+      constructionPhase: updatedFields.category,
+      status: updatedFields.status,
+      noteBySiteIncharge: updatedFields.notes || undefined,
+    };
+
+    try {
+      // Use the route: PATCH /contractor/:projectId/:taskId/task
+      // projectId must be available on the photo object
+      const projectId = editingPhoto.projectId;
+      const taskId = editingPhoto.id;
+
+      if (!projectId || !taskId) {
+        // If no projectId available, show warning but we already updated local state
+        toast.warn("Updated locally (no projectId to persist to server).");
+        setEditDialogOpen(false);
+        return;
+      }
+
+      await axios.patch(
+        `${
+          import.meta.env.VITE_URL
+        }/api/project/contractor/${projectId}/${taskId}/task`,
+        payload,
+        { withCredentials: true }
+      );
+
+      toast.success("Details updated successfully");
+      setEditDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to update task on server:", err);
+      toast.error("Failed to update on server — changes saved locally.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // ---------- End Edit flow ----------
 
   return (
     <MainLayout>
@@ -194,12 +305,6 @@ const ContractorPhotoEvidencePage = () => {
             <CardTitle>Photo Gallery</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* <ContractorPhotoEvidence
-              projectsData={projectsData}
-              tasksData={inProgressTasks}
-              onPhotoClick={handlePhotoClick}
-            /> */}
-
             <div className="space-y-6">
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -358,7 +463,7 @@ const ContractorPhotoEvidencePage = () => {
                       </Select>
                     </div>
 
-                    {/* <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
                         <Button>
                           <Plus className="h-4 w-4 mr-2" />
@@ -367,11 +472,11 @@ const ContractorPhotoEvidencePage = () => {
                       </DialogTrigger>
                       <UploadEvidenceDialog
                         onOpenChange={setDialogOpen}
-                        projects={projectsData}
-                        tasks={tasksData}
+                        // projects={projectsData}
+                        // tasks={tasksData}
                         onSubmit={handlePhotoUpload}
-                      /> 
-                    </Dialog> */}
+                      />
+                    </Dialog>
                   </div>
 
                   {/* Photos Table */}
@@ -417,16 +522,16 @@ const ContractorPhotoEvidencePage = () => {
                                         Category:
                                       </span>{" "}
                                       {CONSTRUCTION_PHASES[
-                                        photo.category as keyof typeof CONSTRUCTION_PHASES
-                                      ]?.title || photo.category}
+                                        photo?.category as keyof typeof CONSTRUCTION_PHASES
+                                      ]?.title || photo?.category}
                                     </div>
                                   </div>
                                 </TableCell>
                                 <TableCell>
                                   <div>
-                                    <div>{photo.project}</div>
+                                    <div>{photo?.project}</div>
                                     <div className="text-xs text-muted-foreground">
-                                      {photo.unit}
+                                      {photo?.unit}
                                     </div>
                                   </div>
                                 </TableCell>
@@ -436,12 +541,12 @@ const ContractorPhotoEvidencePage = () => {
                                 <TableCell>
                                   <Badge
                                     variant="outline"
-                                    className={statusColors[photo.status]}
+                                    className={statusColors[photo?.status]}
                                   >
-                                    {photo.status
+                                    {photo?.status
                                       .split("_")
                                       .map(
-                                        (word) =>
+                                        (word: string) =>
                                           word.charAt(0).toUpperCase() +
                                           word.slice(1)
                                       )
@@ -452,7 +557,7 @@ const ContractorPhotoEvidencePage = () => {
                                   <div className="flex items-center gap-1">
                                     {photo.images
                                       .slice(0, 2)
-                                      .map((image, idx) => (
+                                      .map((image: any, idx: number) => (
                                         <div
                                           key={idx}
                                           className="w-10 h-10 rounded overflow-hidden"
@@ -496,12 +601,14 @@ const ContractorPhotoEvidencePage = () => {
                                         <Eye className="h-4 w-4 mr-2" />
                                         View Details
                                       </DropdownMenuItem>
-                                      {/* <DropdownMenuItem>
-                      Add More Photos
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      Edit Details
-                    </DropdownMenuItem> */}
+                                      <DropdownMenuItem>
+                                        Add More Photos
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => openEditDialog(photo)}
+                                      >
+                                        Edit Details
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => downloadAllImages(photo)}
                                       >
@@ -565,7 +672,7 @@ const ContractorPhotoEvidencePage = () => {
                                   {photo.status
                                     .split("_")
                                     .map(
-                                      (word) =>
+                                      (word: string) =>
                                         word.charAt(0).toUpperCase() +
                                         word.slice(1)
                                     )
@@ -575,18 +682,20 @@ const ContractorPhotoEvidencePage = () => {
 
                               {/* Photos */}
                               <div className="mt-2 flex items-center gap-1">
-                                {photo.images.slice(0, 2).map((image, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="w-12 h-12 rounded overflow-hidden"
-                                  >
-                                    <img
-                                      src={image.url}
-                                      alt={image.caption}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                ))}
+                                {photo.images
+                                  .slice(0, 2)
+                                  .map((image: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="w-12 h-12 rounded overflow-hidden"
+                                    >
+                                      <img
+                                        src={image.url}
+                                        alt={image.caption}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ))}
                                 {photo.images.length > 2 && (
                                   <div className="w-12 h-12 rounded bg-slate-100 flex items-center justify-center text-xs font-medium">
                                     +{photo.images.length - 2}
@@ -617,6 +726,11 @@ const ContractorPhotoEvidencePage = () => {
                                       View Details
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
+                                      onClick={() => openEditDialog(photo)}
+                                    >
+                                      Edit Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
                                       onClick={() => downloadAllImages(photo)}
                                     >
                                       <Download className="h-4 w-4 mr-2" />
@@ -642,6 +756,126 @@ const ContractorPhotoEvidencePage = () => {
             onOpenChange={setPhotoDetailsOpen}
             photoEvidence={selectedPhoto}
           />
+        </Dialog>
+
+        {/* Edit Dialog (prefilled and will call PATCH /contractor/:projectId/:taskId/task) */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="md:w-[650px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+            <DialogHeader>
+              <DialogTitle>Edit Evidence Details</DialogTitle>
+              <DialogDescription>
+                Update title, phase, status or notes for this evidence.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-4 overflow-y-auto max-h-[70vh] px-4 sm:px-6">
+              <div>
+                <Label>Title</Label>
+                <Input
+                  value={editingPhoto?.title || ""}
+                  onChange={(e) =>
+                    setEditingPhoto((prev: any) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>Construction Phase</Label>
+                <Select
+                  value={editingPhoto?.category || ""}
+                  onValueChange={(val) =>
+                    setEditingPhoto((prev: any) => ({ ...prev, category: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select construction phase" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CONSTRUCTION_PHASES).map(([key, phase]) => (
+                      <SelectItem key={key} value={key}>
+                        {phase.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={editingPhoto?.status || "in_progress"}
+                  onValueChange={(val) =>
+                    setEditingPhoto((prev: any) => ({ ...prev, status: val }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="pending_review">
+                      Pending Review
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Notes</Label>
+                <Textarea
+                  value={editingPhoto?.notes || ""}
+                  onChange={(e) =>
+                    setEditingPhoto((prev: any) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Project</Label>
+                  <div className="p-2 rounded border">
+                    {editingPhoto?.project}
+                  </div>
+                </div>
+                <div>
+                  <Label>Unit</Label>
+                  <div className="p-2 rounded border">{editingPhoto?.unit}</div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingPhoto(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  handleSaveEdit({
+                    title: editingPhoto?.title || "",
+                    category: editingPhoto?.category || "",
+                    status: editingPhoto?.status || "in_progress",
+                    notes: editingPhoto?.notes || "",
+                  })
+                }
+                disabled={savingEdit}
+              >
+                {savingEdit ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
       </div>
     </MainLayout>

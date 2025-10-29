@@ -63,21 +63,25 @@ function getStatusBadge(status: string) {
 
 interface PropertyDetailsProps {
   property: Property;
-  onEdit: () => void;
+  buildingId: string;
+  floorId: string;
+  unitId: string;
   onDelete: () => void;
   onBack: () => void;
 }
 
 export function PropertyDetails({
   property,
-  onEdit,
   onDelete,
+  buildingId,
+  floorId,
+  unitId,
   onBack,
 }: PropertyDetailsProps) {
-  const { buildingId, floorId } = useParams<{
-    buildingId: string;
-    floorId: string;
-  }>();
+  // const { buildingId, floorId } = useParams<{
+  //   buildingId: string;
+  //   floorId: string;
+  // }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -195,12 +199,12 @@ export function PropertyDetails({
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(-1);
-            }}
+            size="sm"
+            onClick={() =>
+              navigate(`/properties/building/${buildingId}/floor/${floorId}`)
+            }
           >
-            Back to Building
+            <ChevronLeft className="mr-2 h-4 w-4" /> Back to Building
           </Button>
 
           {canEdit && (
