@@ -51,10 +51,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Project,
+  usefetchProjectsForDropdown,
+} from "@/utils/project/ProjectConfig";
+import { Building } from "@/types/building";
 
 // Material interface
 interface Material {
-  id: string;
+  _id: string;
   name: string;
   type: string;
   quantity: number;
@@ -63,14 +68,7 @@ interface Material {
   rate: number;
   totalCost: number;
   deliveryDate: string;
-  project: {
-    _id: string;
-    projectId: {
-      basicInfo: {
-        projectName: string;
-      };
-    };
-  };
+  project: Project;
   status: string;
   poNumber: string;
   invoiceNumber: string;
@@ -102,7 +100,7 @@ const ContractorMaterials = () => {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(
     null
   );
-  const [projects, setProjects] = useState<any[]>([]); // Using any[] for now, but you should use a specific type
+  // const [projects, setProjects] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
@@ -176,17 +174,12 @@ const ContractorMaterials = () => {
     setViewMaterialDialogOpen(true);
   };
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
+  const {
+    data: projects,
+    isLoading: isLoadingProjects,
+    isError: isErrorProjects,
+    error: fetchProjectsError,
+  } = usefetchProjectsForDropdown();
 
   const fetchMaterials = async () => {
     try {
@@ -203,7 +196,6 @@ const ContractorMaterials = () => {
 
   useEffect(() => {
     fetchMaterials();
-    fetchDropdownData();
   }, []);
 
   // Use a new useEffect to apply filters whenever 'materials', 'activeTab', or 'searchQuery' changes
@@ -217,7 +209,8 @@ const ContractorMaterials = () => {
         const materialType = material.type?.toLowerCase() || "";
         const supplier = material.supplier?.toLowerCase() || "";
         const projectName =
-          material.project?.projectId?.basicInfo?.projectName?.toLowerCase() ||
+          (typeof material.project?.projectId === "object" &&
+            material.project?.projectId?.projectName?.toLowerCase()) ||
           "";
         const query = searchQuery.toLowerCase();
 
@@ -250,12 +243,18 @@ const ContractorMaterials = () => {
     applyFilters();
   }, [materials, activeTab, searchQuery]);
 
+  if (isErrorProjects) {
+    toast.error(fetchProjectsError.message || "Error fetching projects");
+    console.error("Error fetching projects:", fetchProjectsError);
+    return null;
+  }
+
   const markAsDelivered = async () => {
     try {
       if (!selectedMaterial) return;
       await axios.patch(
         `${import.meta.env.VITE_URL}/api/materials/${
-          selectedMaterial.id
+          selectedMaterial._id
         }/status`,
         {
           status: "Delivered",
@@ -437,13 +436,42 @@ const ContractorMaterials = () => {
                       {material.supplier}
                     </TableCell>
                     <TableCell
-                      className="max-w-[150px] truncate"
+                      className="max-w-[200px] truncate"
                       title={
-                        material.project?.projectId?.basicInfo?.projectName
+                        typeof material.project?.projectId === "object" &&
+                        material.project?.projectId !== null
+                          ? `${
+                              material.project?.projectId?.projectName ||
+                              "Unnamed Project"
+                            } / Floor ${
+                              (typeof material.project?.floorUnit ===
+                                "object" &&
+                                material.project?.floorUnit?.floorNumber) ||
+                              "N/A"
+                            } / Plot ${
+                              (typeof material.project?.unit === "object" &&
+                                material.project?.unit?.plotNo) ||
+                              "N/A"
+                            }`
+                          : "Unnamed Project"
                       }
                     >
-                      {material.project?.projectId?.basicInfo?.projectName}
+                      {material.project?.projectId
+                        ? `${
+                            typeof material.project?.projectId === "object" &&
+                            material.project?.projectId?.projectName
+                          } / Floor ${
+                            (typeof material.project?.floorUnit === "object" &&
+                              material.project?.floorUnit?.floorNumber) ||
+                            "N/A"
+                          } / Plot ${
+                            (typeof material.project?.unit === "object" &&
+                              material.project?.unit?.plotNo) ||
+                            "N/A"
+                          }`
+                        : "Unnamed Project"}
                     </TableCell>
+
                     <TableCell>
                       <Badge
                         className={`${
@@ -484,7 +512,7 @@ const ContractorMaterials = () => {
           ) : (
             filteredMaterials.map((material) => (
               <div
-                key={material.id}
+                key={material._id}
                 className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
               >
                 <div className="font-semibold text-lg">{material.name}</div>
@@ -511,7 +539,8 @@ const ContractorMaterials = () => {
                 </div>
                 <div className="text-sm text-gray-600 truncate">
                   <span className="font-medium">Project:</span>{" "}
-                  {material.project?.projectId?.basicInfo?.projectName}
+                  {typeof material.project?.projectId === "object" &&
+                    material.project?.projectId?.projectName}
                 </div>
                 <div>
                   <Badge
@@ -686,18 +715,45 @@ const ContractorMaterials = () => {
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
+                        disabled={isLoadingProjects}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
+                            <SelectValue
+                              placeholder={
+                                isLoadingProjects
+                                  ? "Loading projects..."
+                                  : "Select project"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project._id} value={project._id}>
-                              {project.projectTitle}
-                            </SelectItem>
-                          ))}
+                          {projects.map((project) => {
+                            const projectName =
+                              typeof project.projectId === "object" &&
+                              project.projectId !== null
+                                ? project.projectId.projectName
+                                : "Unnamed Project";
+
+                            const floorNumber =
+                              typeof project.floorUnit === "object" &&
+                              project.floorUnit !== null
+                                ? project.floorUnit.floorNumber
+                                : "No Floor";
+
+                            const plotNo =
+                              typeof project.unit === "object" &&
+                              project.unit !== null
+                                ? project.unit.plotNo
+                                : "No Plot";
+
+                            return (
+                              <SelectItem key={project._id} value={project._id}>
+                                {`${projectName} / Floor ${floorNumber} / Plot ${plotNo}`}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -865,10 +921,15 @@ const ContractorMaterials = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Project:</p>
                   <p>
-                    {
-                      selectedMaterial.project?.projectId?.basicInfo
-                        ?.projectName
-                    }
+                    {typeof selectedMaterial.project?.projectId === "object" &&
+                      selectedMaterial.project?.projectId?.projectName +
+                        "/" +
+                        (typeof selectedMaterial.project?.floorUnit ===
+                          "object" &&
+                          selectedMaterial.project?.floorUnit?.floorNumber) +
+                        "/" +
+                        (typeof selectedMaterial.project?.unit === "object" &&
+                          selectedMaterial.project?.unit?.plotNo)}
                   </p>
                 </div>
                 <div>

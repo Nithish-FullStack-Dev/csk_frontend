@@ -25,7 +25,7 @@ import { usefetchProjectsForDropdown } from "@/utils/project/ProjectConfig";
 
 interface AddTaskDialogProps {
   onOpenChange: (open: boolean) => void;
-  fetchTasks: () => Promise<void>;
+  fetchTasks: () => void;
 }
 
 const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
