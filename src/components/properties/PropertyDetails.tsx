@@ -85,6 +85,9 @@ export function PropertyDetails({
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [currentProperty, setCurrentProperty] = useState<Property | null>(
+    property
+  );
 
   // CREATE UNIT
   const createUnitMutation = useMutation({
@@ -113,10 +116,23 @@ export function PropertyDetails({
       unitData: FormData;
     }) => updateUnit(unitId, unitData),
     onSuccess: (updatedUnit) => {
+      // ✅ Update the UI immediately
+      setCurrentProperty(updatedUnit);
+
+      // ✅ Update the React Query cache
+      queryClient.setQueryData(
+        ["units", buildingId, floorId],
+        (old: any[] = []) =>
+          old.map((unit) => (unit._id === updatedUnit._id ? updatedUnit : unit))
+      );
+
+      // ✅ Optional: refetch from backend if you want fresh data
       queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
       });
 
+      // ✅ Close the dialog & toast success
+      setApartmentDialogOpen(false);
       toast.success("Unit updated successfully");
     },
     onError: (error: any) => {

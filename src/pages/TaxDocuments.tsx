@@ -39,6 +39,7 @@ import {
   PlusCircle,
   Eye,
   Edit,
+  Loader2,
 } from "lucide-react";
 import TaxOverviewCards from "@/components/tax/TaxOverviewCards";
 import TaxCalculator from "@/components/tax/TaxCalculator";
@@ -68,6 +69,7 @@ const TaxDocuments = () => {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null); // holds gstDoc, tdsDoc, etc.
   const [newStatus, setNewStatus] = useState(""); // updated value
+  const [updating, setUpdating] = useState(false);
   const [overview, setOverview] = useState({
     gstCollected: 0,
     tdsDeducted: 0,
@@ -652,8 +654,8 @@ const TaxDocuments = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {gstDocs.map((gstReturn) => (
-                            <TableRow key={gstReturn.id}>
+                          {gstDocs.map((gstReturn, idx) => (
+                            <TableRow key={gstReturn._id || idx}>
                               <TableCell>{gstReturn.period}</TableCell>
                               <TableCell>
                                 <Badge variant="outline">
@@ -731,9 +733,9 @@ const TaxDocuments = () => {
 
                     {/* Mobile Cards */}
                     <div className="block md:hidden space-y-4">
-                      {gstDocs.map((gstReturn) => (
+                      {gstDocs.map((gstReturn, idx) => (
                         <div
-                          key={gstReturn.id}
+                          key={gstReturn._id || idx}
                           className="rounded-lg border p-4 shadow-sm bg-white"
                         >
                           <div className="flex justify-between items-center">
@@ -847,8 +849,8 @@ const TaxDocuments = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {tdsDocs.map((record) => (
-                        <TableRow key={record.id}>
+                      {tdsDocs.map((record, idx) => (
+                        <TableRow key={record._id || idx}>
                           <TableCell>{record.quarter}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{record.section}</Badge>
@@ -916,8 +918,8 @@ const TaxDocuments = () => {
               {/* Mobile Card View */}
               {!loadingDocs && (
                 <div className="md:hidden space-y-4">
-                  {tdsDocs.map((record) => (
-                    <Card key={record.id} className="w-full">
+                  {tdsDocs.map((record, idx) => (
+                    <Card key={record._id || idx} className="w-full">
                       <CardHeader>
                         <CardTitle>TDS Deduction Record</CardTitle>
                       </CardHeader>
@@ -1023,8 +1025,8 @@ const TaxDocuments = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {itrDocs.map((doc) => (
-                            <TableRow key={doc.id}>
+                          {itrDocs.map((doc, idx) => (
+                            <TableRow key={doc._id || idx}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-4 w-4" />
@@ -1095,8 +1097,8 @@ const TaxDocuments = () => {
               {/* Mobile Card View */}
               {!loadingDocs && (
                 <div className="md:hidden space-y-4">
-                  {itrDocs.map((doc) => (
-                    <Card key={doc.id} className="w-full">
+                  {itrDocs.map((doc, idx) => (
+                    <Card key={doc._id || idx} className="w-full">
                       <CardHeader>
                         <CardTitle>Income Tax Document</CardTitle>
                       </CardHeader>
@@ -1594,12 +1596,14 @@ const TaxDocuments = () => {
                   </Button>
                   <Button
                     disabled={
-                      selectedDoc.status === newStatus ||
+                      updating || // disable while updating
+                      selectedDoc?.status === newStatus ||
                       (newStatus === "Filed" &&
-                        !selectedDoc.section &&
+                        !selectedDoc?.section &&
                         !auditorName)
                     }
                     onClick={async () => {
+                      setUpdating(true); // disable + show spinner
                       try {
                         await axios.put(
                           `${
@@ -1621,10 +1625,19 @@ const TaxDocuments = () => {
                         fetchTaxDocuments();
                       } catch (err) {
                         toast.error("Failed to update status.");
+                      } finally {
+                        setUpdating(false); // re-enable after done
                       }
                     }}
                   >
-                    Update
+                    {updating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update"
+                    )}
                   </Button>
                 </DialogFooter>
               </div>
