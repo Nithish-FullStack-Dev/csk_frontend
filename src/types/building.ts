@@ -27,6 +27,8 @@ export interface Building {
   images?: string[];
   description?: string;
   municipalPermission: boolean;
+  reraApproved?: boolean;
+  reraNumber?: string;
   googleMapsLocation?: string;
   brochureUrl?: string | null;
   brochureFileId?: string | null;

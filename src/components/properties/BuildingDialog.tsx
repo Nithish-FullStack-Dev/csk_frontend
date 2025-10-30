@@ -50,6 +50,8 @@ export const BuildingDialog = ({
     completionDate: "",
     description: "",
     municipalPermission: false,
+    reraApproved: false,
+    reraNumber: "",
     thumbnailUrl: "",
     brochureUrl: null,
     googleMapsLocation: "",
@@ -108,6 +110,8 @@ export const BuildingDialog = ({
       completionDate: "",
       description: "",
       municipalPermission: false,
+      reraApproved: false,
+      reraNumber: "",
       thumbnailUrl: "",
       brochureUrl: null,
       googleMapsLocation: "",
@@ -204,6 +208,14 @@ export const BuildingDialog = ({
       "municipalPermission",
       formData.municipalPermission.toString()
     );
+    payload.append("reraApproved", formData.reraApproved.toString());
+    payload.append("reraNumber", formData.reraNumber);
+    //     const payload = {
+    //   ...formData,
+    //   reraApproved: formData.reraApproved,
+    //   reraNumber: formData.reraNumber,
+    // };
+
     if (formData.googleMapsLocation)
       payload.append("googleMapsLocation", formData.googleMapsLocation);
     // Append files if provided (required for add, optional for edit)
@@ -442,6 +454,7 @@ export const BuildingDialog = ({
             )}
           </div>
 
+          {/* Municipal Permission Switch */}
           <div className="flex items-center space-x-2">
             <Switch
               checked={formData.municipalPermission}
@@ -451,6 +464,40 @@ export const BuildingDialog = ({
             />
             <Label>Municipal Permission Obtained</Label>
           </div>
+
+          {/* RERA Permission Switch */}
+          <div className="flex items-center space-x-2 mt-3">
+            <Switch
+              checked={formData.reraApproved}
+              onCheckedChange={(v) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  reraApproved: v,
+                  reraNumber: v ? prev.reraNumber : "", // clear on toggle OFF
+                }))
+              }
+            />
+            <Label>RERA Approved</Label>
+          </div>
+
+          {/* RERA Number Input */}
+          {formData.reraApproved && (
+            <div className="mt-2">
+              <Label className="text-sm font-medium">RERA Number</Label>
+              <Input
+                type="text"
+                value={formData.reraNumber}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    reraNumber: e.target.value,
+                  }))
+                }
+                placeholder="Enter RERA Registration Number"
+                className="w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+          )}
 
           <DialogFooter>
             <Button
