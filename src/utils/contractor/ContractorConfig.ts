@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "../project/ProjectConfig";
+import { FloorUnit } from "@/types/building";
 
 //! Task List
 export const constructionPhases = [
@@ -154,6 +155,103 @@ export const useMaterials = () => {
     queryKey: ["materials"],
     queryFn: fetchMaterials,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: keepPreviousData,
+  });
+};
+
+//! Labor
+
+export interface AttendenceRecord {
+  _id: string;
+  present: number;
+  absent: number;
+  date: Date;
+}
+
+// Define interface for labor team
+export interface LaborTeam {
+  _id: string;
+  name: string;
+  supervisor: string;
+  type: string;
+  members: number;
+  wage: number;
+  project: string | Project;
+  attendance: number;
+  contact: string;
+  status: string;
+  remarks?: string;
+  attendancePercentage: number;
+  attendanceRecords: [AttendenceRecord];
+}
+
+export const fetchTeams = async () => {
+  const response = await axios.get(`${import.meta.env.VITE_URL}/api/labor  `, {
+    withCredentials: true,
+  });
+  return response.data;
+};
+
+export const useLaborTeams = () => {
+  return useQuery<LaborTeam[]>({
+    queryKey: ["laborTeams"],
+    queryFn: fetchTeams,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+
+//! Photo Evidence
+
+export type PhotoStatus = "completed" | "in_progress" | "pending_review";
+
+export interface PhotoEvidence {
+  _id?: string;
+  title: string;
+  task: string;
+  project?: string;
+  floorNumber?: string;
+  plotNo?: string;
+  floorUnit?: string | FloorUnit;
+  projectId: string;
+  unit?: string;
+  category?: string;
+  date?: string;
+  status?: PhotoStatus;
+  images?: { url: string; caption: string }[];
+  notes?: string;
+  rawTask?: any;
+}
+
+export interface PhotoDetailsDialogProps {
+  onOpenChange: (open: boolean) => void;
+  photoEvidence: {
+    _id: string;
+    title: string;
+    project: string;
+    unit?: string;
+    floorNumber: string;
+    plotNo: string;
+    task: string;
+    date: string;
+    category: string;
+    status: PhotoStatus;
+    images: { url: string; caption: string }[];
+  } | null;
+}
+
+export const fetchTasksForPhotoEvidence = async () => {
+  const res = await axios.get(`${import.meta.env.VITE_URL}/api/project/tasks`, {
+    withCredentials: true,
+  });
+  return res.data || [];
+};
+
+export const useTasksForPhotoEvidence = () => {
+  return useQuery<PhotoEvidence[]>({
+    queryKey: ["photoEvidenceTasks"],
+    queryFn: fetchTasksForPhotoEvidence,
+    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 };
