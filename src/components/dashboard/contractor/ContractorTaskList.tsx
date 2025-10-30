@@ -51,68 +51,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, XCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ClipboardCheck } from "lucide-react";
-
-const constructionPhases = [
-  "site_mobilization",
-  "groundwork_foundation",
-  "structural_framework",
-  "slab_construction",
-  "masonry_work",
-  "roofing",
-  "internal_finishing",
-  "external_finishing",
-  "electrical_works",
-  "plumbing_works",
-  "hvac_works",
-  "fire_safety",
-  "project_management",
-  "snagging_rectification",
-];
-
-const statusOptions = ["pending review", "In progress", "completed"];
-
-interface Task {
-  id: string;
-  title: string;
-  project: string;
-  projectId: string;
-  _id: string;
-  unit: string;
-  phase: string;
-  floorNumber: string;
-  plotNo: string;
-  status:
-    | "pending verification"
-    | "In progress"
-    | "completed"
-    | "approved"
-    | "rejected";
-  deadline: string;
-  priority: "high" | "medium" | "low";
-  progress?: number;
-  hasEvidence?: boolean;
-  evidenceTitle: string;
-  contractorUploadedPhotos: [string];
-  statusForContractor: string;
-  noteBySiteIncharge: string;
-}
-
-const statusColors: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-800",
-  in_progress: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  approved: "bg-emerald-100 text-emerald-800",
-  rejected: "bg-red-100 text-red-800",
-};
-
-const priorityColors: Record<string, string> = {
-  high: "bg-red-100 text-red-800",
-  medium: "bg-amber-100 text-amber-800",
-  low: "bg-green-100 text-green-800",
-};
+import {
+  constructionPhases,
+  priorityColors,
+  statusColors,
+  statusOptions,
+  Task,
+  useTasks,
+} from "@/utils/contractor/ContractorConfig";
 
 const ContractorTaskList = () => {
-  const [tasks, setTasks] = useState<Task[]>();
+  // const [tasks, setTasks] = useState<Task[]>();
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -132,6 +81,14 @@ const ContractorTaskList = () => {
     { latitude: number; longitude: number }[]
   >([]);
 
+  const {
+    data: tasks,
+    isLoading: taskLoading,
+    isError: taskError,
+    error: taskErr,
+    refetch: fetchTasks,
+  } = useTasks();
+
   useEffect(() => {
     if (selectedTask) {
       setEvidenceTitle(selectedTask.evidenceTitle || "");
@@ -140,6 +97,13 @@ const ContractorTaskList = () => {
       setStatus(selectedTask.status || "");
     }
   }, [selectedTask]);
+
+  if (taskError) {
+    console.error("Error fetching tasks:", taskErr);
+    toast.error(
+      taskErr.message || "Failed to load tasks. Please try again later."
+    );
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -171,62 +135,6 @@ const ContractorTaskList = () => {
   const removePhoto = (indexToRemove: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== indexToRemove));
     setPhotoLocations((prev) => prev.filter((_, i) => i !== indexToRemove));
-  };
-
-  const mapStatus = (status: string): Task["status"] => {
-    switch (status.toLowerCase()) {
-      case "pending verification":
-        return "pending verification";
-      case "approved":
-        return "approved";
-      case "rejected":
-        return "rejected";
-      case "in progress":
-        return "In progress";
-      case "completed":
-        return "completed";
-    }
-  };
-
-  const mapPriority = (priority: string): Task["priority"] => {
-    switch (priority.toLowerCase()) {
-      case "excellent":
-        return "high";
-      case "good":
-        return "medium";
-      case "unspecified":
-        return "low";
-      default:
-        return "medium";
-    }
-  };
-
-  const fetchTasks = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/tasks`,
-        { withCredentials: true }
-      );
-      const mapped = response.data.map((task: any, index: number) => ({
-        id: index.toString(), // Replace with real id if available
-        title: task.taskTitle,
-        project: task.projectName,
-        unit: task.unit,
-        floorNumber: task.floorNumber,
-        plotNo: task.plotNo,
-        phase: task.constructionPhase,
-        status: mapStatus(task.status), // normalize status if needed
-        deadline: task.deadline,
-        progress: task.progress,
-        priority: mapPriority(task.priority),
-        hasEvidence: task.contractorUploadedPhotos.length > 0,
-        _id: task._id,
-        projectId: task.projectId,
-      }));
-      setTasks(mapped);
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -316,10 +224,6 @@ const ContractorTaskList = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
   let filteredTasks = [];
   if (tasks) {
     filteredTasks = tasks.filter((task) => {
@@ -338,25 +242,25 @@ const ContractorTaskList = () => {
     });
   }
 
-  const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
+  // const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
+  //   setTasks((prevTasks) =>
+  //     prevTasks.map((task) =>
+  //       task.id === taskId ? { ...task, status: newStatus } : task
+  //     )
+  //   );
 
-    const task = tasks.find((t) => t.id === taskId);
+  //   const task = tasks.find((t) => t.id === taskId);
 
-    if (newStatus === "completed") {
-      toast.success(`Task marked as completed`, {
-        description: `${task?.title} has been sent for verification by Site In-charge`,
-      });
-    } else {
-      toast.success(`Task status updated`, {
-        description: `${task?.title} is now ${newStatus?.replace("_", " ")}`,
-      });
-    }
-  };
+  //   if (newStatus === "completed") {
+  //     toast.success(`Task marked as completed`, {
+  //       description: `${task?.title} has been sent for verification by Site In-charge`,
+  //     });
+  //   } else {
+  //     toast.success(`Task status updated`, {
+  //       description: `${task?.title} is now ${newStatus?.replace("_", " ")}`,
+  //     });
+  //   }
+  // };
 
   const handleUploadEvidence = (task) => {
     setSelectedTask(task);
@@ -364,7 +268,7 @@ const ContractorTaskList = () => {
     setUploadEvidenceOpen(true);
   };
 
-  if (!tasks) return <div>Loading tasks...</div>;
+  if (!tasks || taskLoading) return <div>Loading tasks...</div>;
   if (tasks.length === 0) return <div>No tasks.</div>;
   return (
     <div className="space-y-4">
@@ -452,7 +356,7 @@ const ContractorTaskList = () => {
               <TableHead>Deadline</TableHead>
               <TableHead>Progress</TableHead>
               <TableHead>Priority</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -898,6 +802,9 @@ const ContractorTaskList = () => {
               Task Details
             </DialogTitle>
           </DialogHeader>
+          <DialogDescription>
+            Detailed information about the selected construction task.
+          </DialogDescription>
 
           <div className="space-y-6">
             <div className="flex justify-between items-start">
@@ -935,7 +842,9 @@ const ContractorTaskList = () => {
                 <p className="text-muted-foreground">Project / Unit:</p>
                 <p>
                   {(selectedTask && selectedTask.project) || "-"} /{" "}
-                  {(selectedTask && selectedTask.unit) || "-"}
+                  {(selectedTask &&
+                    selectedTask?.plotNo + "/" + selectedTask?.floorNumber) ||
+                    "-"}
                 </p>
               </div>
               <div>
@@ -971,9 +880,7 @@ const ContractorTaskList = () => {
               </div>
               <div>
                 <p className="text-muted-foreground">Construction Status:</p>
-                <p>
-                  {(selectedTask && selectedTask.statusForContractor) || "-"}
-                </p>
+                <p>{(selectedTask && selectedTask.status) || "-"}</p>
               </div>
             </div>
 

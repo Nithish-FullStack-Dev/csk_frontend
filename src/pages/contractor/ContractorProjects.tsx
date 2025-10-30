@@ -316,7 +316,12 @@ const ContractorProjects = () => {
             <CardTitle>Projects Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <ContractorProjectsOverview />
+            <ContractorProjectsOverview
+              projects={projects}
+              isLoading={projectLoad}
+              isError={projectError}
+              error={projectErr}
+            />
           </CardContent>
         </Card>
 

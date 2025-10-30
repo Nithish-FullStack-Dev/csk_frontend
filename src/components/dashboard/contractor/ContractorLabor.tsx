@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -47,30 +48,14 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-
-interface AttendenceRecord {
-  id: string;
-  present: number;
-  absent: number;
-  date: Date;
-}
-
-// Define interface for labor team
-interface LaborTeam {
-  id: string;
-  name: string;
-  supervisor: string;
-  type: string;
-  members: number;
-  wage: number;
-  project: string;
-  attendance: number;
-  contact: string;
-  status: string;
-  remarks?: string;
-  attendancePercentage: number;
-  attendanceRecords: [AttendenceRecord];
-}
+import { LaborTeam, useLaborTeams } from "@/utils/contractor/ContractorConfig";
+import { usefetchProjectsForDropdown } from "@/utils/project/ProjectConfig";
+import {
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import Loader from "@/components/Loader";
 
 // Form schema
 const laborTeamSchema = z.object({
@@ -91,79 +76,47 @@ type LaborTeamFormValues = z.infer<typeof laborTeamSchema>;
 
 const ContractorLabor = () => {
   const { user } = useAuth();
-  const [teams, setTeams] = useState<LaborTeam[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewTeamDialogOpen, setViewTeamDialogOpen] = useState(false);
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<LaborTeam | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [projects, setProjects] = useState([]);
   const [attendanceDate, setAttendanceDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [present, setPresent] = useState(selectedTeam?.members || 0);
-  const [absent, setAbsent] = useState(0);
+  const [present, setPresent] = useState<number>(0);
+  const [absent, setAbsent] = useState<number>(0);
+  const queryClient = useQueryClient();
 
-  const fetchTeams = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/labor  `,
-        {
-          withCredentials: true,
-        }
-      );
-      setTeams(response.data);
-    } catch (error: any) {
-      console.error("Failed to fetch labor teams:", error);
-      toast.error(
-        error.response?.data?.message || "Could not load labor teams"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: projects = [],
+    isLoading: projectsLoading,
+    isError: projectsError,
+    error: projectsErr,
+  } = usefetchProjectsForDropdown();
 
-  const fetchDropdownData = async () => {
-    try {
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
-
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
-  };
-
-  const handleSaveAttendance = async () => {
-    try {
-      const payload = {
-        date: attendanceDate,
-        present,
-        absent,
-      };
-
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam?._id}/attendance`,
-        payload,
-        { withCredentials: true }
-      );
-
-      toast.success("Attendance recorded successfully");
-      fetchTeams();
-      setAttendanceDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to save attendance", error);
-      toast.error("Failed to record attendance");
-    }
-  };
+  const {
+    data: teams = [],
+    isLoading: laborTeamsLoading,
+    isError: laborTeamsError,
+    error: laborTeamsErr,
+    refetch: fetchTeams,
+  } = useLaborTeams();
 
   useEffect(() => {
-    fetchTeams();
-    fetchDropdownData();
-  }, []);
+    if (selectedTeam) {
+      setPresent(selectedTeam.members);
+      setAbsent(0);
+      setAttendanceDate(new Date().toISOString().split("T")[0]);
+    }
+  }, [selectedTeam]);
+
+  // Auto-calculate absent
+  useEffect(() => {
+    if (selectedTeam && present >= 0 && present <= selectedTeam.members) {
+      setAbsent(selectedTeam.members - present);
+    }
+  }, [present, selectedTeam]);
 
   const form = useForm<LaborTeamFormValues>({
     resolver: zodResolver(laborTeamSchema),
@@ -171,35 +124,94 @@ const ContractorLabor = () => {
       type: "Masonry",
       members: 1,
       wage: 800,
-      project: "Skyline Towers Construction",
+      project: "",
+      contact: "",
     },
   });
 
-  const handleSubmit = async (data: LaborTeamFormValues) => {
-    try {
-      const res = await axios.post(
+  const createSubmit = useMutation({
+    mutationFn: async (data: LaborTeamFormValues) => {
+      const { data: res } = await axios.post(
         `${import.meta.env.VITE_URL}/api/labor`,
         data,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
-
-      // Assuming response returns the newly created team
-      const newTeam = res.data;
-
-      setTeams((prev) => [...prev, newTeam]);
-      toast.success("Labor team added successfully");
-
+      return res;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["laborTeams"] });
+      toast.success(data.message || "Labor team added successfully");
       form.reset();
       setAddDialogOpen(false);
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       const message =
-        error.response?.data?.message ||
+        error?.response?.data?.message ||
         "Something went wrong. Please try again.";
       toast.error(message);
       console.error("Axios POST error:", error);
+    },
+  });
+
+  const createdAttendance = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        date: attendanceDate,
+        present,
+        absent,
+      };
+
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/labor/${selectedTeam?._id}/attendance`,
+        payload,
+        { withCredentials: true }
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Attendance recorded successfully");
+      fetchTeams();
+      setAttendanceDialogOpen(false);
+      // Reset attendance inputs
+      if (selectedTeam) {
+        setPresent(selectedTeam.members);
+        setAbsent(0);
+      }
+    },
+    onError: (error: any) => {
+      console.error("Failed to save attendance", error);
+      toast.error(
+        error?.response?.data?.message || "Failed to record attendance"
+      );
+    },
+  });
+
+  // Reset present/absent when selectedTeam changes
+
+  if (laborTeamsError) {
+    console.error("Failed to fetch labor teams:", laborTeamsErr);
+    toast.error(laborTeamsErr?.message || "Could not load labor teams");
+    return null;
+  }
+  if (projectsError) {
+    console.error("Failed to fetch projects:", projectsErr);
+    toast.error(projectsErr?.message || "Could not load projects");
+    return null;
+  }
+
+  if (laborTeamsLoading) return <Loader />;
+
+  const handleSaveAttendance = () => {
+    if (!selectedTeam) return;
+    if (present < 0 || present > selectedTeam.members) {
+      toast.error("Present count cannot exceed total members");
+      return;
     }
+    createdAttendance.mutate();
+  };
+
+  const handleSubmit = (data: LaborTeamFormValues) => {
+    createSubmit.mutate(data);
   };
 
   const viewTeam = (team: LaborTeam) => {
@@ -212,32 +224,34 @@ const ContractorLabor = () => {
     setAttendanceDialogOpen(true);
   };
 
-  let filteredTeams = [];
-  if (teams && Array.isArray(teams)) {
-    filteredTeams = teams.filter((team) =>
-      [team.name, team.supervisor, team.project, team.type].some((field) =>
-        field.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
-  }
+  const filteredTeams = teams.filter((team) =>
+    [team.name, team.supervisor, team.project, team.type].some((field) =>
+      field?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
 
-  const totalTeams = teams && Array.isArray(teams) ? teams.length : 0;
-  const activeTeams =
-    teams && Array.isArray(teams)
-      ? teams.filter((t) => t.status === "Active").length
-      : 0;
-  const totalWorkers =
-    teams && Array.isArray(teams)
-      ? teams.reduce((acc, t) => acc + t.members, 0)
-      : 0;
+  const totalTeams = teams.length;
+  const activeTeams = teams.filter((t) => t.status === "Active").length;
+  const totalWorkers = teams.reduce((acc, t) => acc + t.members, 0);
   const averageAttendance =
-    teams && Array.isArray(teams)
-      ? teams.reduce((acc, t) => acc + (t.attendancePercentage || 0), 0) /
-        (teams.length || 1)
-      : 0;
+    teams.reduce((acc, t) => acc + (t.attendancePercentage || 0), 0) /
+    (teams.length || 1);
+
+  const getProjectDisplay = (team: LaborTeam) => {
+    if (typeof team.project === "string") return team.project;
+    const p = team.project;
+    const name =
+      (typeof p?.projectId === "object" && p?.projectId?.projectName) ||
+      "Unknown Project";
+    const floor =
+      (typeof p?.floorUnit === "object" && p?.floorUnit?.floorNumber) || "N/A";
+    const plot = (typeof p?.unit === "object" && p?.unit?.plotNo) || "N/A";
+    return `${name} / Floor ${floor} / Plot ${plot}`;
+  };
 
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -281,6 +295,7 @@ const ContractorLabor = () => {
         </Card>
       </div>
 
+      {/* Search + Add */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -296,8 +311,8 @@ const ContractorLabor = () => {
         </Button>
       </div>
 
+      {/* Table - Desktop */}
       <div className="border rounded-md">
-        {/* Table for desktop */}
         <div className="hidden md:block overflow-x-auto">
           <Table>
             <TableHeader>
@@ -321,7 +336,7 @@ const ContractorLabor = () => {
                 </TableRow>
               ) : (
                 filteredTeams.map((team) => (
-                  <TableRow key={team.id}>
+                  <TableRow key={team._id}>
                     <TableCell className="font-medium">{team.name}</TableCell>
                     <TableCell>{team.supervisor}</TableCell>
                     <TableCell>{team.type}</TableCell>
@@ -334,9 +349,9 @@ const ContractorLabor = () => {
                     </TableCell>
                     <TableCell
                       className="max-w-[150px] truncate"
-                      title={team.project}
+                      title={getProjectDisplay(team)}
                     >
-                      {team?.project?.projectId?.basicInfo?.projectName}
+                      {getProjectDisplay(team)}
                     </TableCell>
                     <TableCell>
                       <span
@@ -374,7 +389,7 @@ const ContractorLabor = () => {
           </Table>
         </div>
 
-        {/* Card layout for mobile */}
+        {/* Cards - Mobile */}
         <div className="md:hidden space-y-4 p-2">
           {filteredTeams.length === 0 ? (
             <div className="text-center py-4 text-sm text-gray-500">
@@ -383,7 +398,7 @@ const ContractorLabor = () => {
           ) : (
             filteredTeams.map((team) => (
               <div
-                key={team.id}
+                key={team._id}
                 className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
               >
                 <div className="flex justify-between items-center">
@@ -416,7 +431,7 @@ const ContractorLabor = () => {
                 </p>
                 <p className="text-sm text-gray-600 truncate">
                   <span className="font-medium">Project:</span>{" "}
-                  {team?.project?.projectId?.basicInfo?.projectName}
+                  {getProjectDisplay(team)}
                 </p>
 
                 <div className="flex space-x-2 pt-2">
@@ -443,10 +458,13 @@ const ContractorLabor = () => {
 
       {/* Add Labor Team Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Labor Team</DialogTitle>
           </DialogHeader>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Fill in the details below to add a new labor team.
+          </DialogDescription>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
@@ -497,14 +515,20 @@ const ContractorLabor = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Masonry">Masonry</SelectItem>
-                          <SelectItem value="Electrical">Electrical</SelectItem>
-                          <SelectItem value="Plumbing">Plumbing</SelectItem>
-                          <SelectItem value="Carpentry">Carpentry</SelectItem>
-                          <SelectItem value="Painting">Painting</SelectItem>
-                          <SelectItem value="Flooring">Flooring</SelectItem>
-                          <SelectItem value="Welding">Welding</SelectItem>
-                          <SelectItem value="General">General Labor</SelectItem>
+                          {[
+                            "Masonry",
+                            "Electrical",
+                            "Plumbing",
+                            "Carpentry",
+                            "Painting",
+                            "Flooring",
+                            "Welding",
+                            "General Labor",
+                          ].map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -545,6 +569,7 @@ const ContractorLabor = () => {
                             type="number"
                             placeholder="800"
                             min={0}
+                            step="50"
                             {...field}
                           />
                         </div>
@@ -562,19 +587,43 @@ const ContractorLabor = () => {
                       <FormLabel>Project</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value} // use 'value' instead of 'defaultValue' in controlled components
+                        value={field.value}
+                        disabled={projectsLoading}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select project" />
+                            <SelectValue
+                              placeholder={
+                                projectsLoading
+                                  ? "Loading..."
+                                  : "Select project"
+                              }
+                            />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project._id} value={project._id}>
-                              {project.projectTitle}
-                            </SelectItem>
-                          ))}
+                          {projects.map((project) => {
+                            const projectName =
+                              typeof project?.projectId === "object" &&
+                              project?.projectId?.projectName
+                                ? project?.projectId?.projectName
+                                : "Unnamed Project";
+                            const floorNumber =
+                              typeof project?.floorUnit === "object" &&
+                              project?.floorUnit?.floorNumber
+                                ? project?.floorUnit?.floorNumber
+                                : "No Floor";
+                            const plotNo =
+                              typeof project?.unit === "object" &&
+                              project?.unit?.plotNo
+                                ? project?.unit?.plotNo
+                                : "No Plot";
+                            return (
+                              <SelectItem key={project._id} value={project._id}>
+                                {`${projectName} / Floor ${floorNumber} / Plot ${plotNo}`}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -602,7 +651,7 @@ const ContractorLabor = () => {
                 name="remarks"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Remarks</FormLabel>
+                    <FormLabel>Remarks (Optional)</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Any additional information"
@@ -623,7 +672,9 @@ const ContractorLabor = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Add Team</Button>
+                <Button type="submit" disabled={createSubmit.isPending}>
+                  {createSubmit.isPending ? "Adding..." : "Add Team"}
+                </Button>
               </div>
             </form>
           </Form>
@@ -633,10 +684,13 @@ const ContractorLabor = () => {
       {/* View Team Dialog */}
       {selectedTeam && (
         <Dialog open={viewTeamDialogOpen} onOpenChange={setViewTeamDialogOpen}>
-          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-xl">
             <DialogHeader>
               <DialogTitle>Team Details</DialogTitle>
             </DialogHeader>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Here you can view the details of the selected team.
+            </DialogDescription>
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -689,9 +743,7 @@ const ContractorLabor = () => {
                   <h4 className="text-sm font-medium text-muted-foreground">
                     Project
                   </h4>
-                  <p className="text-base">
-                    {selectedTeam?.project?.projectId?.basicInfo?.projectName}
-                  </p>
+                  <p className="text-base">{getProjectDisplay(selectedTeam)}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">
@@ -753,12 +805,15 @@ const ContractorLabor = () => {
           open={attendanceDialogOpen}
           onOpenChange={setAttendanceDialogOpen}
         >
-          <DialogContent className="w-full sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-auto rounded-xl p-4 sm:p-6">
+          <DialogContent className="w-full sm:max-w-[700px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl font-semibold">
                 Attendance Record - {selectedTeam.name}
               </DialogTitle>
             </DialogHeader>
+            <DialogDescription className=" text-sm text-muted-foreground">
+              Here you can view the details of the selected team.
+            </DialogDescription>
 
             <div className="space-y-4 mt-2">
               {/* Team Info */}
@@ -779,7 +834,6 @@ const ContractorLabor = () => {
               </div>
 
               {/* Attendance Records */}
-              {/* Desktop Table */}
               <div className="hidden sm:block border rounded-md overflow-x-auto">
                 <Table className="min-w-[500px]">
                   <TableHeader>
@@ -792,7 +846,7 @@ const ContractorLabor = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedTeam?.attendanceRecords.map((record) => {
+                    {(selectedTeam.attendanceRecords || []).map((record) => {
                       const percentage = Math.round(
                         (record.present / (record.present + record.absent)) *
                           100
@@ -836,7 +890,7 @@ const ContractorLabor = () => {
 
               {/* Mobile Cards */}
               <div className="sm:hidden space-y-3">
-                {selectedTeam?.attendanceRecords.map((record) => {
+                {(selectedTeam.attendanceRecords || []).map((record) => {
                   const percentage = Math.round(
                     (record.present / (record.present + record.absent)) * 100
                   );
@@ -885,7 +939,7 @@ const ContractorLabor = () => {
               </div>
 
               {/* Record Attendance Form */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 pt-2 border-t">
                 <h3 className="text-base font-medium">
                   Record Attendance for Today
                 </h3>
@@ -896,6 +950,7 @@ const ContractorLabor = () => {
                       id="attendance-date"
                       type="date"
                       value={attendanceDate}
+                      max={new Date().toISOString().split("T")[0]}
                       onChange={(e) => setAttendanceDate(e.target.value)}
                     />
                   </div>
@@ -916,21 +971,20 @@ const ContractorLabor = () => {
                       id="attendance-absent"
                       type="number"
                       value={absent}
-                      min="0"
-                      max={selectedTeam.members}
-                      onChange={(e) => setAbsent(Number(e.target.value))}
+                      readOnly
+                      className="bg-gray-50"
                     />
                   </div>
                 </div>
 
                 <div className="flex justify-end space-x-2 mt-2">
                   <Button
-                    onClick={() => {
-                      handleSaveAttendance();
-                      setAttendanceDialogOpen(false);
-                    }}
+                    onClick={handleSaveAttendance}
+                    disabled={createdAttendance.isPending}
                   >
-                    Save Attendance
+                    {createdAttendance.isPending
+                      ? "Saving..."
+                      : "Save Attendance"}
                   </Button>
                 </div>
               </div>

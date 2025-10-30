@@ -183,7 +183,7 @@ const ContractorTimeline: React.FC = () => {
           <div className="space-y-3 pl-4 border-l-2 border-gray-200">
             {items.map((item) => (
               <div key={item.id} className="relative">
-                <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[1.65rem] top-2"></div>
+                <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[3rem] top-2"></div>
                 <div className="p-4 border rounded-lg hover:shadow-md transition">
                   <div className="flex flex-wrap justify-between mb-2">
                     <div className="flex items-center">
