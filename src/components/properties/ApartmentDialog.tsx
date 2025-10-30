@@ -30,7 +30,7 @@ import {
   ProjectStatus,
 } from "@/types/property";
 import { toast } from "sonner";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { fetchUnit } from "@/utils/units/Methods";
@@ -62,7 +62,7 @@ export const ApartmentDialog = ({
     propertyType: "Apartment",
     status: "Available",
     projectStatus: "upcoming",
-    totalAmount: 0,
+    // totalAmount: 0,
     amountReceived: 0,
     balanceAmount: 0,
     ratePlan: "",
@@ -96,7 +96,14 @@ export const ApartmentDialog = ({
       createdAt?: string;
     }[]
   >([]);
+  const [enquiryCustomers, setEnquiryCustomers] = useState([
+    { name: "", contact: "" },
+  ]);
 
+  const [purchasedCustomer, setPurchasedCustomer] = useState({
+    name: "",
+    contact: "",
+  });
   const { data: fetchedUnit, isLoading: isFetchingUnit } = useQuery({
     queryKey: ["unit", apartment?._id],
     queryFn: () => fetchUnit(apartment!._id),
@@ -121,7 +128,7 @@ export const ApartmentDialog = ({
         propertyType: fetchedUnit.propertyType || "Apartment",
         status: fetchedUnit.status || "Available",
         projectStatus: fetchedUnit.projectStatus || "upcoming",
-        totalAmount: fetchedUnit.totalAmount || 0,
+        // totalAmount: fetchedUnit.totalAmount || 0,
         amountReceived: fetchedUnit.amountReceived || 0,
         balanceAmount: fetchedUnit.balanceAmount || 0,
         ratePlan: fetchedUnit.ratePlan || "",
@@ -174,7 +181,7 @@ export const ApartmentDialog = ({
       propertyType: "Apartment",
       status: "Available",
       projectStatus: "upcoming",
-      totalAmount: 0,
+      // totalAmount: 0,
       amountReceived: 0,
       balanceAmount: 0,
       ratePlan: "",
@@ -200,14 +207,14 @@ export const ApartmentDialog = ({
     setDocumentPreviews([]);
   };
 
-  useEffect(() => {
-    const total = Number(formData.totalAmount) || 0;
-    const received = Number(formData.amountReceived) || 0;
-    setFormData((prev) => ({
-      ...prev,
-      balanceAmount: Math.max(0, total - received),
-    }));
-  }, [formData.totalAmount, formData.amountReceived]);
+  // useEffect(() => {
+  //   const total = Number(formData.totalAmount) || 0;
+  //   const received = Number(formData.amountReceived) || 0;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     balanceAmount: Math.max(0, total - received),
+  //   }));
+  // }, [formData.totalAmount, formData.amountReceived]);
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -285,10 +292,10 @@ export const ApartmentDialog = ({
       toast.error("Membership and Plot number are required");
       return;
     }
-    if ((formData.totalAmount || 0) <= 0) {
-      toast.error("Total amount must be greater than 0");
-      return;
-    }
+    // if ((formData.totalAmount || 0) <= 0) {
+    //   toast.error("Total amount must be greater than 0");
+    //   return;
+    // }
     if (mode === "add" && !thumbnailFile) {
       toast.error("Thumbnail is required for new units");
       return;
@@ -324,6 +331,22 @@ export const ApartmentDialog = ({
     }
 
     onSave?.(payload, mode);
+  };
+
+  const handleAddEnquiry = () => {
+    setEnquiryCustomers([...enquiryCustomers, { name: "", contact: "" }]);
+  };
+
+  const handleRemoveEnquiry = (index: number) => {
+    const list = [...enquiryCustomers];
+    list.splice(index, 1);
+    setEnquiryCustomers(list);
+  };
+
+  const handleEnquiryChange = (index: number, field: string, value: string) => {
+    const list = [...enquiryCustomers];
+    list[index][field] = value;
+    setEnquiryCustomers(list);
   };
 
   if (isFetchingUnit) return <div>Loading unit details...</div>;
@@ -474,7 +497,7 @@ export const ApartmentDialog = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          {/* <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Total Amount (₹) *</Label>
               <Input
@@ -513,10 +536,10 @@ export const ApartmentDialog = ({
               />
               <p className="text-xs text-muted-foreground">Auto-calculated</p>
             </div>
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <Label>Rate Plan</Label>
               <Input
                 value={formData.ratePlan || ""}
@@ -524,7 +547,7 @@ export const ApartmentDialog = ({
                   setFormData({ ...formData, ratePlan: e.target.value })
                 }
               />
-            </div>
+            </div> */}
             <div>
               <Label>Registration Status</Label>
               <Select
@@ -547,19 +570,18 @@ export const ApartmentDialog = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div>
-            <Label>Expected Delivery Date</Label>
-            <Input
-              type="date"
-              value={formData.deliveryDate || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, deliveryDate: e.target.value })
-              }
-            />
+            <div>
+              <Label>Expected Delivery Date</Label>
+              <Input
+                type="date"
+                value={formData.deliveryDate || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, deliveryDate: e.target.value })
+                }
+              />
+            </div>
           </div>
-
           <div>
             <Label>Google Maps Location</Label>
             <Input
@@ -636,7 +658,7 @@ export const ApartmentDialog = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Enquiry Customer Name</Label>
               <Input
@@ -661,9 +683,101 @@ export const ApartmentDialog = ({
                 }
               />
             </div>
+          </div> */}
+          {/* Enquiry Customers Section */}
+          <div>
+            <Label className="font-semibold text-lg mb-2 block">
+              Enquiry Customers
+            </Label>
+
+            {enquiryCustomers.map((item, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-2 gap-4 mb-3 items-end"
+              >
+                <div>
+                  <Label>Name</Label>
+                  <Input
+                    value={item.name}
+                    onChange={(e) =>
+                      handleEnquiryChange(index, "name", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label>Contact</Label>
+                    <Input
+                      value={item.contact}
+                      onChange={(e) =>
+                        handleEnquiryChange(index, "contact", e.target.value)
+                      }
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex items-center gap-2 pb-1">
+                    {index === enquiryCustomers.length - 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleAddEnquiry}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {enquiryCustomers.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleRemoveEnquiry(index)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Purchased Customer Section */}
+          <div>
+            <Label className="font-semibold text-lg mb-2 block">
+              Purchased Customer
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={purchasedCustomer.name}
+                  onChange={(e) =>
+                    setPurchasedCustomer({
+                      ...purchasedCustomer,
+                      name: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label>Contact</Label>
+                <Input
+                  value={purchasedCustomer.contact}
+                  onChange={(e) =>
+                    setPurchasedCustomer({
+                      ...purchasedCustomer,
+                      contact: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Purchased Customer Name</Label>
               <Input
@@ -688,7 +802,7 @@ export const ApartmentDialog = ({
                 }
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">

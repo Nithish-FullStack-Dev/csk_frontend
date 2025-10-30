@@ -89,6 +89,10 @@ export function PropertyDetails({
     property
   );
 
+  // ✅ Extract customer info from property safely
+  const enquiryCustomers = (property as any)?.enquiryCustomers || [];
+  const purchasedCustomer = (property as any)?.purchasedCustomer || {};
+
   // CREATE UNIT
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
@@ -286,12 +290,12 @@ export function PropertyDetails({
                   <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
                   <span>Delivery: {formatDate(property.deliveryDate)}</span>
                 </div>
-                <div className="flex items-center">
+                {/* <div className="flex items-center">
                   <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
                   <span>
                     Total: {formatIndianCurrency(property.totalAmount)}
                   </span>
-                </div>
+                </div> */}
               </div>
 
               <div className="mt-4">
@@ -311,36 +315,48 @@ export function PropertyDetails({
                 <User className="mr-2 h-5 w-5" /> Customer Information
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Customer Name</p>
-                <p className="font-medium">
-                  {(property.customerId as any)?.user?.name ||
-                    (property.status === "Sold"
-                      ? property.purchasedCustomerName || "Owner"
-                      : "N/A")}
+              {/* Enquiry Customers */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Enquiry Customers
                 </p>
+
+                {enquiryCustomers.length > 0 ? (
+                  <ul className="space-y-2">
+                    {enquiryCustomers.map((cust, i) => (
+                      <li
+                        key={i}
+                        className="font-medium flex items-center gap-3"
+                      >
+                        <div>{cust.name || "N/A"}</div>
+                        <div className="text-sm flex items-center gap-1">
+                          <Phone className="h-4 w-4" /> {cust.contact || "N/A"}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted">No enquiry customers</p>
+                )}
               </div>
+
+              {/* Purchased Customer */}
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Customer Status</p>
-                <div>
-                  {getStatusBadge(
-                    property.customerStatus ||
-                      (property.status === "Sold" ? "Purchased" : "Open")
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Contact Number</p>
+                <p className="text-sm text-muted-foreground">
+                  Purchased Customer
+                </p>
+                <p className="font-medium">{purchasedCustomer.name || "N/A"}</p>
                 <p className="font-medium flex items-center">
-                  <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-                  {property.contactNo || "N/A"}
+                  <Phone className="mr-2 h-4 w-4" />
+                  {purchasedCustomer.contact || "N/A"}
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-xl flex items-center">
                 <IndianRupee className="mr-2 h-5 w-5" /> Financial Details
@@ -393,7 +409,7 @@ export function PropertyDetails({
                 </p>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader>

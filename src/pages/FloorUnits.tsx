@@ -245,7 +245,11 @@ const FloorUnits = () => {
             <Card
               key={apartment._id || idx}
               className="hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`)}
+              onClick={() =>
+                navigate(
+                  `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`
+                )
+              }
             >
               <CardContent className="p-0">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -334,14 +338,14 @@ const FloorUnits = () => {
                               </p>
                             </div>
                           </div>
-                          <div>
+                          {/* <div>
                             <p className="text-sm text-muted-foreground">
                               Price
                             </p>
                             <p className="font-medium">
                               {formatIndianCurrency(apartment.totalAmount)}
                             </p>
-                          </div>
+                          </div> */}
                         </div>
 
                         {apartment.status !== "Available" && (

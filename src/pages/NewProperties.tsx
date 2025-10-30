@@ -572,6 +572,21 @@ const NewProperties = () => {
                               <X className="h-4 w-4 text-red-500" />
                             )}
                           </div>
+
+                          {/* RERA Status */}
+                          <div className="flex justify-between mt-2">
+                            <span>RERA Approved</span>
+                            {b.reraApproved ? (
+                              <div className="flex items-center space-x-2">
+                                <Check className="h-4 w-4 text-green-500" />
+                                <span className="text-sm font-medium">
+                                  {b.reraNumber || "N/A"}
+                                </span>
+                              </div>
+                            ) : (
+                              <X className="h-4 w-4 text-red-500" />
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex gap-2 mt-4">
