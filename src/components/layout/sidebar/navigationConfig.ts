@@ -209,7 +209,7 @@ export const moduleToNavItem: Record<string, any> = {
     icon: IndianRupee,
     label: "My Commissions",
   },
-  Documents: { to: "/documents", icon: FileText, label: "Documents" },
+  "My Documents": { to: "/documents", icon: FileText, label: "My Documents" },
   "Construction Progress": {
     to: "/progress",
     icon: Gauge,
@@ -304,11 +304,6 @@ export const buildNavigationForRole = (
   ];
   let middle: any[] = [];
 
-  // Admin always sees Role Management (in middle flow)
-  if (roleName === "admin") {
-    middle.push(moduleToNavItem["Role Management"]);
-  }
-
   // Add modules based on permissions
   if (rolePermissions && Array.isArray(rolePermissions)) {
     rolePermissions.forEach((perm) => {
@@ -320,6 +315,10 @@ export const buildNavigationForRole = (
         middle.push(navItem);
       }
     });
+    // Admin always sees Role Management (in middle flow)
+    if (roleName === "admin") {
+      middle.push(moduleToNavItem["Role Management"]);
+    }
   }
 
   // Remove System Settings and Profile if present in middle
