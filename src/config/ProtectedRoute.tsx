@@ -18,12 +18,8 @@ const ProtectedRoute = ({ roleSubmodule, children }) => {
     return children;
   }
 
-  if (user.role === "admin") {
-    if (roleSubmodule === "Role Management") {
-      return children;
-    } else {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  if (user.role === "admin" && roleSubmodule === "Role Management") {
+    return children;
   }
 
   const { userCanViewUser, isRolePermissionsLoading } = useRBAC({
