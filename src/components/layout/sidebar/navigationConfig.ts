@@ -200,7 +200,7 @@ export const moduleToNavItem: Record<string, any> = {
   Approvals: { to: "/approvals", icon: CheckSquare, label: "Approvals" },
   "My Schedule": { to: "/myschedule", icon: Calendar, label: "My Schedule" },
   "Inspection Schedule": {
-    to: "/schedule",
+    to: "/myschedule",
     icon: Calendar,
     label: "Inspection Schedule",
   },
@@ -215,7 +215,7 @@ export const moduleToNavItem: Record<string, any> = {
     icon: Gauge,
     label: "Construction Progress",
   },
-  "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
+  // "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
   "Task Management": { to: "/tasks", icon: ListTodo, label: "Task Management" },
   "Invoice Management": {
     to: "/invoices",
@@ -239,7 +239,11 @@ export const moduleToNavItem: Record<string, any> = {
   },
   "Lead Management": { to: "/leads", icon: Users, label: "Lead Management" },
   Commissions: { to: "/commissions", icon: IndianRupee, label: "Commissions" },
-  Projects: { to: "/projects", icon: Briefcase, label: "Projects Overview" },
+  "Projects Overview": {
+    to: "/projects",
+    icon: Building,
+    label: "Projects Overview",
+  },
   "Construction Timeline": {
     to: "/timeline",
     icon: Calendar,

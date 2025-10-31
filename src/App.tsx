@@ -11,7 +11,7 @@ import MessagingPage from "./pages/MessagingPage";
 // import Properties from "./pages/Properties";
 // import PropertyDetails from "./pages/Properties/PropertyDetails";
 import NotFound from "./pages/NotFound";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, Roles, useAuth } from "./contexts/AuthContext";
 import Invoices from "./pages/Invoices";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
@@ -103,6 +103,7 @@ import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
+import { Permission } from "./types/permission";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -118,24 +119,6 @@ const queryClient = new QueryClient({
 const App = () => {
   const [allRoles, setAllRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_URL}/api/role/roles`
-        );
-        setAllRoles(response.data.map((role) => role.name));
-      } catch (error) {
-        console.error("Failed to fetch roles:", error);
-        // Optionally set a fallback: setAllRoles(["admin", "owner", /* etc. */]);
-      } finally {
-        setRolesLoading(false);
-      }
-    };
-
-    fetchRoles();
-  }, []);
 
   const TeamRouteWrapper = () => {
     const { user } = useAuth();
@@ -202,10 +185,7 @@ const App = () => {
               <Route
                 path="/messaging"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Communications"}>
                     <ChatInterface />
                   </ProtectedRoute>
                 }
@@ -221,10 +201,7 @@ const App = () => {
               <Route
                 path="/enquiry"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Enquiry"}>
                     <Enquiry />
                   </ProtectedRoute>
                 }
@@ -234,10 +211,7 @@ const App = () => {
               <Route
                 path="/reports"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <ReportsHome />
                   </ProtectedRoute>
                 }
@@ -245,10 +219,7 @@ const App = () => {
               <Route
                 path="/reports/properties"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <PropertiesReport />
                   </ProtectedRoute>
                 }
@@ -256,10 +227,7 @@ const App = () => {
               <Route
                 path="/reports/users-access"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <UsersAccessReport />
                   </ProtectedRoute>
                 }
@@ -267,10 +235,7 @@ const App = () => {
               <Route
                 path="/reports/agents"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <AgentsReport />
                   </ProtectedRoute>
                 }
@@ -278,10 +243,7 @@ const App = () => {
               <Route
                 path="/reports/team-leads"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <TeamLeadsReport />
                   </ProtectedRoute>
                 }
@@ -289,10 +251,7 @@ const App = () => {
               <Route
                 path="/reports/sales-managers"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <SalesManagersReport />
                   </ProtectedRoute>
                 }
@@ -300,10 +259,7 @@ const App = () => {
               <Route
                 path="/reports/accounting"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <AccountingReport />
                   </ProtectedRoute>
                 }
@@ -311,10 +267,7 @@ const App = () => {
               <Route
                 path="/reports/contractors"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <ContractorsReport />
                   </ProtectedRoute>
                 }
@@ -322,10 +275,7 @@ const App = () => {
               <Route
                 path="/reports/site-incharge"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <SiteInchargeReport />
                   </ProtectedRoute>
                 }
@@ -341,10 +291,7 @@ const App = () => {
               <Route
                 path="/properties"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Properties"}>
                     <NewProperties />
                   </ProtectedRoute>
                 }
@@ -353,8 +300,8 @@ const App = () => {
                 path="/property/:propertyId"
                 element={
                   <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
+                    
+                    
                   >
                     <PropertyDetails  />
                   </ProtectedRoute>
@@ -367,10 +314,7 @@ const App = () => {
               <Route
                 path="/properties/building/:buildingId"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Properties"}>
                     <BuildingDetails />
                   </ProtectedRoute>
                 }
@@ -378,10 +322,7 @@ const App = () => {
               <Route
                 path="/properties/building/:buildingId/floor/:floorId"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Properties"}>
                     <FloorUnits />
                   </ProtectedRoute>
                 }
@@ -389,10 +330,7 @@ const App = () => {
               <Route
                 path="/properties/building/:buildingId/floor/:floorId/unit/:unitId"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Properties"}>
                     <UnitDetails />
                   </ProtectedRoute>
                 }
@@ -402,10 +340,7 @@ const App = () => {
               <Route
                 path="/content"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Content Management"}>
                     <ContentManagement />
                   </ProtectedRoute>
                 }
@@ -415,10 +350,7 @@ const App = () => {
               <Route
                 path="/analytics"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Business Analytics"}>
                     <BusinessAnalytics />
                   </ProtectedRoute>
                 }
@@ -426,10 +358,7 @@ const App = () => {
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"User Management"}>
                     <UserManagement />
                   </ProtectedRoute>
                 }
@@ -437,10 +366,7 @@ const App = () => {
               <Route
                 path="/roles"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Role Management"}>
                     <RoleManagement />
                   </ProtectedRoute>
                 }
@@ -448,10 +374,7 @@ const App = () => {
               <Route
                 path="/sales"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Sales Overview"}>
                     <SalesOverview />
                   </ProtectedRoute>
                 }
@@ -459,10 +382,7 @@ const App = () => {
               <Route
                 path="/operations"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Operations"}>
                     <OperationsWorkflow />
                   </ProtectedRoute>
                 }
@@ -470,10 +390,7 @@ const App = () => {
               <Route
                 path="/finances"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Finances"}>
                     <Finances />
                   </ProtectedRoute>
                 }
@@ -481,10 +398,7 @@ const App = () => {
               <Route
                 path="/settings"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"System Config"}>
                     <Settings />
                   </ProtectedRoute>
                 }
@@ -492,10 +406,7 @@ const App = () => {
               <Route
                 path="/profile"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Profile"}>
                     <Profile />
                   </ProtectedRoute>
                 }
@@ -505,10 +416,7 @@ const App = () => {
               <Route
                 path="/customer"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Customer Management"}>
                     <CustomerManagement />
                   </ProtectedRoute>
                 }
@@ -516,10 +424,7 @@ const App = () => {
               <Route
                 path="/team"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"My Team"}>
                     <TeamRouteWrapper />
                   </ProtectedRoute>
                 }
@@ -527,10 +432,7 @@ const App = () => {
               <Route
                 path="/teamLead"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Team Management"}>
                     <TeamLeadRouteWrapper />
                   </ProtectedRoute>
                 }
@@ -540,10 +442,7 @@ const App = () => {
               <Route
                 path="/vehicles"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Car Allocation"}>
                     <CarAllocation />
                   </ProtectedRoute>
                 }
@@ -551,10 +450,7 @@ const App = () => {
               <Route
                 path="/approvals"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Approvals"}>
                     <Approvals />
                   </ProtectedRoute>
                 }
@@ -564,10 +460,7 @@ const App = () => {
               <Route
                 path="/leads"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Lead Management"}>
                     {<LeadManagementWrapper />}
                   </ProtectedRoute>
                 }
@@ -575,10 +468,7 @@ const App = () => {
               <Route
                 path="/schedule"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Inspection Schedule"}>
                     <MySchedule />
                   </ProtectedRoute>
                 }
@@ -586,10 +476,7 @@ const App = () => {
               <Route
                 path="/myschedule"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"My Schedule"}>
                     <AgentSchedule />
                   </ProtectedRoute>
                 }
@@ -597,10 +484,7 @@ const App = () => {
               <Route
                 path="/visits"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Site Visits"}>
                     <SiteVisits />
                   </ProtectedRoute>
                 }
@@ -608,10 +492,7 @@ const App = () => {
               <Route
                 path="/documents"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Documents"}>
                     <AgentDocuments />
                   </ProtectedRoute>
                 }
@@ -619,10 +500,7 @@ const App = () => {
               <Route
                 path="/commissions"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Commissions"}>
                     <CommissionsWrapper />
                   </ProtectedRoute>
                 }
@@ -632,10 +510,7 @@ const App = () => {
               <Route
                 path="/projects"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Projects Overview"}>
                     <ContractorProjects />
                   </ProtectedRoute>
                 }
@@ -643,10 +518,7 @@ const App = () => {
               <Route
                 path="/tasks"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Task Management"}>
                     <ContractorTasks />
                   </ProtectedRoute>
                 }
@@ -654,10 +526,7 @@ const App = () => {
               <Route
                 path="/timeline"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Construction Timeline"}>
                     <ContractorTimeline />
                   </ProtectedRoute>
                 }
@@ -665,10 +534,7 @@ const App = () => {
               <Route
                 path="/materials"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Materials"}>
                     <ContractorMaterials />
                   </ProtectedRoute>
                 }
@@ -676,10 +542,7 @@ const App = () => {
               <Route
                 path="/labor"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Labor Management"}>
                     <ContractorLabor />
                   </ProtectedRoute>
                 }
@@ -687,10 +550,7 @@ const App = () => {
               <Route
                 path="/invoices"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Invoices"}>
                     <ContractorInvoices />
                   </ProtectedRoute>
                 }
@@ -698,10 +558,7 @@ const App = () => {
               <Route
                 path="/evidence"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Photo Evidence"}>
                     <ContractorPhotoEvidence />
                   </ProtectedRoute>
                 }
@@ -711,10 +568,7 @@ const App = () => {
               <Route
                 path="/verifications"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Task Verifications"}>
                     <TaskVerifications />
                   </ProtectedRoute>
                 }
@@ -722,10 +576,7 @@ const App = () => {
               <Route
                 path="/quality"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Quality Control "}>
                     <QualityControl />
                   </ProtectedRoute>
                 }
@@ -733,10 +584,7 @@ const App = () => {
               <Route
                 path="/inspections"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Site Inspections"}>
                     <SiteInspections />
                   </ProtectedRoute>
                 }
@@ -744,10 +592,7 @@ const App = () => {
               <Route
                 path="/contractors"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Contractors"}>
                     <ContractorsList />
                   </ProtectedRoute>
                 }
@@ -755,10 +600,7 @@ const App = () => {
               <Route
                 path="/progress"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Construction Progress"}>
                     <ConstructionProgress />
                   </ProtectedRoute>
                 }
@@ -768,10 +610,7 @@ const App = () => {
               <Route
                 path="/payments"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Payments"}>
                     <Payments />
                   </ProtectedRoute>
                 }
@@ -779,10 +618,7 @@ const App = () => {
               <Route
                 path="/reports"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Reports"}>
                     <Reports />
                   </ProtectedRoute>
                 }
@@ -790,10 +626,7 @@ const App = () => {
               <Route
                 path="/budgets"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Budget Tracking"}>
                     <BudgetTracking />
                   </ProtectedRoute>
                 }
@@ -801,10 +634,7 @@ const App = () => {
               <Route
                 path="/taxes"
                 element={
-                  <ProtectedRoute
-                    allowedRoles={allRoles}
-                    loading={rolesLoading}
-                  >
+                  <ProtectedRoute roleSubmodule={"Tax Documents"}>
                     <TaxDocuments />
                   </ProtectedRoute>
                 }

@@ -45,7 +45,7 @@ const moduleConfig: Record<string, string[]> = {
     "My Schedule",
   ],
   "Site Incharge": [
-    "My Projects",
+    // "My Projects",
     "Projects Overview",
     "Construction Timeline",
     "Site Inspections",
