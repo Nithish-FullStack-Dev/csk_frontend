@@ -1,4 +1,5 @@
 import { Building, FloorUnit } from "@/types/building";
+import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +21,13 @@ export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
   );
   // Your backend returned { plots: [...] } earlier; fallback to data shapes
   return data?.plots || data?.data || [];
+};
+export const getAllOpenLand = async (): Promise<OpenLand[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
+    { withCredentials: true }
+  );
+  return data?.lands || [];
 };
 
 export const fetchUnits = async () => {
@@ -51,8 +59,7 @@ export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
     { withCredentials: true }
   );
@@ -74,8 +81,7 @@ export const fetchUnitsForDropDownByBuildingId = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -97,8 +103,7 @@ export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
