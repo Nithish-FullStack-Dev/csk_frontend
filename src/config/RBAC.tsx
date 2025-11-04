@@ -1,5 +1,4 @@
-import Loader from "@/components/Loader";
-import { useAuth, User } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { fetchRolePermissions } from "@/pages/UserManagement";
 import { Permission } from "@/types/permission";
 import { useQuery } from "@tanstack/react-query";
@@ -37,10 +36,14 @@ export const useRBAC = ({ roleSubmodule }: Prop) => {
   const userCanDeleteUser = rolePermissions?.permissions.some(
     (per) => per.submodule === roleSubmodule && per.actions.delete
   );
+  const userCanViewUser = rolePermissions?.permissions.some(
+    (per) => per.submodule === roleSubmodule && per.actions.read
+  );
   return {
     userCanAddUser,
     userCanEditUser,
     userCanDeleteUser,
+    userCanViewUser,
     isRolePermissionsLoading,
   };
 };
