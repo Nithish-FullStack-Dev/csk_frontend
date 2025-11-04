@@ -10,10 +10,11 @@ export interface Building {
   projectName: string;
   location: string;
   propertyType:
-  | "Villa Complex"
-  | "Apartment Complex"
-  | "Plot Development"
-  | "Land Parcel";
+    | "Villa Complex"
+    | "Apartment Complex"
+    | "Plot Development"
+    | "Land Parcel"
+    | "Commercial";
   totalUnits: number;
   availableUnits: number;
   soldUnits: number;

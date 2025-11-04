@@ -609,7 +609,7 @@ const SiteInspections = () => {
                           unitsByFloor &&
                           unitsByFloor?.map((unit, idx) => (
                             <SelectItem key={unit._id || idx} value={unit._id}>
-                              plot no:{unit.plotNo} ,{unit.propertyType}
+                              plot no:{unit.plotNo}
                             </SelectItem>
                           ))
                         )}

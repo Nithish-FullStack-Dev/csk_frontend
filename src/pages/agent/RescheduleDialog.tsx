@@ -147,11 +147,7 @@ export function RescheduleDialog({
           />
 
           <Input
-            value={
-              schedule?.unit
-                ? `Plot No: ${schedule.unit.plotNo} (${schedule.unit.propertyType})`
-                : "N/A"
-            }
+            value={schedule?.unit ? `Plot No: ${schedule.unit.plotNo}` : "N/A"}
             disabled
             readOnly
           />

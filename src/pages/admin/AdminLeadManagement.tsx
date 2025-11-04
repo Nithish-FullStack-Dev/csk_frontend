@@ -78,6 +78,7 @@ import {
 } from "@/utils/leads/LeadConfig";
 import { Property } from "@/types/property";
 import CircleLoader from "@/components/CircleLoader";
+import { Building } from "@/types/building";
 
 const AdminLeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -223,9 +224,10 @@ const AdminLeadManagement = () => {
                       Rejected: "bg-red-100 text-red-800",
                     };
 
-                    const leadUnit = lead.unit as Property;
+                    const leadUnit = lead?.unit as Property;
+                    const leadProperty = lead?.property as Building;
                     const propertyDisplayName = leadUnit
-                      ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                      ? `${leadProperty?.projectName} - ${leadUnit.plotNo}`
                       : "N/A";
 
                     return (
@@ -357,8 +359,9 @@ const AdminLeadManagement = () => {
                   };
 
                   const leadUnit = lead.unit as Property;
+                  const leadProperty = lead?.property as Building;
                   const propertyDisplayName = leadUnit
-                    ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                    ? `${leadProperty?.projectName} - ${leadUnit?.plotNo}`
                     : "N/A";
 
                   return (

@@ -79,6 +79,7 @@ import {
   useUpdateLead,
 } from "@/utils/leads/LeadConfig";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
+import { Building } from "@/types/building";
 
 const LeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -251,7 +252,7 @@ const LeadManagement = () => {
     const leadUnit = lead.unit as Property;
     const propertySearchName = leadUnit
       ? `${leadUnit.projectName} - ${leadUnit.plotNo}`
-      : leadPropertyId || ""; 
+      : leadPropertyId || "";
 
     const matchesSearch =
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -598,7 +599,7 @@ const LeadManagement = () => {
                           unitsByFloor &&
                           unitsByFloor.map((unit, idx) => (
                             <SelectItem key={unit._id || idx} value={unit._id}>
-                              Plot {unit.plotNo}, {unit.propertyType}
+                              Plot {unit.plotNo}
                             </SelectItem>
                           ))
                         )}
@@ -731,8 +732,9 @@ const LeadManagement = () => {
                     };
 
                     const leadUnit = lead.unit as Property;
+                    const leadProperty = lead?.property as Building;
                     const propertyDisplayName = leadUnit
-                      ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                      ? `${leadProperty?.propertyType} - ${leadUnit?.plotNo}`
                       : "N/A";
 
                     return (
@@ -883,8 +885,9 @@ const LeadManagement = () => {
                   };
 
                   const leadUnit = lead.unit as Property;
+                  const leadProperty = lead?.property as Building;
                   const propertyDisplayName = leadUnit
-                    ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                    ? `${leadProperty?.projectName} - ${leadUnit.plotNo}`
                     : "N/A";
 
                   return (
@@ -1074,9 +1077,11 @@ const LeadManagement = () => {
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>
                         {(() => {
-                          const leadUnit = selectedLead.unit as Property;
+                          const leadUnit = selectedLead?.unit as Property;
+                          const leadProperty =
+                            selectedLead?.property as Building;
                           return leadUnit
-                            ? `${leadUnit.propertyType} - ${leadUnit.plotNo}`
+                            ? `${leadProperty?.projectName} - ${leadUnit.plotNo}`
                             : "N/A";
                         })()}
                       </span>
@@ -1301,7 +1306,7 @@ const LeadManagement = () => {
                         unitsByFloor &&
                         unitsByFloor.map((unit, idx) => (
                           <SelectItem key={unit._id || idx} value={unit._id}>
-                            Plot {unit.plotNo}, {unit.propertyType}
+                            Plot {unit.plotNo}
                           </SelectItem>
                         ))
                       )}

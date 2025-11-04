@@ -33,9 +33,7 @@ export function DetailsDialog({ open, setOpen, schedule }) {
           </p>
           <p>
             <strong>Apartment:</strong>{" "}
-            {schedule?.unit
-              ? `Plot No: ${schedule.unit.plotNo} (${schedule.unit.propertyType})`
-              : "N/A"}
+            {schedule?.unit ? `Plot No: ${schedule.unit.plotNo}` : "N/A"}
           </p>
           <p>
             <strong>Date:</strong>{" "}

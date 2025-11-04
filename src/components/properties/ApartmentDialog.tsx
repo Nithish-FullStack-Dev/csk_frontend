@@ -59,7 +59,6 @@ export const ApartmentDialog = ({
     plotNo: "",
     villaFacing: "North",
     extent: 0,
-    propertyType: "Apartment",
     status: "Available",
     projectStatus: "upcoming",
     // totalAmount: 0,
@@ -125,7 +124,6 @@ export const ApartmentDialog = ({
         plotNo: fetchedUnit.plotNo || "",
         villaFacing: fetchedUnit.villaFacing || "North",
         extent: fetchedUnit.extent || 0,
-        propertyType: fetchedUnit.propertyType || "Apartment",
         status: fetchedUnit.status || "Available",
         projectStatus: fetchedUnit.projectStatus || "upcoming",
         // totalAmount: fetchedUnit.totalAmount || 0,
@@ -178,7 +176,6 @@ export const ApartmentDialog = ({
       plotNo: "",
       villaFacing: "North",
       extent: 0,
-      propertyType: "Apartment",
       status: "Available",
       projectStatus: "upcoming",
       // totalAmount: 0,
@@ -426,25 +423,6 @@ export const ApartmentDialog = ({
                       {facing}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Property Type</Label>
-              <Select
-                value={formData.propertyType || "Apartment"}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, propertyType: v as PropertyType })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Apartment">Apartment</SelectItem>
-                  <SelectItem value="Villa">Villa</SelectItem>
-                  <SelectItem value="Plot">Plot</SelectItem>
-                  <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                 </SelectContent>
               </Select>
             </div>

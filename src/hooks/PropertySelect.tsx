@@ -96,7 +96,7 @@ const PropertySelect = ({
             ) : projects?.length ? (
               projects.map((project) => (
                 <SelectItem key={project._id} value={project._id}>
-                  {project.projectName}
+                  {project?.projectName} , {project?.propertyType}
                 </SelectItem>
               ))
             ) : (
@@ -179,7 +179,7 @@ const PropertySelect = ({
             ) : units.length ? (
               units.map((unit) => (
                 <SelectItem key={unit._id} value={unit._id}>
-                  Plot {unit.plotNo}, {unit.propertyType}
+                  Plot {unit.plotNo}
                 </SelectItem>
               ))
             ) : (

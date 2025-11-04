@@ -294,6 +294,7 @@ export const BuildingDialog = ({
                     Apartment Complex
                   </SelectItem>
                   <SelectItem value="Villa Complex">Villa Complex</SelectItem>
+                  <SelectItem value="Commercial">Commercial</SelectItem>
                   <SelectItem value="Plot Development">
                     Plot Development
                   </SelectItem>
