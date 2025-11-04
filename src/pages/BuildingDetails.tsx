@@ -19,6 +19,8 @@ import {
   Trash2,
   FileText,
   Edit,
+  GalleryThumbnails,
+  Image,
 } from "lucide-react";
 import { Building, FloorUnit } from "@/types/building";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +44,7 @@ const BuildingDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Fetch floors
   const {
@@ -478,8 +481,8 @@ const BuildingDetails = () => {
         {building?.images?.length > 0 && (
           <Card className="shadow-lg rounded-xl overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800">
-                Gallery
+              <CardTitle>
+                <Image className="w-5 h-5 mr-2 inline" /> Gallery
               </CardTitle>
             </CardHeader>
 
@@ -489,6 +492,7 @@ const BuildingDetails = () => {
                   <div
                     key={index}
                     className="relative group rounded-lg overflow-hidden cursor-pointer"
+                    onClick={() => setSelectedImage(img)}
                   >
                     <img
                       src={img}
@@ -503,6 +507,28 @@ const BuildingDetails = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Fullscreen Lightbox */}
+              {selectedImage && (
+                <div
+                  className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <div className="relative max-w-4xl w-[90vw]">
+                    <button
+                      onClick={() => setSelectedImage(null)}
+                      className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
+                    >
+                      <X className="h-8 w-8" />
+                    </button>
+                    <img
+                      src={selectedImage}
+                      alt="Preview"
+                      className="w-full h-auto rounded-lg shadow-lg object-contain"
+                    />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
