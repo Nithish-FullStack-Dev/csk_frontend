@@ -6,13 +6,19 @@ import { useRBAC } from "./RBAC";
 const ProtectedRoute = ({ roleSubmodule, children }) => {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) {
+  const { userCanViewUser, isRolePermissionsLoading } = useRBAC({
+    roleSubmodule,
+  });
+
+  if (isRolePermissionsLoading || isLoading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-estate-navy" />
       </div>
     );
   }
+
+  if (!user) return <Navigate to="/login" replace />;
 
   if (roleSubmodule === "System Config" || roleSubmodule === "Profile") {
     return children;
@@ -22,19 +28,6 @@ const ProtectedRoute = ({ roleSubmodule, children }) => {
     return children;
   }
 
-  const { userCanViewUser, isRolePermissionsLoading } = useRBAC({
-    roleSubmodule,
-  });
-
-  if (isRolePermissionsLoading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-estate-navy" />
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/login" replace />;
   if (!userCanViewUser) return <Navigate to="/unauthorized" replace />;
   return children;
 };

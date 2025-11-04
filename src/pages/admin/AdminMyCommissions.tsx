@@ -21,114 +21,29 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { format, addDays, subMonths } from "date-fns";
+import { format, subMonths } from "date-fns";
 import axios from "axios";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import {
   IndianRupee,
   TrendingUp,
   Download,
-  ArrowUpRight,
-  FileText,
   Info,
-  PlusCircle,
-  Edit,
+  ArrowUpRight,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { useAuth, User } from "@/contexts/AuthContext";
-import { Property } from "../public/PropertyInterfaces";
-// import { Lead } from "./LeadManagement";
-import { Calendar } from "@/components/ui/calendar";
-import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "../UserManagement";
-import { Lead } from "../agent/LeadManagement";
-
-interface PopulatedLead extends Omit<Lead, "property" | "addedBy"> {
-  property: Property;
-  addedBy: User;
-}
-
-interface Commission {
-  _id: string;
-  clientId: PopulatedLead;
-  commissionAmount: string;
-  commissionPercent: string;
-  saleDate: Date;
-  paymentDate?: Date;
-  status: "pending" | "paid";
-}
-
-interface CommissionEligibleLead extends Lead {
-  property: Property;
-}
-
-const fetchAllCommission = async (): Promise<Commission[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/commission/getAllCommissions`,
-    { withCredentials: true }
-  );
-  return Array.isArray(data) ? data : [];
-};
-
-const fetchCommissionEligibleLeads = async (): Promise<
-  CommissionEligibleLead[]
-> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getClosedLeads`,
-    { withCredentials: true }
-  );
-  return Array.isArray(data)
-    ? data
-    : data && Array.isArray(data.leads)
-    ? data.leads
-    : data && Array.isArray(data.data)
-    ? data.data
-    : [];
-};
+import { useAuth } from "@/contexts/AuthContext";
+import { Commission, fetchAllCommission } from "@/utils/leads/CommissionConfig";
 
 const AdminMyCommissions = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedCommission, setSelectedCommission] =
-    useState<Commission | null>(null);
-  const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
-  const [commissionFormData, setCommissionFormData] = useState({
-    _id: "",
-    clientId: "",
-    commissionAmount: "",
-    commissionPercent: "",
-    saleDate: new Date(),
-    paymentDate: null as Date | null,
-    status: "pending",
-  });
-  const [isEditing, setIsEditing] = useState(false);
-
-  const queryClient = useQueryClient();
 
   const {
     data: commissions,
@@ -141,118 +56,17 @@ const AdminMyCommissions = () => {
     staleTime: 0,
   });
 
-  const {
-    data: commissionEligibleLeads,
-    isLoading: isLeadsLoading,
-    isError: isLeadsError,
-    error: leadsErr,
-  } = useQuery<CommissionEligibleLead[], Error>({
-    queryKey: ["commissionEligibleLeads"],
-    queryFn: fetchCommissionEligibleLeads,
-    staleTime: 0,
-  });
-
-  const {
-    data: rolePermissions,
-    isLoading: isRolePermissionsLoading,
-    error: rolePermissionsError,
-    isError: isRolePermissionsError,
-  } = useQuery<Permission>({
-    queryKey: ["rolePermissions", user?.role],
-    queryFn: () => fetchRolePermissions(user?.role as string),
-    enabled: !!user?.role,
-  });
-
-  const addCommissionMutation = useMutation({
-    mutationFn: async (
-      newCommission: Omit<Commission, "_id" | "clientId"> & { clientId: string }
-    ) => {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_URL}/api/commission/addCommissions`,
-        newCommission
-      );
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Commission added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["commissions"] });
-      queryClient.invalidateQueries({ queryKey: ["commissionEligibleLeads"] });
-      setIsAddEditDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast.error(
-        `Failed to add commission: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    },
-  });
-
-  const updateCommissionMutation = useMutation({
-    mutationFn: async (updatedCommissionData: {
-      _id: string;
-      commissionAmount: string;
-      commissionPercent: string;
-      saleDate: string;
-      paymentDate: string | null;
-      status: "pending" | "paid";
-    }) => {
-      const { data } = await axios.put(
-        `${import.meta.env.VITE_URL}/api/commission/updateCommissions/${
-          updatedCommissionData._id
-        }`,
-        updatedCommissionData
-      );
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Commission updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["commissions"] });
-      setIsAddEditDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast.error(
-        `Failed to update commission: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    },
-  });
-
   useEffect(() => {
     if (isCommError) {
       toast.error("Failed to fetch commissions.");
     }
   }, [isCommError, commErr]);
 
-  useEffect(() => {
-    if (isLeadsError) {
-      toast.error("Failed to fetch commission eligible leads.");
-    }
-  }, [isLeadsError, leadsErr]);
-
-  if (isRolePermissionsError) {
-    console.error("Error fetching role permissions:", rolePermissionsError);
-    toast.error("Failed to load role permissions");
-  }
-
-  if (isCommissionLoading || isLeadsLoading || isRolePermissionsLoading) {
+  if (isCommissionLoading) {
     return <Loader />;
   }
 
-  const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Commissions" && per.actions.write
-  );
-  const userCanEditUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Commissions" && per.actions.edit
-  );
-  const userCanDeleteUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Commissions" && per.actions.delete
-  );
-
   const actualCommissions: Commission[] = commissions || [];
-  const actualCommissionEligibleLeads: CommissionEligibleLead[] =
-    commissionEligibleLeads || [];
 
   const totalEarned = actualCommissions.reduce((sum, commission) => {
     if (commission.status === "paid") {
@@ -307,7 +121,6 @@ const AdminMyCommissions = () => {
     thisMonth: `₹${thisMonthEarned.toLocaleString("en-IN")}`,
     lastMonth: `₹${lastMonthEarned.toLocaleString("en-IN")}`,
     totalSales: totalSales,
-    conversionRate: totalSales > 0 ? "42%" : "0%",
     pendingTransactions: actualCommissions.filter((c) => c.status === "pending")
       .length,
   };
@@ -379,12 +192,11 @@ const AdminMyCommissions = () => {
         : "N/A";
 
       return [
-        `"${commission.clientId.addedBy.name}"`, // Access client name from populated Lead's addedBy
-        `"${commission.clientId.property.basicInfo.projectName}"`, // Access property name from populated Lead's property
-        `"${commission.clientId.property.basicInfo.plotNumber}"`,
-        `"${commission.clientId.property.financialDetails.totalAmount.toLocaleString(
-          "en-IN"
-        )}"`,
+        `"${commission.clientId.addedBy.name}"`,
+        `"${commission.clientId.property?.projectName}"`,
+        `"${commission.clientId.floorUnit?.floorNumber}"`,
+        `"${commission.clientId.unit?.plotNo}"`,
+        `"${commission.clientId.unit?.totalAmount.toLocaleString("en-IN")}"`,
         `"${commission.commissionAmount}"`,
         `"${commission.commissionPercent}"`,
         `"${saleDateFormatted}"`,
@@ -413,124 +225,6 @@ const AdminMyCommissions = () => {
     toast.success("Commission report downloaded successfully!");
   };
 
-  const handleAddCommissionClick = () => {
-    setIsEditing(false);
-    setCommissionFormData({
-      _id: "",
-      clientId: "",
-      commissionAmount: "",
-      commissionPercent: "",
-      saleDate: new Date(),
-      paymentDate: null,
-      status: "pending",
-    });
-    setIsAddEditDialogOpen(true);
-  };
-
-  const handleEditCommissionClick = (commission: Commission) => {
-    setIsEditing(true);
-    setCommissionFormData({
-      _id: commission._id,
-      clientId: commission.clientId._id,
-      commissionAmount: parseFloat(
-        commission.commissionAmount.replace(/[₹,]/g, "")
-      ).toString(),
-      commissionPercent: parseFloat(
-        commission.commissionPercent.replace(/%/, "")
-      ).toString(),
-      saleDate: new Date(commission.saleDate),
-      paymentDate: commission.paymentDate
-        ? new Date(commission.paymentDate)
-        : null,
-      status: commission.status,
-    });
-    setIsAddEditDialogOpen(true);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setCommissionFormData((prev) => ({
-      ...prev,
-      [id]: value === "" ? "" : Math.max(0, Number(value)).toString(),
-    }));
-  };
-
-  const handleSelectChange = (value: string) => {
-    setCommissionFormData((prev) => ({
-      ...prev,
-      clientId: value,
-    }));
-  };
-
-  const handleDateChange = (
-    date: Date | undefined,
-    field: "saleDate" | "paymentDate"
-  ) => {
-    setCommissionFormData((prev) => ({
-      ...prev,
-      [field]: date || null,
-    }));
-  };
-
-  const handleStatusChange = (checked: boolean) => {
-    setCommissionFormData((prev) => ({
-      ...prev,
-      status: checked ? "paid" : "pending",
-      paymentDate: checked ? new Date() : null,
-    }));
-  };
-
-  const handleSubmitCommission = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!commissionFormData.clientId && !isEditing) {
-      toast.error("Please select a closed property to add a commission.");
-      return;
-    }
-    if (
-      !commissionFormData.commissionAmount ||
-      !commissionFormData.commissionPercent
-    ) {
-      toast.error("Please enter both commission amount and percentage.");
-      return;
-    }
-    if (
-      isNaN(parseFloat(commissionFormData.commissionAmount)) ||
-      isNaN(parseFloat(commissionFormData.commissionPercent))
-    ) {
-      toast.error("Commission amount and percentage must be numbers.");
-      return;
-    }
-    if (!commissionFormData.saleDate) {
-      toast.error("Please select a sale date.");
-      return;
-    }
-
-    const formattedPayload = {
-      commissionAmount: `₹${parseFloat(
-        commissionFormData.commissionAmount
-      ).toLocaleString("en-IN")}`,
-      commissionPercent: `${parseFloat(commissionFormData.commissionPercent)}%`,
-      saleDate: commissionFormData.saleDate.toISOString(),
-      paymentDate: commissionFormData.paymentDate
-        ? commissionFormData.paymentDate.toISOString()
-        : null,
-      status: commissionFormData.status as "pending" | "paid",
-    };
-
-    if (isEditing) {
-      updateCommissionMutation.mutate({
-        _id: commissionFormData._id,
-        ...formattedPayload,
-      });
-    } else {
-      addCommissionMutation.mutate({
-        clientId: commissionFormData?.clientId,
-        ...formattedPayload,
-      });
-    }
-  };
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -541,18 +235,10 @@ const AdminMyCommissions = () => {
               Track your earnings and payment history
             </p>
           </div>
-          <div className="flex gap-2 md:flex-row flex-col">
-            {/* {userCanAddUser && (
-              <Button variant="outline" onClick={handleAddCommissionClick}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Commission
-              </Button>
-            )} */}
-            <Button variant="outline" onClick={handleDownloadReport}>
-              <Download className="mr-2 h-4 w-4" />
-              Download Report
-            </Button>
-          </div>
+          <Button variant="outline" onClick={handleDownloadReport}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Report
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -703,13 +389,12 @@ const AdminMyCommissions = () => {
                         Sale Date
                       </TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredCommissions.length > 0 ? (
-                      filteredCommissions.map((commission) => (
-                        <TableRow key={commission._id}>
+                      filteredCommissions.map((commission: Commission, idx) => (
+                        <TableRow key={commission._id || idx}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-6 w-6">
@@ -732,13 +417,17 @@ const AdminMyCommissions = () => {
                           <TableCell>
                             <div>
                               <p>
-                                {commission.clientId.property?.basicInfo
-                                  ?.projectName || "N/A"}
+                                {commission.clientId.property?.projectName ||
+                                  "N/A"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Floor Number:{" "}
+                                {commission.clientId.floorUnit?.floorNumber ||
+                                  "N/A"}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 Unit:{" "}
-                                {commission.clientId.property?.basicInfo
-                                  ?.plotNumber || "N/A"}
+                                {commission.clientId.unit?.plotNo || "N/A"}
                               </p>
                             </div>
                           </TableCell>
@@ -750,8 +439,7 @@ const AdminMyCommissions = () => {
                               <p className="text-xs text-muted-foreground">
                                 {commission.commissionPercent} of ₹
                                 {(
-                                  commission.clientId.property?.financialDetails
-                                    ?.totalAmount || 0
+                                  commission.clientId.unit?.totalAmount || 0
                                 ).toLocaleString("en-IN")}
                               </p>
                             </div>
@@ -777,40 +465,12 @@ const AdminMyCommissions = () => {
                                 : "Pending"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setSelectedCommission(commission)
-                                }
-                              >
-                                <Info className="h-4 w-4" />
-                                <span className="sr-only">View Details</span>
-                              </Button>
-                              {/* {userCanEditUser && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleEditCommissionClick(commission)
-                                  }
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  <span className="sr-only">
-                                    Edit Commission
-                                  </span>
-                                </Button>
-                              )} */}
-                            </div>
-                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={5}
                           className="text-center text-muted-foreground py-8"
                         >
                           No commissions found for this category.
@@ -824,9 +484,9 @@ const AdminMyCommissions = () => {
               {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
                 {filteredCommissions.length > 0 ? (
-                  filteredCommissions.map((commission) => (
+                  filteredCommissions.map((commission: Commission, idx) => (
                     <div
-                      key={commission._id}
+                      key={commission._id || idx}
                       className="border rounded-lg p-4 bg-white shadow-sm space-y-2"
                     >
                       <div className="flex items-center gap-3">
@@ -847,12 +507,9 @@ const AdminMyCommissions = () => {
 
                       <div>
                         <span className="font-medium">Property:</span>{" "}
-                        {commission.clientId.property?.basicInfo?.projectName ||
-                          "N/A"}
+                        {commission.clientId.property?.projectName || "N/A"}
                         <p className="text-xs text-muted-foreground">
-                          Unit:{" "}
-                          {commission.clientId.property?.basicInfo
-                            ?.plotNumber || "N/A"}
+                          Unit: {commission.clientId.unit?.plotNo || "N/A"}
                         </p>
                       </div>
 
@@ -861,8 +518,7 @@ const AdminMyCommissions = () => {
                         {commission.commissionAmount} (
                         {commission.commissionPercent} of ₹
                         {(
-                          commission.clientId.property?.financialDetails
-                            ?.totalAmount || 0
+                          commission.clientId.unit?.totalAmount || 0
                         ).toLocaleString("en-IN")}
                         )
                       </div>
@@ -886,23 +542,6 @@ const AdminMyCommissions = () => {
                           {commission.status === "paid" ? "Paid" : "Pending"}
                         </Badge>
                       </div>
-
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => setSelectedCommission(commission)}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEditCommissionClick(commission)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
                   ))
                 ) : (
@@ -921,369 +560,6 @@ const AdminMyCommissions = () => {
             </div>
           </CardFooter>
         </Card>
-
-        {selectedCommission && (
-          <Dialog
-            open={!!selectedCommission}
-            onOpenChange={() => setSelectedCommission(null)}
-          >
-            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-              <DialogHeader>
-                <DialogTitle>Commission Details</DialogTitle>
-                <DialogDescription>
-                  Sale transaction information and payment details
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage
-                        src={selectedCommission.clientId.addedBy?.avatar || ""}
-                      />
-                      <AvatarFallback>
-                        {selectedCommission.clientId.addedBy?.name
-                          ? selectedCommission.clientId.addedBy.name[0]
-                          : "N/A"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">
-                        {selectedCommission.clientId.addedBy?.name || "N/A"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Client</p>
-                    </div>
-                  </div>
-                  <Badge
-                    className={
-                      selectedCommission.status === "paid"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }
-                  >
-                    {selectedCommission.status === "paid" ? "Paid" : "Pending"}
-                  </Badge>
-                </div>
-
-                <div className="border-t border-b py-4">
-                  <h3 className="font-medium mb-3">Property Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Property</p>
-                      <p className="font-medium">
-                        {selectedCommission.clientId.property?.basicInfo
-                          ?.projectName || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Unit</p>
-                      <p className="font-medium">
-                        {selectedCommission.clientId.property?.basicInfo
-                          ?.plotNumber || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Sale Value
-                      </p>
-                      <p className="font-medium">
-                        ₹
-                        {(
-                          selectedCommission.clientId.property?.financialDetails
-                            ?.totalAmount || 0
-                        ).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Sale Date</p>
-                      <p className="font-medium">
-                        {selectedCommission.saleDate
-                          ? format(
-                              new Date(selectedCommission.saleDate),
-                              "MMMM d, yyyy"
-                            )
-                          : "N/A"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-b pb-4">
-                  <h3 className="font-medium mb-3">Commission Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Commission Rate
-                      </p>
-                      <p className="font-medium">
-                        {selectedCommission.commissionPercent}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Commission Amount
-                      </p>
-                      <p className="font-medium">
-                        {selectedCommission.commissionAmount}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Payment Status
-                      </p>
-                      <p className="font-medium">
-                        {selectedCommission.status === "paid"
-                          ? "Paid"
-                          : "Pending"}
-                      </p>
-                    </div>
-                    {selectedCommission.paymentDate && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Payment Date
-                        </p>
-                        <p className="font-medium">
-                          {format(
-                            new Date(selectedCommission.paymentDate),
-                            "MMMM d, yyyy"
-                          )}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Transaction ID: CSK-COM-{selectedCommission._id}
-                  </p>
-                  {selectedCommission.status === "pending" && (
-                    <p className="text-sm text-estate-gold">
-                      Expected payment by{" "}
-                      {selectedCommission.saleDate
-                        ? format(
-                            addDays(new Date(selectedCommission.saleDate), 15),
-                            "MMMM d, yyyy"
-                          )
-                        : "N/A"}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedCommission(null)}
-                >
-                  Close
-                </Button>
-                <Button>
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Invoice
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        <Dialog
-          open={isAddEditDialogOpen}
-          onOpenChange={setIsAddEditDialogOpen}
-        >
-          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-            <DialogHeader>
-              <DialogTitle>
-                {isEditing ? "Edit Commission" : "Add New Commission"}
-              </DialogTitle>
-              <DialogDescription>
-                {isEditing
-                  ? "Update details for this commission."
-                  : "Enter details for the new commission linked to a closed property sale."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmitCommission} className="grid gap-4 py-4">
-              {!isEditing && (
-                <div className="grid gap-2">
-                  <Label htmlFor="clientId">Select Closed Property</Label>
-                  <Select
-                    onValueChange={handleSelectChange}
-                    value={commissionFormData.clientId}
-                    disabled={
-                      isLeadsLoading ||
-                      actualCommissionEligibleLeads.length === 0
-                    }
-                  >
-                    <SelectTrigger id="clientId">
-                      <SelectValue
-                        placeholder={
-                          isLeadsLoading
-                            ? "Loading leads..."
-                            : actualCommissionEligibleLeads.length === 0
-                            ? "No eligible leads available"
-                            : "Select a client/property"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {actualCommissionEligibleLeads.length > 0 ? (
-                        actualCommissionEligibleLeads.map((lead) => (
-                          <SelectItem key={lead._id} value={lead._id}>
-                            {lead.name || "N/A"} -{" "}
-                            {lead.property?.basicInfo?.projectName || "N/A"} (
-                            {lead.property?.basicInfo?.plotNumber || "N/A"})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-leads" disabled>
-                          No eligible leads available
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Only properties with a "Closed" status and no existing
-                    commission are shown.
-                  </p>
-                </div>
-              )}
-
-              <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="commissionAmount">
-                    Commission Amount (₹)
-                  </Label>
-                  <Input
-                    id="commissionAmount"
-                    type="number"
-                    placeholder="e.g., 50000"
-                    value={commissionFormData.commissionAmount}
-                    onChange={handleFormChange}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="commissionPercent">
-                    Commission Percentage (%)
-                  </Label>
-                  <Input
-                    id="commissionPercent"
-                    type="number"
-                    placeholder="e.g., 2.5"
-                    value={commissionFormData.commissionPercent}
-                    onChange={handleFormChange}
-                    required
-                    step="0.01"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="saleDate">Sale Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !commissionFormData.saleDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {commissionFormData.saleDate ? (
-                        format(commissionFormData.saleDate, "PPP")
-                      ) : (
-                        <span>Pick a sale date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={commissionFormData.saleDate}
-                      onSelect={(date) => handleDateChange(date, "saleDate")}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {isEditing && (
-                <div className="grid gap-2">
-                  <Label htmlFor="paymentDate">Payment Date (Optional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !commissionFormData.paymentDate &&
-                            "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {commissionFormData.paymentDate ? (
-                          format(commissionFormData.paymentDate, "PPP")
-                        ) : (
-                          <span>Pick a payment date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={commissionFormData.paymentDate || undefined}
-                        onSelect={(date) =>
-                          handleDateChange(date, "paymentDate")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              )}
-
-              {isEditing && (
-                <div className="flex items-center space-x-2 mt-2">
-                  <Checkbox
-                    id="status"
-                    checked={commissionFormData.status === "paid"}
-                    onCheckedChange={(checked) => handleStatusChange(!!checked)}
-                  />
-                  <Label
-                    htmlFor="status"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Mark as Paid
-                  </Label>
-                </div>
-              )}
-
-              <DialogFooter className="mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddEditDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    addCommissionMutation.isPending ||
-                    updateCommissionMutation.isPending
-                  }
-                >
-                  {isEditing
-                    ? updateCommissionMutation.isPending
-                      ? "Saving..."
-                      : "Save Changes"
-                    : addCommissionMutation.isPending
-                    ? "Adding..."
-                    : "Add Commission"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );

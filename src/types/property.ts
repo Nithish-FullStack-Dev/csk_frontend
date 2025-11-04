@@ -74,7 +74,7 @@ export interface Property {
   preBooking?: boolean;
   contractor?: User;
   siteIncharge?: User;
-  // totalAmount: number;
+  totalAmount?: number;
   workCompleted: number;
   deliveryDate: string;
   emiScheme: boolean;
@@ -96,5 +96,4 @@ export interface Property {
   enquiryCustomerContact?: string;
   purchasedCustomerName?: string;
   purchasedCustomerContact?: string;
-
 }
