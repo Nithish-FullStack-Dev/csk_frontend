@@ -51,6 +51,7 @@ import {
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
 import OpenLandProperties from "./OpenLandProperties";
+import { useRBAC } from "@/config/RBAC";
 // import OpenLandDialog from "@/components/properties/OpenLandDialog";
 
 const NewProperties = () => {
@@ -58,13 +59,11 @@ const NewProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- state for buildings UI ---
   const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // building dialogs & deletion
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
@@ -73,7 +72,6 @@ const NewProperties = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
 
-  // --- state for open plots UI ---
   const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
   const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
@@ -83,7 +81,6 @@ const NewProperties = () => {
     null
   );
 
-  // openland
   const [openLandDialog, setopenLandDialog] = useState(false);
   const [openLandSubmitting, setOpenLandSubmitting] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
@@ -92,8 +89,6 @@ const NewProperties = () => {
   const [selectedOpenLand, setSelectedOpenLand] = useState<OpenLand | null>(
     null
   );
-
-  const canEdit = user && ["owner", "admin"].includes(user.role);
 
   const {
     data: buildings,
@@ -130,7 +125,13 @@ const NewProperties = () => {
     placeholderData: keepPreviousData,
   });
 
-  // ---------- Mutations ----------
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Properties" });
+
   const deleteBuilding = useMutation({
     mutationFn: async (id: string) => {
       await axios.delete(
@@ -345,12 +346,15 @@ const NewProperties = () => {
     toast.error((openPlotsErr as any)?.message || "Failed to fetch open plots");
     console.error(openPlotsErr);
   }
+  if (openLandError) {
+    toast.error((openLandErr as any)?.message || "Failed to fetch open lands");
+    console.error(openLandErr);
+  }
   if (buildError) {
     toast.error((buildErr as any)?.message || "Failed to fetch buildings");
     console.error(buildErr);
   }
 
-  // ---------- Handlers ----------2
   const clearFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");
@@ -375,11 +379,13 @@ const NewProperties = () => {
     setBuildingToDelete(id);
     setDeleteDialogOpen(true);
   };
+
   const handleEditOpenLand = (land: OpenLand, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenLand(land);
     setopenLandDialog(true);
   };
+
   const handleDeleteConfirm = () => {
     if (!buildingToDelete) return;
     deleteBuilding.mutate(buildingToDelete);
@@ -391,7 +397,6 @@ const NewProperties = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
-  // OpenPlot handlers
   const handleOpenPlotSubmit = async (formData: any) => {
     try {
       setOpenPlotSubmitting(true);
@@ -410,12 +415,12 @@ const NewProperties = () => {
       setOpenPlotSubmitting(false);
     }
   };
-  // openland handlers
+
   const handleOpenLandSubmit = async (formData: any) => {
     try {
       setOpenLandSubmitting(true);
       if (currentOpenLand && currentOpenLand._id) {
-        await updateOpenLandMutation.mutateAsync({    
+        await updateOpenLandMutation.mutateAsync({
           id: currentOpenLand._id,
           payload: formData,
         });
@@ -429,6 +434,7 @@ const NewProperties = () => {
       setOpenLandSubmitting(false);
     }
   };
+
   const handleOpenLandDelete = async () => {
     if (!selectedOpenLand) return;
     setCurrentOpenLand(selectedOpenLand);
@@ -436,19 +442,22 @@ const NewProperties = () => {
     await deleteOpenLandMutation.mutateAsync();
     setSelectedOpenLand(null); // Go back to the list view
   };
+
   const handleOpenLandEdit = (land: OpenLand, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenLand(land);
     setopenLandDialog(true);
   };
+
   const handleAddOpenLand = () => {
     setCurrentOpenLand(undefined);
     setopenLandDialog(true);
   };
+
   const handleOpenLandBack = () => {
     setSelectedOpenLand(null);
   };
-  // OpenPlot handlers
+
   const handleEditOpenPlot = (plot: OpenPlot, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenPlot(plot);
@@ -470,6 +479,7 @@ const NewProperties = () => {
     if (!window.confirm("Delete this open land?")) return;
     deleteOpenLandMutation.mutate();
   };
+
   const handleDeleteOpenPlotFromDetails = async () => {
     if (!selectedOpenPlot) return;
     setCurrentOpenPlot(selectedOpenPlot);
@@ -500,52 +510,18 @@ const NewProperties = () => {
       toast.error("Failed to download brochure.");
     }
   };
-  // const handleShare = async (
-  //   e: React.MouseEvent,
-  //   url?: string | null,
-  //   projectName?: string | null
-  // ) => {
-  //   e.stopPropagation();
-  //   if (!url) {
-  //     toast.error("No brochure available to share");
-  //     return;
-  //   }
 
-  //   try {
-  //     const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
-  //     const genUrl = `${API_BASE}/api/generate-signed-url?url=${encodeURIComponent(
-  //       url
-  //     )}&ttlSeconds=600`;
-
-  //     const resp = await fetch(genUrl, { credentials: "include" }); // include cookies if auth required
-  //     if (!resp.ok) throw new Error("Failed to get signed url");
-  //     const data = await resp.json();
-  //     const signedUrl = data.signedUrl;
-
-  //     if (navigator.share) {
-  //       await navigator.share({
-  //         title: projectName || "Brochure",
-  //         text: `Check this brochure: ${projectName || ""}`,
-  //         url: signedUrl,
-  //       });
-  //       toast.success("Shared!");
-  //       return;
-  //     }
-
-  //     await navigator.clipboard.writeText(signedUrl);
-  //     toast.success("Signed link copied to clipboard!");
-  //   } catch (err) {
-  //     console.error("Share error:", err);
-  //     toast.error("Failed to share brochure");
-  //   }
-  // };
-
-  // ---------- Loading UX ----------
-  if (buildingsLoading || openPlotsLoading || openPlotsLoading) {
+  if (
+    buildingsLoading ||
+    openPlotsLoading ||
+    openLandLoading ||
+    isRolePermissionsLoading
+  ) {
     return <Loader />;
   }
 
-  // ---------- Render ----------
+  const canEdit = userCanEditUser;
+
   return (
     <MainLayout>
       <div className="space-y-6">

@@ -139,7 +139,7 @@ export const fetchContractorProjects = async () => {
   return data;
 };
 
-export const fetchTasks = async () => {
+export const fetchFormattedTasks = async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/tasks`,
     { withCredentials: true }
@@ -167,6 +167,13 @@ export const fetchTasks = async () => {
       };
     })
     .sort((a, b) => a.daysRemaining - b.daysRemaining);
+};
+
+export const fetchTasks = async (): Promise<Task[]> => {
+  const response = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/tasks`
+  );
+  return response.data;
 };
 
 export const usefetchProjects = () => {
@@ -208,6 +215,14 @@ export const usefetchContractorDropDown = () => {
 export const useFetchTasks = () => {
   return useQuery<UpcomingTask[]>({
     queryKey: ["formattedTasks"],
+    queryFn: fetchFormattedTasks,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+export const useTasks = () => {
+  return useQuery<Task[]>({
+    queryKey: ["tasks"],
     queryFn: fetchTasks,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,

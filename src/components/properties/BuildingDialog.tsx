@@ -63,13 +63,16 @@ export const BuildingDialog = ({
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [brochurePreview, setBrochurePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     return () => {
       if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
       if (brochurePreview) URL.revokeObjectURL(brochurePreview);
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [thumbnailPreview, brochurePreview]);
+  }, [thumbnailPreview, brochurePreview, imagePreviews]);
 
   useEffect(() => {
     if (building) {
@@ -122,6 +125,8 @@ export const BuildingDialog = ({
     setBrochureFile(null);
     setThumbnailPreview("");
     setBrochurePreview(null);
+    setImageFiles([]);
+    setImagePreviews([]);
   };
 
   const createBuilding = useMutation({
@@ -187,7 +192,10 @@ export const BuildingDialog = ({
       toast.error("Please fill all required fields");
       return;
     }
-    if (mode === "add" && (!thumbnailFile || !brochureFile)) {
+    if (
+      mode === "add" &&
+      (!thumbnailFile || !brochureFile || imageFiles.length === 0)
+    ) {
       toast.error("Please upload thumbnail and brochure files");
       return;
     }
@@ -221,6 +229,9 @@ export const BuildingDialog = ({
     // Append files if provided (required for add, optional for edit)
     if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
     if (brochureFile) payload.append("brochureUrl", brochureFile);
+    if (imageFiles.length > 0) {
+      imageFiles.forEach((file) => payload.append("images", file));
+    }
 
     if (mode === "add") {
       createBuilding.mutate(payload);
@@ -424,6 +435,50 @@ export const BuildingDialog = ({
                 />
                 )
               </p>
+            )}
+          </div>
+
+          <div>
+            <Label>Project Gallery Images (Multiple)</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = e.target.files ? Array.from(e.target.files) : [];
+                if (files.length === 0) return;
+
+                // validate all are images
+                const invalid = files.some(
+                  (file) => !file.type.startsWith("image/")
+                );
+                if (invalid) {
+                  toast.error("Only image files are allowed");
+                  return;
+                }
+
+                // revoke old previews
+                imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+
+                // create new previews
+                const previews = files.map((file) => URL.createObjectURL(file));
+                setImageFiles(files);
+                setImagePreviews(previews);
+                toast.success(`${files.length} image(s) selected`);
+              }}
+            />
+
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {imagePreviews.map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`preview-${idx}`}
+                    className="w-20 h-20 object-cover rounded-md border"
+                  />
+                ))}
+              </div>
             )}
           </div>
 

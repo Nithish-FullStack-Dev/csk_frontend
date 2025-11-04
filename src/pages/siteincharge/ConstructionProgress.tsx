@@ -31,7 +31,6 @@ import {
   Bar,
 } from "recharts";
 import {
-  Building,
   Gauge,
   Clock,
   Calendar,
@@ -49,6 +48,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Project, Task, usefetchProjects } from "@/utils/project/ProjectConfig";
+import Loader from "@/components/Loader";
 
 interface ProjectProgress {
   id: string;
@@ -58,6 +59,7 @@ interface ProjectProgress {
   expectedCompletion: string;
   status: "on_track" | "at_risk" | "delayed";
   contractor: string;
+  clientName: string;
 }
 
 interface PhaseProgress {
@@ -66,78 +68,46 @@ interface PhaseProgress {
   actual: number;
 }
 
-const projectsProgress: ProjectProgress[] = [
-  {
-    id: "p1",
-    name: "Riverside Tower Block A",
-    phase: "Foundation",
-    progress: 85,
-    expectedCompletion: "2025-05-15",
-    status: "on_track",
-    contractor: "ABC Construction Ltd.",
-  },
-  {
-    id: "p2",
-    name: "Riverside Tower Block B",
-    phase: "Structural Framework",
-    progress: 45,
-    expectedCompletion: "2025-06-30",
-    status: "at_risk",
-    contractor: "ABC Construction Ltd.",
-  },
-  {
-    id: "p3",
-    name: "Valley Heights Unit 3",
-    phase: "Electrical Works",
-    progress: 30,
-    expectedCompletion: "2025-07-10",
-    status: "delayed",
-    contractor: "PowerTech Systems",
-  },
-  {
-    id: "p4",
-    name: "Valley Heights Unit 7",
-    phase: "Roofing",
-    progress: 20,
-    expectedCompletion: "2025-08-05",
-    status: "on_track",
-    contractor: "Top Shelter Inc.",
-  },
-  {
-    id: "p5",
-    name: "Green Villa Villa 2",
-    phase: "Interior Finishing",
-    progress: 60,
-    expectedCompletion: "2025-06-15",
-    status: "on_track",
-    contractor: "XYZ Builders",
-  },
-];
+const calculateStatus = (
+  progress: number,
+  deadline: string
+): "on_track" | "at_risk" | "delayed" => {
+  const today = new Date();
+  const deadlineDate = new Date(deadline);
+  const daysUntilDeadline =
+    (deadlineDate.getTime() - today.getTime()) / (1000 * 3600 * 24);
 
-const riversideTowerProgress: PhaseProgress[] = [
-  { phase: "Foundation", planned: 100, actual: 85 },
-  { phase: "Structural Framework", planned: 70, actual: 45 },
-  { phase: "MEP Rough-in", planned: 40, actual: 25 },
-  { phase: "Interior Walls", planned: 20, actual: 10 },
-  { phase: "Finishing", planned: 0, actual: 0 },
-];
+  if (progress >= 75 && daysUntilDeadline > 7) return "on_track";
+  if (progress >= 40 && daysUntilDeadline <= 7) return "at_risk";
+  return "delayed";
+};
 
-const valleyHeightsProgress: PhaseProgress[] = [
-  { phase: "Foundation", planned: 100, actual: 100 },
-  { phase: "Structural Framework", planned: 100, actual: 90 },
-  { phase: "Roofing", planned: 80, actual: 50 },
-  { phase: "MEP Rough-in", planned: 60, actual: 40 },
-  { phase: "Interior Walls", planned: 40, actual: 30 },
-  { phase: "Finishing", planned: 20, actual: 10 },
-];
+const aggregatePhaseProgress = (
+  tasks: Task[],
+  projectName: string
+): PhaseProgress[] => {
+  const phaseMap: Record<
+    string,
+    { planned: number; actual: number; count: number }
+  > = {};
 
-const greenVillaProgress: PhaseProgress[] = [
-  { phase: "Foundation", planned: 100, actual: 100 },
-  { phase: "Structural Framework", planned: 100, actual: 100 },
-  { phase: "MEP Rough-in", planned: 100, actual: 95 },
-  { phase: "Interior Walls", planned: 90, actual: 85 },
-  { phase: "Finishing", planned: 70, actual: 60 },
-];
+  tasks
+    .filter((task) => task.statusForContractor !== "completed")
+    .forEach((task) => {
+      const phase = task.constructionPhase || "Other";
+      if (!phaseMap[phase]) {
+        phaseMap[phase] = { planned: 100, actual: 0, count: 0 };
+      }
+      phaseMap[phase].actual += task.progressPercentage;
+      phaseMap[phase].count += 1;
+    });
+
+  return Object.entries(phaseMap).map(([phase, data]) => ({
+    phase,
+    planned: data.planned,
+    actual: data.count > 0 ? Math.round(data.actual / data.count) : 0,
+  }));
+};
 
 const statusColors: Record<string, string> = {
   on_track: "bg-green-100 text-green-800",
@@ -152,38 +122,109 @@ const progressColorClass = (progress: number) => {
 };
 
 const ConstructionProgress = () => {
-  const [selectedProject, setSelectedProject] = useState("riverside_tower");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+  const {
+    data: projects = [],
+    isLoading: isProjectsLoading,
+    error: projectsError,
+  } = usefetchProjects();
+
+  const projectsProgress: ProjectProgress[] = projects.map(
+    (project: Project) => {
+      const projectTasks = project.units
+        ? Object.values(project.units).flat()
+        : [];
+      const totalProgress = projectTasks.reduce(
+        (sum, task) => sum + task.progressPercentage,
+        0
+      );
+      const avgProgress =
+        projectTasks.length > 0
+          ? Math.round(totalProgress / projectTasks.length)
+          : 0;
+      const latestDeadline =
+        projectTasks
+          .map((task) => new Date(task.deadline))
+          .sort((a, b) => b.getTime() - a.getTime())[0]
+          ?.toISOString() || new Date().toISOString();
+      const mainContractor =
+        typeof project.contractors?.[0] === "object" &&
+        project.contractors?.[0]?.name
+          ? project.contractors[0].name
+          : typeof projectTasks[0]?.contractor === "object" &&
+            projectTasks[0]?.contractor?.name
+          ? projectTasks[0].contractor.name
+          : "N/A";
+      const mainPhase = projectTasks[0]?.constructionPhase || "N/A";
+      const projectName =
+        typeof project.projectId === "object"
+          ? project.projectId.projectName
+          : "";
+      const clientName = project.clientName || "N/A";
+
+      return {
+        id: project._id || "",
+        name: projectName,
+        phase: mainPhase,
+        progress: avgProgress,
+        expectedCompletion: latestDeadline,
+        status: calculateStatus(avgProgress, latestDeadline),
+        contractor: mainContractor,
+        clientName,
+      };
+    }
+  );
+
+  const projectNames: string[] = Array.from(
+    new Set(
+      projects.map((p: Project) =>
+        typeof p.projectId === "object" ? p.projectId.projectName : ""
+      )
+    )
+  ).filter((name): name is string => name !== "");
+
+  React.useEffect(() => {
+    if (projectNames.length > 0 && !selectedProject) {
+      setSelectedProject(projectNames[0]);
+    }
+  }, [projectNames, selectedProject]);
 
   const getProgressData = () => {
-    switch (selectedProject) {
-      case "riverside_tower":
-        return riversideTowerProgress;
-      case "valley_heights":
-        return valleyHeightsProgress;
-      case "green_villa":
-        return greenVillaProgress;
-      default:
-        return riversideTowerProgress;
-    }
+    if (!selectedProject) return [];
+    const selectedProjectData = projects.find(
+      (p: Project) =>
+        typeof p.projectId === "object" &&
+        p.projectId.projectName === selectedProject
+    );
+    const tasks = selectedProjectData?.units
+      ? Object.values(selectedProjectData.units).flat()
+      : [];
+    return aggregatePhaseProgress(tasks, selectedProject);
   };
 
-  const getProjectName = () => {
-    switch (selectedProject) {
-      case "riverside_tower":
-        return "Riverside Tower";
-      case "valley_heights":
-        return "Valley Heights";
-      case "green_villa":
-        return "Green Villa";
-      default:
-        return "Riverside Tower";
-    }
-  };
+  const getProjectName = () => selectedProject || "Select a Project";
 
   const progressData = getProgressData();
   const overallProgress =
     projectsProgress.reduce((sum, project) => sum + project.progress, 0) /
-    projectsProgress.length;
+    (projectsProgress.length || 1);
+
+  if (isProjectsLoading) {
+    return <Loader />;
+  }
+
+  if (projectsError) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center h-screen">
+          <p className="text-red-500">
+            Error: {projectsError?.message || "Failed to load data"}
+          </p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -256,18 +297,18 @@ const ConstructionProgress = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between">
               <CardTitle>Project Progress Chart</CardTitle>
               <Select
-                value={selectedProject}
+                value={selectedProject || ""}
                 onValueChange={setSelectedProject}
               >
                 <SelectTrigger className="w-[200px] mt-2 md:mt-0">
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="riverside_tower">
-                    Riverside Tower
-                  </SelectItem>
-                  <SelectItem value="valley_heights">Valley Heights</SelectItem>
-                  <SelectItem value="green_villa">Green Villa</SelectItem>
+                  {projectNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -316,6 +357,7 @@ const ConstructionProgress = () => {
                             <ArrowUpDown className="ml-2 h-4 w-4" />
                           </div>
                         </TableHead>
+                        <TableHead>Client</TableHead>
                         <TableHead>Phase</TableHead>
                         <TableHead>Contractor</TableHead>
                         <TableHead>Expected Completion</TableHead>
@@ -330,6 +372,7 @@ const ConstructionProgress = () => {
                           <TableCell className="font-medium">
                             {project.name}
                           </TableCell>
+                          <TableCell>{project.clientName}</TableCell>
                           <TableCell>{project.phase}</TableCell>
                           <TableCell>{project.contractor}</TableCell>
                           <TableCell>
@@ -411,7 +454,10 @@ const ConstructionProgress = () => {
                           <div>
                             <h3 className="font-semibold">{project.name}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {project.contractor}
+                              Client: {project.clientName}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Contractor: {project.contractor}
                             </p>
                           </div>
                           <DropdownMenu>
@@ -498,6 +544,7 @@ const ConstructionProgress = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Project</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead>Phase</TableHead>
                       <TableHead>Progress</TableHead>
                       <TableHead>Expected Completion</TableHead>
@@ -512,6 +559,7 @@ const ConstructionProgress = () => {
                           <TableCell className="font-medium">
                             {project.name}
                           </TableCell>
+                          <TableCell>{project.clientName}</TableCell>
                           <TableCell>{project.phase}</TableCell>
                           <TableCell>
                             <div className="space-y-1">
@@ -556,6 +604,9 @@ const ConstructionProgress = () => {
                             <h3 className="font-semibold text-lg">
                               {project.name}
                             </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Client: {project.clientName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               Phase: {project.phase}
                             </p>
@@ -606,6 +657,7 @@ const ConstructionProgress = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Project</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead>Phase</TableHead>
                       <TableHead>Progress</TableHead>
                       <TableHead>Expected Completion</TableHead>
@@ -620,6 +672,7 @@ const ConstructionProgress = () => {
                           <TableCell className="font-medium">
                             {project.name}
                           </TableCell>
+                          <TableCell>{project.clientName}</TableCell>
                           <TableCell>{project.phase}</TableCell>
                           <TableCell>
                             <div className="space-y-1">
@@ -668,6 +721,9 @@ const ConstructionProgress = () => {
                             <h3 className="font-semibold text-lg">
                               {project.name}
                             </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Client: {project.clientName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               Phase: {project.phase}
                             </p>
@@ -718,6 +774,7 @@ const ConstructionProgress = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Project</TableHead>
+                      <TableHead>Client</TableHead>
                       <TableHead>Phase</TableHead>
                       <TableHead>Progress</TableHead>
                       <TableHead>Expected Completion</TableHead>
@@ -732,6 +789,7 @@ const ConstructionProgress = () => {
                           <TableCell className="font-medium">
                             {project.name}
                           </TableCell>
+                          <TableCell>{project.clientName}</TableCell>
                           <TableCell>{project.phase}</TableCell>
                           <TableCell>
                             <div className="space-y-1">
@@ -784,6 +842,9 @@ const ConstructionProgress = () => {
                             <h3 className="font-semibold text-lg">
                               {project.name}
                             </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Client: {project.clientName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               Phase: {project.phase}
                             </p>

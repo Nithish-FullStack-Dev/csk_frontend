@@ -34,63 +34,6 @@ const CustomerDashboard = () => {
                     : "Find your dream property"}
                 </p>
               </div>
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="properties">
-                  {isPurchasedCustomer ? "My Properties" : "Saved Properties"}
-                </TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {isPurchasedCustomer ? (
-                <>
-                  <StatCard
-                    title="My Properties"
-                    value="2"
-                    icon={<Home className="h-6 w-6 text-estate-navy" />}
-                  />
-                  <StatCard
-                    title="Total Investment"
-                    value="$620,000"
-                    icon={<CreditCard className="h-6 w-6 text-estate-teal" />}
-                  />
-                  <StatCard
-                    title="Documents"
-                    value="12"
-                    icon={<FileText className="h-6 w-6 text-estate-gold" />}
-                  />
-                  <StatCard
-                    title="Next Payment"
-                    value="18 Days"
-                    icon={<Calendar className="h-6 w-6 text-estate-navy" />}
-                  />
-                </>
-              ) : (
-                <>
-                  <StatCard
-                    title="Saved Properties"
-                    value="4"
-                    icon={<Home className="h-6 w-6 text-estate-navy" />}
-                  />
-                  <StatCard
-                    title="Scheduled Visits"
-                    value="2"
-                    icon={<Calendar className="h-6 w-6 text-estate-teal" />}
-                  />
-                  <StatCard
-                    title="Applications"
-                    value="1"
-                    icon={<FileText className="h-6 w-6 text-estate-gold" />}
-                  />
-                  <StatCard
-                    title="Documents"
-                    value="3"
-                    icon={<FileText className="h-6 w-6 text-estate-navy" />}
-                  />
-                </>
-              )}
             </div>
 
             <TabsContent value="overview" className="mt-0 pt-0 border-none">

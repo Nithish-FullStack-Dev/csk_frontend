@@ -29,55 +29,13 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Loader from "@/components/Loader";
-
-const getBuildingById = async (buildingId: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/building/getBuildingById/${buildingId}`,
-    { withCredentials: true }
-  );
-  return data.data as Building;
-};
-
-const getFloorsByBuildingId = async (buildingId: string) => {
-  const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
-    }/api/floor/getAllFloorsByBuildingId/${buildingId}`,
-    { withCredentials: true }
-  );
-  return data.data as FloorUnit[];
-};
-
-const createFloor = async (payload: FormData) => {
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_URL}/api/floor/createFloor`,
-    payload,
-    {
-      withCredentials: true,
-    }
-  );
-  return data;
-};
-
-const updateFloor = async (floorId: string, payload: FormData) => {
-  console.log("floorId", floorId);
-  const { data } = await axios.patch(
-    `${import.meta.env.VITE_URL}/api/floor/updateFloorById/${floorId}`,
-    payload,
-    {
-      withCredentials: true,
-    }
-  );
-  return data;
-};
-
-const deleteFloor = async (floorId: string) => {
-  const { data } = await axios.delete(
-    `${import.meta.env.VITE_URL}/api/floor/deleteFloorById/${floorId}`,
-    { withCredentials: true }
-  );
-  return data;
-};
+import {
+  createFloor,
+  deleteFloor,
+  getBuildingById,
+  getFloorsByBuildingId,
+  updateFloor,
+} from "@/utils/public/Config";
 
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
@@ -110,7 +68,6 @@ const BuildingDetails = () => {
         url
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
 
-      // Open in new tab so browser handles download; the server streams the file
       window.open(proxyUrl, "_blank");
       toast.success("Download starting...");
     } catch (error) {
@@ -200,15 +157,15 @@ const BuildingDetails = () => {
       toast.error(err.response?.data?.message || "Failed to delete building");
     },
   });
-  // Handle errors
-  useEffect(() => {
-    if (buildError) {
-      toast.error(buildErr?.message || "Failed to fetch building");
-    }
-    if (floorsError) {
-      toast.error(floorsErr?.message || "Failed to fetch floors");
-    }
-  }, [buildErr, buildError, floorsError, floorsErr, navigate]);
+
+  if (buildError) {
+    toast.error(buildErr?.message || "Failed to fetch building");
+    console.log("Failed to fetch building", buildErr);
+  }
+  if (floorsError) {
+    toast.error(floorsErr?.message || "Failed to fetch floors");
+    console.log("Failed to fetch floors", floorsErr);
+  }
 
   // Loading state
   if (floorsLoading || buildingLoading) {
@@ -517,8 +474,41 @@ const BuildingDetails = () => {
           </CardContent>
         </Card>
 
+        {/* Gallery */}
+        {building?.images?.length > 0 && (
+          <Card className="shadow-lg rounded-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-800">
+                Gallery
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {building.images.map((img, index) => (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden cursor-pointer"
+                  >
+                    <img
+                      src={img}
+                      alt={`Building Image ${index + 1}`}
+                      className="w-full h-40 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        View Image
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Map */}
-        {building.googleMapsLocation && (
+        {building?.googleMapsLocation && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
