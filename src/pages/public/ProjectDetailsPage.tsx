@@ -125,30 +125,15 @@ const ProjectDetailsPage = () => {
 
   // Helper function to render amenity icons
   const renderAmenity = (amenityName: string) => {
-    const IconComponent = amenityIcons[amenityName];
-    if (IconComponent) {
-      return (
-        <div
-          key={amenityName}
-          className="flex items-center space-x-2 p-3 bg-navy-50 rounded-lg shadow-sm border border-navy-100"
-        >
-          <IconComponent className="h-5 w-5 text-gold-600" />
-          <span className="text-sm font-medium text-navy-800">
-            {amenityName}
-          </span>
-        </div>
-      );
-    }
-    return null;
+    return (
+      <div
+        key={amenityName}
+        className="flex items-center space-x-2 p-3 bg-navy-50 rounded-lg shadow-sm border border-navy-100"
+      >
+        <span className="text-sm font-medium text-navy-800">{amenityName}</span>
+      </div>
+    );
   };
-
-  const dummyAmenities = [
-    { name: "Parking", icon: Car },
-    { name: "Garden", icon: Trees },
-    { name: "Wi-Fi", icon: Wifi },
-    { name: "Gym", icon: Dumbbell },
-    { name: "Swimming Pool", icon: Bath },
-  ];
 
   let allGalleryImages: string[] = [];
 
@@ -272,12 +257,40 @@ const ProjectDetailsPage = () => {
                     Amenities & Features
                   </CardTitle>
                 </CardHeader>
+
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {dummyAmenities.map((amenity) =>
-                      renderAmenity(amenity.name)
-                    )}
-                  </div>
+                  {property?.amenities && property.amenities.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {property.amenities.map((amenity) =>
+                        renderAmenity(amenity)
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+                      <div className="flex items-center justify-center w-14 h-14 rounded-full bg-navy-100">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-7 w-7 text-navy-700"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 13h6m2 0a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v4a2 2 0 002 2m10 0v4a2 2 0 01-2 2H9a2 2 0 01-2-2v-4"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-navy-700 font-medium text-base">
+                        No amenities added yet
+                      </p>
+                      <p className="text-navy-500 text-sm">
+                        Amenities & features will appear here once added.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

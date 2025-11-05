@@ -375,6 +375,29 @@ const BuildingDetails = () => {
                   </a>
                 </Button>
               )}
+
+              {building?.amenities && building?.amenities.length > 0 && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Check className="mr-2 h-5 w-5 text-green-500" />{" "}
+                      Amenities
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {building.amenities.map((amenity, idx) => (
+                        <Badge
+                          key={idx}
+                          className="bg-blue-100 text-blue-800 px-3 py-1 text-sm rounded-full"
+                        >
+                          {amenity}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </Card>

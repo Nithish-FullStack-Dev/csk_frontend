@@ -58,6 +58,7 @@ export const BuildingDialog = ({
     googleMapsLocation: "",
     images: [],
     brochureFileId: null,
+    amenities: [],
   });
 
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -68,6 +69,7 @@ export const BuildingDialog = ({
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const brochureInputRef = useRef<HTMLInputElement>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [amenityInput, setAmenityInput] = useState<string>("");
 
   useEffect(() => {
     if (building && open) {
@@ -90,13 +92,16 @@ export const BuildingDialog = ({
         googleMapsLocation: building.googleMapsLocation || "",
         images: building.images || [],
         brochureFileId: building.brochureFileId || null,
+        amenities: building.amenities || [], // Initialize amenities
       });
       setThumbnailPreview(building.thumbnailUrl || "");
       setBrochurePreview(building.brochureUrl || null);
       setImagePreviews(building.images || []);
+      setSelectedAmenities(building.amenities || []); // Initialize selectedAmenities
       setThumbnailFile(null);
       setBrochureFile(null);
       setImageFiles([]);
+      setAmenityInput(""); // Reset amenity input
     } else if (!building && open) {
       resetForm();
     }
@@ -135,6 +140,7 @@ export const BuildingDialog = ({
       googleMapsLocation: "",
       images: [],
       brochureFileId: null,
+      amenities: [],
     });
     setThumbnailFile(null);
     setBrochureFile(null);
@@ -142,6 +148,8 @@ export const BuildingDialog = ({
     setBrochurePreview(null);
     setImageFiles([]);
     setImagePreviews([]);
+    setSelectedAmenities([]);
+    setAmenityInput("");
     if (brochureInputRef.current) {
       brochureInputRef.current.value = "";
     }
@@ -216,6 +224,36 @@ export const BuildingDialog = ({
     },
   });
 
+  const handleAddAmenity = () => {
+    if (!amenityInput.trim()) {
+      toast.error("Please enter an amenity");
+      return;
+    }
+    if (selectedAmenities.includes(amenityInput.trim())) {
+      toast.error("This amenity is already added");
+      return;
+    }
+    setSelectedAmenities((prev) => [...prev, amenityInput.trim()]);
+    setFormData((prev) => ({
+      ...prev,
+      amenities: [...prev.amenities, amenityInput.trim()],
+    }));
+    setAmenityInput("");
+  };
+
+  const removeAmenity = (index: number) => {
+    setSelectedAmenities((prev) => {
+      const newAmenities = [...prev];
+      newAmenities.splice(index, 1);
+      return newAmenities;
+    });
+    setFormData((prev) => {
+      const newAmenities = [...prev.amenities];
+      newAmenities.splice(index, 1);
+      return { ...prev, amenities: newAmenities };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -262,6 +300,9 @@ export const BuildingDialog = ({
     if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
     if (brochureFile) payload.append("brochureUrl", brochureFile);
     imageFiles.forEach((file) => payload.append("images", file));
+    selectedAmenities.forEach((amenity) =>
+      payload.append("amenities[]", amenity)
+    ); // Add amenities to payload
 
     mode === "add"
       ? createBuilding.mutate(payload)
@@ -473,6 +514,42 @@ export const BuildingDialog = ({
                 setFormData({ ...formData, description: e.target.value })
               }
             />
+          </div>
+
+          {/* New Amenities Section */}
+          <div>
+            <Label>Amenities</Label>
+            <div className="flex gap-2">
+              <Input
+                value={amenityInput}
+                onChange={(e) => setAmenityInput(e.target.value)}
+                placeholder="Enter an amenity (e.g., Swimming Pool)"
+              />
+              <Button type="button" onClick={handleAddAmenity}>
+                Add
+              </Button>
+            </div>
+            {selectedAmenities.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectedAmenities.map((amenity, index) => (
+                  <div
+                    key={amenity + index}
+                    className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm"
+                  >
+                    {amenity}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2 h-5 w-5"
+                      onClick={() => removeAmenity(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
