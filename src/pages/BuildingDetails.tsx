@@ -483,17 +483,24 @@ const BuildingDetails = () => {
             </CardHeader>
 
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {building.images.map((img, index) => (
                   <div
                     key={index}
-                    className="relative group rounded-lg overflow-hidden cursor-pointer"
+                    className={`
+                        relative group overflow-hidden cursor-pointer rounded-lg
+                        ${
+                          index === 0
+                            ? "col-span-2 md:col-span-2 row-span-2"
+                            : "h-40"
+                        }
+                      `}
                     onClick={() => setSelectedImage(img)}
                   >
                     <img
                       src={img}
                       alt={`Building Image ${index + 1}`}
-                      className="w-full h-40 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
+                      className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
@@ -507,20 +514,24 @@ const BuildingDetails = () => {
               {/* Fullscreen Lightbox */}
               {selectedImage && (
                 <div
-                  className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+                  className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
                   onClick={() => setSelectedImage(null)}
                 >
-                  <div className="relative max-w-4xl w-[90vw]">
+                  <div
+                    className="relative max-w-5xl w-full max-h-[90vh] flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => setSelectedImage(null)}
                       className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
                     >
                       <X className="h-8 w-8" />
                     </button>
+
                     <img
                       src={selectedImage}
                       alt="Preview"
-                      className="w-full h-auto rounded-lg shadow-lg object-contain"
+                      className="w-auto max-w-full h-auto max-h-[80vh] rounded-lg shadow-lg object-contain"
                     />
                   </div>
                 </div>

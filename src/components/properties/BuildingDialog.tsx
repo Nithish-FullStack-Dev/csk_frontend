@@ -67,6 +67,7 @@ export const BuildingDialog = ({
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const brochureInputRef = useRef<HTMLInputElement>(null);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   useEffect(() => {
     if (building && open) {
@@ -78,7 +79,8 @@ export const BuildingDialog = ({
         availableUnits: building.availableUnits || 0,
         soldUnits: building.soldUnits || 0,
         constructionStatus: building.constructionStatus || "Planned",
-        completionDate: building.completionDate || "",
+        completionDate:
+          new Date(building.completionDate).toISOString().split("T")[0] || "",
         description: building.description || "",
         municipalPermission: building.municipalPermission || false,
         reraApproved: building.reraApproved || false,
@@ -225,6 +227,10 @@ export const BuildingDialog = ({
       toast.error("Please fill all required fields");
       return;
     }
+    if (formData.availableUnits > formData.totalUnits) {
+      toast.error("Available units cannot exceed total units");
+      return;
+    }
     if (mode === "add" && (!thumbnailFile || !brochureFile)) {
       toast.error("Please upload thumbnail and brochure files");
       return;
@@ -236,7 +242,10 @@ export const BuildingDialog = ({
     payload.append("propertyType", formData.propertyType);
     payload.append("totalUnits", formData.totalUnits.toString());
     payload.append("availableUnits", formData.availableUnits.toString());
-    payload.append("soldUnits", formData.soldUnits.toString());
+    payload.append(
+      "soldUnits",
+      (formData.totalUnits - formData.availableUnits).toString()
+    );
     payload.append("constructionStatus", formData.constructionStatus);
     if (formData.completionDate)
       payload.append("completionDate", formData.completionDate);
@@ -386,9 +395,14 @@ export const BuildingDialog = ({
                 value={formData.totalUnits}
                 onChange={(e) => {
                   if (/^\d*$/.test(e.target.value)) {
+                    const totalUnits = Number(e.target.value);
                     setFormData({
                       ...formData,
-                      totalUnits: Number(e.target.value),
+                      totalUnits,
+                      availableUnits: Math.min(
+                        formData.availableUnits,
+                        totalUnits
+                      ),
                     });
                   }
                 }}
@@ -400,14 +414,20 @@ export const BuildingDialog = ({
               <Input
                 type="number"
                 step={1}
-                min={0}
+                min={1}
+                max={formData.totalUnits}
                 value={formData.availableUnits}
                 onChange={(e) => {
                   if (/^\d*$/.test(e.target.value)) {
-                    setFormData({
-                      ...formData,
-                      availableUnits: Number(e.target.value),
-                    });
+                    const availableUnits = Number(e.target.value);
+                    if (availableUnits <= formData.totalUnits) {
+                      setFormData({
+                        ...formData,
+                        availableUnits,
+                      });
+                    } else {
+                      toast.error("Available units cannot exceed total units");
+                    }
                   }
                 }}
               />
@@ -416,17 +436,9 @@ export const BuildingDialog = ({
               <Label>Sold Units</Label>
               <Input
                 type="number"
-                step={1}
-                min={0}
-                value={formData.soldUnits}
-                onChange={(e) => {
-                  if (/^\d*$/.test(e.target.value)) {
-                    setFormData({
-                      ...formData,
-                      soldUnits: Number(e.target.value),
-                    });
-                  }
-                }}
+                value={formData.totalUnits - formData.availableUnits}
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
               />
             </div>
           </div>
@@ -532,7 +544,7 @@ export const BuildingDialog = ({
             </div>
 
             <div>
-              <Label>Project Gallery Images (Multiple)</Label>
+              <Label>Project Gallery Images (upto 5 images)</Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center h-56 flex flex-col justify-center">
                 <div
                   className="flex flex-col items-center justify-center cursor-pointer"
@@ -556,6 +568,13 @@ export const BuildingDialog = ({
                     const files = Array.from(e.target.files || []).filter(
                       (file) => validateFile(file, "image", 5)
                     );
+                    const totalImages =
+                      formData.images.length + imageFiles.length + files.length;
+
+                    if (totalImages > 5) {
+                      toast.error("You can only upload a maximum of 5 images");
+                      return;
+                    }
                     if (files.length === 0) return;
 
                     const newPreviews = files.map((file) =>

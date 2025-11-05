@@ -5,6 +5,11 @@ export type PropertyStatus =
   | "Reserved"
   | "Blocked";
 
+export interface Amenity {
+  name: string;
+  icon: string; // Icon name (e.g., "Car")
+}
+
 export interface Building {
   _id?: string;
   projectName: string;
@@ -30,6 +35,7 @@ export interface Building {
   municipalPermission: boolean;
   reraApproved?: boolean;
   reraNumber?: string;
+  amenities?: Amenity[];
   googleMapsLocation?: string;
   brochureUrl?: string | null;
   brochureFileId?: string | null;
