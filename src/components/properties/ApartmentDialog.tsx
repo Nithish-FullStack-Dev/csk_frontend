@@ -95,6 +95,8 @@ export const ApartmentDialog = ({
       createdAt?: string;
     }[]
   >([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [enquiryCustomers, setEnquiryCustomers] = useState([
     { name: "", contact: "" },
   ]);
@@ -293,8 +295,12 @@ export const ApartmentDialog = ({
     //   toast.error("Total amount must be greater than 0");
     //   return;
     // }
-    if (mode === "add" && !thumbnailFile) {
-      toast.error("Thumbnail is required for new units");
+    // if (mode === "add" && !thumbnailFile) {
+    //   toast.error("Thumbnail is required for new units");
+    //   return;
+    // }
+    if (mode === "add" && (!thumbnailFile || imageFiles.length === 0)) {
+      toast.error("Please upload thumbnail and brochure files");
       return;
     }
 
@@ -324,6 +330,12 @@ export const ApartmentDialog = ({
     if (documentFiles.length > 0) {
       documentFiles.forEach((file) => {
         payload.append("documents", file);
+      });
+    }
+
+    if (imageFiles.length > 0) {
+      imageFiles.forEach((file) => {
+        payload.append("images", file);
       });
     }
 
@@ -560,7 +572,7 @@ export const ApartmentDialog = ({
               />
             </div>
           </div>
-          <div>
+          {/* <div>
             <Label>Google Maps Location</Label>
             <Input
               value={formData.googleMapsLocation || ""}
@@ -569,7 +581,7 @@ export const ApartmentDialog = ({
               }
               placeholder="https://maps.google.com/..."
             />
-          </div>
+          </div> */}
 
           <div>
             <Label>Thumbnail (Image File) {mode === "add" ? "*" : ""}</Label>
@@ -590,7 +602,49 @@ export const ApartmentDialog = ({
               </p>
             )}
           </div>
+          <div>
+            <Label>Project Gallery Images (Multiple)</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const files = e.target.files ? Array.from(e.target.files) : [];
+                if (files.length === 0) return;
 
+                // validate all are images
+                const invalid = files.some(
+                  (file) => !file.type.startsWith("image/")
+                );
+                if (invalid) {
+                  toast.error("Only image files are allowed");
+                  return;
+                }
+
+                // revoke old previews
+                imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+
+                // create new previews
+                const previews = files.map((file) => URL.createObjectURL(file));
+                setImageFiles(files);
+                setImagePreviews(previews);
+                toast.success(`${files.length} image(s) selected`);
+              }}
+            />
+
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {imagePreviews.map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`preview-${idx}`}
+                    className="w-20 h-20 object-cover rounded-md border"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
           <div>
             <Label>Documents (PDF/Images)</Label>
             <Input
