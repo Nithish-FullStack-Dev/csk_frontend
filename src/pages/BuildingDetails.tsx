@@ -224,10 +224,6 @@ const BuildingDetails = () => {
     payload.append("unitType", data.unitType);
     payload.append("totalSubUnits", data.totalSubUnits.toString());
     payload.append("availableSubUnits", data.availableSubUnits.toString());
-    if (data.priceRange) {
-      payload.append("priceRange[min]", data.priceRange.min.toString());
-      payload.append("priceRange[max]", data.priceRange.max.toString());
-    }
 
     if (mode === "add") {
       createFloorMutation.mutate(payload);

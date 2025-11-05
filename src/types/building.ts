@@ -43,8 +43,4 @@ export interface FloorUnit {
   unitType: string; // e.g., "1 BHK", "2 BHK", "Villa"
   totalSubUnits: number;
   availableSubUnits: number;
-  priceRange?: {
-    min: number;
-    max: number;
-  };
 }

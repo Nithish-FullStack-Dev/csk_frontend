@@ -71,19 +71,6 @@ export const openPlotFormSchema = z.object({
     ["Residential", "Commercial", "Agricultural", "Industrial"],
     { message: "Plot type is required" }
   ),
-  pricePerSqYard: z.coerce
-    .number()
-    .min(0, "Price per Sq. Yard is required and cannot be negative"),
-  totalAmount: z.coerce
-    .number()
-    .min(0, "Total amount is required and cannot be negative"),
-  bookingAmount: z.coerce
-    .number()
-    .min(0, "Booking amount is required and cannot be negative"),
-  amountReceived: z.coerce
-    .number()
-    .min(0, "Amount received is required and cannot be negative"),
-  balanceAmount: z.coerce.number().min(0, "Balance amount cannot be negative"),
   googleMapsLink: z
     .string()
     .url("Must be a valid URL")
@@ -184,11 +171,6 @@ export function OpenPlotForm({
     ? {
         ...openPlot,
         extentSqYards: openPlot.extentSqYards,
-        pricePerSqYard: openPlot.pricePerSqYard,
-        totalAmount: openPlot.totalAmount,
-        bookingAmount: openPlot.bookingAmount,
-        amountReceived: openPlot.amountReceived,
-        balanceAmount: openPlot.balanceAmount,
         isCornerPlot: openPlot.isCornerPlot,
         isGatedCommunity: openPlot.isGatedCommunity,
         emiScheme: openPlot.emiScheme,
@@ -214,11 +196,6 @@ export function OpenPlotForm({
         facing: "North",
         extentSqYards: 0,
         plotType: "Residential",
-        pricePerSqYard: 0,
-        totalAmount: 0,
-        bookingAmount: 0,
-        amountReceived: 0,
-        balanceAmount: 0,
         googleMapsLink: "",
         approval: "Unapproved",
         isCornerPlot: false,
@@ -241,19 +218,6 @@ export function OpenPlotForm({
     resolver: zodResolver(openPlotFormSchema),
     defaultValues,
   });
-
-  // watch calculated fields
-  const totalAmount = form.watch("totalAmount");
-  const amountReceived = form.watch("amountReceived");
-
-  useEffect(() => {
-    const balance = (totalAmount || 0) - (amountReceived || 0);
-    form.setValue("balanceAmount", balance >= 0 ? balance : 0, {
-      shouldValidate: true,
-    });
-  }, [totalAmount, amountReceived, form]);
-
-  // ---------- FILE HANDLERS (thumbnail, images, brochure) ----------
 
   const handleThumbnailUpload = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -442,11 +406,6 @@ export function OpenPlotForm({
         listedDate: data.listedDate?.toISOString(),
         availableFrom: data.availableFrom?.toISOString(),
         extentSqYards: Number(data.extentSqYards),
-        pricePerSqYard: Number(data.pricePerSqYard),
-        totalAmount: Number(data.totalAmount),
-        bookingAmount: Number(data.bookingAmount),
-        amountReceived: Number(data.amountReceived),
-        balanceAmount: Number(data.balanceAmount),
       };
 
       const config = {
@@ -720,11 +679,9 @@ export function OpenPlotForm({
           </div>
 
           <div className="pt-4">
-            <h3 className="text-lg font-medium">
-              Availability & Financial Details
-            </h3>
+            <h3 className="text-lg font-medium">Availability</h3>
             <p className="text-sm text-muted-foreground">
-              Manage the plot's status and pricing.
+              Manage the plot's status.
             </p>
           </div>
           <Separator />
@@ -755,167 +712,6 @@ export function OpenPlotForm({
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Price Per Sq. Yard */}
-            <FormField
-              control={form.control}
-              name="pricePerSqYard"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price Per Sq. Yard (₹)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="5000"
-                        {...field}
-                        min="0"
-                        className="pl-10"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = Math.max(
-                            0,
-                            parseFloat(value) || 0
-                          );
-                          field.onChange(sanitizedValue);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Total Amount */}
-            <FormField
-              control={form.control}
-              name="totalAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Amount (₹)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="1000000"
-                        {...field}
-                        min="0"
-                        className="pl-10"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = Math.max(
-                            0,
-                            parseFloat(value) || 0
-                          );
-                          field.onChange(sanitizedValue);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Booking Amount */}
-            <FormField
-              control={form.control}
-              name="bookingAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Booking Amount (₹)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="50000"
-                        {...field}
-                        min="0"
-                        className="pl-10"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = Math.max(
-                            0,
-                            parseFloat(value) || 0
-                          );
-                          field.onChange(sanitizedValue);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Amount Received */}
-            <FormField
-              control={form.control}
-              name="amountReceived"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount Received (₹)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="25000"
-                        {...field}
-                        min="0"
-                        className="pl-10"
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = Math.max(
-                            0,
-                            parseFloat(value) || 0
-                          );
-                          field.onChange(sanitizedValue);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Balance Amount */}
-            <FormField
-              control={form.control}
-              name="balanceAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Balance Amount (₹)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="950000"
-                        {...field}
-                        min="0"
-                        className="pl-10"
-                        readOnly
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const sanitizedValue = Math.max(
-                            0,
-                            parseFloat(value) || 0
-                          );
-                          field.onChange(sanitizedValue);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

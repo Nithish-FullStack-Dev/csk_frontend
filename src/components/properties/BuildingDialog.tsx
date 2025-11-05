@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import { Building } from "@/types/building";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { UploadCloud, X } from "lucide-react";
 
 interface BuildingDialogProps {
   open: boolean;
@@ -65,19 +66,11 @@ export const BuildingDialog = ({
   const [brochurePreview, setBrochurePreview] = useState<string | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const brochureInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    return () => {
-      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
-      if (brochurePreview) URL.revokeObjectURL(brochurePreview);
-      imagePreviews.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [thumbnailPreview, brochurePreview, imagePreviews]);
-
-  useEffect(() => {
-    if (building) {
+    if (building && open) {
       setFormData({
-        ...building,
         projectName: building.projectName || "",
         location: building.location || "",
         propertyType: building.propertyType || "Apartment Complex",
@@ -88,6 +81,8 @@ export const BuildingDialog = ({
         completionDate: building.completionDate || "",
         description: building.description || "",
         municipalPermission: building.municipalPermission || false,
+        reraApproved: building.reraApproved || false,
+        reraNumber: building.reraNumber || "",
         thumbnailUrl: building.thumbnailUrl || "",
         brochureUrl: building.brochureUrl || null,
         googleMapsLocation: building.googleMapsLocation || "",
@@ -96,9 +91,27 @@ export const BuildingDialog = ({
       });
       setThumbnailPreview(building.thumbnailUrl || "");
       setBrochurePreview(building.brochureUrl || null);
-    } else {
+      setImagePreviews(building.images || []);
+      setThumbnailFile(null);
+      setBrochureFile(null);
+      setImageFiles([]);
+    } else if (!building && open) {
       resetForm();
     }
+
+    return () => {
+      if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+      if (brochurePreview && brochurePreview.startsWith("blob:")) {
+        URL.revokeObjectURL(brochurePreview);
+      }
+      imagePreviews.forEach((url) => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
   }, [building, open]);
 
   const resetForm = () => {
@@ -127,6 +140,30 @@ export const BuildingDialog = ({
     setBrochurePreview(null);
     setImageFiles([]);
     setImagePreviews([]);
+    if (brochureInputRef.current) {
+      brochureInputRef.current.value = "";
+    }
+  };
+
+  const validateFile = (
+    file: File,
+    type: "image" | "pdf",
+    maxSizeMB: number
+  ) => {
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (type === "image" && !file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return false;
+    }
+    if (type === "pdf" && file.type !== "application/pdf") {
+      toast.error("Only PDF files are allowed");
+      return false;
+    }
+    if (file.size > maxSizeBytes) {
+      toast.error(`File size exceeds ${maxSizeMB}MB limit`);
+      return false;
+    }
+    return true;
   };
 
   const createBuilding = useMutation({
@@ -148,9 +185,7 @@ export const BuildingDialog = ({
       onOpenChange(false);
     },
     onError: (err: any) => {
-      const errorMessage =
-        err.response?.data?.message || "Failed to add building.";
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.message || "Failed to add building.");
     },
   });
 
@@ -175,9 +210,7 @@ export const BuildingDialog = ({
       onOpenChange(false);
     },
     onError: (err: any) => {
-      const errorMessage =
-        err.response?.data?.message || "Failed to update building.";
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.message || "Failed to update building.");
     },
   });
 
@@ -192,10 +225,7 @@ export const BuildingDialog = ({
       toast.error("Please fill all required fields");
       return;
     }
-    if (
-      mode === "add" &&
-      (!thumbnailFile || !brochureFile || imageFiles.length === 0)
-    ) {
+    if (mode === "add" && (!thumbnailFile || !brochureFile)) {
       toast.error("Please upload thumbnail and brochure files");
       return;
     }
@@ -218,25 +248,43 @@ export const BuildingDialog = ({
     );
     payload.append("reraApproved", formData.reraApproved.toString());
     payload.append("reraNumber", formData.reraNumber);
-    //     const payload = {
-    //   ...formData,
-    //   reraApproved: formData.reraApproved,
-    //   reraNumber: formData.reraNumber,
-    // };
-
     if (formData.googleMapsLocation)
       payload.append("googleMapsLocation", formData.googleMapsLocation);
-    // Append files if provided (required for add, optional for edit)
     if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
     if (brochureFile) payload.append("brochureUrl", brochureFile);
-    if (imageFiles.length > 0) {
-      imageFiles.forEach((file) => payload.append("images", file));
-    }
+    imageFiles.forEach((file) => payload.append("images", file));
 
-    if (mode === "add") {
-      createBuilding.mutate(payload);
-    } else {
-      updateBuilding.mutate(payload);
+    mode === "add"
+      ? createBuilding.mutate(payload)
+      : updateBuilding.mutate(payload);
+  };
+
+  const removeImage = (index: number) => {
+    setImagePreviews((prev) => {
+      const newPreviews = [...prev];
+      const url = newPreviews[index];
+      if (url && url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+    setImageFiles((prev) => {
+      const newFiles = [...prev];
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
+  const removeBrochure = () => {
+    if (brochurePreview && brochurePreview.startsWith("blob:")) {
+      URL.revokeObjectURL(brochurePreview);
+    }
+    setBrochureFile(null);
+    setBrochurePreview(null);
+    setFormData((prev) => ({ ...prev, brochureUrl: null }));
+    if (brochureInputRef.current) {
+      brochureInputRef.current.value = "";
     }
   };
 
@@ -334,13 +382,16 @@ export const BuildingDialog = ({
               <Input
                 type="number"
                 min={1}
+                step={1}
                 value={formData.totalUnits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalUnits: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value)) {
+                    setFormData({
+                      ...formData,
+                      totalUnits: Number(e.target.value),
+                    });
+                  }
+                }}
                 required
               />
             </div>
@@ -348,28 +399,34 @@ export const BuildingDialog = ({
               <Label>Available Units</Label>
               <Input
                 type="number"
+                step={1}
                 min={0}
                 value={formData.availableUnits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    availableUnits: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value)) {
+                    setFormData({
+                      ...formData,
+                      availableUnits: Number(e.target.value),
+                    });
+                  }
+                }}
               />
             </div>
             <div>
               <Label>Sold Units</Label>
               <Input
                 type="number"
+                step={1}
                 min={0}
                 value={formData.soldUnits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    soldUnits: Number(e.target.value),
-                  })
-                }
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value)) {
+                    setFormData({
+                      ...formData,
+                      soldUnits: Number(e.target.value),
+                    });
+                  }
+                }}
               />
             </div>
           </div>
@@ -407,110 +464,196 @@ export const BuildingDialog = ({
           </div>
 
           <div>
-            <Label>Thumbnail (Image File) {mode === "add" ? "*" : ""}</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  if (!file.type.startsWith("image/")) {
-                    toast.error("Only images allowed");
-                    return;
-                  }
-                  setThumbnailFile(file);
-                  if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
-                  const previewUrl = URL.createObjectURL(file);
-                  setThumbnailPreview(previewUrl);
-                  toast.success("Thumbnail selected");
-                }
-              }}
-            />
-            {thumbnailPreview && (
-              <p className="text-sm text-muted-foreground mt-1">
-                ✓ Thumbnail selected (
-                <img
-                  src={thumbnailPreview}
-                  alt="thumbnail preview"
-                  className="w-20 h-20 object-cover inline-block"
+            <div>
+              <Label>Thumbnail {mode === "add" ? "*" : ""}</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center h-56 flex flex-col justify-center">
+                <Input
+                  id="thumbnailUpload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && validateFile(file, "image", 5)) {
+                      setThumbnailFile(file);
+                      if (
+                        thumbnailPreview &&
+                        thumbnailPreview.startsWith("blob:")
+                      ) {
+                        URL.revokeObjectURL(thumbnailPreview);
+                      }
+                      setThumbnailPreview(URL.createObjectURL(file));
+                    }
+                  }}
                 />
-                )
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label>Project Gallery Images (Multiple)</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const files = e.target.files ? Array.from(e.target.files) : [];
-                if (files.length === 0) return;
-
-                // validate all are images
-                const invalid = files.some(
-                  (file) => !file.type.startsWith("image/")
-                );
-                if (invalid) {
-                  toast.error("Only image files are allowed");
-                  return;
-                }
-
-                // revoke old previews
-                imagePreviews.forEach((url) => URL.revokeObjectURL(url));
-
-                // create new previews
-                const previews = files.map((file) => URL.createObjectURL(file));
-                setImageFiles(files);
-                setImagePreviews(previews);
-                toast.success(`${files.length} image(s) selected`);
-              }}
-            />
-
-            {imagePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {imagePreviews.map((url, idx) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`preview-${idx}`}
-                    className="w-20 h-20 object-cover rounded-md border"
-                  />
-                ))}
+                {thumbnailPreview ? (
+                  <div className="relative">
+                    <img
+                      src={thumbnailPreview}
+                      alt="Plot Thumbnail"
+                      className="mx-auto mb-2 max-h-40 rounded object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-0 right-0 bg-white/80 rounded-full"
+                      onClick={() => {
+                        if (
+                          thumbnailPreview &&
+                          thumbnailPreview.startsWith("blob:")
+                        ) {
+                          URL.revokeObjectURL(thumbnailPreview);
+                        }
+                        setThumbnailFile(null);
+                        setThumbnailPreview("");
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() =>
+                      document.getElementById("thumbnailUpload")?.click()
+                    }
+                  >
+                    <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">
+                      Click to upload main image
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      This will be displayed on plot cards.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div>
-            <Label>Project Brochure (PDF) {mode === "add" ? "*" : ""}</Label>
-            <Input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  if (file.type !== "application/pdf") {
-                    toast.error("Only PDF allowed");
-                    return;
+            <div>
+              <Label>Project Gallery Images (Multiple)</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center h-56 flex flex-col justify-center">
+                <div
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                  onClick={() =>
+                    document.getElementById("additionalImagesUpload")?.click()
                   }
-                  setBrochureFile(file);
-                  if (brochurePreview) URL.revokeObjectURL(brochurePreview);
-                  const previewUrl = URL.createObjectURL(file);
-                  setBrochurePreview(previewUrl);
-                  toast.success("Brochure selected");
-                }
-              }}
-            />
-            {brochurePreview && (
-              <p className="text-sm text-muted-foreground mt-1">
-                ✓ Brochure selected
-              </p>
-            )}
+                >
+                  <UploadCloud className="h-8 w-8 text-muted-foreground mb-1" />
+                  <p className="text-muted-foreground">
+                    Click to add more images
+                  </p>
+                </div>
+
+                <Input
+                  id="additionalImagesUpload"
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).filter(
+                      (file) => validateFile(file, "image", 5)
+                    );
+                    if (files.length === 0) return;
+
+                    const newPreviews = files.map((file) =>
+                      URL.createObjectURL(file)
+                    );
+                    setImageFiles((prev) => [...prev, ...files]);
+                    setImagePreviews((prev) => [...prev, ...newPreviews]);
+                  }}
+                />
+
+                {imagePreviews.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {imagePreviews.map((url, index) => (
+                      <div key={url + index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Plot Image ${index + 1}`}
+                          className="h-24 w-full object-cover rounded"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-0 right-0 bg-white/80 rounded-full h-6 w-6"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Label>Project Brochure (PDF) {mode === "add" ? "*" : ""}</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-56 flex flex-col justify-center">
+                <Input
+                  id="brochureUpload"
+                  className="hidden"
+                  type="file"
+                  accept="application/pdf"
+                  ref={brochureInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file && validateFile(file, "pdf", 10)) {
+                      setBrochureFile(file);
+                      if (
+                        brochurePreview &&
+                        brochurePreview.startsWith("blob:")
+                      ) {
+                        URL.revokeObjectURL(brochurePreview);
+                      }
+                      setBrochurePreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+                {brochurePreview ? (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <a
+                        href={brochurePreview}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        View Brochure
+                      </a>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {brochureFile?.name || brochurePreview.split("/").pop()}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={removeBrochure}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className="flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() =>
+                      document.getElementById("brochureUpload")?.click()
+                    }
+                  >
+                    <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">
+                      Click to upload project brochure (PDF)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Municipal Permission Switch */}
           <div className="flex items-center space-x-2">
             <Switch
               checked={formData.municipalPermission}
@@ -521,22 +664,20 @@ export const BuildingDialog = ({
             <Label>Municipal Permission Obtained</Label>
           </div>
 
-          {/* RERA Permission Switch */}
           <div className="flex items-center space-x-2 mt-3">
             <Switch
               checked={formData.reraApproved}
               onCheckedChange={(v) =>
-                setFormData((prev) => ({
-                  ...prev,
+                setFormData({
+                  ...formData,
                   reraApproved: v,
-                  reraNumber: v ? prev.reraNumber : "", // clear on toggle OFF
-                }))
+                  reraNumber: v ? formData.reraNumber : "",
+                })
               }
             />
             <Label>RERA Approved</Label>
           </div>
 
-          {/* RERA Number Input */}
           {formData.reraApproved && (
             <div className="mt-2">
               <Label className="text-sm font-medium">RERA Number</Label>
@@ -544,10 +685,7 @@ export const BuildingDialog = ({
                 type="text"
                 value={formData.reraNumber}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    reraNumber: e.target.value,
-                  }))
+                  setFormData({ ...formData, reraNumber: e.target.value })
                 }
                 placeholder="Enter RERA Registration Number"
                 className="w-full rounded-md border px-3 py-2 text-sm"

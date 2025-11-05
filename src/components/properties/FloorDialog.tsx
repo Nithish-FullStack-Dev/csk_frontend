@@ -1,4 +1,3 @@
-// src/components/properties/FloorDialog.tsx
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -38,7 +37,6 @@ export const FloorDialog = ({
     unitType: "",
     totalSubUnits: 1,
     availableSubUnits: 1,
-    priceRange: undefined,
   });
 
   useEffect(() => {
@@ -46,7 +44,6 @@ export const FloorDialog = ({
       setFormData({
         ...floor,
         buildingId,
-        priceRange: floor.priceRange || undefined,
       });
     } else {
       resetForm();
@@ -60,7 +57,6 @@ export const FloorDialog = ({
       unitType: "",
       totalSubUnits: 1,
       availableSubUnits: 1,
-      priceRange: undefined,
     });
   };
 
@@ -79,17 +75,6 @@ export const FloorDialog = ({
     }
     if (formData.availableSubUnits > formData.totalSubUnits) {
       toast.error("Available Sub-Units cannot exceed Total Sub-Units");
-      return false;
-    }
-    if (
-      formData.priceRange &&
-      (formData.priceRange.min < 0 ||
-        formData.priceRange.max < 0 ||
-        formData.priceRange.min > formData.priceRange.max)
-    ) {
-      toast.error(
-        "Price Range must have valid min and max values (min <= max)"
-      );
       return false;
     }
     return true;
@@ -133,13 +118,17 @@ export const FloorDialog = ({
                 id="floorNumber"
                 type="number"
                 min={1}
+                step={1}
                 value={formData.floorNumber}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    floorNumber: Math.max(1, Number(e.target.value) || 1),
-                  })
-                }
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setFormData({
+                      ...formData,
+                      floorNumber: Math.max(1, Number(value) || 1),
+                    });
+                  }
+                }}
                 required
               />
             </div>
@@ -165,13 +154,16 @@ export const FloorDialog = ({
                 id="totalSubUnits"
                 type="number"
                 min={1}
+                step={1}
                 value={formData.totalSubUnits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalSubUnits: Math.max(1, Number(e.target.value) || 1),
-                  })
-                }
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value)) {
+                    setFormData({
+                      ...formData,
+                      totalSubUnits: Math.max(1, Number(e.target.value) || 1),
+                    });
+                  }
+                }}
                 required
               />
             </div>
@@ -182,55 +174,19 @@ export const FloorDialog = ({
                 id="availableSubUnits"
                 type="number"
                 min={0}
+                step={1}
                 value={formData.availableSubUnits}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    availableSubUnits: Math.max(0, Number(e.target.value) || 0),
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="priceMin">Price Range Min</Label>
-              <Input
-                id="priceMin"
-                type="number"
-                min={0}
-                value={formData.priceRange?.min || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    priceRange: {
-                      min: Number(e.target.value) || 0,
-                      max: formData.priceRange?.max || 0,
-                    },
-                  })
-                }
-                placeholder="e.g., 500000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priceMax">Price Range Max</Label>
-              <Input
-                id="priceMax"
-                type="number"
-                min={0}
-                value={formData.priceRange?.max || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    priceRange: {
-                      min: formData.priceRange?.min || 0,
-                      max: Number(e.target.value) || 0,
-                    },
-                  })
-                }
-                placeholder="e.g., 1000000"
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value)) {
+                    setFormData({
+                      ...formData,
+                      availableSubUnits: Math.max(
+                        0,
+                        Number(e.target.value) || 0
+                      ),
+                    });
+                  }
+                }}
               />
             </div>
           </div>
