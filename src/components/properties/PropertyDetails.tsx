@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   X,
   IndianRupee,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,7 @@ export function PropertyDetails({
   // ✅ Extract customer info from property safely
   const enquiryCustomers = (property as any)?.enquiryCustomers || [];
   const purchasedCustomer = (property as any)?.purchasedCustomer || {};
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // CREATE UNIT
   const createUnitMutation = useMutation({
@@ -493,8 +495,65 @@ export function PropertyDetails({
             </CardContent>
           </Card>
         </div>
+        {/* Gallery */}
+        {property?.images?.length > 0 && (
+          <Card className="shadow-lg rounded-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle>
+                <Image className="w-5 h-5 mr-2 inline" /> Gallery
+              </CardTitle>
+            </CardHeader>
 
-        {property.googleMapsLocation && (
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {property?.images
+                  .filter((img) => img && img.trim() !== "")
+                  .map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative group rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => setSelectedImage(img)}
+                    >
+                      <img
+                        src={img}
+                        alt={`Building Image ${index + 1}`}
+                        className="w-full h-40 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">
+                          View Image
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Fullscreen Lightbox */}
+              {selectedImage && (
+                <div
+                  className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <div className="relative max-w-4xl w-[90vw]">
+                    <button
+                      onClick={() => setSelectedImage(null)}
+                      className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
+                    >
+                      <X className="h-8 w-8" />
+                    </button>
+                    <img
+                      src={selectedImage}
+                      alt="Preview"
+                      className="w-full h-auto rounded-lg shadow-lg object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* {property.googleMapsLocation && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="text-xl flex items-center">
@@ -514,7 +573,7 @@ export function PropertyDetails({
               </Button>
             </CardContent>
           </Card>
-        )}
+        )} */}
       </div>
 
       <Dialog
