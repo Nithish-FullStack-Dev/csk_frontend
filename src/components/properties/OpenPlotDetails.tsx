@@ -28,6 +28,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -80,6 +81,27 @@ export function OpenPlotDetails({
   const openLightbox = (imageSrc: string) => {
     setCurrentImage(imageSrc);
     setLightboxOpen(true);
+  };
+  const handleDownload = async (
+    e: React.MouseEvent,
+    url?: string | null,
+    projectName?: string | null
+  ) => {
+    e.stopPropagation();
+    if (!url) return toast.error("No brochure available to download.");
+
+    try {
+      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
+        url
+      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+
+      window.open(proxyUrl, "_blank");
+      toast.success("Download starting...");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download brochure.");
+    }
   };
 
   // ✅ Converts a normal Google Maps URL → embeddable URL automatically
@@ -163,7 +185,7 @@ export function OpenPlotDetails({
                 <Building className="h-5 w-5 mr-2 text-muted-foreground" />
                 <span>Extent: {plot.extentSqYards} sq. yards</span>
               </div>
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />
                 <span>Total: {formatCurrency(plot.totalAmount)}</span>
               </div>
@@ -172,10 +194,14 @@ export function OpenPlotDetails({
                 <span>
                   Price/Sq.Yard: {formatCurrency(plot.pricePerSqYard)}
                 </span>
+              </div> */}
+              <div className="flex items-center">
+                <Building className="h-5 w-5 mr-2 text-muted-foreground" />
+                <span>Plot Type: {plot.plotType}</span>
               </div>
             </div>
 
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <div className="flex justify-between items-center mb-1">
                 <span>
                   Amount Received: {formatCurrency(plot.amountReceived)}
@@ -185,7 +211,22 @@ export function OpenPlotDetails({
                 value={(plot.amountReceived / plot.totalAmount) * 100}
                 className="h-2"
               />
-            </div>
+            </div> */}
+            {plot?.brochureUrl && (
+              <Button variant="outline" asChild className="mt-4">
+                <a
+                  // href={building.brochureUrl}
+                  onClick={(e) =>
+                    handleDownload(e, plot?.brochureUrl, plot?.projectName)
+                  }
+                  // target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FileText className="mr-2 h-4 w-4" /> Download Project
+                  Brochure
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </Card>
@@ -210,8 +251,47 @@ export function OpenPlotDetails({
             </p>
           </CardContent>
         </Card>
-
+        {/* Legal Info */}
         <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <FileText className="mr-2 h-5 w-5" /> Legal & Other Info
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p>
+              <strong>Approval:</strong> {plot.approval}
+            </p>
+            <p>
+              <strong>Corner Plot:</strong> {plot.isCornerPlot ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>Gated Community:</strong>{" "}
+              {plot.isGatedCommunity ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>Registration:</strong>{" "}
+              {getStatusBadge(plot.registrationStatus)}
+            </p>
+            <p className="flex items-center">
+              <strong>EMI Scheme:</strong>{" "}
+              {plot.emiScheme ? (
+                <>
+                  <Check className="ml-2 h-4 w-4 text-green-500" /> Available
+                </>
+              ) : (
+                <>
+                  <X className="ml-2 h-4 w-4 text-red-500" /> Not Available
+                </>
+              )}
+            </p>
+            <p className="flex items-start">
+              <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+              {plot.remarks || "No remarks"}
+            </p>
+          </CardContent>
+        </Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
               <IndianRupee className="mr-2 h-5 w-5" /> Financials
@@ -244,49 +324,8 @@ export function OpenPlotDetails({
               {formatCurrency(plot.totalAmount - plot.amountReceived)}
             </p>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
-
-      {/* Legal Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center">
-            <FileText className="mr-2 h-5 w-5" /> Legal & Other Info
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <p>
-            <strong>Approval:</strong> {plot.approval}
-          </p>
-          <p>
-            <strong>Corner Plot:</strong> {plot.isCornerPlot ? "Yes" : "No"}
-          </p>
-          <p>
-            <strong>Gated Community:</strong>{" "}
-            {plot.isGatedCommunity ? "Yes" : "No"}
-          </p>
-          <p>
-            <strong>Registration:</strong>{" "}
-            {getStatusBadge(plot.registrationStatus)}
-          </p>
-          <p className="flex items-center">
-            <strong>EMI Scheme:</strong>{" "}
-            {plot.emiScheme ? (
-              <>
-                <Check className="ml-2 h-4 w-4 text-green-500" /> Available
-              </>
-            ) : (
-              <>
-                <X className="ml-2 h-4 w-4 text-red-500" /> Not Available
-              </>
-            )}
-          </p>
-          <p className="flex items-start">
-            <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
-            {plot.remarks || "No remarks"}
-          </p>
-        </CardContent>
-      </Card>
 
       {/* 🖼️ Gallery - Bento Grid */}
       {galleryImages.length > 0 && (
