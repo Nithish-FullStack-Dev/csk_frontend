@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import {
   Dialog,
   DialogTrigger,
   DialogContent,
   DialogHeader,
-  DialogClose,
   DialogFooter,
   DialogTitle,
   DialogDescription,
@@ -36,11 +35,13 @@ import {
   Filter,
   ArrowUpDown,
   MoreHorizontal,
-  Camera,
   CheckCircle,
   Building,
-  FileText,
   AlertOctagon,
+  Upload,
+  XCircle,
+  Image as ImageIcon,
+  AlertCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -49,95 +50,32 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Upload, XCircle } from "lucide-react";
-import axios from "axios";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { X } from "lucide-react";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Image as ImageIcon, AlertCircle } from "lucide-react";
-import PropertySelect from "@/hooks/PropertySelect";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  usefetchProjectsForDropdown,
+  usefetchContractorDropDown,
+  Project,
+} from "@/utils/project/ProjectConfig";
+import { User } from "@/contexts/AuthContext";
 
 interface QualityIssue {
-  id: string;
+  _id: string;
   title: string;
-  project: string;
-  unit: string;
-  contractor: string;
+  project: Project;
+  contractor: User;
   severity: "critical" | "major" | "minor";
   status: "open" | "under_review" | "resolved";
-  reportedDate: string;
+  reported_date: string;
   taskId?: string;
   description: string;
+  evidenceImages: string[];
 }
-
-const qualityIssues: QualityIssue[] = [
-  {
-    id: "q1",
-    title: "Cracked foundation concrete",
-    project: "Riverside Tower",
-    unit: "Block A",
-    contractor: "ABC Construction Ltd.",
-    severity: "critical",
-    status: "open",
-    reportedDate: "2025-04-10",
-    taskId: "t101",
-    description:
-      "Multiple cracks detected in the foundation concrete. Requires immediate attention.",
-  },
-  {
-    id: "q2",
-    title: "Improper electrical wiring",
-    project: "Valley Heights",
-    unit: "Unit 3",
-    contractor: "PowerTech Systems",
-    severity: "major",
-    status: "under_review",
-    reportedDate: "2025-04-12",
-    taskId: "t205",
-    description:
-      "Electrical wiring does not follow building code standards. Safety hazard.",
-  },
-  {
-    id: "q3",
-    title: "Poor quality wall finishing",
-    project: "Green Villa",
-    unit: "Villa 2",
-    contractor: "XYZ Builders",
-    severity: "minor",
-    status: "open",
-    reportedDate: "2025-04-14",
-    description: "Wall finishing is uneven and shows visible imperfections.",
-  },
-  {
-    id: "q4",
-    title: "Incorrect bathroom tile installation",
-    project: "Riverside Tower",
-    unit: "Block B",
-    contractor: "Elite Ceramics",
-    severity: "minor",
-    status: "resolved",
-    reportedDate: "2025-04-05",
-    taskId: "t156",
-    description:
-      "Tiles were installed with improper spacing and alignment. Contractor has corrected the issue.",
-  },
-  {
-    id: "q5",
-    title: "Structural column misalignment",
-    project: "Valley Heights",
-    unit: "Unit 7",
-    contractor: "ABC Construction Ltd.",
-    severity: "critical",
-    status: "under_review",
-    reportedDate: "2025-04-08",
-    taskId: "t198",
-    description:
-      "Column position deviates from structural drawings by 5cm. Structural engineer review required.",
-  },
-];
 
 const severityColors: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
@@ -151,47 +89,64 @@ const statusColors: Record<string, string> = {
   resolved: "bg-green-100 text-green-800",
 };
 
+const fetchQualityIssues = async (): Promise<QualityIssue[]> => {
+  const res = await axios.get(
+    `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
+    {
+      withCredentials: true,
+    }
+  );
+  return res.data.issues;
+};
+
 const QualityControl = () => {
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
-  const [qualityIssues, setQualityIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [contractors, setContractors] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialog, setIsDialog] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedIssue, setSelectedIssue] = useState<QualityIssue | null>(null);
   const [newStatus, setNewStatus] = useState("");
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedProjectAssign, setSelectedProjectAssign] = useState(null);
-  const [assignDialog, setAssignDiaog] = useState(false);
-  const [title, setTitle] = useState("");
+  const [assignDialog, setAssignDialog] = useState(false);
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [selectedUnit, setSelectedUnit] = useState("");
   const [phase, setPhase] = useState("");
   const [priority, setPriority] = useState("medium");
   const [deadline, setDeadline] = useState<Date | undefined>(new Date());
-  const [selectedContractorId, setSelectedContractorId] = useState(null);
+  const [selectedContractorId, setSelectedContractorId] = useState<
+    string | null
+  >(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
-  const [isUploading, setIsuploading] = useState(false);
-  const [selectedFloorUnit, setSelectedFloorUnit] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     project: "",
-    unit: "",
     contractor: "",
     severity: "",
     description: "",
     status: "",
   });
-  const [units, setUnits] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+
+  // Use useQuery for fetching quality issues
+  const {
+    data: qualityIssues = [],
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["qualityIssues"],
+    queryFn: fetchQualityIssues,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Use custom hooks for dropdowns
+  const { data: projects = [] } = usefetchProjectsForDropdown();
+  const { data: contractors = [] } = usefetchContractorDropDown();
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -203,7 +158,7 @@ const QualityControl = () => {
     setPhotos((prevPhotos) => prevPhotos.filter((_, i) => i !== index));
   };
 
-  const handleAssignContractor = async (e) => {
+  const handleAssignContractor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (!selectedContractorId || !selectedIssue?._id) {
@@ -215,14 +170,12 @@ const QualityControl = () => {
         title: selectedIssue.title,
         contractorId: selectedContractorId,
         projectId: selectedIssue.project._id,
-        unit: selectedIssue.unit,
         priority,
         deadline,
         phase,
         qualityIssueId: selectedIssue._id,
         description,
       };
-      console.log(payload);
       const res = await axios.post(
         `${
           import.meta.env.VITE_URL
@@ -233,14 +186,13 @@ const QualityControl = () => {
 
       if (res.status === 200) {
         toast.success("Task assigned and contractor updated successfully");
-        setAssignDiaog(false);
-        fetchQualityIssues();
-        setSelectedContractorId("");
-        setDeadline(null);
+        setAssignDialog(false);
+        setSelectedContractorId(null);
+        setDeadline(undefined);
         setDescription("");
         setPhase("");
-        setPriority("");
-        // Refresh quality issue or task list if needed
+        setPriority("medium");
+        queryClient.invalidateQueries({ queryKey: ["qualityIssues"] });
       } else {
         toast.error("Failed to assign task");
       }
@@ -250,36 +202,21 @@ const QualityControl = () => {
     }
   };
 
-  const handleViewDetails = (issue) => {
+  const handleViewDetails = (issue: QualityIssue) => {
     setSelectedIssue(issue);
-    setOpenDialog(true);
+    setIsDialogOpen(true);
   };
 
-  const handleUpdateStatus = (issue) => {
+  const handleUpdateStatus = (issue: QualityIssue) => {
     setSelectedIssue(issue);
     setNewStatus(issue.status);
     setStatusDialogOpen(true);
   };
 
-  const fetchQualityIssues = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
-        { withCredentials: true }
-      );
-      setQualityIssues(res.data.issues); // Ensure backend sends an array
-    } catch (err) {
-      setError("Failed to load issues");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsuploading(true);
+    setIsUploading(true);
     try {
-      // 1. Upload photos one-by-one
       const uploadedImageUrls: string[] = [];
       for (const photo of photos) {
         const formData = new FormData();
@@ -291,19 +228,19 @@ const QualityControl = () => {
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
+              withCredentials: true,
             }
           );
           if (res.data.url) uploadedImageUrls.push(res.data.url);
-          console.log(res.data);
         } catch (err) {
           console.error("Upload failed", err);
-        } finally {
-          setIsuploading(false);
+          toast.error("Failed to upload image");
         }
       }
 
       const payload = {
         ...formData,
+        project: projectId,
         evidenceImages: uploadedImageUrls,
       };
       const res = await axios.post(
@@ -312,89 +249,56 @@ const QualityControl = () => {
         { withCredentials: true }
       );
 
-      if (res) {
+      if (res.status === 200) {
         toast.success("Issue reported successfully");
         setIsDialogOpen(false);
         setPhotos([]);
         setFormData({
           title: "",
           project: "",
-          unit: "",
           contractor: "",
           severity: "",
           description: "",
           status: "",
         });
-        fetchQualityIssues();
+        setProjectId("");
+        queryClient.invalidateQueries({ queryKey: ["qualityIssues"] });
       } else {
         toast.error("Failed to report issue");
       }
     } catch (err) {
       toast.error("Something went wrong");
       console.error(err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  useEffect(() => {
-    fetchQualityIssues();
-  }, []);
-
-  const fetchDropdownData = async () => {
-    try {
-      const clientsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/contractors`,
-        { withCredentials: true }
-      ); // Replace with your actual route
-      const projectsRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        { withCredentials: true }
-      );
-
-      setContractors(clientsRes.data.data);
-      setProjects(projectsRes.data);
-    } catch (error) {
-      console.error("Error fetching dropdown data:", error);
-    }
+  const getProjectName = (project: Project) => {
+    return project.projectId.projectName || "Untitled Project";
   };
-
-  useEffect(() => {
-    fetchDropdownData();
-  }, []);
 
   const filteredIssues =
     Array.isArray(qualityIssues) &&
     qualityIssues.filter((issue) => {
-      // Apply status filter
-      if (filter !== "all" && issue.status !== filter) {
-        return false;
-      }
-
-      // Apply project filter
+      if (filter !== "all" && issue.status !== filter) return false;
       if (
         projectFilter &&
         projectFilter !== "all-projects" &&
-        issue.project !== projectFilter
-      ) {
+        issue.project._id !== projectFilter
+      )
         return false;
-      }
-
-      // Apply severity filter
       if (
         severityFilter &&
         severityFilter !== "all-severities" &&
         issue.severity !== severityFilter
-      ) {
+      )
         return false;
-      }
-
-      // Apply search query
       if (
         searchQuery &&
         !issue.title.toLowerCase().includes(searchQuery.toLowerCase())
-      ) {
+      )
         return false;
-      }
-
       return true;
     });
 
@@ -407,6 +311,12 @@ const QualityControl = () => {
             Manage and track quality issues across all construction projects
           </p>
         </div>
+
+        {error && (
+          <div className="text-red-500 text-sm">
+            Failed to load issues: {error.message}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -482,20 +392,14 @@ const QualityControl = () => {
                 <SelectTrigger className="w-fit">
                   <div className="flex items-center">
                     <Building className="h-4 w-4 mr-2" />
-                    <span>
-                      {projectFilter === "all-projects" || !projectFilter
-                        ? "All Projects"
-                        : projectFilter}
-                    </span>
+                    <SelectValue placeholder="All Projects" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all-projects">All Projects</SelectItem>
-                  {projects.map((property) => (
-                    <SelectItem key={property._id} value={property._id}>
-                      {typeof property.projectTitle === "string"
-                        ? property.projectTitle
-                        : "Invalid title"}
+                  {projects.map((project) => (
+                    <SelectItem key={project._id} value={project._id}>
+                      {project.projectId.projectName || "Untitled Project"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -522,7 +426,7 @@ const QualityControl = () => {
               </Select>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialog} onOpenChange={setIsDialog}>
               <DialogTrigger asChild>
                 <Button onClick={() => setIsDialogOpen(true)}>
                   <AlertOctagon className="h-4 w-4 mr-2" />
@@ -536,7 +440,7 @@ const QualityControl = () => {
                   </DialogTitle>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-4">
+                <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label>Title</Label>
                     <Input
@@ -544,17 +448,30 @@ const QualityControl = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, title: e.target.value })
                       }
+                      required
                     />
                   </div>
 
-                  <PropertySelect
-                    selectedFloorUnit={selectedFloorUnit}
-                    selectedProject={selectedProject}
-                    selectedUnit={selectedUnit}
-                    setSelectedFloorUnit={setSelectedFloorUnit}
-                    setSelectedProject={setSelectedProject}
-                    setSelectedUnit={setSelectedUnit}
-                  />
+                  <div className="grid gap-2">
+                    <Label>Project</Label>
+                    <Select
+                      value={projectId}
+                      onValueChange={setProjectId}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project._id} value={project._id}>
+                            {project.projectId.projectName ||
+                              "Untitled Project"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="grid gap-2">
                     <Label>Contractor</Label>
@@ -585,6 +502,7 @@ const QualityControl = () => {
                       onValueChange={(value) =>
                         setFormData({ ...formData, severity: value })
                       }
+                      required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Severity" />
@@ -604,6 +522,7 @@ const QualityControl = () => {
                       onValueChange={(value) =>
                         setFormData({ ...formData, status: value })
                       }
+                      required
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Status" />
@@ -681,24 +600,23 @@ const QualityControl = () => {
                       onChange={handleFileChange}
                     />
                   </div>
-                </div>
 
-                <DialogFooter>
-                  <Button
-                    onClick={handleSubmit}
-                    className="w-full"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? "Submitting..." : "Submit"}
-                  </Button>
-                </DialogFooter>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isUploading || loading}
+                    >
+                      {isUploading ? "Submitting..." : "Submit"}
+                    </Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
           </div>
 
           <Card>
             <CardContent className="p-0">
-              {/* Desktop / Tablet Table View */}
               <div className="hidden sm:block">
                 <Table>
                   <TableHeader>
@@ -709,7 +627,7 @@ const QualityControl = () => {
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         </div>
                       </TableHead>
-                      <TableHead>Project / Unit</TableHead>
+                      <TableHead>Project</TableHead>
                       <TableHead>Contractor</TableHead>
                       <TableHead>Reported Date</TableHead>
                       <TableHead>Severity</TableHead>
@@ -718,7 +636,16 @@ const QualityControl = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredIssues.length === 0 ? (
+                    {loading ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-6 text-muted-foreground"
+                        >
+                          Loading issues...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredIssues.length === 0 ? (
                       <TableRow>
                         <TableCell
                           colSpan={7}
@@ -728,10 +655,8 @@ const QualityControl = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      Array.isArray(filteredIssues) &&
                       filteredIssues.map((issue) => (
-                        <TableRow key={issue.taskId || issue.title}>
-                          {/* Ensure unique key */}
+                        <TableRow key={issue._id}>
                           <TableCell className="font-medium">
                             <div>
                               {issue.title}
@@ -742,18 +667,12 @@ const QualityControl = () => {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell>{getProjectName(issue.project)}</TableCell>
                           <TableCell>
-                            {issue?.project?.projectId?.basicInfo.projectName ||
-                              "Untitled Project"}{" "}
-                            / {issue?.unit || "N/A"}
+                            {issue.contractor.name || "N/A"}
                           </TableCell>
                           <TableCell>
-                            {typeof issue.contractor === "object"
-                              ? issue.contractor?.name || "N/A"
-                              : issue.contractor || "Contractor"}
-                          </TableCell>
-                          <TableCell>
-                            {issue?.reported_date
+                            {issue.reported_date
                               ? new Date(
                                   issue.reported_date
                                 ).toLocaleDateString()
@@ -764,8 +683,8 @@ const QualityControl = () => {
                               variant="outline"
                               className={severityColors[issue.severity]}
                             >
-                              {issue?.severity.charAt(0).toUpperCase() +
-                                issue?.severity.slice(1)}
+                              {issue.severity.charAt(0).toUpperCase() +
+                                issue.severity.slice(1)}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -775,8 +694,8 @@ const QualityControl = () => {
                             >
                               {issue.status === "under_review"
                                 ? "Under Review"
-                                : issue?.status.charAt(0).toUpperCase() +
-                                  issue?.status.slice(1)}
+                                : issue.status.charAt(0).toUpperCase() +
+                                  issue.status.slice(1)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -802,7 +721,7 @@ const QualityControl = () => {
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedIssue(issue);
-                                    setAssignDiaog(true);
+                                    setAssignDialog(true);
                                   }}
                                 >
                                   Assign Contractor
@@ -825,16 +744,19 @@ const QualityControl = () => {
                 </Table>
               </div>
 
-              {/* Mobile Card View */}
               <div className="block sm:hidden space-y-4 p-4">
-                {filteredIssues.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    Loading issues...
+                  </div>
+                ) : filteredIssues.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
                     No quality issues found matching your filters
                   </div>
                 ) : (
                   filteredIssues.map((issue) => (
                     <div
-                      key={issue.taskId || issue.title}
+                      key={issue._id}
                       className="border rounded-xl p-4 shadow-sm bg-white"
                     >
                       <div className="flex justify-between items-start">
@@ -869,7 +791,7 @@ const QualityControl = () => {
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedIssue(issue);
-                                setAssignDiaog(true);
+                                setAssignDialog(true);
                               }}
                             >
                               Assign Contractor
@@ -889,19 +811,15 @@ const QualityControl = () => {
                       <div className="mt-3 grid gap-2 text-sm">
                         <p>
                           <strong>Project:</strong>{" "}
-                          {issue?.project?.projectId?.basicInfo.projectName ||
-                            "Untitled Project"}{" "}
-                          / {issue?.unit || "N/A"}
+                          {getProjectName(issue.project)}
                         </p>
                         <p>
                           <strong>Contractor:</strong>{" "}
-                          {typeof issue.contractor === "object"
-                            ? issue.contractor?.name
-                            : issue.contractor}
+                          {issue.contractor.name || "N/A"}
                         </p>
                         <p>
                           <strong>Date:</strong>{" "}
-                          {issue?.reported_date
+                          {issue.reported_date
                             ? new Date(issue.reported_date).toLocaleDateString()
                             : "N/A"}
                         </p>
@@ -911,8 +829,8 @@ const QualityControl = () => {
                             variant="outline"
                             className={severityColors[issue.severity]}
                           >
-                            {issue?.severity.charAt(0).toUpperCase() +
-                              issue?.severity.slice(1)}
+                            {issue.severity.charAt(0).toUpperCase() +
+                              issue.severity.slice(1)}
                           </Badge>
                         </p>
                         <p>
@@ -923,8 +841,8 @@ const QualityControl = () => {
                           >
                             {issue.status === "under_review"
                               ? "Under Review"
-                              : issue?.status.charAt(0).toUpperCase() +
-                                issue?.status.slice(1)}
+                              : issue.status.charAt(0).toUpperCase() +
+                                issue.status.slice(1)}
                           </Badge>
                         </p>
                       </div>
@@ -933,8 +851,7 @@ const QualityControl = () => {
                 )}
               </div>
 
-              {/* Dialog to display issue details */}
-              <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
                   <div className="flex justify-between items-start">
                     <DialogHeader>
@@ -954,17 +871,11 @@ const QualityControl = () => {
                       </div>
                       <div>
                         <strong>Project:</strong>{" "}
-                        {selectedIssue?.project?.projectId?.basicInfo
-                          .projectName || "N/A"}
-                      </div>
-                      <div>
-                        <strong>Unit:</strong> {selectedIssue.unit || "N/A"}
+                        {getProjectName(selectedIssue.project)}
                       </div>
                       <div>
                         <strong>Contractor:</strong>{" "}
-                        {typeof selectedIssue.contractor === "object"
-                          ? selectedIssue.contractor?.name
-                          : selectedIssue.contractor}
+                        {selectedIssue.contractor.name || "N/A"}
                       </div>
                       <div>
                         <strong>Reported Date:</strong>{" "}
@@ -1027,17 +938,20 @@ const QualityControl = () => {
                               `${
                                 import.meta.env.VITE_URL
                               }/api/quality-issue/issues/${
-                                selectedIssue._id
+                                selectedIssue?._id
                               }/status`,
                               {
                                 status: newStatus,
-                              }
+                              },
+                              { withCredentials: true }
                             );
-
                             setStatusDialogOpen(false);
-                            fetchQualityIssues();
+                            queryClient.invalidateQueries({
+                              queryKey: ["qualityIssues"],
+                            });
                           } catch (err) {
                             console.error("Failed to update status", err);
+                            toast.error("Failed to update status");
                           }
                         }}
                       >
@@ -1104,131 +1018,137 @@ const QualityControl = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              <Dialog open={assignDialog} onOpenChange={setAssignDialog}>
+                <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
+                  <DialogHeader>
+                    <DialogTitle>Assign the task to Contractor</DialogTitle>
+                    <DialogDescription>
+                      To assign the task fill in all the details below.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form
+                    className="space-y-4 pt-4"
+                    onSubmit={handleAssignContractor}
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Task Title</Label>
+                      <p className="border p-2 rounded bg-gray-100 text-sm">
+                        {selectedIssue?.title || "No title to this issue"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe the task details"
+                        rows={3}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Project</Label>
+                      <p className="border p-2 rounded bg-gray-100 text-sm">
+                        {selectedIssue
+                          ? getProjectName(selectedIssue.project)
+                          : "No project selected"}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Contractor</Label>
+                      <Select
+                        onValueChange={(value) =>
+                          setSelectedContractorId(value)
+                        }
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Contractor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.isArray(contractors) &&
+                            contractors.map((c) => (
+                              <SelectItem key={c._id} value={c._id}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="phase">Construction Phase</Label>
+                        <Select value={phase} onValueChange={setPhase} required>
+                          <SelectTrigger id="phase">
+                            <SelectValue placeholder="Select phase" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(CONSTRUCTION_PHASES).map(
+                              ([key, value]) => (
+                                <SelectItem key={key} value={key}>
+                                  {value.title}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select
+                          value={priority}
+                          onValueChange={setPriority}
+                          required
+                        >
+                          <SelectTrigger id="priority">
+                            <SelectValue placeholder="Select priority" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Deadline</Label>
+                      <div className="border rounded-md p-2">
+                        <DatePicker
+                          date={deadline}
+                          setDate={setDeadline}
+                          showMonthYearDropdowns
+                        />
+                      </div>
+                    </div>
+
+                    <DialogFooter className="pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setAssignDialog(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={loading}>
+                        Confirm Assignment
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </Tabs>
-
-        <Dialog open={assignDialog} onOpenChange={setAssignDiaog}>
-          <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
-            <DialogHeader>
-              <DialogTitle>Assign the task to Contractor</DialogTitle>
-              <DialogDescription>
-                To assign the task fill in all the details below.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form className="space-y-4 pt-4" onSubmit={handleAssignContractor}>
-              <div className="space-y-2">
-                <Label htmlFor="title">Task Title</Label>
-                <p className="border p-2 rounded bg-gray-100 text-sm">
-                  {selectedIssue?.title || "No title to this issue"}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the task details"
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Project</Label>
-                <p className="border p-2 rounded bg-gray-100 text-sm">
-                  {selectedIssue?.project?.projectId?.basicInfo?.projectName ||
-                    "Untitled Project"}
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Unit</Label>
-                <p className="border p-2 rounded bg-gray-100 text-sm">
-                  {selectedIssue?.unit || "N/A"}
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Contractor</Label>
-                <Select
-                  onValueChange={(value) => setSelectedContractorId(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Contractor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.isArray(contractors) &&
-                      contractors.map((c) => (
-                        <SelectItem key={c._id} value={c._id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phase">Construction Phase</Label>
-                  <Select value={phase} onValueChange={setPhase} required>
-                    <SelectTrigger id="phase">
-                      <SelectValue placeholder="Select phase" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CONSTRUCTION_PHASES).map(
-                        ([key, value]) => (
-                          <SelectItem key={key} value={key}>
-                            {value.title}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger id="priority">
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Deadline</Label>
-                <div className="border rounded-md p-2">
-                  <DatePicker
-                    date={deadline}
-                    setDate={setDeadline}
-                    showMonthYearDropdowns
-                  />
-                </div>
-              </div>
-
-              <DialogFooter className="pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setAssignDiaog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Confirm Assignment</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );
