@@ -391,7 +391,8 @@ export default function OpenLandForm({
             {isEditing ? "Edit Open Land" : "Add Open Land"}
           </h3>
           <p className="text-sm text-muted-foreground">
-            Enter key details and upload media.
+            Fill in the details below to {isEditing ? "update" : "add"} an
+            openLand
           </p>
         </div>
         <Separator />
@@ -405,7 +406,7 @@ export default function OpenLandForm({
               <FormItem>
                 <FormLabel>Project Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Evergreen" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -418,7 +419,7 @@ export default function OpenLandForm({
               <FormItem>
                 <FormLabel>Location</FormLabel>
                 <FormControl>
-                  <Input placeholder="Hyderabad" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -472,7 +473,7 @@ export default function OpenLandForm({
               <FormItem>
                 <FormLabel>Land Area</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="34" {...field} />
+                  <Input type="number" {...field} />
                 </FormControl>
               </FormItem>
             )}
