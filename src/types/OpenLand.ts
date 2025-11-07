@@ -6,7 +6,7 @@ export type LandType =
     | "Residential"
     | "Industrial"
     | "Farm Land"
-    | "Open Plot";
+    | "Open Land";
 
 export type LandApproval =
     | "DTCP"
@@ -33,16 +33,21 @@ export interface OpenLand {
     city?: string;
     state?: string;
     country?: string;
+    facing?: string;          // Direction the land is facing (e.g., North, South-East)
+    landType: LandType;
+    landApproval: LandApproval;
+    availabilityStatus: LandAvailabilityStatus;
 
     landArea: number;            // Total land area (sqft / sq-yd / acres)
-    areaUnit: "sqft" | "sq-yd" | "acre"; // Unit of land measurement
-
+    areaUnit: "Sqft" | "Sqyd" | "Acre" | "Hectare"; // Unit of land measurement
     pricePerUnit?: number;       // Price per unit (optional)
     totalPrice?: number;         // Total land price (optional)
     googleMapsLink?: string;
 
     brochureUrl?: string;        // Brochure file path
     thumbnailUrl?: string;       // Thumbnail image
+    images?: string[];           // Array of image file paths
+
 
     description?: string;        // Short description
     features?: string[];         // Key highlights / features

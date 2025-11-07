@@ -303,27 +303,6 @@ const NewProperties = () => {
       }
     },
   });
-  const deleteOpenLandMutation = useMutation({
-    mutationFn: async () => {
-      if (!currentOpenLand) return;
-      await axios.delete(
-        `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${
-          currentOpenLand._id
-        }`,
-        {
-          withCredentials: true,
-        }
-      );
-    },
-    onSuccess: () => {
-      toast.success("Open land deleted");
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
-    },
-    onError: (err: any) => {
-      console.error("deleteOpenLand error:", err?.response || err);
-      toast.error(err?.response?.data?.message || "Failed to delete open land");
-    },
-  });
 
   useEffect(() => {
     let results = (buildings || []).slice();
@@ -380,12 +359,6 @@ const NewProperties = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleEditOpenLand = (land: OpenLand, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setCurrentOpenLand(land);
-    setopenLandDialog(true);
-  };
-
   const handleDeleteConfirm = () => {
     if (!buildingToDelete) return;
     deleteBuilding.mutate(buildingToDelete);
@@ -435,20 +408,6 @@ const NewProperties = () => {
     }
   };
 
-  const handleOpenLandDelete = async () => {
-    if (!selectedOpenLand) return;
-    setCurrentOpenLand(selectedOpenLand);
-    if (!window.confirm("Delete this open land?")) return;
-    await deleteOpenLandMutation.mutateAsync();
-    setSelectedOpenLand(null); // Go back to the list view
-  };
-
-  const handleOpenLandEdit = (land: OpenLand, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setCurrentOpenLand(land);
-    setopenLandDialog(true);
-  };
-
   const handleAddOpenLand = () => {
     setCurrentOpenLand(undefined);
     setopenLandDialog(true);
@@ -470,14 +429,6 @@ const NewProperties = () => {
     // confirm quickly
     if (!window.confirm("Delete this open plot?")) return;
     deleteOpenPlotMutation.mutate();
-  };
-
-  const handleDeleteOpenLand = (id: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setCurrentOpenLand(openLandData.find((p) => p._id === id));
-    // confirm quickly
-    if (!window.confirm("Delete this open land?")) return;
-    deleteOpenLandMutation.mutate();
   };
 
   const handleDeleteOpenPlotFromDetails = async () => {
@@ -550,7 +501,13 @@ const NewProperties = () => {
 
               {canEdit && (
                 <div className="flex gap-3">
-                  <Button className="" onClick={handleAddOpenLand}>
+                  <Button
+                    className=""
+                    onClick={() => {
+                      setCurrentOpenLand(undefined);
+                      setopenLandDialog(true);
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" /> Add Open Land
                   </Button>
 
@@ -872,12 +829,8 @@ const NewProperties = () => {
                                 <span>{plot.extentSqYards}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span>Price / SqYard</span>
-                                <span>₹{plot.pricePerSqYard}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Total Amount</span>
-                                <span>₹{plot.totalAmount}</span>
+                                <span>Plot Type</span>
+                                <span>{plot.plotType}</span>
                               </div>
                             </div>
 
