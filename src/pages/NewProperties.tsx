@@ -50,8 +50,10 @@ import {
 } from "@/utils/buildings/Projects";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
-import OpenLandProperties from "./OpenLandProperties";
+// import OpenLandProperties from "./OpenLandProperties";
 import { useRBAC } from "@/config/RBAC";
+import OpenLandDetails from "@/components/properties/OpenLandDetails";
+import OpenLandProperties from "./OpenLandProperties";
 // import OpenLandDialog from "@/components/properties/OpenLandDialog";
 
 const NewProperties = () => {
@@ -71,6 +73,10 @@ const NewProperties = () => {
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
+  const [deleteType, setDeleteType] = useState<
+    "building" | "plot" | "land" | null
+  >(null);
+  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
   const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
@@ -238,6 +244,27 @@ const NewProperties = () => {
       toast.error(err?.response?.data?.message || "Failed to delete open plot");
     },
   });
+  const deleteOpenLandMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentOpenLand) return;
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${
+          currentOpenLand._id
+        }`,
+        {
+          withCredentials: true,
+        }
+      );
+    },
+    onSuccess: () => {
+      toast.success("Open land deleted");
+      queryClient.invalidateQueries({ queryKey: ["openLand"] });
+    },
+    onError: (err: any) => {
+      console.error("deleteOpenLand error:", err?.response || err);
+      toast.error(err?.response?.data?.message || "Failed to delete open land");
+    },
+  });
   const createOpenLandMutation = useMutation({
     mutationFn: async (payload: Partial<OpenLand>) => {
       const { data } = await axios.post(
@@ -359,11 +386,32 @@ const NewProperties = () => {
     setDeleteDialogOpen(true);
   };
 
+  // const handleDeleteConfirm = () => {
+  //   if (!buildingToDelete) return;
+  //   deleteBuilding.mutate(buildingToDelete);
+  //   setBuildingToDelete(null);
+  //   setDeleteDialogOpen(false);
+  // };
   const handleDeleteConfirm = () => {
-    if (!buildingToDelete) return;
-    deleteBuilding.mutate(buildingToDelete);
-    setBuildingToDelete(null);
+    if (!deleteType || !itemToDeleteId) return;
+
+    if (deleteType === "building") {
+      deleteBuilding.mutate(itemToDeleteId);
+    }
+
+    if (deleteType === "plot") {
+      setCurrentOpenPlot(openPlots.find((p) => p._id === itemToDeleteId));
+      deleteOpenPlotMutation.mutate();
+    }
+
+    if (deleteType === "land") {
+      setCurrentOpenLand(openLandData?.find((l) => l._id === itemToDeleteId));
+      deleteOpenLandMutation.mutate();
+    }
+
     setDeleteDialogOpen(false);
+    setItemToDeleteId(null);
+    setDeleteType(null);
   };
 
   const handleSuccessfulSave = () => {
@@ -422,14 +470,29 @@ const NewProperties = () => {
     setCurrentOpenPlot(plot);
     setDialogOpenPlot(true);
   };
-
-  const handleDeleteOpenPlot = (id: string, e?: React.MouseEvent) => {
+  const handleEditOpenLand = (land: OpenLand, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setCurrentOpenPlot(openPlots.find((p) => p._id === id));
-    // confirm quickly
-    if (!window.confirm("Delete this open plot?")) return;
-    deleteOpenPlotMutation.mutate();
+    setCurrentOpenLand(land);
+    setopenLandDialog(true);
   };
+  const openDeleteDialog = (
+    type: "building" | "plot" | "land",
+    id: string,
+    e?: React.MouseEvent
+  ) => {
+    e?.stopPropagation();
+    setDeleteType(type);
+    setItemToDeleteId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  // const handleDeleteOpenPlot = (id: string, e?: React.MouseEvent) => {
+  //   e?.stopPropagation();
+  //   setCurrentOpenPlot(openPlots.find((p) => p._id === id));
+  //   // confirm quickly
+  //   if (!window.confirm("Delete this open plot?")) return;
+  //   deleteOpenPlotMutation.mutate();
+  // };
 
   const handleDeleteOpenPlotFromDetails = async () => {
     if (!selectedOpenPlot) return;
@@ -438,7 +501,13 @@ const NewProperties = () => {
     await deleteOpenPlotMutation.mutateAsync();
     setSelectedOpenPlot(null); // Go back to the list view
   };
-
+  const handleDeleteOpenLandFromDetails = async () => {
+    if (!selectedOpenLand) return;
+    setCurrentOpenLand(selectedOpenLand);
+    if (!window.confirm("Delete this open Land?")) return;
+    await deleteOpenLandMutation.mutateAsync();
+    setSelectedOpenLand(null); // Go back to the list view
+  };
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
@@ -484,6 +553,15 @@ const NewProperties = () => {
             }}
             onDelete={handleDeleteOpenPlotFromDetails}
             onBack={() => setSelectedOpenPlot(null)}
+          />
+        ) : selectedOpenLand ? (
+          <OpenLandDetails
+            land={selectedOpenLand}
+            onEdit={() => {
+              handleEditOpenLand(selectedOpenLand);
+            }}
+            onDelete={handleDeleteOpenLandFromDetails}
+            onBack={() => setSelectedOpenLand(null)}
           />
         ) : (
           <>
@@ -628,7 +706,9 @@ const NewProperties = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={(e) => handleDeleteClick(b._id!, e)}
+                                onClick={(e) =>
+                                  openDeleteDialog("building", b._id!, e)
+                                }
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -798,7 +878,7 @@ const NewProperties = () => {
                                     size="icon"
                                     variant="ghost"
                                     onClick={(e) =>
-                                      handleDeleteOpenPlot(plot._id!, e)
+                                      openDeleteDialog("plot", plot._id!, e)
                                     }
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -897,8 +977,178 @@ const NewProperties = () => {
                 </CardContent>
               </Card>
             </section>
-            {/* openland */}
-            <OpenLandProperties />
+            {/* ---------- Open Lands Section ---------- */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold">Open Land</h2>
+                <div />
+              </div>
+
+              <Card>
+                <CardContent className="p-6">
+                  {openPlots.length === 0 ? (
+                    <div className="text-center py-12">
+                      <h3 className="text-lg font-semibold mb-2">
+                        No open Land found
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Add open Land using the button above.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {openLandData?.map((land) => (
+                        <Card
+                          key={land?._id}
+                          onClick={() => setSelectedOpenLand(land)}
+                          className="overflow-hidden hover:shadow-lg transition cursor-pointer"
+                        >
+                          <div className="relative">
+                            {land?.thumbnailUrl ? (
+                              <img
+                                src={land?.thumbnailUrl}
+                                alt={land?.projectName}
+                                className="h-48 w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-48 bg-muted flex items-center justify-center">
+                                <Building2 className="h-10 w-10 opacity-20" />
+                              </div>
+                            )}
+                          </div>
+
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="font-semibold text-lg">
+                                {land?.projectName} — {land?.plotNo}
+                              </h3>
+                              {canEdit && (
+                                <div
+                                  className="flex gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => handleEditOpenLand(land, e)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      openDeleteDialog("land", land?._id!, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4 mr-1" />{" "}
+                              {land?.googleMapsLocation ? (
+                                <a
+                                  className="underline"
+                                  href={land?.googleMapsLocation}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View on map
+                                </a>
+                              ) : (
+                                land?.projectName
+                              )}
+                            </div>
+
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div className="flex justify-between">
+                                <span>Land Type</span>
+                                <span>{land?.landType}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Facing</span>
+                                <span>{land?.facing}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Land Area</span>
+                                <span>
+                                  {land?.landArea}/{land?.areaUnit}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="border-t pt-3 text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span>Availability</span>
+                                <span>
+                                  {land?.availableDate
+                                    ? new Date(
+                                        land?.availableDate
+                                      ).toLocaleDateString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      })
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOpenLand(land);
+                                }}
+                              >
+                                View Land Details
+                              </Button>
+                              {land?.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        land?.brochureUrl!,
+                                        land?.projectName
+                                      )
+                                    }
+                                    title="Download Brochure"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  {/* <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleShare(
+                                        e,
+                                        land.brochureUrl!,
+                                        land.projectName
+                                      )
+                                    }
+                                    title="Copy Share Link"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button> */}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
           </>
         )}
       </div>
@@ -916,8 +1166,20 @@ const NewProperties = () => {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Building"
-        description="Are you sure you want to delete this building?"
+        title={
+          deleteType === "building"
+            ? "Delete Building"
+            : deleteType === "plot"
+            ? "Delete Open Plot"
+            : "Delete Open Land"
+        }
+        description={
+          deleteType === "building"
+            ? "Are you sure you want to delete this building?"
+            : deleteType === "plot"
+            ? "Are you sure you want to delete this open plot?"
+            : "Are you sure you want to delete this open land?"
+        }
       />
 
       {/* OpenPlot dialog (calls your existing component) */}

@@ -15,21 +15,23 @@ import {
 } from "@tanstack/react-query";
 import { getAllOpenLand } from "@/utils/buildings/Projects";
 import { useRBAC } from "@/config/RBAC";
+import { useNavigate } from "react-router-dom";
 
-const OpenLandProperties = () => {
+interface OpenLandPropertiesProps {
+  onSelectOpenLand: (land: OpenLand) => void;
+}
+
+const OpenLandProperties: React.FC<OpenLandPropertiesProps> = ({
+  onSelectOpenLand,
+}) => {
   const queryClient = useQueryClient();
-  const API_BASE =
-    import.meta.env.VITE_URL ||
-    "[http://localhost:3000](http://localhost:3000)";
-
+  const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+  const navigate = useNavigate();
   const [openLandDialog, setOpenLandDialog] = useState(false);
   const [openLandSubmitting, setOpenLandSubmitting] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<
     OpenLand | undefined
   >();
-  const [selectedOpenLand, setSelectedOpenLand] = useState<OpenLand | null>(
-    null
-  );
 
   // RBAC permissions
   const { userCanEditUser } = useRBAC({ roleSubmodule: "Properties" });
@@ -53,9 +55,7 @@ const OpenLandProperties = () => {
       const { data } = await axios.post(
         `${API_BASE}/api/openLand/saveOpenLand`,
         payload,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       return data;
     },
@@ -81,9 +81,7 @@ const OpenLandProperties = () => {
       const { data } = await axios.put(
         `${API_BASE}/api/openLand/updateOpenLand/${id}`,
         payload,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       return data;
     },
@@ -114,11 +112,6 @@ const OpenLandProperties = () => {
   });
 
   // --- Handlers ---
-  const handleAddOpenLand = () => {
-    setCurrentOpenLand(undefined);
-    setOpenLandDialog(true);
-  };
-
   const handleEditOpenLand = (land: OpenLand, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenLand(land);
@@ -185,157 +178,153 @@ const OpenLandProperties = () => {
 
   // --- UI Render ---
   return (
-    <div>
-      {" "}
-      <section>
-        {" "}
-        <div className="flex justify-between mb-4 items-center">
-          {" "}
-          <h2 className="text-2xl font-semibold">Open Lands</h2>
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            {openLandData.length === 0 ? (
-              <div className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">
-                  No open lands found
-                </h3>
-                <p className="text-muted-foreground">
-                  Add open lands using the button above.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {openLandData.map((land) => {
-                  const thumbnailSrc = land.thumbnailUrl
-                    ? land.thumbnailUrl.startsWith("http")
-                      ? land.thumbnailUrl
-                      : `${API_BASE}/${land.thumbnailUrl.replace(/^\/+/, "")}`
-                    : null;
+    <section>
+      <div className="flex justify-between mb-4 items-center">
+        <h2 className="text-2xl font-semibold">Open Lands</h2>
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          {openLandData.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">
+                No open lands found
+              </h3>
+              <p className="text-muted-foreground">
+                Add open lands using the button above.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {openLandData.map((land, idx) => {
+                const thumbnailSrc = land.thumbnailUrl
+                  ? land.thumbnailUrl.startsWith("http")
+                    ? land.thumbnailUrl
+                    : `${API_BASE}/${land.thumbnailUrl.replace(/^\/+/, "")}`
+                  : null;
 
-                  return (
-                    <Card
-                      key={land._id}
-                      onClick={() => setSelectedOpenLand(land)}
-                      className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                    >
-                      <div className="relative">
-                        {thumbnailSrc ? (
-                          <img
-                            src={thumbnailSrc}
-                            alt={land.projectName}
-                            className="h-48 w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-48 bg-muted flex items-center justify-center">
-                            <Building2 className="h-10 w-10 opacity-20" />
+                return (
+                  <Card
+                    key={land._id}
+                    onClick={() => onSelectOpenLand(land)}
+                    className="overflow-hidden hover:shadow-lg transition cursor-pointer"
+                  >
+                    <div className="relative">
+                      {thumbnailSrc ? (
+                        <img
+                          src={thumbnailSrc}
+                          alt={land.projectName}
+                          className="h-48 w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-48 bg-muted flex items-center justify-center">
+                          <Building2 className="h-10 w-10 opacity-20" />
+                        </div>
+                      )}
+                    </div>
+
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-semibold text-lg truncate">
+                          {land.projectName}{" "}
+                          {land.plotNo ? `— ${land.plotNo}` : ""}
+                        </h3>
+                        {canEdit && (
+                          <div
+                            className="flex gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => handleEditOpenLand(land, e)}
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) =>
+                                handleDeleteOpenLand(land._id!, e)
+                              }
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         )}
                       </div>
 
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-semibold text-lg truncate">
-                            {land.projectName}{" "}
-                            {land.plotNo ? `— ${land.plotNo}` : ""}
-                          </h3>
-                          {canEdit && (
-                            <div
-                              className="flex gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={(e) => handleEditOpenLand(land, e)}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={(e) =>
-                                  handleDeleteOpenLand(land._id!, e)
-                                }
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center text-sm text-muted-foreground mb-3">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {land.googleMapsLink ? (
-                            <a
-                              className="underline"
-                              href={land.googleMapsLink}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              View on map
-                            </a>
-                          ) : (
-                            land.location || "No location"
-                          )}
-                        </div>
-
-                        <div className="space-y-2 mb-4 text-sm">
-                          <div className="flex justify-between">
-                            <span>Land Area</span>
-                            <span>
-                              {land.landArea} {land.areaUnit}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Type</span>
-                            <span>{land.landType}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Status</span>
-                            <span>{land.availabilityStatus}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            size="sm"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedOpenLand(land);
-                            }}
+                      <div className="flex items-center text-sm text-muted-foreground mb-3">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        {land.googleMapsLink ? (
+                          <a
+                            className="underline"
+                            href={land.googleMapsLink}
+                            target="_blank"
+                            rel="noreferrer"
                           >
-                            View Land Details
-                          </Button>
-                          {land.brochureUrl && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={(e) =>
-                                handleDownload(
-                                  e,
-                                  land.brochureUrl!,
-                                  land.projectName
-                                )
-                              }
-                              title="Download Brochure"
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          )}
+                            View on map
+                          </a>
+                        ) : (
+                          land.location || "No location"
+                        )}
+                      </div>
+
+                      <div className="space-y-2 mb-4 text-sm">
+                        <div className="flex justify-between">
+                          <span>Land Area</span>
+                          <span>
+                            {land.landArea} {land.areaUnit}
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+                        <div className="flex justify-between">
+                          <span>Type</span>
+                          <span>{land.landType}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Status</span>
+                          <span>{land.availabilityStatus}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() =>
+                            navigate(`/properties/open-land/${land._id}`)
+                          }
+                        >
+                          View Land Details
+                        </Button>
+
+                        {land.brochureUrl && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={(e) =>
+                              handleDownload(
+                                e,
+                                land.brochureUrl!,
+                                land.projectName
+                              )
+                            }
+                            title="Download Brochure"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Dialog */}
       <OpenLandDialog
         open={openLandDialog}
@@ -343,7 +332,7 @@ const OpenLandProperties = () => {
         openLand={currentOpenLand}
         onSubmit={handleOpenLandSubmit}
       />
-    </div>
+    </section>
   );
 };
 
