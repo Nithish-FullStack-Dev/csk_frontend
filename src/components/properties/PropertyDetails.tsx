@@ -1,6 +1,5 @@
-// src/components/PropertyDetails.tsx
 import { useState } from "react";
-import { useNavigate, useNavigation, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Check,
   Building,
@@ -15,13 +14,11 @@ import {
   MessageSquare,
   ChevronLeft,
   X,
-  IndianRupee,
   Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -32,11 +29,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { Property } from "@/types/property";
-import { formatIndianCurrency } from "@/lib/formatCurrency";
 import { ApartmentDialog } from "./ApartmentDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { toast } from "sonner";
 import { createUnit, deleteUnit, updateUnit } from "@/utils/units/Methods";
 
@@ -76,26 +71,30 @@ export function PropertyDetails({
   onDelete,
   buildingId,
   floorId,
-  unitId,
-  onBack,
 }: PropertyDetailsProps) {
-  // const { buildingId, floorId } = useParams<{
-  //   buildingId: string;
-  //   floorId: string;
-  // }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentProperty, setCurrentProperty] = useState<Property | null>(
     property
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
+    useState(false);
 
-  // ✅ Extract customer info from property safely
+  const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
+  const [selectedApartment, setSelectedApartment] = useState<
+    Property | undefined
+  >();
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
+    null
+  );
+
   const enquiryCustomers = (property as any)?.enquiryCustomers || [];
   const purchasedCustomer = (property as any)?.purchasedCustomer || {};
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // CREATE UNIT
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
     onSuccess: (newUnit) => {
@@ -103,6 +102,8 @@ export function PropertyDetails({
         ["units", buildingId, floorId],
         (oldData: any[] = []) => [...oldData, newUnit]
       );
+      queryClient.setQueryData(["unit", newUnit._id], newUnit);
+      queryClient.invalidateQueries({ queryKey: ["unit", newUnit._id] });
 
       toast.success("Unit created successfully");
       setApartmentDialogOpen(false);
@@ -122,22 +123,17 @@ export function PropertyDetails({
       unitData: FormData;
     }) => updateUnit(unitId, unitData),
     onSuccess: (updatedUnit) => {
-      // ✅ Update the UI immediately
       setCurrentProperty(updatedUnit);
 
-      // ✅ Update the React Query cache
       queryClient.setQueryData(
         ["units", buildingId, floorId],
-        (old: any[] = []) =>
-          old.map((unit) => (unit._id === updatedUnit._id ? updatedUnit : unit))
+        (oldUnits: any[] = []) =>
+          oldUnits.map((u) => (u._id === updatedUnit._id ? updatedUnit : u))
       );
 
-      // ✅ Optional: refetch from backend if you want fresh data
-      queryClient.invalidateQueries({
-        queryKey: ["units", buildingId, floorId],
-      });
+      queryClient.setQueryData(["unit", updatedUnit._id], updatedUnit);
+      queryClient.invalidateQueries({ queryKey: ["unit", updatedUnit._id] });
 
-      // ✅ Close the dialog & toast success
       setApartmentDialogOpen(false);
       toast.success("Unit updated successfully");
     },
@@ -161,19 +157,6 @@ export function PropertyDetails({
       toast.error(error.response?.data?.message || "Failed to delete unit");
     },
   });
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
-    useState(false);
-
-  const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
-  const [selectedApartment, setSelectedApartment] = useState<
-    Property | undefined
-  >();
-  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
-    null
-  );
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
   const formatDate = (dateString: string) => {
@@ -292,12 +275,6 @@ export function PropertyDetails({
                   <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
                   <span>Delivery: {formatDate(property.deliveryDate)}</span>
                 </div>
-                {/* <div className="flex items-center">
-                  <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />{" "}
-                  <span>
-                    Total: {formatIndianCurrency(property.totalAmount)}
-                  </span>
-                </div> */}
               </div>
 
               <div className="mt-4">
@@ -357,61 +334,6 @@ export function PropertyDetails({
               </div>
             </CardContent>
           </Card>
-
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <IndianRupee className="mr-2 h-5 w-5" /> Financial Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="font-medium text-lg">
-                  {formatIndianCurrency(property.totalAmount)}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    Amount Received
-                  </p>
-                  <p className="font-medium text-green-600">
-                    {formatIndianCurrency(property.amountReceived)}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    Balance Amount
-                  </p>
-                  <p className="font-medium text-red-600">
-                    {formatIndianCurrency(property.balanceAmount)}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">
-                  Rate Plan (Scheme)
-                </p>
-                <p className="font-medium">{property.ratePlan || "N/A"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">EMI Scheme</p>
-                <p className="font-medium flex items-center">
-                  {property.emiScheme ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4 text-green-500" />{" "}
-                      Available
-                    </>
-                  ) : (
-                    <>
-                      <X className="mr-2 h-4 w-4 text-red-500" /> Not Available
-                    </>
-                  )}
-                </p>
-              </div>
-            </CardContent>
-          </Card> */}
 
           <Card>
             <CardHeader>
@@ -552,28 +474,6 @@ export function PropertyDetails({
             </CardContent>
           </Card>
         )}
-
-        {/* {property.googleMapsLocation && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <Map className="mr-2 h-5 w-5" /> Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" asChild className="w-full">
-                <a
-                  href={property.googleMapsLocation}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center"
-                >
-                  <Map className="mr-2 h-5 w-5" /> View on Google Maps
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
-        )} */}
       </div>
 
       <Dialog
