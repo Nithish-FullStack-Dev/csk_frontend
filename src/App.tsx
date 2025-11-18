@@ -146,6 +146,8 @@ import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import CircleLoader from "./components/CircleLoader";
+// import OpenLandProperties from "./pages/OpenLandProperties";
+const OpenLandProperties = lazy(() => import("./pages/OpenLandProperties"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -216,6 +218,8 @@ const App = () => {
                   element={<UpcomingProjectsPage />}
                 />
                 <Route path="/public/open-plots" element={<OpenPlotsPage />} />
+                {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
+                {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                 <Route path="/public/contact" element={<ContactPage />} />
 
                 {/* Admin Routes */}
@@ -359,6 +363,15 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/properties/open-land/:id"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <OpenLandProperties /> {/* or the correct details page */}
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route
                   path="/properties/building/:buildingId/floor/:floorId"
                   element={

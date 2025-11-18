@@ -24,44 +24,87 @@ export type LandAvailabilityStatus =
     | "Reserved"
     | "Under Discussion";
 
+/** Interested customer entry structure */
+export interface InterestedCustomerEntry {
+    customer: {
+        _id: string;
+        name: string;
+        phone?: string;
+        email?: string;
+    };
+    agent: {
+        _id: string;
+        name: string;
+        email?: string;
+    };
+    addedAt?: string;
+}
+
 export interface OpenLand {
     _id?: string;
 
-    projectName: string;         // Name of the land project
-    plotNo: string;              // Plot number / survey number / parcel identifier
-    location: string;            // Location / address
+    projectName: string;
+    plotNo: string;
+    location: string;
     city?: string;
     state?: string;
     country?: string;
-    facing?: string;          // Direction the land is facing (e.g., North, South-East)
+
+    facing?: string;
+
     landType: LandType;
     landApproval: LandApproval;
     availabilityStatus: LandAvailabilityStatus;
 
-    landArea: number;            // Total land area (sqft / sq-yd / acres)
-    areaUnit: "Sqft" | "Sqyd" | "Acre" | "Hectare"; // Unit of land measurement
-    pricePerUnit?: number;       // Price per unit (optional)
-    totalPrice?: number;         // Total land price (optional)
-    googleMapsLink?: string;
+    landArea: number;
+    areaUnit: "Sqft" | "Sqyd" | "Acre" | "Hectare";
 
-    brochureUrl?: string;        // Brochure file path
-    thumbnailUrl?: string;       // Thumbnail image
-    images?: string[];           // Array of image file paths
+    pricePerUnit?: number;
+    totalPrice?: number;
 
+    googleMapsLocation?: string;
 
-    description?: string;        // Short description
-    features?: string[];         // Key highlights / features
+    brochureUrl?: string;
+    thumbnailUrl?: string;
+    images?: string[];
+
+    description?: string;
+    features?: string[];
 
     // Legal approvals
     reraApproved?: boolean;
     reraNumber?: string;
     municipalPermission?: boolean;
 
-    // Timestamps
+    // NEW CUSTOMER RELATIONS (Matches backend)
+    ownerCustomer?: {
+        _id: string;
+        name: string;
+        phone?: string;
+        email?: string;
+    } | null;
+
+    interestedCustomers?: InterestedCustomerEntry[];
+
+    soldToCustomer?: {
+        _id: string;
+        name: string;
+        phone?: string;
+        email?: string;
+    } | null;
+
+    soldDate?: string | null;
+
+    // Agent who listed this property
+    agentId?: {
+        _id: string;
+        name: string;
+        email?: string;
+    };
+
     createdAt?: string;
     updatedAt?: string;
     availableDate?: string;
 }
-
 
 export const sampleOpenLands: OpenLand[] = [];
