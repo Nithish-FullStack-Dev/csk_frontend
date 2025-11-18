@@ -61,21 +61,10 @@ import {
   usefetchProjectsForDropdown,
   usefetchContractorDropDown,
   Project,
+  QualityIssue,
+  useQualityIssues,
 } from "@/utils/project/ProjectConfig";
 import { User } from "@/contexts/AuthContext";
-
-interface QualityIssue {
-  _id: string;
-  title: string;
-  project: Project;
-  contractor: User;
-  severity: "critical" | "major" | "minor";
-  status: "open" | "under_review" | "resolved";
-  reported_date: string;
-  taskId?: string;
-  description: string;
-  evidenceImages: string[];
-}
 
 const severityColors: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
@@ -87,16 +76,6 @@ const statusColors: Record<string, string> = {
   open: "bg-red-100 text-red-800",
   under_review: "bg-amber-100 text-amber-800",
   resolved: "bg-green-100 text-green-800",
-};
-
-const fetchQualityIssues = async (): Promise<QualityIssue[]> => {
-  const res = await axios.get(
-    `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
-    {
-      withCredentials: true,
-    }
-  );
-  return res.data.issues;
 };
 
 const QualityControl = () => {
@@ -132,20 +111,25 @@ const QualityControl = () => {
     status: "",
   });
 
-  // Use useQuery for fetching quality issues
   const {
     data: qualityIssues = [],
     isLoading: loading,
     error,
-  } = useQuery({
-    queryKey: ["qualityIssues"],
-    queryFn: fetchQualityIssues,
-    staleTime: 5 * 60 * 1000,
-  });
+  } = useQualityIssues();
 
   // Use custom hooks for dropdowns
-  const { data: projects = [] } = usefetchProjectsForDropdown();
-  const { data: contractors = [] } = usefetchContractorDropDown();
+  const {
+    data: projects = [],
+    isLoading: projectLoading,
+    isError: projectError,
+    error: projectErr,
+  } = usefetchProjectsForDropdown();
+  const {
+    data: contractors = [],
+    isLoading: contractorLoading,
+    isError: contractorError,
+    error: contractorErr,
+  } = usefetchContractorDropDown();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -275,7 +259,11 @@ const QualityControl = () => {
   };
 
   const getProjectName = (project: Project) => {
-    return project.projectId.projectName || "Untitled Project";
+    return (
+      (typeof project.projectId === "object" &&
+        project.projectId.projectName) ||
+      "Untitled Project"
+    );
   };
 
   const filteredIssues =
@@ -301,6 +289,9 @@ const QualityControl = () => {
         return false;
       return true;
     });
+
+  if (contractorError) {
+  }
 
   return (
     <MainLayout>
@@ -388,7 +379,11 @@ const QualityControl = () => {
                 />
               </div>
 
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <Select
+                value={projectFilter}
+                onValueChange={setProjectFilter}
+                disabled={projectLoading}
+              >
                 <SelectTrigger className="w-fit">
                   <div className="flex items-center">
                     <Building className="h-4 w-4 mr-2" />
@@ -396,12 +391,17 @@ const QualityControl = () => {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all-projects">All Projects</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project._id} value={project._id}>
-                      {project.projectId.projectName || "Untitled Project"}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all-projects">
+                    {projectLoading ? "Loading..." : "All Projects"}
+                  </SelectItem>
+                  {!projectLoading &&
+                    projects?.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {(typeof project.projectId === "object" &&
+                          project.projectId.projectName) ||
+                          "Untitled Project"}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
 
@@ -428,7 +428,7 @@ const QualityControl = () => {
 
             <Dialog open={isDialog} onOpenChange={setIsDialog}>
               <DialogTrigger asChild>
-                <Button onClick={() => setIsDialogOpen(true)}>
+                <Button onClick={() => setIsDialog(true)}>
                   <AlertOctagon className="h-4 w-4 mr-2" />
                   Report New Issue
                 </Button>
@@ -439,6 +439,7 @@ const QualityControl = () => {
                     Report New Quality Issue
                   </DialogTitle>
                 </DialogHeader>
+                <DialogDescription></DialogDescription>
 
                 <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -458,20 +459,32 @@ const QualityControl = () => {
                       value={projectId}
                       onValueChange={setProjectId}
                       required
+                      disabled={projectLoading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Project" />
                       </SelectTrigger>
                       <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project._id} value={project._id}>
-                            {project.projectId.projectName ||
-                              "Untitled Project"}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="all-projects">
+                          {projectLoading ? "Loading..." : "All Projects"}
+                        </SelectItem>
+                        {!projectLoading &&
+                          projects.map((project) => (
+                            <SelectItem key={project._id} value={project._id}>
+                              {(typeof project.projectId === "object" &&
+                                project.projectId.projectName) ||
+                                "Untitled Project"}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>
+                  {projectError && (
+                    <div className="text-red-500 text-sm">
+                      Failed to load projects:{" "}
+                      {projectErr?.message || "Unknown error"}
+                    </div>
+                  )}
 
                   <div className="grid gap-2">
                     <Label>Contractor</Label>
@@ -480,20 +493,32 @@ const QualityControl = () => {
                       onValueChange={(value) =>
                         setFormData({ ...formData, contractor: value })
                       }
+                      disabled={contractorLoading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Contractor" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.isArray(contractors) &&
-                          contractors.map((c) => (
-                            <SelectItem key={c._id} value={c._id}>
+                        <SelectItem value="all-projects">
+                          {contractorLoading
+                            ? "Loading..."
+                            : "Select Contractor"}
+                        </SelectItem>
+                        {!contractorLoading &&
+                          contractors?.data?.map((c, idx) => (
+                            <SelectItem key={c._id || idx} value={c._id}>
                               {c.name}
                             </SelectItem>
                           ))}
                       </SelectContent>
                     </Select>
                   </div>
+                  {contractorError && (
+                    <div className="text-red-500 text-sm">
+                      Failed to load contractors:{" "}
+                      {contractorErr?.message || "Unknown error"}
+                    </div>
+                  )}
 
                   <div className="grid gap-2">
                     <Label>Severity</Label>
@@ -662,7 +687,7 @@ const QualityControl = () => {
                               {issue.title}
                               {issue.taskId && (
                                 <div className="text-xs text-muted-foreground">
-                                  Task ID: {issue.taskId}
+                                  Task ID: {issue?.taskId}
                                 </div>
                               )}
                             </div>
@@ -766,7 +791,7 @@ const QualityControl = () => {
                           </h3>
                           {issue.taskId && (
                             <p className="text-xs text-muted-foreground">
-                              Task ID: {issue.taskId}
+                              Task ID: {issue?.taskId}
                             </p>
                           )}
                         </div>
@@ -859,16 +884,19 @@ const QualityControl = () => {
                         Issue Details
                       </DialogTitle>
                     </DialogHeader>
+                    <DialogDescription></DialogDescription>
                   </div>
                   {selectedIssue && (
                     <div className="grid gap-4 mt-2 text-sm">
                       <div>
                         <strong>Title:</strong> {selectedIssue.title}
                       </div>
-                      <div>
-                        <strong>Task ID:</strong>{" "}
-                        {selectedIssue.taskId || "N/A"}
-                      </div>
+                      {selectedIssue?.taskId && (
+                        <div>
+                          <strong>Task ID:</strong>{" "}
+                          {selectedIssue?.taskId || null}
+                        </div>
+                      )}
                       <div>
                         <strong>Project:</strong>{" "}
                         {getProjectName(selectedIssue.project)}
@@ -908,6 +936,7 @@ const QualityControl = () => {
                     <DialogHeader>
                       <DialogTitle>Update Status</DialogTitle>
                     </DialogHeader>
+                    <DialogDescription></DialogDescription>
                   </div>
 
                   <div className="grid gap-4 mt-4">
@@ -1072,8 +1101,8 @@ const QualityControl = () => {
                           <SelectValue placeholder="Select Contractor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Array.isArray(contractors) &&
-                            contractors.map((c) => (
+                          {!contractorLoading &&
+                            contractors?.data?.map((c) => (
                               <SelectItem key={c._id} value={c._id}>
                                 {c.name}
                               </SelectItem>

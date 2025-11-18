@@ -103,6 +103,19 @@ interface UpcomingTask {
   floorNumber?: string;
 }
 
+export interface QualityIssue {
+  _id: string;
+  title: string;
+  project: Project;
+  contractor: User;
+  severity: "critical" | "major" | "minor";
+  status: "open" | "under_review" | "resolved";
+  reported_date: string;
+  taskId?: string;
+  description: string;
+  evidenceImages: string[];
+}
+
 export const fetchProjects = async () => {
   const projectsRes = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/projects`,
@@ -185,6 +198,16 @@ export const usefetchProjects = () => {
   });
 };
 
+export const fetchQualityIssues = async (): Promise<QualityIssue[]> => {
+  const res = await axios.get(
+    `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
+    {
+      withCredentials: true,
+    }
+  );
+  return res.data.issues;
+};
+
 export const usefetchProjectsForDropdown = () => {
   return useQuery<Project[]>({
     queryKey: ["ProjectsForDropdown"],
@@ -224,6 +247,15 @@ export const useTasks = () => {
   return useQuery<Task[]>({
     queryKey: ["tasks"],
     queryFn: fetchTasks,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useQualityIssues = () => {
+  return useQuery({
+    queryKey: ["qualityIssues"],
+    queryFn: fetchQualityIssues,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
