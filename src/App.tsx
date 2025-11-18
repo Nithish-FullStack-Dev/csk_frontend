@@ -616,7 +616,7 @@ const App = () => {
                 <Route
                   path="/quality"
                   element={
-                    <ProtectedRoute roleSubmodule={"Quality Control "}>
+                    <ProtectedRoute roleSubmodule={"Quality Control"}>
                       <QualityControl />
                     </ProtectedRoute>
                   }

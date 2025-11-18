@@ -200,7 +200,7 @@ export const moduleToNavItem: Record<string, any> = {
   Approvals: { to: "/approvals", icon: CheckSquare, label: "Approvals" },
   "My Schedule": { to: "/myschedule", icon: Calendar, label: "My Schedule" },
   "Inspection Schedule": {
-    to: "/myschedule",
+    to: "/schedule",
     icon: Calendar,
     label: "Inspection Schedule",
   },
