@@ -1,15 +1,5 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Building, MapPin, ArrowRight, Phone, Mail, Star } from "lucide-react";
+import { Phone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PublicLayout from "@/components/layout/PublicLayout";
 import HeroSection from "@/components/public/HeroSection";
@@ -68,7 +58,7 @@ const HomePage = () => {
         </section>
 
         {/* Quick Enquiry Form */}
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 ">
           <div className="container mx-auto px-4">
             <div className="md:max-w-[80%] mx-w-[90%] mx-auto">
               <div className="text-center mb-5">
