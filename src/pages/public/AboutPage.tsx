@@ -1,79 +1,18 @@
 import PublicLayout from "@/components/layout/PublicLayout";
 import AboutSection from "@/components/public/AboutSection";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Target,
-  Eye,
-  Gem,
-  Users,
-  Lightbulb,
-  Handshake,
-  ShieldCheck,
-} from "lucide-react";
 import { easeOut, motion } from "framer-motion";
-import clsx from "clsx";
-import { AnimatedTestimonials } from "@/components/ui/AnimatedTestimonials";
-import { useEffect } from "react";
+import AnimatedTestimonials from "@/components/ui/AnimatedTestimonials";
 import { Link } from "react-router-dom";
-import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import Loader from "@/components/Loader";
-import CircleLoader from "@/components/CircleLoader";
-import AboutPageSkeleton from "./AboutPageSkeleton";
-
-const team = [
-  {
-    name: "R. Sai Kumar Reddy",
-    role: "Founder & CEO",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    bio: "A visionary leader with over 20 years of transformative experience in real estate development and strategic management.",
-  },
-  {
-    name: "Divya Prakash Singh",
-    role: "Chief Operating Officer",
-    image:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    bio: "Drives operational excellence and project delivery with a focus on efficiency and customer satisfaction.",
-  },
-  {
-    name: "Sandeep Rao",
-    role: "Head of Sales & Marketing",
-    image:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    bio: "Leads market strategy and client engagement, bringing properties to life for discerning buyers.",
-  },
-  {
-    name: "Priya Sharma",
-    role: "Head of Customer Relations",
-    image:
-      "https://www.perfocal.com/blog/content/images/2021/01/Perfocal_17-11-2019_TYWFAQ_100_standard-3.jpg",
-    bio: "Dedicated to ensuring a seamless and positive experience for every CSK client, from inquiry to handover.",
-  },
-];
-
-const fetchTeam = async () => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
-  );
-  return data || team;
-};
+import { team, useAbout } from "@/utils/public/AboutPageConfig";
 
 const PublicAboutPage = () => {
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["team"],
-    queryFn: fetchTeam,
-  });
+  const { data, isLoading, isError, error } = useAbout();
 
   if (isError) {
     console.error("failed to fetch team", error);
     toast.error("failed to fetch team");
     return null;
-  }
-
-  if (isLoading || !data) {
-    return <AboutPageSkeleton />;
   }
 
   const containerVariants = {
@@ -102,15 +41,21 @@ const PublicAboutPage = () => {
     window.scrollTo(0, 0);
   }, []);
  */
-  const testimonials = (data?.team || team).map((member) => ({
-    name: member.name,
-    designation: member.role,
-    quote: member.bio,
-    src: member.image,
-  }));
+  const testimonials =
+    !isLoading &&
+    (data?.team || team).map((member) => ({
+      name: member?.name,
+      designation: member?.role,
+      quote: member?.bio,
+      src: member?.image,
+    }));
 
   const TestimonialsSection = () => (
-    <AnimatedTestimonials testimonials={testimonials} autoplay={true} />
+    <AnimatedTestimonials
+      testimonials={testimonials}
+      autoplay={true}
+      isLoading={isLoading}
+    />
   );
 
   return (
@@ -178,15 +123,23 @@ const PublicAboutPage = () => {
 
         <AboutSection />
 
-        <section className="py-11 md:py-12 bg-yellow-50">
+        <section className="py-11 md:py-12 bg-estate-gold/10">
           <div className="container mx-auto px-6">
             <div className="text-center mb-8">
               <h2 className="text-4xl md:text-5xl font-md font-vidaloka text-gray-800 mb-4 leading-tight">
-                {data?.teamTitle || "Meet Our Visionary Leadership"}
+                {isLoading
+                  ? "Loading..."
+                  : isError
+                  ? `Something went wrong ${error?.message}`
+                  : data?.teamTitle || "Meet Our Visionary Leadership"}
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                {data?.teamDes ||
-                  "Guided by experience and innovation, our leadership team is dedicated to shaping the future of real estate."}
+                {isLoading
+                  ? "Loading..."
+                  : isError
+                  ? `Something went wrong ${error?.message}`
+                  : data?.teamDes ||
+                    "Guided by experience and innovation, our leadership team is dedicated to shaping the future of real estate."}
               </p>
             </div>
             <motion.div

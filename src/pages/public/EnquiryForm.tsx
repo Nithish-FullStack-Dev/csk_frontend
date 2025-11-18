@@ -580,7 +580,7 @@ const ModernEnquiryForm: React.FC = () => {
   const totalSteps = steps.length - 1; // Total interactive steps are 0 and 1, success is 2
 
   return (
-    <section className="bg-[#F8F7F4] py-4 md:py-5">
+    <section className=" py-4 md:py-5">
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row w-full max-w-6xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden min-h-[600px]">
           {/* --- Left Pane: Visuals --- */}

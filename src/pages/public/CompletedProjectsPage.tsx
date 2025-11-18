@@ -8,60 +8,16 @@ import {
   Star,
   Trophy,
   Smile,
-  MapPin,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import axios from "axios";
-import { Property } from "@/types/property";
-import { useEffect, useState } from "react";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useCompletedProperties } from "@/utils/public/Config";
-import CircleLoader from "@/components/CircleLoader";
 import { Building } from "@/types/building";
 
 const CompletedProjectsPage = () => {
-  // const [completedProjects, setCompletedProjects] = useState([]);
-
-  // const fetchCompletedProperties = async () => {
-  //   if (loading) return;
-  //   try {
-  //     setLoading(true);
-  //     const { data } = await axios.get(
-  //       `${import.meta.env.VITE_URL}/api/properties/completed-properties`
-  //     );
-  //     const completedProjectsFromDB: Property[] = data.map((item: any) => {
-  //       const basic = item.basicInfo || {};
-  //       const finance = item.financialDetails || {};
-  //       const location = item.locationInfo || {};
-  //       return {
-  //         id: item._id,
-  //         title: basic?.projectName || "Untitled Project",
-  //         price: finance?.totalAmount?.toString()?.slice(0, 2) || "00",
-  //         location: location?.googleMapsLocation || "Not specified",
-  //         image:
-  //           location?.mainPropertyImage ||
-  //           "https://via.placeholder.com/400x300?text=No+Image",
-  //         category: basic?.propertyType || "Unknown",
-  //         // lat: location?.coordinates?.lat || 17.4457025,
-  //         // lng: location?.coordinates?.lng || 78.3770637,
-  //         googleMapsLocation: location?.googleMapsLocation || "",
-  //       };
-  //     });
-  //     setCompletedProjects(completedProjectsFromDB);
-  //     setIsError(false);
-  //   } catch (error) {
-  //     console.error("Failed to completed properties:", error);
-  //     toast.error("Failed to load Completed properties.");
-  //     setIsError(true);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const {
     data: completedProjects,
     isLoading: completedPropertiesLoading,
@@ -74,9 +30,6 @@ const CompletedProjectsPage = () => {
     toast.error(completedPropertiesErr.message);
     console.log("Upcoming properties error:", completedPropertiesErr);
   }
-  // if (completedPropertiesLoading) {
-  //   return <CircleLoader />;
-  // }
 
   const stats = [
     {

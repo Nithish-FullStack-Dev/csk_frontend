@@ -1,5 +1,4 @@
 import PublicLayout from "@/components/layout/PublicLayout";
-import PropertyListingCard from "@/components/public/PropertyListingCard"; // Assuming this component is well-designed
 import {
   MapPin,
   Ruler,
@@ -8,31 +7,18 @@ import {
   Car,
   Zap,
   CheckCircle2,
-  IndianRupee,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Using Shadcn UI Card components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { easeOut, motion } from "framer-motion";
 import "../../shine.css";
 import { Link, useNavigate } from "react-router-dom";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
-import { ColourfulText } from "@/components/ui/colourful-text";
-import { useEffect, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { Property } from "@/types/property";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useOpenPlots } from "@/utils/public/Config";
-import CircleLoader from "@/components/CircleLoader";
 
 const OpenPlotsPage = () => {
   const navigate = useNavigate();
-  // const [plotProjects, setPlotProjects] = useState([]);
-  // const [loading, setLoading] = useState(false);
-  // const [isError, setIsError] = useState(false);
-
   const {
     data: plotProjects,
     isLoading: openPlotsLoading,
@@ -45,9 +31,7 @@ const OpenPlotsPage = () => {
     toast.error(openPlotsErr.message);
     console.log("Upcoming properties error:", openPlotsErr);
   }
-  if (openPlotsLoading) {
-    return <CircleLoader />;
-  }
+
   const amenities = [
     {
       icon: TreePine,
@@ -324,13 +308,6 @@ const OpenPlotsPage = () => {
                         >
                           Plot Type: {plot?.plotType || "-"}
                         </CardItem>
-
-                        {/* <CardItem
-                          translateZ={20}
-                          className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400"
-                        >
-                          ₹{plot.totalAmount.toLocaleString()}
-                        </CardItem> */}
                       </div>
 
                       {/* Button */}

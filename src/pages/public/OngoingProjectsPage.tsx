@@ -14,7 +14,6 @@ import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { useOngoingProperties } from "@/utils/public/Config";
 import { Building } from "@/types/building";
 import { Badge } from "@/components/ui/badge";
@@ -42,16 +41,6 @@ const OngoingProjectsPage = () => {
     },
     { name: "Royal Gardens", progress: 45, expectedCompletion: "Mar 2025" },
   ];
-
-  // New, more vibrant colors for our design!
-  const vibrantColors = {
-    primary: "#6A5ACD", // SlateBlue
-    secondary: "#FFD700", // Gold
-    accent1: "#32CD32", // LimeGreen
-    accent2: "#FFA500", // Orange
-    backgroundLight: "#F0F8FF", // AliceBlue
-    backgroundDark: "#191970", // MidnightBlue
-  };
 
   return (
     <PublicLayout>
