@@ -2,8 +2,9 @@ import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import exp from "constants";
 
 //! BUILDINGS, FLOOR AND UNITS
 export const getAllBuildings = async (): Promise<Building[]> => {
@@ -46,6 +47,22 @@ export const fetchProjects = async () => {
   return data.data || [];
 };
 
+export const fetchLeadByOpenLandId = async (openLandId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsByOpenLandId/${openLandId}`,
+    { withCredentials: true }
+  );
+  return data?.data || [];
+};
+
+export const fetchLeadByOpenPlotId = async (openPlotId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsByOpenPlotId/${openPlotId}`,
+    { withCredentials: true }
+  );
+  return data?.data || [];
+};
+
 export const useProjects = () => {
   return useQuery<Building[]>({
     queryKey: ["projects"],
@@ -73,6 +90,27 @@ export const useOpenPlots = () => {
   });
 };
 
+export const useLeadbyOpenLandId = (openLandId: string) => {
+  return useQuery({
+    queryKey: ["leadByOpenLandId", openLandId],
+    queryFn: () => fetchLeadByOpenLandId(openLandId),
+    enabled: !!openLandId,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useLeadbyOpenPlotId = (openPlotId: string) => {
+  return useQuery({
+    queryKey: ["leadByOpenPlotId", openPlotId],
+    queryFn: () => fetchLeadByOpenPlotId(openPlotId),
+    enabled: !!openPlotId,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+//! FLOORS AND UNITS FOR DROPDOWN
 export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string
 ) => {

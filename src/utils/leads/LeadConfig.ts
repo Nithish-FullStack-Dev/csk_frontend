@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
 import axios from "axios";
@@ -84,6 +84,14 @@ export const fetchAllCustomer_purchased = async () => {
     `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`
   );
   return data;
+};
+
+export const fetchLeadByUnitId = async (unitId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsByUserId/${unitId}`,
+    { withCredentials: true }
+  );
+  return data || [];
 };
 
 //! SAVE UPDATE AND DELETE
@@ -179,5 +187,15 @@ export const useUpdateLead = () => {
 export const useDeleteLead = () => {
   return useMutation({
     mutationFn: deleteLead,
+  });
+};
+
+export const useLeadbyUnitId = (unitId: string) => {
+  return useQuery({
+    queryKey: ["leadByUnitId", unitId],
+    queryFn: () => fetchLeadByUnitId(unitId),
+    enabled: !!unitId,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
   });
 };

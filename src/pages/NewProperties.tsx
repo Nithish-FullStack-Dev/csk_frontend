@@ -561,7 +561,7 @@ const NewProperties = () => {
               </div>
 
               {canEdit && (
-                <div className="flex gap-3">
+                <div className="flex gap-3 sm:flex-row flex-col">
                   <Button
                     className=""
                     onClick={() => {
