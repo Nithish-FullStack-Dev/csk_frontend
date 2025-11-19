@@ -100,6 +100,7 @@ const UpcomingProjectsPage = lazy(
   () => import("./pages/public/UpcomingProjectsPage")
 );
 const OpenPlotsPage = lazy(() => import("./pages/public/OpenPlotsPage"));
+
 const ContactPage = lazy(() => import("./pages/public/ContactPage"));
 const ProjectDetailsPage = lazy(
   () => import("./pages/public/ProjectDetailsPage")
@@ -152,6 +153,8 @@ import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import CircleLoader from "./components/CircleLoader";
+
+import OpenLandsPage from "./pages/public/OpenLandPage";
 import PublicSkeleton from "./pages/public/PublicSkeleton";
 import Loader from "./components/Loader";
 // import OpenLandProperties from "./pages/OpenLandProperties";
@@ -238,6 +241,9 @@ const App = () => {
                   element={<UpcomingProjectsPage />}
                 />
                 <Route path="/public/open-plots" element={<OpenPlotsPage />} />
+                <Route path="/public/open-lands" element={<OpenLandsPage />} />
+                {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
+                {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                 <Route path="/public/contact" element={<ContactPage />} />
               </Route>
 

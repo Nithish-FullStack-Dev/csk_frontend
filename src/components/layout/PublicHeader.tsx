@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,24 +9,31 @@ const navigation = [
   { name: "About", href: "/public/about" },
   {
     name: "Properties",
-    href: "/public/properties",
     dropdown: [
       { name: "Upcoming Projects", href: "/public/upcoming-projects" },
       { name: "Ongoing Projects", href: "/public/ongoing-projects" },
       { name: "Completed Projects", href: "/public/completed-projects" },
     ],
   },
-  { name: "Open Plots", href: "/public/open-plots" },
+  {
+    name: "Open-Properties",
+    dropdown: [
+      { name: "Open Lands", href: "/public/open-lands" },
+      { name: "Open Plots", href: "/public/open-plots" },
+    ],
+  },
   { name: "Contact Us", href: "/public/contact" },
 ];
 
 const PublicHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [activeMobileDropdown, setActiveMobileDropdown] = useState<
+    string | null
+  >(null);
+
   const location = useLocation();
-  const dropdownTimeoutRef = useRef<number | null>(null);
   const currentPath = location.pathname;
 
   useEffect(() => {
@@ -43,44 +50,24 @@ const PublicHeader = () => {
   }, [isMenuOpen]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showDropdown && !(event.target as HTMLElement).closest(".group")) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showDropdown]);
-
-  useEffect(() => {
     setIsMenuOpen(false);
-    setMobileDropdownOpen(false);
+    setActiveMobileDropdown(null);
+    setActiveDropdown(null);
   }, [location.pathname]);
 
   const isActive = (href: string) => {
     if (location.pathname === href) return true;
-    const parentItem = navigation.find(
-      (navItem) => navItem.href === href && navItem.dropdown
-    );
+    const parentItem = navigation.find((navItem) => {
+      return (
+        !!navItem.dropdown && navItem.dropdown.some((s) => s.href === href)
+      );
+    });
     if (parentItem && parentItem.dropdown) {
       return parentItem.dropdown.some(
         (subItem) => location.pathname === subItem.href
       );
     }
     return false;
-  };
-
-  const handleMouseEnter = () => {
-    if (dropdownTimeoutRef.current) {
-      clearTimeout(dropdownTimeoutRef.current);
-    }
-    setShowDropdown(true);
-  };
-
-  const handleMouseLeave = () => {
-    dropdownTimeoutRef.current = window.setTimeout(() => {
-      setShowDropdown(false);
-    }, 150);
   };
 
   return (
@@ -105,15 +92,18 @@ const PublicHeader = () => {
               </div>
             </Link>
 
-            {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center space-x-10 relative">
               {navigation.map((item) =>
                 item.dropdown ? (
                   <div
                     key={item.name}
                     className="relative group"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
+                    onMouseEnter={() => setActiveDropdown(item.name)}
+                    onMouseLeave={() =>
+                      setActiveDropdown((cur) =>
+                        cur === item.name ? null : cur
+                      )
+                    }
                   >
                     <button
                       className={clsx(
@@ -127,25 +117,27 @@ const PublicHeader = () => {
                     >
                       {item.name}
                       <motion.span
-                        animate={{ rotate: showDropdown ? 180 : 0 }}
-                        transition={{ duration: 0.3 }}
+                        animate={{
+                          rotate: activeDropdown === item.name ? 180 : 0,
+                        }}
+                        transition={{ duration: 0.25 }}
                         className="ml-1"
                       >
                         <ChevronDown className="h-4 w-4" />
                       </motion.span>
                     </button>
+
                     <AnimatePresence>
-                      {showDropdown && (
+                      {activeDropdown === item.name && (
                         <motion.div
-                          initial={{ opacity: 0, y: 10, scaleY: 0.95 }}
+                          initial={{ opacity: 0, y: 8, scaleY: 0.98 }}
                           animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                          exit={{ opacity: 0, y: 10, scaleY: 0.95 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                          className="absolute left-1/2 -translate-x-1/2 mt-0.5 w-60 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-100 z-50 origin-top"
+                          exit={{ opacity: 0, y: 8, scaleY: 0.98 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="absolute -left-1/2  -translate-x-1/2 mt-1 w-60 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-100 z-50 origin-top"
                         >
                           {item.dropdown.map((subItem) => {
-                            const isActive = currentPath === subItem.href;
-
+                            const isActiveSub = currentPath === subItem.href;
                             return (
                               <Link
                                 key={subItem.name}
@@ -155,10 +147,10 @@ const PublicHeader = () => {
                                     top: 0,
                                     behavior: "smooth",
                                   });
-                                  setShowDropdown(false);
+                                  setActiveDropdown(null);
                                 }}
                                 className={`block px-5 py-3 text-base transition-colors duration-200 ${
-                                  isActive
+                                  isActiveSub
                                     ? "text-estate-gold font-semibold bg-gray-50"
                                     : "text-gray-700 hover:bg-gray-50 hover:text-estate-gold"
                                 }`}
@@ -193,13 +185,12 @@ const PublicHeader = () => {
               )}
             </nav>
 
-            {/* Mobile Menu Button */}
             <button
               className={clsx(
                 "lg:hidden transition-colors duration-300 p-2 rounded-md",
                 isMenuOpen || isSticky ? "text-gray-800" : "text-white"
               )}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={() => setIsMenuOpen((s) => !s)}
               aria-label="Toggle mobile menu"
             >
               {isMenuOpen ? (
@@ -212,7 +203,6 @@ const PublicHeader = () => {
         </div>
       </header>
 
-      {/* Mobile Sidebar & Overlay outside header */}
       <AnimatePresence>
         {isMenuOpen && (
           <>
@@ -228,7 +218,7 @@ const PublicHeader = () => {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              transition={{ duration: 0.36, ease: "easeOut" }}
             >
               <button
                 onClick={() => setIsMenuOpen(false)}
@@ -243,24 +233,32 @@ const PublicHeader = () => {
                   item.dropdown ? (
                     <div key={item.name}>
                       <button
-                        className="flex items-center justify-between text-xl font-semibold w-full text-gray-800 py-2 hover:text-estate-gold"
-                        onClick={() => setMobileDropdownOpen((prev) => !prev)}
+                        className="flex items-center justify-between text-xl font-semibold w-full text-gray-800 py-2"
+                        onClick={() =>
+                          setActiveMobileDropdown((cur) =>
+                            cur === item.name ? null : item.name
+                          )
+                        }
                       >
-                        {item.name}
+                        <span>{item.name}</span>
                         <motion.span
-                          animate={{ rotate: mobileDropdownOpen ? 180 : 0 }}
-                          transition={{ duration: 0.3 }}
+                          animate={{
+                            rotate:
+                              activeMobileDropdown === item.name ? 180 : 0,
+                          }}
+                          transition={{ duration: 0.22 }}
                         >
                           <ChevronDown className="h-5 w-5" />
                         </motion.span>
                       </button>
+
                       <AnimatePresence>
-                        {mobileDropdownOpen && (
+                        {activeMobileDropdown === item.name && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            transition={{ duration: 0.22, ease: "easeOut" }}
                             className="ml-4 mt-2 flex flex-col gap-3 border-l-2 border-gray-200 pl-4"
                           >
                             {item.dropdown.map((subItem) => (
@@ -269,13 +267,13 @@ const PublicHeader = () => {
                                 to={subItem.href}
                                 onClick={() => {
                                   setIsMenuOpen(false);
-                                  setMobileDropdownOpen(false);
+                                  setActiveMobileDropdown(null);
                                   window.scrollTo({
                                     top: 0,
                                     behavior: "smooth",
                                   });
                                 }}
-                                className="text-gray-600 text-base py-1 hover:text-estate-gold"
+                                className="text-gray-700 text-base py-1 hover:text-estate-gold"
                               >
                                 {subItem.name}
                               </Link>
@@ -292,12 +290,7 @@ const PublicHeader = () => {
                         setIsMenuOpen(false);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
-                      className={clsx(
-                        "text-xl font-semibold transition-colors duration-300 py-2",
-                        isActive(item.href)
-                          ? "text-estate-gold"
-                          : "text-gray-800 hover:text-estate-gold"
-                      )}
+                      className="text-xl font-semibold transition-colors duration-300 py-2 text-gray-800 hover:text-estate-gold"
                     >
                       {item.name}
                     </Link>
