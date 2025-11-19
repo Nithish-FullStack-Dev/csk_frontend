@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check,
@@ -34,6 +34,7 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createUnit, deleteUnit, updateUnit } from "@/utils/units/Methods";
+import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -75,9 +76,6 @@ export function PropertyDetails({
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentProperty, setCurrentProperty] = useState<Property | null>(
-    property
-  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
     useState(false);
@@ -95,6 +93,14 @@ export function PropertyDetails({
   const purchasedCustomer = (property as any)?.purchasedCustomer || {};
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  const {
+    data: leads = [],
+    isLoading: leadsLoading,
+    isError: leadsError,
+    error: leadsErr,
+  } = useLeadbyUnitId(property?._id);
+
+  // CREATE UNIT
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
     onSuccess: (newUnit) => {
@@ -123,8 +129,6 @@ export function PropertyDetails({
       unitData: FormData;
     }) => updateUnit(unitId, unitData),
     onSuccess: (updatedUnit) => {
-      setCurrentProperty(updatedUnit);
-
       queryClient.setQueryData(
         ["units", buildingId, floorId],
         (oldUnits: any[] = []) =>
@@ -168,6 +172,7 @@ export function PropertyDetails({
       day: "numeric",
     });
   };
+
   const handleEditApartment = (apartment: Property, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedApartment(apartment);
@@ -180,10 +185,13 @@ export function PropertyDetails({
     setApartmentToDelete(apartmentId);
     setDeleteDialogOpen(true);
   };
+
   const handleDeleteConfirm = () => {
     if (apartmentToDelete) {
       deleteUnitMutation.mutate(apartmentToDelete);
     }
+    setDeleteDialogOpen(false);
+    setApartmentToDelete(null);
   };
   const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
     if (mode === "add") {
@@ -223,10 +231,7 @@ export function PropertyDetails({
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPropertyDeleteDialogOpen(true);
-                }}
+                onClick={(e) => handleDeleteClick(property._id!, e)}
               >
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </Button>
@@ -416,7 +421,50 @@ export function PropertyDetails({
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                Interested Clients for This Property{" "}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
+              <div>
+                {leadsLoading && <p>Loading leads...</p>}
+                {leadsError && (
+                  <p className="text-red-500">{leadsErr?.message}</p>
+                )}
+                {!leadsLoading && !leads?.length && <p>No leads yet</p>}
+
+                {leads?.map((lead: Lead) => (
+                  <div key={lead._id} className="border p-4 rounded-lg mb-4">
+                    <h3 className="text-lg font-semibold mb-2">{lead?.name}</h3>
+                    <p className="mb-1">
+                      <strong>Email:</strong> {lead?.email}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Phone:</strong> {lead?.phone}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Status:</strong>{" "}
+                      {lead?.status.charAt(0).toUpperCase() +
+                        lead?.status.slice(1)}
+                    </p>
+                    <p className="mb-1">
+                      <strong>added on:</strong>{" "}
+                      {new Date(lead?.createdAt).toLocaleDateString("en-IN", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
         {/* Gallery */}
         {property?.images?.length > 0 && (
           <Card className="shadow-lg rounded-xl overflow-hidden">

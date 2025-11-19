@@ -152,7 +152,6 @@ import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
 import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
-import CircleLoader from "./components/CircleLoader";
 
 import OpenLandsPage from "./pages/public/OpenLandPage";
 import PublicSkeleton from "./pages/public/PublicSkeleton";
@@ -380,14 +379,6 @@ const App = () => {
                   element={
                     <ProtectedRoute roleSubmodule={"Properties"}>
                       <BuildingDetails />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/properties/open-land/:id"
-                  element={
-                    <ProtectedRoute roleSubmodule={"Properties"}>
-                      <OpenLandProperties onSelectOpenLand={null} />
                     </ProtectedRoute>
                   }
                 />

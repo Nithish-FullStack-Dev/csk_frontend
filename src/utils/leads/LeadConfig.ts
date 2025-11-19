@@ -1,8 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
 import axios from "axios";
 import { User } from "@/contexts/AuthContext";
+import { OpenLand } from "@/types/OpenLand";
+import { OpenPlot } from "@/types/OpenPlots";
 
 export interface CustomerPayload {
   user: string;
@@ -38,6 +40,8 @@ export interface Lead {
   unit: string | Property;
   property: string | Building;
   floorUnit: string | FloorUnit;
+  openLand: string | OpenLand;
+  openPlot: string | OpenPlot;
   propertyStatus:
     | "New"
     | "Assigned"
@@ -80,6 +84,14 @@ export const fetchAllCustomer_purchased = async () => {
     `${import.meta.env.VITE_URL}/api/user/getAllcustomer_purchased`
   );
   return data;
+};
+
+export const fetchLeadByUnitId = async (unitId: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsByUserId/${unitId}`,
+    { withCredentials: true }
+  );
+  return data || [];
 };
 
 //! SAVE UPDATE AND DELETE
@@ -175,5 +187,15 @@ export const useUpdateLead = () => {
 export const useDeleteLead = () => {
   return useMutation({
     mutationFn: deleteLead,
+  });
+};
+
+export const useLeadbyUnitId = (unitId: string) => {
+  return useQuery({
+    queryKey: ["leadByUnitId", unitId],
+    queryFn: () => fetchLeadByUnitId(unitId),
+    enabled: !!unitId,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
   });
 };
