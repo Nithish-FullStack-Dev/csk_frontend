@@ -1,4 +1,5 @@
 import { Building, FloorUnit } from "@/types/building";
+import { OpenLand } from "@/types/OpenLand";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -40,6 +41,13 @@ export async function fetchOpenPlots() {
   );
   return data;
 }
+export async function fetchOpenLand() {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
+    { withCredentials: true }
+  );
+  return data;
+}
 
 export const getBuildingById = async (buildingId: string) => {
   const { data } = await axios.get(
@@ -51,9 +59,7 @@ export const getBuildingById = async (buildingId: string) => {
 
 export const getFloorsByBuildingId = async (buildingId: string) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
-    }/api/floor/getAllFloorsByBuildingId/${buildingId}`,
+    `${import.meta.env.VITE_URL}/api/floor/getAllFloorsByBuildingId/${buildingId}`,
     { withCredentials: true }
   );
   return data.data as FloorUnit[];
@@ -89,7 +95,6 @@ export const deleteFloor = async (floorId: string) => {
   );
   return data;
 };
-
 export const usePropertyById = (id: string) => {
   return useQuery<Building>({
     queryKey: ["propertyById", id],
@@ -99,6 +104,26 @@ export const usePropertyById = (id: string) => {
     enabled: !!id,
   });
 };
+export const fetchOpenLandById = async (id: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/openLand/getOpenLandById/${id}`,
+    { withCredentials: true }
+  );
+
+  // your API returns: { success: true, land: {...} }
+  return data.land;
+};
+
+export const useOpenLandById = (id: string) => {
+  return useQuery<OpenLand>({
+    queryKey: ["openLandById", id],
+    queryFn: () => fetchOpenLandById(id),
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+    enabled: !!id,
+  });
+};
+
 
 export const useUpcomingProperties = () => {
   return useQuery({
@@ -130,6 +155,14 @@ export const useOpenPlots = () => {
   return useQuery({
     queryKey: ["openPlots"],
     queryFn: fetchOpenPlots,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+  });
+};
+export const useOpenLand = () => {
+  return useQuery({
+    queryKey: ["openLand"],
+    queryFn: fetchOpenLand,
     staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
