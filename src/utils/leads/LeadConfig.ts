@@ -3,6 +3,8 @@ import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
 import axios from "axios";
 import { User } from "@/contexts/AuthContext";
+import { OpenLand } from "@/types/OpenLand";
+import { OpenPlot } from "@/types/OpenPlots";
 
 export interface CustomerPayload {
   user: string;
@@ -38,6 +40,8 @@ export interface Lead {
   unit: string | Property;
   property: string | Building;
   floorUnit: string | FloorUnit;
+  openLand: string | OpenLand;
+  openPlot: string | OpenPlot;
   propertyStatus:
     | "New"
     | "Assigned"

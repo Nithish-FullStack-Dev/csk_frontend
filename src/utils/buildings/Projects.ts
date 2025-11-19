@@ -2,7 +2,7 @@ import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 //! BUILDINGS, FLOOR AND UNITS
@@ -19,9 +19,9 @@ export const getAllOpenPlots = async (): Promise<OpenPlot[]> => {
     `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
     { withCredentials: true }
   );
-  // Your backend returned { plots: [...] } earlier; fallback to data shapes
   return data?.plots || data?.data || [];
 };
+
 export const getAllOpenLand = async (): Promise<OpenLand[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
@@ -51,7 +51,25 @@ export const useProjects = () => {
     queryKey: ["projects"],
     queryFn: fetchProjects,
     staleTime: 2 * 60 * 1000,
-    placeholderData: [],
+    placeholderData: (prev) => prev || [],
+  });
+};
+
+export const useOPenLand = () => {
+  return useQuery<OpenLand[]>({
+    queryKey: ["openLand"],
+    queryFn: getAllOpenLand,
+    staleTime: 600000,
+    placeholderData: (prev) => prev || [],
+  });
+};
+
+export const useOpenPlots = () => {
+  return useQuery<OpenPlot[]>({
+    queryKey: ["openPlots"],
+    queryFn: getAllOpenPlots,
+    staleTime: 600000,
+    placeholderData: (prev) => prev || [],
   });
 };
 
@@ -59,7 +77,8 @@ export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
     { withCredentials: true }
   );
@@ -72,7 +91,7 @@ export const useFloorUnits = (buildingId: string) => {
     queryFn: () => fetchFloorUnitsForDropDownByBuildingId(buildingId),
     staleTime: 2 * 60 * 1000,
     enabled: !!buildingId,
-    placeholderData: [],
+    placeholderData: (prev) => prev || [],
   });
 };
 
@@ -81,7 +100,8 @@ export const fetchUnitsForDropDownByBuildingId = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -94,7 +114,7 @@ export const useUnits = (buildingId: string, floorId: string) => {
     queryFn: () => fetchUnitsForDropDownByBuildingId(buildingId, floorId),
     staleTime: 2 * 60 * 1000,
     enabled: !!buildingId && !!floorId,
-    placeholderData: [],
+    placeholderData: (prev) => prev || [],
   });
 };
 
@@ -103,7 +123,8 @@ export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
   floorId: string
 ) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL
+    `${
+      import.meta.env.VITE_URL
     }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
     { withCredentials: true }
   );
@@ -117,7 +138,7 @@ export const useAvaliableUnits = (buildingId: string, floorId: string) => {
       fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown(buildingId, floorId),
     staleTime: 2 * 60 * 1000,
     enabled: !!buildingId && !!floorId,
-    placeholderData: [],
+    placeholderData: (prev) => prev || [],
   });
 };
 

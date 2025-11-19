@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Building2,
   Search,
@@ -22,10 +21,8 @@ import {
   Pencil,
   Trash2,
   Download,
-  Share2,
   X,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Building } from "@/types/building";
 import { BuildingDialog } from "@/components/properties/BuildingDialog";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
@@ -41,23 +38,18 @@ import Loader from "@/components/Loader";
 import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
-import { OpenPlotCardDetailed } from "@/components/properties/OpenCardDetailed";
 import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
 import {
   getAllBuildings,
-  getAllOpenLand,
-  getAllOpenPlots,
+  useOPenLand,
+  useOpenPlots,
 } from "@/utils/buildings/Projects";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
-// import OpenLandProperties from "./OpenLandProperties";
 import { useRBAC } from "@/config/RBAC";
 import OpenLandDetails from "@/components/properties/OpenLandDetails";
-import OpenLandProperties from "./OpenLandProperties";
-// import OpenLandDialog from "@/components/properties/OpenLandDialog";
 
 const NewProperties = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -113,23 +105,14 @@ const NewProperties = () => {
     isLoading: openPlotsLoading,
     isError: openPlotsError,
     error: openPlotsErr,
-  } = useQuery<OpenPlot[]>({
-    queryKey: ["openPlots"],
-    queryFn: getAllOpenPlots,
-    staleTime: 600000,
-    placeholderData: keepPreviousData,
-  });
+  } = useOpenPlots();
+
   const {
     data: openLandData,
     isLoading: openLandLoading,
     isError: openLandError,
     error: openLandErr,
-  } = useQuery<OpenLand[]>({
-    queryKey: ["openLand"],
-    queryFn: getAllOpenLand,
-    staleTime: 600000,
-    placeholderData: keepPreviousData,
-  });
+  } = useOPenLand();
 
   const {
     isRolePermissionsLoading,

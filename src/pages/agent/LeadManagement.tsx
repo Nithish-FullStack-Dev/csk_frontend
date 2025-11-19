@@ -67,6 +67,8 @@ import { fetchRolePermissions } from "../UserManagement";
 import {
   useAvaliableUnits,
   useFloorUnits,
+  useOPenLand,
+  useOpenPlots,
   useProjects,
 } from "@/utils/buildings/Projects";
 import { Label } from "@/components/ui/label";
@@ -80,6 +82,8 @@ import {
 } from "@/utils/leads/LeadConfig";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import { Building } from "@/types/building";
+import { OpenLand } from "@/types/OpenLand";
+import { OpenPlot } from "@/types/OpenPlots";
 
 const LeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,6 +107,8 @@ const LeadManagement = () => {
   const [unit, setUnit] = useState("");
   const [floorUnit, setFloorUnit] = useState("");
   const [notes, setNote] = useState("");
+  const [openLand, setOpenLand] = useState("");
+  const [openPlot, setOpenPlot] = useState("");
 
   const { mutate: submitLead, isPending: loading } = useSaveLead();
   const { mutate: editLead, isPending: updating } = useUpdateLead();
@@ -111,6 +117,8 @@ const LeadManagement = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedOpenLand, setSelectedOpenLand] = useState("");
+  const [selectedOpenPlot, setSelectedOpenPlot] = useState("");
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -166,6 +174,20 @@ const LeadManagement = () => {
     enabled: !!user?.role,
   });
 
+  const {
+    data: openLandData,
+    isLoading: openLandLoading,
+    isError: openLandIsError,
+    error: openLandError,
+  } = useOPenLand();
+
+  const {
+    data: openPlots,
+    isLoading: openPlotsLoading,
+    isError: openPlotsIsError,
+    error: openPlotsError,
+  } = useOpenPlots();
+
   useEffect(() => {
     if (leadToEdit) {
       setName(leadToEdit.name);
@@ -187,6 +209,16 @@ const LeadManagement = () => {
           ? leadToEdit.floorUnit._id
           : leadToEdit.floorUnit
       );
+      setOpenLand(
+        typeof leadToEdit.openLand === "object"
+          ? leadToEdit.openLand._id
+          : leadToEdit.openLand
+      );
+      setOpenPlot(
+        typeof leadToEdit.openPlot === "object"
+          ? leadToEdit.openPlot._id
+          : leadToEdit.openPlot
+      );
       setStatus(leadToEdit.status);
       setPropertyStatus(leadToEdit.propertyStatus);
       setNote(leadToEdit.notes);
@@ -200,6 +232,8 @@ const LeadManagement = () => {
       setUnit("");
       setFloorUnit("");
       setStatus("");
+      setOpenLand("");
+      setOpenPlot("");
       setNote("");
     }
   }, [leadToEdit]);
@@ -229,6 +263,18 @@ const LeadManagement = () => {
   if (dropdownIsError) {
     console.log("Failed to load dropdown data. Please try again.");
     toast.error(dropdownError.message);
+    return null;
+  }
+
+  if (openPlotsIsError) {
+    console.log("Failed to load open plots. Please try again.");
+    toast.error(openPlotsError.message);
+    return null;
+  }
+
+  if (openLandIsError) {
+    console.log("Failed to load open land. Please try again.");
+    toast.error(openLandError.message);
     return null;
   }
 
@@ -284,6 +330,8 @@ const LeadManagement = () => {
       property: selectedProject,
       floorUnit: selectedFloorUnit,
       unit: selectedUnit,
+      openPlot: selectedOpenPlot,
+      openLand: selectedOpenLand,
       status: status as Lead["status"],
       notes,
       phone,
@@ -308,6 +356,8 @@ const LeadManagement = () => {
         setSelectedProject("");
         setSelectedFloorUnit("");
         setSelectedUnit("");
+        setSelectedOpenLand("");
+        setSelectedOpenPlot("");
       },
       onError: (err) => {
         toast.error(err.message);
@@ -342,6 +392,8 @@ const LeadManagement = () => {
       status: status as Lead["status"],
       propertyStatus: propertyStatus as Lead["propertyStatus"],
       notes,
+      openPlot,
+      openLand,
       phone,
     };
 
@@ -607,6 +659,95 @@ const LeadManagement = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="unit">Open Plot</Label>
+                    <Select
+                      value={selectedOpenPlot}
+                      onValueChange={setSelectedOpenPlot}
+                      disabled={
+                        openPlotsLoading || !openPlots || openPlots.length === 0
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            openPlotsLoading
+                              ? "Loading Open Plots..."
+                              : !openPlots || openPlots.length === 0
+                              ? "No open plots available"
+                              : "Select Open Plot"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {openPlotsLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : !openPlots || openPlots.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No open plots available
+                          </SelectItem>
+                        ) : (
+                          openPlots &&
+                          openPlots.map((plot, idx) => (
+                            <SelectItem
+                              key={plot?._id || idx}
+                              value={plot?._id}
+                            >
+                              Name: {plot?.projectName} , plotNo: {plot?.plotNo}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Open Land</Label>
+                    <Select
+                      value={selectedOpenLand}
+                      onValueChange={setSelectedOpenLand}
+                      disabled={
+                        openLandLoading ||
+                        !openLandData ||
+                        openLandData.length === 0
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            openLandLoading
+                              ? "Loading Open Lands..."
+                              : !openLandData || openLandData.length === 0
+                              ? "No open lands available"
+                              : "Select Open Land"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {openLandLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Loading...
+                          </SelectItem>
+                        ) : !openLandData || openLandData.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No open lands available
+                          </SelectItem>
+                        ) : (
+                          openLandData &&
+                          openLandData.map((land, idx) => (
+                            <SelectItem
+                              key={land?._id || idx}
+                              value={land?._id}
+                            >
+                              Name: {land?.projectName} , plotNo:{" "}
+                              {land?.landType}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="status" className="text-sm font-medium">
                       Status *
                     </label>
@@ -694,7 +835,7 @@ const LeadManagement = () => {
                   </TableHead>
                   <TableHead>Property Status</TableHead>
                   <TableHead className="hidden md:table-cell">
-                    Last Contact
+                    Last Action
                   </TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -1032,7 +1173,7 @@ const LeadManagement = () => {
             open={!!selectedLead}
             onOpenChange={() => setSelectedLead(null)}
           >
-            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl">
               <DialogHeader>
                 <DialogTitle>Lead Details</DialogTitle>
               </DialogHeader>
@@ -1071,24 +1212,46 @@ const LeadManagement = () => {
                       <span>{selectedLead.phone}</span>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Property Interest</p>
-                    <div className="text-sm flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>
-                        {(() => {
-                          const leadUnit = selectedLead?.unit as Property;
-                          const leadProperty =
-                            selectedLead?.property as Building;
-                          return leadUnit
-                            ? `${leadProperty?.projectName} - ${leadUnit.plotNo}`
-                            : "N/A";
-                        })()}
-                      </span>
-                    </div>
+                  <div className="space-y-3">
+                    {[
+                      {
+                        label: "Property Interest",
+                        data: selectedLead?.unit
+                          ? `${
+                              (selectedLead?.property as Building)?.projectName
+                            } - ${(selectedLead?.unit as Property)?.plotNo}`
+                          : "N/A",
+                      },
+                      {
+                        label: "Open Land Interest",
+                        data: selectedLead?.openLand
+                          ? `${
+                              (selectedLead?.openLand as OpenLand)?.projectName
+                            } - ${
+                              (selectedLead?.openLand as OpenLand)?.landType
+                            }`
+                          : "N/A",
+                      },
+                      {
+                        label: "Open Plot Interest",
+                        data: selectedLead?.openPlot
+                          ? `${
+                              (selectedLead?.openPlot as OpenPlot)?.projectName
+                            } - ${(selectedLead?.openPlot as OpenPlot)?.plotNo}`
+                          : "N/A",
+                      },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex flex-col gap-1">
+                        <p className="text-sm font-medium">{item.label}</p>
+
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{item.data}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
                 {isSalesManager && (
                   <div>
                     <p className="text-sm font-medium mb-1">Lead Added By</p>
@@ -1111,7 +1274,6 @@ const LeadManagement = () => {
                     </p>
                   </div>
                 )}
-
                 <div>
                   <p className="text-sm font-medium mb-1">Notes</p>
                   <p className="text-sm">{selectedLead.notes}</p>
@@ -1313,6 +1475,90 @@ const LeadManagement = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="openPlot">Open Plot</Label>
+                  <Select
+                    value={openPlot}
+                    onValueChange={setOpenPlot}
+                    disabled={
+                      openPlotsLoading || !openPlots || openPlots.length === 0
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          openPlotsLoading
+                            ? "Loading Open Plots..."
+                            : !openPlots || openPlots.length === 0
+                            ? "No open plots available"
+                            : "Select Open Plot"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {openPlotsLoading ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : !openPlots || openPlots.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No open plots available
+                        </SelectItem>
+                      ) : (
+                        openPlots &&
+                        openPlots.map((plot, idx) => (
+                          <SelectItem key={plot._id || idx} value={plot._id}>
+                            name: {plot.projectName} , Plot {plot.plotNo}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="openLand">Open Land</Label>
+
+                  <Select
+                    value={openLand}
+                    onValueChange={setOpenLand}
+                    disabled={
+                      openLandLoading ||
+                      !openLandData ||
+                      openLandData.length === 0
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          openLandLoading
+                            ? "Loading Open Lands..."
+                            : !openLandData || openLandData.length === 0
+                            ? "No open lands available"
+                            : "Select Open Land"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {openLandLoading ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : !openLandData || openLandData.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          No open lands available
+                        </SelectItem>
+                      ) : (
+                        openLandData &&
+                        openLandData.map((land, idx) => (
+                          <SelectItem key={land?._id || idx} value={land?._id}>
+                            name: {land?.projectName} , Land {land?.landType}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <label htmlFor="editStatus" className="text-sm font-medium">
                     Status *
