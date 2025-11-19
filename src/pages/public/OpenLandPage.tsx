@@ -26,116 +26,33 @@ import { toast } from "sonner";
 import CircleLoader from "@/components/CircleLoader";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useOpenLand } from "@/utils/public/Config";
+import { OpenLand } from "@/types/OpenLand";
 
-type OpenLand = {
-  _id: string;
-  projectName: string;
-  location?: string;
-  thumbnailUrl?: string;
-  googleMapsLocation?: string;
-  landArea?: number;
-  areaUnit?: string;
-  landType?: string;
-  landStatus?: string;
-  availableDate?: string;
-  description?: string;
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
-};
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  show: { y: 0, opacity: 1, transition: { duration: 0.5, ease: easeOut } },
-};
-
-export default function OpenLandsPage(): JSX.Element {
+const OpenLandsPage = () => {
   const navigate = useNavigate();
 
-  // fetch open lands (robust: handle several response shapes)
-  const [data, setData] = useState<{
-    lands?: OpenLand[];
-    openlands?: OpenLand[];
-  } | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<any>(null);
+  const {
+    data: landProjects,
+    isLoading: openLandsLoading,
+    isError: openLandsError,
+    error: openLandsErr,
+    refetch,
+  } = useOpenLand();
+  const openLandList: OpenLand[] = Array.isArray(landProjects)
+    ? landProjects
+    : Array.isArray((landProjects as any)?.lands)
+    ? (landProjects as any)?.lands
+    : Array.isArray((landProjects as any)?.openlands)
+    ? (landProjects as any)?.openlands
+    : Array.isArray((landProjects as any)?.openLands)
+    ? (landProjects as any)?.openLands
+    : [];
 
-  useEffect(() => {
-    let mounted = true;
-    const fetch = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
-          {
-            withCredentials: true,
-          }
-        );
-        if (!mounted) return;
-        const payload = res.data ?? res;
-        // payload may be { success, lands } or { lands } or { openlands } etc
-        setData(payload);
-      } catch (err: any) {
-        console.error("Open lands fetch error", err);
-        setError(err);
-        toast.error(err?.message || "Failed to fetch open lands");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    fetch();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // normalise list
-  const openLands: OpenLand[] = useMemo(() => {
-    if (!data) return [];
-    if (Array.isArray((data as any).lands)) return (data as any).lands;
-    if (Array.isArray((data as any).openlands)) return (data as any).openlands;
-    if (Array.isArray((data as any).openLands)) return (data as any).openLands;
-    // fallback: try top-level array
-    if (Array.isArray(data)) return data as unknown as OpenLand[];
-    return [];
-  }, [data]);
-
-  if (loading)
-    return (
-      <PublicLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <CircleLoader />
-        </div>
-      </PublicLayout>
-    );
-  if (error) {
-    return (
-      <PublicLayout>
-        <div className="min-h-screen flex flex-col items-center justify-center px-6">
-          <h2 className="text-2xl font-semibold text-red-600 mb-4">
-            Unable to load Open Lands
-          </h2>
-          <p className="mb-6 text-gray-600">
-            {error?.message || "An error occurred"}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </PublicLayout>
-    );
+  if (openLandsError) {
+    toast.error(openLandsErr.message);
+    console.log("OpenLands error:", openLandsErr);
   }
-
   const amenities = [
     {
       icon: TreePine,
@@ -173,7 +90,55 @@ export default function OpenLandsPage(): JSX.Element {
         "Open lands are vetted with clear titles and standard approvals.",
     },
   ];
+  const landTypes = [
+    {
+      icon: TreePine,
+      title: "Agriculture Land",
+      description: "Best for farming, plantations and long-term cultivation.",
+    },
+    {
+      icon: Ruler,
+      title: "Non-Agriculture Land",
+      description:
+        "Permitted for residential, commercial or mixed development.",
+    },
+    {
+      icon: HomeIcon,
+      title: "Residential Land",
+      description: "Ideal for villas, homes, gated communities and townships.",
+    },
+    {
+      icon: Building2,
+      title: "Commercial Land",
+      description: "Suitable for offices, shops, business complexes and trade.",
+    },
+    {
+      icon: Factory,
+      title: "Industrial Land",
+      description: "Allocated for warehouses, factories and production units.",
+    },
+    {
+      icon: Leaf,
+      title: "Farm Land",
+      description:
+        "Perfect for weekend farming, resorts and farmhouse projects.",
+    },
+  ];
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
 
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1, transition: { duration: 0.6, ease: easeOut } },
+  };
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gray-100">
@@ -229,55 +194,18 @@ export default function OpenLandsPage(): JSX.Element {
               whileInView="show"
               viewport={{ once: true, amount: 0.3 }}
             >
-              {[
-                {
-                  icon: TreePine,
-                  title: "Agriculture Land",
-                  description:
-                    "Best for farming, plantations and long-term cultivation.",
-                },
-                {
-                  icon: Ruler,
-                  title: "Non-Agriculture Land",
-                  description:
-                    "Permitted for residential, commercial or mixed development.",
-                },
-                {
-                  icon: HomeIcon,
-                  title: "Residential Land",
-                  description:
-                    "Ideal for villas, homes, gated communities and townships.",
-                },
-                {
-                  icon: Building2,
-                  title: "Commercial Land",
-                  description:
-                    "Suitable for offices, shops, business complexes and trade.",
-                },
-                {
-                  icon: Factory,
-                  title: "Industrial Land",
-                  description:
-                    "Allocated for warehouses, factories and production units.",
-                },
-                {
-                  icon: Leaf,
-                  title: "Farm Land",
-                  description:
-                    "Perfect for weekend farming, resorts and farmhouse projects.",
-                },
-              ].map((item, idx) => (
+              {landTypes?.map((land, idx) => (
                 <motion.div key={idx} variants={itemVariants}>
                   <Card className="text-center h-full flex flex-col p-6 bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:border-estate-gold">
                     <CardHeader className="pb-4">
-                      <item.icon className="h-14 w-14 mx-auto mb-4 text-estate-gold" />
+                      <land.icon className="h-14 w-14 mx-auto mb-4 text-estate-gold" />
                       <CardTitle className="text-xl font-md font-vidaloka text-gray-800">
-                        {item.title}
+                        {land?.title}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-grow">
                       <p className="text-gray-600 text-base">
-                        {item.description}
+                        {land?.description}
                       </p>
                     </CardContent>
                   </Card>
@@ -300,155 +228,125 @@ export default function OpenLandsPage(): JSX.Element {
               </p>
             </div>
 
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-center items-start"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.3 }}
-            >
-              {openLands.length === 0 && (
-                <div className="col-span-full text-center text-gray-500">
-                  No open lands available right now.
-                </div>
-              )}
+            {openLandsLoading ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-gray-600 animate-pulse">
+                  Please wait...
+                </h1>
+              </div>
+            ) : openLandsError ? (
+              <div className="text-center py-10">
+                <h1 className="text-lg text-red-500 mb-4">
+                  Something went wrong...
+                </h1>
+                <button
+                  onClick={() => refetch()}
+                  className="px-4 py-2 flex items-center justify-center gap-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition"
+                >
+                  retry
+                </button>
+              </div>
+            ) : (
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-center items-start"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+              >
+                {openLandList.length === 0 && (
+                  <div className="col-span-full text-center text-gray-500">
+                    No open lands available right now.
+                  </div>
+                )}
 
-              {openLands.map((land: OpenLand) => (
-                <CardContainer key={land._id} className="inter-var">
-                  <CardBody
-                    className="
-              bg-white dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1]
-              dark:bg-black dark:border-white/[0.2]
-              rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem]
-              h-auto min-h-[26rem] md:min-h-[30rem]
-              p-6 group/card shadow-xl flex flex-col justify-between relative transition-all duration-300
-            "
-                  >
-                    {/* Badge */}
-                    <CardItem
-                      translateZ={30}
-                      className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+                {openLandList?.map((land: OpenLand) => (
+                  <CardContainer key={land?._id} className="inter-var">
+                    <CardBody
+                      className="
+                bg-white dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1]
+                dark:bg-black dark:border-white/[0.2]
+                rounded-2xl w-full sm:w-[22rem] md:w-[24rem] lg:w-[25rem]
+                h-auto min-h-[26rem] md:min-h-[30rem]
+                p-6 group/card shadow-xl flex flex-col justify-between relative transition-all duration-300
+              "
                     >
-                      Open Land
-                    </CardItem>
-
-                    {/* Image */}
-                    <CardItem translateZ={80} className="w-full mt-3">
-                      <img
-                        src={
-                          land?.thumbnailUrl ||
-                          "/assets/images/placeholder-land.jpg"
-                        }
-                        alt={land?.projectName}
-                        className="h-44 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
-                      />
-                    </CardItem>
-
-                    {/* Title */}
-                    <CardItem
-                      translateZ={30}
-                      className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
-                    >
-                      {land?.projectName}
-                    </CardItem>
-
-                    {/* INFO */}
-                    <div className="mt-3 space-y-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-xs text-muted-foreground">
-                            Location
-                          </div>
-                          <div className="font-medium">
-                            {land?.location || "-"}
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            Area
-                          </div>
-                          <div className="font-medium">
-                            {land?.landArea
-                              ? `${land.landArea} ${land.areaUnit || ""}`
-                              : "-"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-xs text-muted-foreground">
-                            Type
-                          </div>
-                          <div className="font-medium">
-                            {land?.landType || "-"}
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs text-muted-foreground">
-                            Status
-                          </div>
-                          <div className="font-medium">
-                            {land?.landStatus || "-"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {land.availableDate && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">
-                            Available From
-                          </div>
-                          <div className="font-medium">
-                            {new Date(land.availableDate).toLocaleDateString(
-                              "en-IN",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              }
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* BUTTONS */}
-                    <div className="mt-4 flex gap-3">
-                      <Link
-                        to={`/public/openLand/${land._id}`}
-                        className="w-full"
+                      {/* Badge */}
+                      <CardItem
+                        translateZ={30}
+                        className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
                       >
-                        <CardItem
-                          translateZ={30}
-                          as="button"
-                          className="
-                    w-full px-4 py-2 rounded-full bg-slate-600 dark:bg-white
-                    text-white dark:text-black text-xs sm:text-sm font-medium
-                    transition-colors hover:opacity-90
-                  "
-                        >
-                          View Details
-                        </CardItem>
-                      </Link>
+                        Open Land
+                      </CardItem>
 
-                      {land.googleMapsLocation && (
-                        <button
-                          onClick={() =>
-                            window.open(land.googleMapsLocation, "_blank")
-                          }
-                          className="px-4 py-2 rounded-full bg-white border text-xs sm:text-sm flex items-center gap-2 hover:bg-gray-50"
+                      {/* Image */}
+                      <CardItem translateZ={80} className="w-full mt-3">
+                        <img
+                          src={land?.thumbnailUrl}
+                          alt={land?.projectName}
+                          className="h-44 sm:h-52 md:h-56 lg:h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl transition-transform duration-300 ease-out"
+                        />
+                      </CardItem>
+
+                      {/* Title */}
+                      <CardItem
+                        translateZ={30}
+                        className="text-lg mt-3 space-y-1 sm:text-xl font-md font-vidaloka text-neutral-900 dark:text-white"
+                      >
+                        {land?.projectName}
+                      </CardItem>
+
+                      {/* MAP SECTION */}
+                      <CardItem className="mt-3 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                        {land?.googleMapsLocation ? (
+                          <div className="w-full h-32 rounded-lg overflow-hidden">
+                            <iframe
+                              src={land.googleMapsLocation}
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0 }}
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                            ></iframe>
+                          </div>
+                        ) : (
+                          <div className="w-full h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                            <p className="text-gray-500 text-sm">
+                              Location map not available
+                            </p>
+                          </div>
+                        )}
+                      </CardItem>
+
+                      {/* Land Type */}
+                      <CardItem
+                        translateZ={20}
+                        className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-2"
+                      >
+                        Land Type: {land?.landType || "-"}
+                      </CardItem>
+
+                      {/* Button */}
+                      <div className="mt-4 flex justify-end">
+                        <Link
+                          to={`/public/openLand/${land?._id}`}
+                          className="w-full"
                         >
-                          <MapPin className="h-4 w-4" /> Map
-                        </button>
-                      )}
-                    </div>
-                  </CardBody>
-                </CardContainer>
-              ))}
-            </motion.div>
+                          <CardItem
+                            translateZ={30}
+                            as="button"
+                            className="w-full px-4 py-2 rounded-full bg-slate-600 dark:bg-white text-white dark:text-black text-xs sm:text-sm font-medium transition-colors hover:opacity-90"
+                          >
+                            View Details
+                          </CardItem>
+                        </Link>
+                      </div>
+                    </CardBody>
+                  </CardContainer>
+                ))}
+              </motion.div>
+            )}
           </div>
         </section>
 
@@ -512,4 +410,5 @@ export default function OpenLandsPage(): JSX.Element {
       </div>
     </PublicLayout>
   );
-}
+};
+export default OpenLandsPage;

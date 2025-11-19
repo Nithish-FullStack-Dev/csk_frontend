@@ -157,7 +157,7 @@ import CircleLoader from "./components/CircleLoader";
 import OpenLandsPage from "./pages/public/OpenLandPage";
 import PublicSkeleton from "./pages/public/PublicSkeleton";
 import Loader from "./components/Loader";
-// import OpenLandProperties from "./pages/OpenLandProperties";
+import OpenLandDetails from "./pages/public/OpenLandDetails";
 const OpenLandProperties = lazy(() => import("./pages/OpenLandProperties"));
 
 const queryClient = new QueryClient({
@@ -267,6 +267,10 @@ const App = () => {
                 <Route
                   path="/public/openPlot/:id"
                   element={<OpenPlotsDetails />}
+                />
+                <Route
+                  path="/public/openLand/:id"
+                  element={<OpenLandDetails />}
                 />
                 <Route
                   path="/enquiry"
