@@ -1,29 +1,18 @@
-// src/pages/public/UpcomingProjectsPage.tsx
 import PublicLayout from "@/components/layout/PublicLayout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Star, Bell, Gift, Users } from "lucide-react";
-import EnquiryForm from "@/components/public/EnquiryForm";
+import { MapPin, Star, Bell, Gift, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import "../../shine.css";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
-import { ColourfulText } from "@/components/ui/colourful-text";
-import axios from "axios";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ModernEnquiryForm from "./EnquiryForm";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
-// Fix Leaflet default marker icon
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import { Building } from "@/types/building";
 import { useUpcomingProperties } from "@/utils/public/Config";
-import Loader from "@/components/Loader";
-import CircleLoader from "@/components/CircleLoader";
 import { Link } from "react-router-dom";
 
 let DefaultIcon = L.icon({
@@ -70,10 +59,6 @@ const UpcomingProjectsPage = () => {
       description: "Exclusive updates and priority customer service",
     },
   ];
-
-  if (upcomingPropertiesLoading) {
-    return <CircleLoader />;
-  }
 
   return (
     <PublicLayout>

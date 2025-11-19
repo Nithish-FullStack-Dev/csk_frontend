@@ -23,16 +23,13 @@ import {
   Property,
   PropertyDocument,
   VillaFacing,
-  PropertyType,
   PropertyStatus,
   RegistrationStatus,
-  CustomerStatus,
   ProjectStatus,
 } from "@/types/property";
 import { toast } from "sonner";
-import { X, Upload, Plus, Minus } from "lucide-react";
+import { X, UploadCloud, Plus, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { fetchUnit } from "@/utils/units/Methods";
 
 interface ApartmentDialogProps {
@@ -61,7 +58,6 @@ export const ApartmentDialog = ({
     extent: 0,
     status: "Available",
     projectStatus: "upcoming",
-    // totalAmount: 0,
     amountReceived: 0,
     balanceAmount: 0,
     ratePlan: "",
@@ -83,28 +79,17 @@ export const ApartmentDialog = ({
   });
 
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
-  const [documentPreviews, setDocumentPreviews] = useState<
-    {
-      _id: string;
-      title: string;
-      previewUrl: string;
-      mimeType: string;
-      visibility: PropertyDocument["visibility"];
-      createdAt?: string;
-    }[]
-  >([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [enquiryCustomers, setEnquiryCustomers] = useState([
     { name: "", contact: "" },
   ]);
-
   const [purchasedCustomer, setPurchasedCustomer] = useState({
     name: "",
     contact: "",
   });
+
   const { data: fetchedUnit, isLoading: isFetchingUnit } = useQuery({
     queryKey: ["unit", apartment?._id],
     queryFn: () => fetchUnit(apartment!._id),
@@ -112,14 +97,7 @@ export const ApartmentDialog = ({
   });
 
   useEffect(() => {
-    return () => {
-      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
-      documentPreviews.forEach((doc) => URL.revokeObjectURL(doc.previewUrl));
-    };
-  }, [thumbnailPreview, documentPreviews]);
-
-  useEffect(() => {
-    if (mode === "edit" && fetchedUnit) {
+    if (mode === "edit" && fetchedUnit && open) {
       setFormData({
         ...fetchedUnit,
         memNo: fetchedUnit.memNo || "",
@@ -128,7 +106,6 @@ export const ApartmentDialog = ({
         extent: fetchedUnit.extent || 0,
         status: fetchedUnit.status || "Available",
         projectStatus: fetchedUnit.projectStatus || "upcoming",
-        // totalAmount: fetchedUnit.totalAmount || 0,
         amountReceived: fetchedUnit.amountReceived || 0,
         balanceAmount: fetchedUnit.balanceAmount || 0,
         ratePlan: fetchedUnit.ratePlan || "",
@@ -147,29 +124,26 @@ export const ApartmentDialog = ({
         workCompleted: fetchedUnit.workCompleted || 0,
         registrationStatus: fetchedUnit.registrationStatus || "Not Started",
         customerStatus: fetchedUnit.customerStatus || "Open",
-        customerId: fetchedUnit.customerId || undefined,
-        contractor: fetchedUnit.contractor || undefined,
-        siteIncharge: fetchedUnit.siteIncharge || undefined,
-        agentId: fetchedUnit.agentId || undefined,
         googleMapsLocation: fetchedUnit.googleMapsLocation || "",
         images: fetchedUnit.images || [],
       });
+
       setThumbnailPreview(fetchedUnit.thumbnailUrl || "");
-      setDocumentPreviews(
-        (fetchedUnit.documents || []).map((doc) => ({
-          _id: doc._id,
-          title: doc.title,
-          previewUrl: doc.fileUrl,
-          mimeType: doc.mimeType,
-          visibility: doc.visibility || "PURCHASER_ONLY",
-          createdAt: doc.createdAt,
-        }))
-      );
+      setImagePreviews(fetchedUnit.images || []);
       setThumbnailFile(null);
-      setDocumentFiles([]);
-    } else if (mode === "add") {
+      setImageFiles([]);
+    } else if (mode === "add" && open) {
       resetForm();
     }
+
+    return () => {
+      if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(thumbnailPreview);
+      }
+      imagePreviews.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
   }, [fetchedUnit, mode, open]);
 
   const resetForm = () => {
@@ -180,7 +154,6 @@ export const ApartmentDialog = ({
       extent: 0,
       status: "Available",
       projectStatus: "upcoming",
-      // totalAmount: 0,
       amountReceived: 0,
       balanceAmount: 0,
       ratePlan: "",
@@ -201,88 +174,24 @@ export const ApartmentDialog = ({
       images: [],
     });
     setThumbnailFile(null);
-    setDocumentFiles([]);
     setThumbnailPreview("");
-    setDocumentPreviews([]);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setEnquiryCustomers([{ name: "", contact: "" }]);
+    setPurchasedCustomer({ name: "", contact: "" });
   };
 
-  // useEffect(() => {
-  //   const total = Number(formData.totalAmount) || 0;
-  //   const received = Number(formData.amountReceived) || 0;
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     balanceAmount: Math.max(0, total - received),
-  //   }));
-  // }, [formData.totalAmount, formData.amountReceived]);
-
-  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Only image files are allowed for thumbnail");
-        return;
-      }
-      setThumbnailFile(file);
-      if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
-      const previewUrl = URL.createObjectURL(file);
-      setThumbnailPreview(previewUrl);
-      setFormData((prev) => ({ ...prev, thumbnailUrl: previewUrl }));
-      toast.success("Thumbnail selected");
+  const validateFile = (file: File, type: "image", maxSizeMB: number) => {
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are allowed");
+      return false;
     }
-  };
-
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.filter(
-      (f) => f.type === "application/pdf" || f.type.startsWith("image/")
-    );
-    if (validFiles.length !== files.length) {
-      toast.error("Only PDF and image files are allowed");
-      return;
+    if (file.size > maxSizeBytes) {
+      toast.error(`File size exceeds ${maxSizeMB}MB limit`);
+      return false;
     }
-    const newDocs = validFiles.map((f) => ({
-      _id: Math.random().toString(36).substring(7),
-      title: f.name,
-      previewUrl: URL.createObjectURL(f),
-      mimeType: f.type,
-      visibility: "PURCHASER_ONLY" as PropertyDocument["visibility"],
-      createdAt: new Date().toISOString(),
-    }));
-    setDocumentFiles((prev) => [...prev, ...validFiles]);
-    setDocumentPreviews((prev) => [...prev, ...newDocs]);
-    setFormData((prev) => ({
-      ...prev,
-      documents: [
-        ...(prev.documents || []),
-        ...newDocs.map((doc) => ({
-          _id: doc._id,
-          title: doc.title,
-          fileUrl: doc.previewUrl,
-          mimeType: doc.mimeType,
-          visibility: doc.visibility,
-          createdAt: doc.createdAt,
-        })),
-      ],
-    }));
-    toast.success(`${newDocs.length} document(s) uploaded`);
-  };
-
-  const removeDocument = (docId: string) => {
-    setDocumentFiles((prev) =>
-      prev.filter((_, index) =>
-        documentPreviews[index] ? documentPreviews[index]._id !== docId : true
-      )
-    );
-    setDocumentPreviews((prev) => {
-      const doc = prev.find((d) => d._id === docId);
-      if (doc) URL.revokeObjectURL(doc.previewUrl);
-      return prev.filter((d) => d._id !== docId);
-    });
-    setFormData((prev) => ({
-      ...prev,
-      documents: (prev.documents || []).filter((d) => d._id !== docId),
-    }));
-    toast.success("Document removed");
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -291,55 +200,48 @@ export const ApartmentDialog = ({
       toast.error("Membership and Plot number are required");
       return;
     }
-    // if ((formData.totalAmount || 0) <= 0) {
-    //   toast.error("Total amount must be greater than 0");
-    //   return;
-    // }
-    // if (mode === "add" && !thumbnailFile) {
-    //   toast.error("Thumbnail is required for new units");
-    //   return;
-    // }
-    if (mode === "add" && (!thumbnailFile || imageFiles.length === 0)) {
-      toast.error("Please upload thumbnail and brochure files");
+    if (
+      mode === "add" &&
+      (!thumbnailFile || imageFiles.length + imagePreviews.length === 0)
+    ) {
+      toast.error("Please upload thumbnail and at least one gallery image");
       return;
     }
 
     const payload = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      if (key !== "documents" && value !== null && value !== undefined) {
+      if (
+        key !== "documents" &&
+        key !== "images" &&
+        key !== "thumbnailUrl" &&
+        value !== null &&
+        value !== undefined
+      ) {
         payload.append(key, String(value));
       }
     });
 
-    // Append document metadata as a JSON string
-    if (formData.documents && formData.documents.length > 0) {
-      const documentMetadata = formData.documents.map((doc) => ({
-        id: doc._id,
-        title: doc.title,
-        visibility: doc.visibility,
-        mimeType: doc.mimeType,
-        createdAt: doc.createdAt,
-      }));
-      payload.append("documentMetadata", JSON.stringify(documentMetadata));
-    }
-
-    if (thumbnailFile) {
-      payload.append("thumbnailUrl", thumbnailFile);
-    }
-
-    if (documentFiles.length > 0) {
-      documentFiles.forEach((file) => {
-        payload.append("documents", file);
-      });
-    }
-
-    if (imageFiles.length > 0) {
-      imageFiles.forEach((file) => {
-        payload.append("images", file);
-      });
-    }
+    if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
+    imageFiles.forEach((file) => payload.append("images", file));
 
     onSave?.(payload, mode);
+  };
+
+  const removeThumbnail = () => {
+    if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+    setThumbnailFile(null);
+    setThumbnailPreview("");
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setImagePreviews((prev) => {
+      const url = prev[index];
+      if (url && url.startsWith("blob:")) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== index);
+    });
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddEnquiry = () => {
@@ -347,15 +249,17 @@ export const ApartmentDialog = ({
   };
 
   const handleRemoveEnquiry = (index: number) => {
-    const list = [...enquiryCustomers];
-    list.splice(index, 1);
-    setEnquiryCustomers(list);
+    setEnquiryCustomers(enquiryCustomers.filter((_, i) => i !== index));
   };
 
-  const handleEnquiryChange = (index: number, field: string, value: string) => {
-    const list = [...enquiryCustomers];
-    list[index][field] = value;
-    setEnquiryCustomers(list);
+  const handleEnquiryChange = (
+    index: number,
+    field: "name" | "contact",
+    value: string
+  ) => {
+    const updated = [...enquiryCustomers];
+    updated[index][field] = value;
+    setEnquiryCustomers(updated);
   };
 
   if (isFetchingUnit) return <div>Loading unit details...</div>;
@@ -368,7 +272,7 @@ export const ApartmentDialog = ({
             {mode === "add" ? "Add New Unit" : "Edit Unit"}
           </DialogTitle>
           <DialogDescription>
-            Fill in the apartment details below.
+            Fill in the apartment/unit details below.
           </DialogDescription>
         </DialogHeader>
 
@@ -402,7 +306,7 @@ export const ApartmentDialog = ({
               <Input
                 type="number"
                 min={1}
-                value={String(formData.extent || 0)}
+                value={formData.extent || 0}
                 onChange={(e) =>
                   setFormData({ ...formData, extent: Number(e.target.value) })
                 }
@@ -418,7 +322,7 @@ export const ApartmentDialog = ({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select facing" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {[
@@ -430,9 +334,9 @@ export const ApartmentDialog = ({
                     "North-West",
                     "South-East",
                     "South-West",
-                  ].map((facing) => (
-                    <SelectItem key={facing} value={facing}>
-                      {facing}
+                  ].map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {f}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -463,7 +367,6 @@ export const ApartmentDialog = ({
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label>Project Status</Label>
               <Select
@@ -487,57 +390,7 @@ export const ApartmentDialog = ({
             </div>
           </div>
 
-          {/* <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Total Amount (₹) *</Label>
-              <Input
-                type="number"
-                min={1}
-                value={String(formData.totalAmount || 0)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalAmount: Number(e.target.value),
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label>Amount Received (₹)</Label>
-              <Input
-                type="number"
-                min={0}
-                value={String(formData.amountReceived || 0)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amountReceived: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label>Balance (₹)</Label>
-              <Input
-                readOnly
-                value={String(formData.balanceAmount || 0)}
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Auto-calculated</p>
-            </div>
-          </div> */}
-
           <div className="grid grid-cols-2 gap-4">
-            {/* <div>
-              <Label>Rate Plan</Label>
-              <Input
-                value={formData.ratePlan || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, ratePlan: e.target.value })
-                }
-              />
-            </div> */}
             <div>
               <Label>Registration Status</Label>
               <Select
@@ -560,7 +413,6 @@ export const ApartmentDialog = ({
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label>Expected Delivery Date</Label>
               <Input
@@ -572,111 +424,122 @@ export const ApartmentDialog = ({
               />
             </div>
           </div>
-          {/* <div>
-            <Label>Google Maps Location</Label>
-            <Input
-              value={formData.googleMapsLocation || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, googleMapsLocation: e.target.value })
-              }
-              placeholder="https://maps.google.com/..."
-            />
-          </div> */}
 
           <div>
-            <Label>Thumbnail (Image File) {mode === "add" ? "*" : ""}</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailUpload}
-            />
-            {thumbnailPreview && (
-              <p className="text-sm text-muted-foreground mt-1">
-                ✓ Thumbnail selected (
-                <img
-                  src={thumbnailPreview}
-                  alt="thumbnail preview"
-                  className="w-20 h-20 object-cover inline-block"
-                />
-                )
-              </p>
-            )}
-          </div>
-          <div>
-            <Label>Project Gallery Images (Multiple)</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => {
-                const files = e.target.files ? Array.from(e.target.files) : [];
-                if (files.length === 0) return;
-
-                // validate all are images
-                const invalid = files.some(
-                  (file) => !file.type.startsWith("image/")
-                );
-                if (invalid) {
-                  toast.error("Only image files are allowed");
-                  return;
-                }
-
-                // revoke old previews
-                imagePreviews.forEach((url) => URL.revokeObjectURL(url));
-
-                // create new previews
-                const previews = files.map((file) => URL.createObjectURL(file));
-                setImageFiles(files);
-                setImagePreviews(previews);
-                toast.success(`${files.length} image(s) selected`);
-              }}
-            />
-
-            {imagePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {imagePreviews.map((url, idx) => (
+            <Label>Thumbnail {mode === "add" ? "*" : ""}</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center h-56 flex flex-col justify-center">
+              <Input
+                id="apartmentThumbnail"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file && validateFile(file, "image", 5)) {
+                    setThumbnailFile(file);
+                    if (
+                      thumbnailPreview &&
+                      thumbnailPreview.startsWith("blob:")
+                    )
+                      URL.revokeObjectURL(thumbnailPreview);
+                    setThumbnailPreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              {thumbnailPreview ? (
+                <div className="relative">
                   <img
-                    key={idx}
-                    src={url}
-                    alt={`preview-${idx}`}
-                    className="w-20 h-20 object-cover rounded-md border"
+                    src={thumbnailPreview}
+                    alt="Thumbnail"
+                    className="mx-auto mb-2 max-h-40 rounded object-cover"
                   />
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <Label>Documents (PDF/Images)</Label>
-            <Input
-              type="file"
-              accept="application/pdf,image/*"
-              multiple
-              onChange={handleDocumentUpload}
-              className="mt-2"
-            />
-            {documentPreviews.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {documentPreviews.map((doc, idx) => (
-                  <div
-                    key={doc._id || idx}
-                    className="flex items-center justify-between p-2 border rounded-md"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 bg-white/80 rounded-full"
+                    onClick={removeThumbnail}
                   >
-                    <div className="flex items-center gap-2">
-                      <Upload className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{doc.title}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeDocument(doc._id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className="flex flex-col items-center justify-center cursor-pointer"
+                  onClick={() =>
+                    document.getElementById("apartmentThumbnail")?.click()
+                  }
+                >
+                  <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-muted-foreground">
+                    Click to upload thumbnail
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This will be the main display image
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label>Gallery Images (up to 5)</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center h-56 flex flex-col justify-center">
+              <Input
+                id="apartmentGallery"
+                className="hidden"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []).filter((f) =>
+                    validateFile(f, "image", 5)
+                  );
+                  const total = imagePreviews.length + files.length;
+                  if (total > 5) {
+                    toast.error("You can upload a maximum of 5 gallery images");
+                    return;
+                  }
+                  const newPreviews = files.map((f) => URL.createObjectURL(f));
+                  setImageFiles((prev) => [...prev, ...files]);
+                  setImagePreviews((prev) => [...prev, ...newPreviews]);
+                }}
+              />
+              <div
+                className="flex flex-col items-center justify-center cursor-pointer"
+                onClick={() =>
+                  document.getElementById("apartmentGallery")?.click()
+                }
+              >
+                <UploadCloud className="h-8 w-8 text-muted-foreground mb-1" />
+                <p className="text-muted-foreground">
+                  Click to add gallery images
+                </p>
               </div>
-            )}
+
+              {imagePreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {imagePreviews.map((url, i) => (
+                    <div key={url + i} className="relative">
+                      <img
+                        src={url}
+                        alt={`Gallery ${i + 1}`}
+                        className="h-24 w-full object-cover rounded"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-0 right-0 bg-white/80 rounded-full h-6 w-6"
+                        onClick={() => removeGalleryImage(i)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -690,38 +553,10 @@ export const ApartmentDialog = ({
             />
           </div>
 
-          {/* <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Enquiry Customer Name</Label>
-              <Input
-                value={formData.enquiryCustomerName || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    enquiryCustomerName: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label>Enquiry Customer Contact</Label>
-              <Input
-                value={formData.enquiryCustomerContact || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    enquiryCustomerContact: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div> */}
-          {/* Enquiry Customers Section */}
           <div>
             <Label className="font-semibold text-lg mb-2 block">
               Enquiry Customers
             </Label>
-
             {enquiryCustomers.map((item, index) => (
               <div
                 key={index}
@@ -736,7 +571,6 @@ export const ApartmentDialog = ({
                     }
                   />
                 </div>
-
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Label>Contact</Label>
@@ -747,8 +581,6 @@ export const ApartmentDialog = ({
                       }
                     />
                   </div>
-
-                  {/* Buttons */}
                   <div className="flex items-center gap-2 pb-1">
                     {index === enquiryCustomers.length - 1 && (
                       <Button
@@ -760,7 +592,6 @@ export const ApartmentDialog = ({
                         <Plus className="h-4 w-4" />
                       </Button>
                     )}
-
                     {enquiryCustomers.length > 1 && (
                       <Button
                         type="button"
@@ -777,7 +608,6 @@ export const ApartmentDialog = ({
             ))}
           </div>
 
-          {/* Purchased Customer Section */}
           <div>
             <Label className="font-semibold text-lg mb-2 block">
               Purchased Customer
@@ -809,32 +639,6 @@ export const ApartmentDialog = ({
               </div>
             </div>
           </div>
-          {/* <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Purchased Customer Name</Label>
-              <Input
-                value={formData.purchasedCustomerName || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    purchasedCustomerName: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label>Purchased Customer Contact</Label>
-              <Input
-                value={formData.purchasedCustomerContact || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    purchasedCustomerContact: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div> */}
 
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
@@ -846,7 +650,6 @@ export const ApartmentDialog = ({
               />
               <Label>EMI Available</Label>
             </div>
-
             <div className="flex items-center space-x-2">
               <Switch
                 checked={!!formData.municipalPermission}
@@ -868,7 +671,7 @@ export const ApartmentDialog = ({
             </Button>
             <Button type="submit" disabled={isCreating || isUpdating}>
               {isCreating || isUpdating
-                ? "Loading..."
+                ? "Saving..."
                 : mode === "add"
                 ? "Create Unit"
                 : "Update Unit"}

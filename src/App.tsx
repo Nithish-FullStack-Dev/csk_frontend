@@ -3,7 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Unauthorized from "./pages/Unauthorized";
@@ -147,7 +153,10 @@ import AdminTeamLead from "./pages/admin/AdminTeamLead";
 import AdminLeadManagement from "./pages/admin/AdminLeadManagement";
 import AdminMyCommissions from "./pages/admin/AdminMyCommissions";
 import CircleLoader from "./components/CircleLoader";
+
 import OpenLandsPage from "./pages/public/OpenLandPage";
+import PublicSkeleton from "./pages/public/PublicSkeleton";
+import Loader from "./components/Loader";
 // import OpenLandProperties from "./pages/OpenLandProperties";
 const OpenLandProperties = lazy(() => import("./pages/OpenLandProperties"));
 
@@ -161,6 +170,18 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const PublicSuspenseWrapper = () => (
+  <Suspense fallback={<PublicSkeleton />}>
+    <Outlet />
+  </Suspense>
+);
+
+const PrivateSuspenseWrapper = () => (
+  <Suspense fallback={<Loader />}>
+    <Outlet />
+  </Suspense>
+);
 
 const App = () => {
   const TeamRouteWrapper = () => {
@@ -198,9 +219,9 @@ const App = () => {
           <BrowserRouter>
             <AuthRedirect />
             <ScrollToTop />
-            <Suspense fallback={<CircleLoader />}>
-              <Routes>
-                {/* Public Routes */}
+            <Routes>
+              {/* Public Routes */}
+              <Route element={<PublicSuspenseWrapper />}>
                 <Route path="/public" element={<HomePage />} />
                 <Route path="/public/about" element={<PublicAboutPage />} />
                 <Route
@@ -224,8 +245,10 @@ const App = () => {
                 {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
                 {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                 <Route path="/public/contact" element={<ContactPage />} />
+              </Route>
 
-                {/* Admin Routes */}
+              {/* Admin Routes */}
+              <Route element={<PrivateSuspenseWrapper />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 <Route path="/" element={<Dashboard />} />
@@ -343,17 +366,7 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-                {/* <Route
-                path="/property/:propertyId"
-                element={
-                  <ProtectedRoute
-                    
-                    
-                  >
-                    <PropertyDetails  />
-                  </ProtectedRoute>
-                }
-              /> */}
+
                 <Route
                   path="/properties/openplot/:id"
                   element={<OpenPlotsDetails />}
@@ -366,7 +379,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-                {/*  */}
+                <Route
+                  path="/properties/open-land/:id"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <OpenLandProperties onSelectOpenLand={null} />
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/properties/building/:buildingId/floor/:floorId"
@@ -625,7 +645,7 @@ const App = () => {
                 <Route
                   path="/quality"
                   element={
-                    <ProtectedRoute roleSubmodule={"Quality Control "}>
+                    <ProtectedRoute roleSubmodule={"Quality Control"}>
                       <QualityControl />
                     </ProtectedRoute>
                   }
@@ -694,8 +714,8 @@ const App = () => {
 
                 {/* Catch-all route for 404 */}
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+              </Route>
+            </Routes>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>
