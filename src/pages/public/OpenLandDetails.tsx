@@ -562,66 +562,6 @@ const OpenLandDetails: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-md font-vidaloka text-navy-800">
-                    Owner & Leads
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <User className="h-6 w-6 text-gold-600" />
-                      <div>
-                        <div className="text-navy-800 font-semibold">
-                          {land.ownerName || "-"}
-                        </div>
-                        <div className="text-navy-600 text-sm">Owner</div>
-                      </div>
-                    </div>
-
-                    {Array.isArray(land.interestedCustomers) &&
-                    land.interestedCustomers.length > 0 ? (
-                      <div className="space-y-3">
-                        <h4 className="text-base font-semibold text-navy-800">
-                          Interested Customers
-                        </h4>
-                        <div className="space-y-2">
-                          {land.interestedCustomers.map((ic: any) => (
-                            <div
-                              key={ic._id}
-                              className="p-3 border rounded-lg bg-white/60 flex items-center justify-between"
-                            >
-                              <div>
-                                <div className="text-sm font-medium">
-                                  {ic.lead?.name}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-navy-600">
-                                  {ic.agent?.name}
-                                </div>
-                                <div className="text-xs text-navy-500">
-                                  {ic.createdAt
-                                    ? new Date(
-                                        ic.createdAt
-                                      ).toLocaleDateString()
-                                    : ""}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-navy-600">
-                        No interested leads yet
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
