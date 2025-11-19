@@ -157,7 +157,6 @@ import OpenLandsPage from "./pages/public/OpenLandPage";
 import PublicSkeleton from "./pages/public/PublicSkeleton";
 import Loader from "./components/Loader";
 import OpenLandDetails from "./pages/public/OpenLandDetails";
-const OpenLandProperties = lazy(() => import("./pages/OpenLandProperties"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

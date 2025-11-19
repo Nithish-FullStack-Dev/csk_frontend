@@ -234,13 +234,16 @@ const NewProperties = () => {
         `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${
           currentOpenLand._id
         }`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
     },
     onSuccess: () => {
       toast.success("Open land deleted");
+
+      // optional but recommended
+      setCurrentOpenLand(undefined);
+      setSelectedOpenLand(undefined);
+
       queryClient.invalidateQueries({ queryKey: ["openLand"] });
     },
     onError: (err: any) => {
@@ -248,6 +251,7 @@ const NewProperties = () => {
       toast.error(err?.response?.data?.message || "Failed to delete open land");
     },
   });
+
   const createOpenLandMutation = useMutation({
     mutationFn: async (payload: Partial<OpenLand>) => {
       const { data } = await axios.post(
@@ -257,27 +261,22 @@ const NewProperties = () => {
       );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Open land created");
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
+
+      const created = data?.land || data;
+
+      // INSTANT UI UPDATE
+      setCurrentOpenLand(created);
+      setSelectedOpenLand(created);
+
       setopenLandDialog(false);
-      setCurrentOpenLand(undefined);
+
+      queryClient.invalidateQueries({ queryKey: ["openLand"] });
     },
     onError: (err: any) => {
       console.error("createOpenLand error:", err?.response || err);
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 409) {
-          toast.error(
-            err.response?.data?.message || "Conflict while creating open land"
-          );
-        } else {
-          toast.error(
-            err.response?.data?.message || "Failed to create open land"
-          );
-        }
-      } else {
-        toast.error("Failed to create open land");
-      }
+      toast.error(err?.response?.data?.message || "Failed to create open land");
     },
   });
   const updateOpenLandMutation = useMutation({
@@ -297,20 +296,21 @@ const NewProperties = () => {
     },
     onSuccess: (updatedData) => {
       toast.success("Open land updated");
+
+      const updated = updatedData?.land || updatedData?.data || updatedData;
+
+      // INSTANT UI UPDATE
+      setCurrentOpenLand(updated);
+      setSelectedOpenLand(updated);
+
       setopenLandDialog(false);
-      setCurrentOpenLand(undefined);
+
+      // background refresh
       queryClient.invalidateQueries({ queryKey: ["openLand"] });
-      if (updatedData?.data) setSelectedOpenLand(updatedData.data);
     },
     onError: (err: any) => {
       console.error("updateOpenLand error:", err?.response || err);
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Failed to update open land"
-        );
-      } else {
-        toast.error("Failed to update open land");
-      }
+      toast.error(err?.response?.data?.message || "Failed to update open land");
     },
   });
 
