@@ -34,7 +34,12 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createUnit, deleteUnit, updateUnit } from "@/utils/units/Methods";
-import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
+import {
+  Lead,
+  useCompletedTaskVerfication,
+  useLeadbyUnitId,
+  useUnitProgress,
+} from "@/utils/leads/LeadConfig";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -88,6 +93,7 @@ export function PropertyDetails({
   const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
     null
   );
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const enquiryCustomers = (property as any)?.enquiryCustomers || [];
   const purchasedCustomer = (property as any)?.purchasedCustomer || {};
@@ -99,6 +105,20 @@ export function PropertyDetails({
     isError: leadsError,
     error: leadsErr,
   } = useLeadbyUnitId(property?._id);
+
+  const {
+    data: completedTasks,
+    isLoading: completedTasksLoading,
+    isError: completedTasksError,
+    error: completedTasksErr,
+  } = useCompletedTaskVerfication(buildingId, property?._id);
+
+  const {
+    data: unitProgress,
+    isLoading: unitProgressLoading,
+    isError: unitProgressError,
+    error: unitProgressErr,
+  } = useUnitProgress(buildingId, floorId, property?._id);
 
   // CREATE UNIT
   const createUnitMutation = useMutation({
@@ -284,9 +304,14 @@ export function PropertyDetails({
 
               <div className="mt-4">
                 <div className="flex justify-between items-center mb-1">
-                  <span>Construction Progress: {property.workCompleted}%</span>
+                  <span>
+                    Construction Progress: {unitProgress?.overallProgress}%
+                  </span>
                 </div>
-                <Progress value={property.workCompleted} className="h-2" />
+                <Progress
+                  value={unitProgress?.overallProgress}
+                  className="h-2"
+                />
               </div>
             </div>
           </div>
@@ -464,6 +489,143 @@ export function PropertyDetails({
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Check className="h-5 w-5" /> Tasks Progress
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
+            {/* Loading State */}
+            {completedTasksLoading && <p>Loading completed tasks...</p>}
+
+            {/* Error State */}
+            {completedTasksError && (
+              <p className="text-red-500">
+                {completedTasksErr?.message || "Error fetching tasks"}
+              </p>
+            )}
+
+            {/* No Tasks State */}
+            {!completedTasksLoading &&
+              !completedTasksError &&
+              completedTasks?.length === 0 && (
+                <p>No completed tasks available</p>
+              )}
+
+            {/* Render Tasks */}
+            {!completedTasksLoading && !completedTasksError && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {completedTasks?.map((task: any) => (
+                  <div
+                    key={task?._id}
+                    className="border p-4 rounded-lg shadow-sm hover:shadow transition"
+                  >
+                    {/* Task Title */}
+                    <h3 className="text-lg font-semibold mb-2">
+                      {task?.title || "Untitled Task"}
+                    </h3>
+
+                    {/* Basic Info */}
+                    <div className="text-sm space-y-1">
+                      <p>
+                        <strong>Phase:</strong>{" "}
+                        {task?.constructionPhase || "Not specified"}
+                      </p>
+                      <p>
+                        <strong>Progress:</strong>{" "}
+                        {task?.progressPercentage ?? "N/A"}%
+                      </p>
+                      <p>
+                        <strong>Deadline:</strong>{" "}
+                        {task?.deadline
+                          ? new Date(task.deadline).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )
+                          : "N/A"}
+                      </p>
+                      <p>
+                        <strong>Submitted On:</strong>{" "}
+                        {task?.submittedOn
+                          ? new Date(task.submittedOn).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )
+                          : "Not submitted"}
+                      </p>
+                    </div>
+
+                    {/* Contractor Info */}
+                    <div className="mt-3">
+                      <p className="text-sm font-medium">Assigned Contractor</p>
+                      {task?.contractor ? (
+                        <p className="text-sm text-muted-foreground">
+                          {task?.contractor?.name || "Unknown"} (
+                          {task?.contractor?.email || "N/A"})
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Not assigned
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Task Photos */}
+                    <div className="mt-3">
+                      <p className="text-sm font-medium mb-1">
+                        Uploaded Photos:
+                      </p>
+                      {task?.siteInchargeUploadedPhotos?.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-2">
+                          {task.siteInchargeUploadedPhotos.map(
+                            (url: string, i: number) => (
+                              <img
+                                key={i}
+                                src={url}
+                                alt={`task-proof-${i}`}
+                                className="h-20 w-full object-cover rounded-md shadow-sm cursor-pointer hover:opacity-80 transition"
+                                onClick={() => setPreviewImage(url)}
+                              />
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No images uploaded
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Image Preview Modal */}
+        <Dialog
+          open={!!previewImage}
+          onOpenChange={() => setPreviewImage(null)}
+        >
+          <DialogContent className="max-w-3xl p-0">
+            <img
+              src={previewImage!}
+              alt="Preview"
+              className="w-full rounded-lg object-cover"
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Gallery */}
         {property?.images?.length > 0 && (
