@@ -7,7 +7,6 @@ import { z } from "zod";
 import axios from "axios";
 import { toast } from "sonner";
 import { UploadCloud, X } from "lucide-react";
-
 import {
   Form,
   FormControl,
@@ -28,14 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
 
-/** Schema aligned with your backend OpenLand model + your UI fields */
 export const openLandFormSchema = z.object({
   projectName: z.string().min(1, "Project name is required"),
   location: z.string().min(1, "Location is required"),
-
+  surveyNumber: z.string().optional().or(z.literal("")),
   landType: z.enum([
     "Agriculture",
     "Non-Agriculture",
@@ -46,22 +43,19 @@ export const openLandFormSchema = z.object({
     "Plotting Land",
     "Other",
   ]),
-
-  // Optional fields your UI uses even if backend stores landSize string
-  landArea: z.coerce.number().optional(),
+  landStatus: z.enum(["Available", "Sold", "Reserved", "Blocked"]).optional(),
+  landArea: z
+    .union([z.coerce.number(), z.number().optional()])
+    .optional()
+    .refine((v) => v === undefined || v >= 0, { message: "Must be >= 0" }),
   areaUnit: z.enum(["Sqft", "Sqyd", "Acre", "Hectare"]).optional(),
-
   landSize: z.string().optional(),
-  availableDate: z.string().optional(), // send as string/ISO
-
+  availableDate: z.string().optional(),
   description: z.string().optional(),
-
   municipalPermission: z.boolean().default(false),
   reraApproved: z.boolean().default(false),
-  reraNumber: z.string().optional(),
-
-  googleMapsLocation: z.string().optional(), // iframe/embed or normal link
-
+  reraNumber: z.string().optional().or(z.literal("")),
+  googleMapsLocation: z.string().optional().or(z.literal("")),
   facing: z.enum([
     "North",
     "East",
@@ -73,23 +67,35 @@ export const openLandFormSchema = z.object({
     "South-West",
     "Not Applicable",
   ]),
-
-  roadAccessWidth: z.string().optional(),
+  roadAccessWidth: z.string().optional().or(z.literal("")),
   fencingAvailable: z.boolean().default(false),
   waterFacility: z.boolean().default(false),
   electricity: z.boolean().default(false),
-
   thumbnailUrl: z.string().optional().or(z.literal("")),
   images: z.array(z.string()).optional(),
   brochureUrl: z.string().optional().or(z.literal("")),
+  ownerName: z.string().optional().or(z.literal("")),
+  LandApproval: z
+    .enum([
+      "DTCP",
+      "HMDA",
+      "Panchayat",
+      "Municipality",
+      "Unapproved",
+      "NA",
+      "Other",
+    ])
+    .optional(),
+  pricePerUnit: z
+    .union([z.coerce.number(), z.number().optional()])
+    .optional()
+    .refine((v) => v === undefined || v >= 0, { message: "Must be >= 0" }),
 });
 
 export type OpenLandFormValues = z.infer<typeof openLandFormSchema>;
 
 interface OpenLandFormProps {
-  /** Pass the existing land doc when editing (can be your backend land object) */
   openLand?: any;
-  /** Parent receives the saved object returned by the API */
   onSubmit: (saved: any) => void;
   onCancel: () => void;
 }
@@ -102,17 +108,19 @@ export default function OpenLandForm({
   const { user } = useAuth();
   const isEditing = !!openLand;
 
-  // --- RHF setup
   const form = useForm<OpenLandFormValues>({
     resolver: zodResolver(openLandFormSchema),
     defaultValues: openLand
       ? {
-          // Prefer backend values if present
           projectName: openLand.projectName || "",
           location: openLand.location || "",
+          surveyNumber: openLand.surveyNumber || openLand.landNo || "",
           landType: openLand.landType || "Other",
-          // Optional UI helpers
-          landArea: openLand.landArea ?? undefined,
+          landStatus: openLand.landStatus || "Available",
+          landArea:
+            typeof openLand.landArea === "number"
+              ? openLand.landArea
+              : undefined,
           areaUnit: openLand.areaUnit || "Acre",
           landSize: openLand.landSize || "",
           availableDate: openLand.availableDate
@@ -131,11 +139,20 @@ export default function OpenLandForm({
           thumbnailUrl: openLand.thumbnailUrl || "",
           images: openLand.images || [],
           brochureUrl: openLand.brochureUrl || "",
+          ownerName: openLand.ownerName || "",
+          LandApproval: openLand.LandApproval || "NA",
+
+          pricePerUnit:
+            typeof openLand.pricePerUnit === "number"
+              ? openLand.pricePerUnit
+              : undefined,
         }
       : {
           projectName: "",
           location: "",
+          surveyNumber: "",
           landType: "Other",
+          landStatus: "Available",
           landArea: undefined,
           areaUnit: "Acre",
           landSize: "",
@@ -153,27 +170,25 @@ export default function OpenLandForm({
           thumbnailUrl: "",
           images: [],
           brochureUrl: "",
+          ownerName: "",
+          LandApproval: "NA",
+          pricePerUnit: undefined,
         },
   });
 
-  // --- Local file+preview state (same pattern as OpenPlotForm)
   const [createdBlobUrls, setCreatedBlobUrls] = useState<string[]>([]);
-
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     openLand?.thumbnailUrl || ""
   );
-
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(openLand?.images || []);
-
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [brochurePreview, setBrochurePreview] = useState<string | null>(
     openLand?.brochureUrl || null
   );
   const [brochureRemoved, setBrochureRemoved] = useState(false);
 
-  // Cleanup blobs on unmount
   useEffect(() => {
     return () => {
       createdBlobUrls.forEach((u) => {
@@ -184,7 +199,6 @@ export default function OpenLandForm({
     };
   }, [createdBlobUrls]);
 
-  // --- Upload handlers (same flow as OpenPlotForm)
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -254,7 +268,6 @@ export default function OpenLandForm({
     if (openLand?.brochureUrl) setBrochureRemoved(true);
   };
 
-  // --- Submit
   const [saving, setSaving] = useState(false);
 
   const onSubmitInternal = async (data: OpenLandFormValues) => {
@@ -267,7 +280,6 @@ export default function OpenLandForm({
       setSaving(true);
       const csrfToken = await getCsrfToken();
 
-      // 1) Thumbnail
       let finalThumbnailUrl = openLand?.thumbnailUrl || "";
       if (thumbnailFile) {
         const fd = new FormData();
@@ -283,10 +295,9 @@ export default function OpenLandForm({
             withCredentials: true,
           }
         );
-        finalThumbnailUrl = res.data.url; // full Cloudinary URL
+        finalThumbnailUrl = res.data.url;
       }
 
-      // 2) Images
       let finalImages = imageUrls.filter((u) => !u.startsWith("blob:"));
       if (imageFiles.length) {
         for (const f of imageFiles) {
@@ -307,7 +318,6 @@ export default function OpenLandForm({
         }
       }
 
-      // 3) Brochure
       let finalBrochureUrl = openLand?.brochureUrl || "";
       if (brochureFile) {
         const fd = new FormData();
@@ -328,7 +338,6 @@ export default function OpenLandForm({
         finalBrochureUrl = "";
       }
 
-      // 4) Final payload (include both your helpers + backend's fields)
       const payload: any = {
         ...data,
         thumbnailUrl: finalThumbnailUrl,
@@ -336,7 +345,6 @@ export default function OpenLandForm({
         brochureUrl: finalBrochureUrl,
       };
 
-      // Optional: if you want to maintain a human-readable landSize in backend as well:
       if (data.landArea && data.areaUnit && !data.landSize) {
         payload.landSize = `${data.landArea} ${data.areaUnit}`;
       }
@@ -360,7 +368,6 @@ export default function OpenLandForm({
             config
           );
 
-      // Your update response earlier had { success, message, land }
       const saved = res.data?.land ?? res.data;
 
       toast.success(
@@ -379,7 +386,6 @@ export default function OpenLandForm({
     }
   };
 
-  // --- UI
   return (
     <Form {...form}>
       <form
@@ -391,13 +397,12 @@ export default function OpenLandForm({
             {isEditing ? "Edit Open Land" : "Add Open Land"}
           </h3>
           <p className="text-sm text-muted-foreground">
-            Fill in the details below to {isEditing ? "update" : "add"} an
-            openLand
+            Fill in the details below to {isEditing ? "update" : "add"} an open
+            land
           </p>
         </div>
         <Separator />
 
-        {/* Basic details */}
         <div className="grid sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -427,7 +432,6 @@ export default function OpenLandForm({
           />
         </div>
 
-        {/* Land type + size */}
         <div className="grid sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -473,8 +477,9 @@ export default function OpenLandForm({
               <FormItem>
                 <FormLabel>Land Area</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" min={0} {...field} />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -506,7 +511,6 @@ export default function OpenLandForm({
           />
         </div>
 
-        {/* Available Date + Google Maps */}
         <div className="grid sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -538,7 +542,6 @@ export default function OpenLandForm({
           />
         </div>
 
-        {/* Facing + Road */}
         <div className="grid sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -585,7 +588,6 @@ export default function OpenLandForm({
           />
         </div>
 
-        {/* Facilities */}
         <div className="grid sm:grid-cols-3 gap-4">
           <FormField
             control={form.control}
@@ -628,12 +630,10 @@ export default function OpenLandForm({
           />
         </div>
 
-        {/* Media Uploads */}
         <Separator />
         <h3 className="text-lg font-medium">Media Uploads</h3>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Thumbnail */}
           <div>
             <FormLabel>Thumbnail Image</FormLabel>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -677,7 +677,6 @@ export default function OpenLandForm({
             </div>
           </div>
 
-          {/* Gallery */}
           <div>
             <FormLabel>Gallery Images</FormLabel>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -726,7 +725,6 @@ export default function OpenLandForm({
           </div>
         </div>
 
-        {/* Brochure */}
         <div>
           <FormLabel>Project Brochure (PDF)</FormLabel>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
@@ -776,7 +774,6 @@ export default function OpenLandForm({
           </div>
         </div>
 
-        {/* Description */}
         <FormField
           control={form.control}
           name="description"
@@ -794,9 +791,8 @@ export default function OpenLandForm({
           )}
         />
 
-        {/* Legal */}
         <Separator />
-        <h3 className="text-lg font-medium">Legal</h3>
+        <h3 className="text-lg font-medium">Legal & Details</h3>
         <div className="grid sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -841,7 +837,97 @@ export default function OpenLandForm({
           )}
         />
 
-        {/* Actions */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="ownerName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Owner Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="LandApproval"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Land Approval</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select approval" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {[
+                      "DTCP",
+                      "HMDA",
+                      "Panchayat",
+                      "Municipality",
+                      "Unapproved",
+                      "NA",
+                      "Other",
+                    ].map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="landStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Land Status</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Available">Available</SelectItem>
+                    <SelectItem value="Sold">Sold</SelectItem>
+                    <SelectItem value="Reserved">Reserved</SelectItem>
+                    <SelectItem value="Blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="surveyNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Survey Number</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <Separator />
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel}>

@@ -324,13 +324,6 @@ const OpenPlotsPage = () => {
                         >
                           Plot Type: {plot?.plotType || "-"}
                         </CardItem>
-
-                        {/* <CardItem
-                          translateZ={20}
-                          className="text-sm sm:text-base font-semibold text-blue-700 dark:text-blue-400"
-                        >
-                          ₹{plot.totalAmount.toLocaleString()}
-                        </CardItem> */}
                       </div>
 
                       {/* Button */}

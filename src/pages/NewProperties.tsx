@@ -1020,7 +1020,7 @@ const NewProperties = () => {
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-1">
                               <h3 className="font-semibold text-lg">
-                                {land?.projectName} — {land?.plotNo}
+                                {land?.projectName} — {land?.surveyNumber}
                               </h3>
                               {canEdit && (
                                 <div
