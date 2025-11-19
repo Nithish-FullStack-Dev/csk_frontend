@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronLeft,
@@ -16,7 +15,6 @@ import {
   Trash,
   Map,
   Building,
-  IndianRupee,
   User,
   FileText,
   MessageSquare,
@@ -25,10 +23,11 @@ import {
   Image as ImageIcon,
   MapPin,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
+import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -69,6 +68,12 @@ export function OpenPlotDetails({
   const [currentImage, setCurrentImage] = useState("");
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  const {
+    data: leads,
+    isLoading: leadsLoading,
+    isError: leadsError,
+    error: leadErr,
+  } = useLeadbyOpenPlotId(plot._id);
 
   const galleryImages = useMemo(() => {
     const allImages = new Set<string>(plot.images || []);
@@ -91,7 +96,7 @@ export function OpenPlotDetails({
     if (!url) return toast.error("No brochure available to download.");
 
     try {
-      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
         url
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
@@ -104,26 +109,21 @@ export function OpenPlotDetails({
     }
   };
 
-  // ✅ Converts a normal Google Maps URL → embeddable URL automatically
   const getEmbeddableGoogleMapSrc = (url?: string): string => {
     if (!url) return "";
 
-    // Already embed link
     if (url.includes("/embed?pb=")) return url;
 
-    // Handle links like https://www.google.com/maps/place/Hyderabad/@17.385,78.486
     if (url.includes("/maps/place/")) {
       return url.replace("/maps/place/", "/maps/embed/place/");
     }
 
-    // Handle links like https://goo.gl/maps/xxxxx or ?q=lat,lng
     if (url.includes("goo.gl") || url.includes("?q=")) {
       const queryMatch = url.match(/q=([^&]+)/);
       const query = queryMatch ? decodeURIComponent(queryMatch[1]) : "";
       return `https://www.google.com/maps?q=${query}&output=embed`;
     }
 
-    // Fallback to search embed
     return `https://www.google.com/maps?q=${encodeURIComponent(
       url
     )}&output=embed`;
@@ -185,41 +185,19 @@ export function OpenPlotDetails({
                 <Building className="h-5 w-5 mr-2 text-muted-foreground" />
                 <span>Extent: {plot.extentSqYards} sq. yards</span>
               </div>
-              {/* <div className="flex items-center">
-                <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Total: {formatCurrency(plot.totalAmount)}</span>
-              </div>
-              <div className="flex items-center">
-                <IndianRupee className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>
-                  Price/Sq.Yard: {formatCurrency(plot.pricePerSqYard)}
-                </span>
-              </div> */}
+
               <div className="flex items-center">
                 <Building className="h-5 w-5 mr-2 text-muted-foreground" />
                 <span>Plot Type: {plot.plotType}</span>
               </div>
             </div>
 
-            {/* <div className="mt-4">
-              <div className="flex justify-between items-center mb-1">
-                <span>
-                  Amount Received: {formatCurrency(plot.amountReceived)}
-                </span>
-              </div>
-              <Progress
-                value={(plot.amountReceived / plot.totalAmount) * 100}
-                className="h-2"
-              />
-            </div> */}
             {plot?.brochureUrl && (
               <Button variant="outline" asChild className="mt-4">
                 <a
-                  // href={building.brochureUrl}
                   onClick={(e) =>
                     handleDownload(e, plot?.brochureUrl, plot?.projectName)
                   }
-                  // target="_blank"
                   rel="noopener noreferrer"
                 >
                   <FileText className="mr-2 h-4 w-4" /> Download Project
@@ -291,40 +269,32 @@ export function OpenPlotDetails({
             </p>
           </CardContent>
         </Card>
-        {/* <Card>
+
+        <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <IndianRupee className="mr-2 h-5 w-5" /> Financials
+              <User className="mr-2 h-5 w-5" /> Interested Clients
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p>
-              <strong>Price/Sq.Yard:</strong>{" "}
-              {formatCurrency(plot.pricePerSqYard)}
-            </p>
-            <p>
-              <strong>Total Amount:</strong> {formatCurrency(plot.totalAmount)}
-            </p>
-            <div className="mt-4">
-              <div className="flex justify-between items-center mb-1">
-                <span>
-                  Amount Received: {formatCurrency(plot.amountReceived)}
-                </span>
-                <span>
-                  {Math.round((plot.amountReceived / plot.totalAmount) * 100)}%
-                </span>
-              </div>
-              <Progress
-                value={(plot.amountReceived / plot.totalAmount) * 100}
-                className="h-2"
-              />
-            </div>
-            <p>
-              <strong>Balance:</strong>{" "}
-              {formatCurrency(plot.totalAmount - plot.amountReceived)}
-            </p>
+          <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+            {leadsLoading && <p>Loading leads...</p>}
+            {leadsError && <p className="text-red-500">{leadErr?.message}</p>}
+            {!leadsLoading && !leadsError && leads.length === 0 && (
+              <p className="text-gray-500 italic">
+                No interested clients found.
+              </p>
+            )}
+            {!leadsLoading && !leadsError && leads.length > 0 && (
+              <ul className="list-disc list-inside">
+                {leads.map((lead: Lead, idx: number) => (
+                  <li key={lead?._id || idx}>
+                    {lead?.name} - {lead?.phone} - {lead?.email}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
-        </Card> */}
+        </Card>
       </div>
 
       {/* 🖼️ Gallery - Bento Grid */}
