@@ -15,12 +15,14 @@ import {
   ChevronLeft,
   X,
   Image,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -33,7 +35,12 @@ import { ApartmentDialog } from "./ApartmentDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createUnit, deleteUnit, updateUnit } from "@/utils/units/Methods";
+import {
+  createUnit,
+  deleteUnit,
+  updateUnit,
+  useCustomerPurchasedUnits,
+} from "@/utils/units/Methods";
 import {
   Lead,
   useCompletedTaskVerfication,
@@ -94,10 +101,14 @@ export function PropertyDetails({
     null
   );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-  const enquiryCustomers = (property as any)?.enquiryCustomers || [];
-  const purchasedCustomer = (property as any)?.purchasedCustomer || {};
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const {
+    data: customerPurchasedUnits = [],
+    isLoading: customerPurchasedUnitsLoading,
+    isError: customerPurchasedUnitsError,
+    error: customerPurchasedUnitsErr,
+  } = useCustomerPurchasedUnits(property._id!);
 
   const {
     data: leads = [],
@@ -107,10 +118,10 @@ export function PropertyDetails({
   } = useLeadbyUnitId(property?._id);
 
   const {
-    data: completedTasks,
-    isLoading: completedTasksLoading,
-    isError: completedTasksError,
-    error: completedTasksErr,
+    data: verfiedProject,
+    isLoading: verfiedProjectLoading,
+    isError: verfiedProjectError,
+    error: verfiedProjectErr,
   } = useCompletedTaskVerfication(buildingId, property?._id);
 
   const {
@@ -184,7 +195,7 @@ export function PropertyDetails({
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
   const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "Not specified";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -303,15 +314,25 @@ export function PropertyDetails({
               </div>
 
               <div className="mt-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span>
-                    Construction Progress: {unitProgress?.overallProgress}%
-                  </span>
-                </div>
-                <Progress
-                  value={unitProgress?.overallProgress}
-                  className="h-2"
-                />
+                {unitProgressLoading && <p>Loading progress...</p>}
+                {unitProgressError && (
+                  <p className="text-red-500">
+                    {unitProgressErr?.message || "Error fetching progress"}
+                  </p>
+                )}
+                {!unitProgressLoading && !unitProgressError && (
+                  <>
+                    <div className="flex justify-between items-center mb-1">
+                      <span>
+                        Construction Progress: {unitProgress?.overallProgress}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={unitProgress?.overallProgress}
+                      className="h-2"
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -326,42 +347,50 @@ export function PropertyDetails({
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Enquiry Customers */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  Enquiry Customers
+              {customerPurchasedUnitsLoading && (
+                <p>Loading customer details...</p>
+              )}
+              {customerPurchasedUnitsError && (
+                <p className="text-red-500">
+                  {customerPurchasedUnitsErr?.message ||
+                    "Error while fetching customer details"}
                 </p>
+              )}
+              {!customerPurchasedUnitsLoading &&
+                !customerPurchasedUnitsError && (
+                  <>
+                    {/* Purchased Customer */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Purchased Customers
+                      </p>
 
-                {enquiryCustomers.length > 0 ? (
-                  <ul className="space-y-2">
-                    {enquiryCustomers.map((cust, i) => (
-                      <li
-                        key={i}
-                        className="font-medium flex items-center gap-3"
-                      >
-                        <div>{cust.name || "N/A"}</div>
-                        <div className="text-sm flex items-center gap-1">
-                          <Phone className="h-4 w-4" /> {cust.contact || "N/A"}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted">No enquiry customers</p>
+                      {customerPurchasedUnits &&
+                      customerPurchasedUnits?.length > 0 ? (
+                        <ul className="space-y-3">
+                          {customerPurchasedUnits?.map((customer, idx) => (
+                            <li
+                              key={customer?._id || idx}
+                              className="p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white"
+                            >
+                              <p className="font-semibold text-base">
+                                {customer?.name}
+                              </p>
+                              <div className="text-sm text-muted-foreground flex items-center mt-1">
+                                <Mail className="mr-2 h-4 w-4" />
+                                {customer?.email}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No customers found.
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
-              </div>
-
-              {/* Purchased Customer */}
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">
-                  Purchased Customer
-                </p>
-                <p className="font-medium">{purchasedCustomer.name || "N/A"}</p>
-                <p className="font-medium flex items-center">
-                  <Phone className="mr-2 h-4 w-4" />
-                  {purchasedCustomer.contact || "N/A"}
-                </p>
-              </div>
             </CardContent>
           </Card>
 
@@ -372,33 +401,90 @@ export function PropertyDetails({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Contractor</p>
-                <p className="font-medium">
-                  {(property.contractor as any)?.name || "N/A"}
+              {verfiedProjectLoading && <p>Loading project details...</p>}
+
+              {verfiedProjectError && (
+                <p className="text-red-500">
+                  {verfiedProjectErr?.message ||
+                    "Error fetching project details"}
                 </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Site Incharge</p>
-                <p className="font-medium">
-                  {(property.siteIncharge as any)?.name || "N/A"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Work Completed</p>
-                <div className="flex items-center">
-                  <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{property.workCompleted}%</span>
-                </div>
-                <Progress value={property.workCompleted} className="h-2 mt-2" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Delivery Date</p>
-                <p className="font-medium flex items-center">
-                  <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                  {formatDate(property.deliveryDate)}
-                </p>
-              </div>
+              )}
+              {!verfiedProjectLoading && !verfiedProjectError && (
+                <>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Assigned Contractors
+                    </p>
+                    <p className="font-medium">
+                      {verfiedProject?.projectDetails?.contractors?.map(
+                        (contractor, idx) => (
+                          <div
+                            className="flex items-center"
+                            key={contractor?._id || idx}
+                          >
+                            <span>{contractor?.name || "N/A"}</span>
+                            <span className="mx-2">|</span>
+                            <span className="text-sm text-muted-foreground">
+                              {contractor?.email || "N/A"}
+                            </span>
+                          </div>
+                        )
+                      )}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Site Incharge
+                    </p>
+                    <p className="font-medium">
+                      <span>
+                        {verfiedProject?.projectDetails?.siteIncharge?.name ||
+                          "N/A"}
+                      </span>
+                      <span className="mx-2">|</span>
+                      <span className="text-sm text-muted-foreground">
+                        {verfiedProject?.projectDetails?.siteIncharge?.email ||
+                          "N/A"}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    {unitProgressLoading && <p>Loading progress...</p>}
+                    {unitProgressError && (
+                      <p className="text-red-500">
+                        {unitProgressErr?.message || "Error fetching progress"}
+                      </p>
+                    )}
+
+                    {!unitProgressLoading && !unitProgressError && (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Work Completed
+                        </p>
+                        <div className="flex items-center">
+                          <PercentIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">
+                            {unitProgress?.overallProgress}%
+                          </span>
+                        </div>
+                        <Progress
+                          value={unitProgress?.overallProgress}
+                          className="h-2 mt-2"
+                        />
+                      </>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Delivery Date
+                    </p>
+                    <p className="font-medium flex items-center">
+                      <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {formatDate(property?.deliveryDate) || "Not specified"}
+                    </p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -499,26 +585,26 @@ export function PropertyDetails({
 
           <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
             {/* Loading State */}
-            {completedTasksLoading && <p>Loading completed tasks...</p>}
+            {verfiedProjectLoading && <p>Loading completed tasks...</p>}
 
             {/* Error State */}
-            {completedTasksError && (
+            {verfiedProjectError && (
               <p className="text-red-500">
-                {completedTasksErr?.message || "Error fetching tasks"}
+                {verfiedProjectErr?.message || "Error fetching tasks"}
               </p>
             )}
 
             {/* No Tasks State */}
-            {!completedTasksLoading &&
-              !completedTasksError &&
-              completedTasks?.length === 0 && (
+            {!verfiedProjectLoading &&
+              !verfiedProjectError &&
+              verfiedProject?.completedTasks?.length === 0 && (
                 <p>No completed tasks available</p>
               )}
 
             {/* Render Tasks */}
-            {!completedTasksLoading && !completedTasksError && (
+            {!verfiedProjectLoading && !verfiedProjectError && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {completedTasks?.map((task: any) => (
+                {verfiedProject?.completedTasks?.map((task: any) => (
                   <div
                     key={task?._id}
                     className="border p-4 rounded-lg shadow-sm hover:shadow transition"
@@ -618,7 +704,8 @@ export function PropertyDetails({
           open={!!previewImage}
           onOpenChange={() => setPreviewImage(null)}
         >
-          <DialogContent className="max-w-3xl p-0">
+          <DialogContent className="max-w-3xl p-0" aria-describedby={undefined}>
+            <DialogTitle className="sr-only">Image Preview</DialogTitle>
             <img
               src={previewImage!}
               alt="Preview"
@@ -628,22 +715,29 @@ export function PropertyDetails({
         </Dialog>
 
         {/* Gallery */}
-        {property?.images?.length > 0 && (
-          <Card className="shadow-lg rounded-xl overflow-hidden">
-            <CardHeader>
-              <CardTitle>
-                <Image className="w-5 h-5 mr-2 inline" /> Gallery
-              </CardTitle>
-            </CardHeader>
+        <Card className="rounded-xl overflow-hidden">
+          <CardHeader>
+            <CardTitle>
+              <Image className="w-5 h-5 mr-2 inline" /> Gallery
+            </CardTitle>
+          </CardHeader>
 
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <CardContent>
+            {property?.images && property.images.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {property?.images
                   .filter((img) => img && img.trim() !== "")
                   .map((img, index) => (
                     <div
                       key={index}
-                      className="relative group rounded-lg overflow-hidden cursor-pointer"
+                      className={`
+                        relative group overflow-hidden cursor-pointer rounded-lg
+                        ${
+                          index === 0
+                            ? "col-span-2 md:col-span-2 row-span-2"
+                            : "h-40"
+                        }
+                      `}
                       onClick={() => setSelectedImage(img)}
                     >
                       <img
@@ -659,31 +753,37 @@ export function PropertyDetails({
                     </div>
                   ))}
               </div>
+            ) : (
+              <p>No images available.</p>
+            )}
 
-              {/* Fullscreen Lightbox */}
-              {selectedImage && (
+            {/* Fullscreen Lightbox */}
+            {selectedImage && (
+              <div
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                onClick={() => setSelectedImage(null)}
+              >
                 <div
-                  className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
-                  onClick={() => setSelectedImage(null)}
+                  className="relative max-w-5xl w-full max-h-[90vh] flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="relative max-w-4xl w-[90vw]">
-                    <button
-                      onClick={() => setSelectedImage(null)}
-                      className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
-                    >
-                      <X className="h-8 w-8" />
-                    </button>
-                    <img
-                      src={selectedImage}
-                      alt="Preview"
-                      className="w-full h-auto rounded-lg shadow-lg object-contain"
-                    />
-                  </div>
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute -top-10 right-0 text-white hover:text-red-400 transition"
+                  >
+                    <X className="h-8 w-8" />
+                  </button>
+
+                  <img
+                    src={selectedImage}
+                    alt="Preview"
+                    className="w-auto max-w-full h-auto max-h-[80vh] rounded-lg shadow-lg object-contain"
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog
