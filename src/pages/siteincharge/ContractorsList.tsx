@@ -62,79 +62,7 @@ import Loader from "@/components/Loader";
 import { Label } from "@/components/ui/label";
 import { User } from "@/contexts/AuthContext";
 import { set } from "date-fns";
-
-const contractors: Contractor[] = [
-  {
-    _id: "c1",
-    name: "John Smith",
-    company: "ABC Construction Ltd.",
-    specialization: "Structural Works",
-    projects: ["Riverside Tower", "Valley Heights"],
-    contactPerson: "John Smith",
-    phone: "+91 98765 43210",
-    email: "john.smith@abcconstruction.com",
-    status: "active",
-    completedTasks: 28,
-    totalTasks: 45,
-    rating: 4,
-  },
-  {
-    _id: "c2",
-    name: "Rajesh Kumar",
-    company: "XYZ Builders",
-    specialization: "Masonry Work",
-    projects: ["Green Villa"],
-    contactPerson: "Rajesh Kumar",
-    phone: "+91 87654 32109",
-    email: "rajesh@xyzbuilders.com",
-    status: "active",
-    completedTasks: 15,
-    totalTasks: 22,
-    rating: 3,
-  },
-  {
-    _id: "c3",
-    name: "Amit Patel",
-    company: "PowerTech Systems",
-    specialization: "Electrical Works",
-    projects: ["Valley Heights", "Riverside Tower"],
-    contactPerson: "Amit Patel",
-    phone: "+91 76543 21098",
-    email: "amit@powertechsystems.com",
-    status: "active",
-    completedTasks: 12,
-    totalTasks: 18,
-    rating: 5,
-  },
-  {
-    _id: "c4",
-    name: "Suresh Reddy",
-    company: "Elite Ceramics",
-    specialization: "Tiling & Finishing",
-    projects: ["Riverside Tower"],
-    contactPerson: "Suresh Reddy",
-    phone: "+91 65432 10987",
-    email: "suresh@eliteceramics.com",
-    status: "on_hold",
-    completedTasks: 8,
-    totalTasks: 15,
-    rating: 2,
-  },
-  {
-    _id: "c5",
-    name: "David Wilson",
-    company: "Top Shelter Inc.",
-    specialization: "Roofing",
-    projects: ["Valley Heights"],
-    contactPerson: "David Wilson",
-    phone: "+91 54321 09876",
-    email: "david@topshelter.com",
-    status: "inactive",
-    completedTasks: 0,
-    totalTasks: 5,
-    rating: 3,
-  },
-];
+import { CONSTRUCTION_PHASES } from "@/types/construction";
 
 const statusColors: Record<string, string> = {
   active: "bg-green-100 text-green-800",
@@ -157,6 +85,9 @@ const ContractorsList = () => {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   // const [allProjects, setAllProjects] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [phase, setPhase] = useState("");
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     contractor: "",
@@ -228,7 +159,7 @@ const ContractorsList = () => {
     const matchesProject =
       projectFilter === "" ||
       projectFilter === "all-projects" ||
-      contractor.projects.includes(projectFilter);
+      contractor.projects.filter((p) => p._id === projectFilter).length > 0;
 
     // Apply status filter
     const matchesStatus =
@@ -309,7 +240,7 @@ const ContractorsList = () => {
         </div>
 
         <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-          <div className="flex flex-wrap items-center space-x-0 space-y-2 sm:space-x-2 sm:space-y-0">
+          <div className="flex flex-wrap items-center space-x-0 space-y-2 sm:space-x-2 sm:space-y-0 md:gap-4">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -347,7 +278,7 @@ const ContractorsList = () => {
               </SelectContent>
             </Select>
 
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
+            {/* <Select value={projectFilter} onValueChange={setProjectFilter}>
               <SelectTrigger className="w-fit">
                 <div className="flex items-center">
                   <Building className="h-4 w-4 mr-2" />
@@ -361,12 +292,12 @@ const ContractorsList = () => {
               <SelectContent>
                 <SelectItem value="all-projects">All Projects</SelectItem>
                 {projects.map((project) => (
-                  <SelectItem key={project} value={project}>
-                    {project}
+                  <SelectItem key={project?._id} value={project?._id}>
+                    {project?.projectName}
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-fit">
@@ -418,7 +349,6 @@ const ContractorsList = () => {
                     <TableHead>Projects</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Progress</TableHead>
-                    <TableHead>Status</TableHead>
                     {/* <TableHead>Rating</TableHead> */}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -437,25 +367,26 @@ const ContractorsList = () => {
                     filteredContractors.map((contractor) => (
                       <TableRow key={contractor._id}>
                         <TableCell className="font-medium">
-                          {contractor.name}
+                          {contractor?.name}
                           <div className="text-xs text-muted-foreground">
-                            {contractor.company}
+                            Status: {contractor?.status}
                           </div>
                         </TableCell>
                         <TableCell>{contractor.specialization}</TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             {contractor.projects.map((project, index) => (
-                              <Badge
+                              <div
                                 key={index}
-                                variant="outline"
-                                className="max-w-fit"
+                                className="px-3 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700 border border-slate-200 w-fit"
                               >
-                                {project}
-                              </Badge>
+                                {project.projectName} — Floor{" "}
+                                {project.floorNumber}, Unit {project.unitType}
+                              </div>
                             ))}
                           </div>
                         </TableCell>
+
                         <TableCell>
                           <div className="flex flex-col text-sm">
                             <div className="flex items-center">
@@ -484,27 +415,6 @@ const ContractorsList = () => {
                             />
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={statusColors[contractor.status]}
-                          >
-                            {contractor.status === "on_hold"
-                              ? "On Hold"
-                              : contractor.status.charAt(0).toUpperCase() +
-                                contractor.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        {/* <TableCell>
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`h-4 w-4 ${i < contractor.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} 
-                            />
-                          ))}
-                        </div>
-                      </TableCell> */}
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -593,7 +503,7 @@ const ContractorsList = () => {
                         <div>
                           <h3 className="font-semibold">{contractor.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {contractor.company}
+                            {contractor?.status}
                           </p>
                         </div>
                         <DropdownMenu>
@@ -666,11 +576,17 @@ const ContractorsList = () => {
                           {contractor.phone}, {contractor.email}
                         </p>
                         <div className="mt-2">
+                          {/* typeof p?.floorUnit === "object" && */}
                           <span className="font-semibold">Projects: </span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {contractor.projects.map((project, index) => (
-                              <Badge key={index} variant="outline">
-                                {project}
+                            {contractor?.projects?.map((project, index) => (
+                              <Badge
+                                key={index}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {project.projectName} — F{project.floorNumber} /
+                                U{project.unitType}
                               </Badge>
                             ))}
                           </div>
@@ -689,18 +605,6 @@ const ContractorsList = () => {
                             }
                             className="h-2 mt-1"
                           />
-                        </div>
-                        <div className="mt-2">
-                          <span className="font-semibold">Status: </span>
-                          <Badge
-                            variant="outline"
-                            className={statusColors[contractor.status]}
-                          >
-                            {contractor.status === "on_hold"
-                              ? "On Hold"
-                              : contractor.status.charAt(0).toUpperCase() +
-                                contractor.status.slice(1)}
-                          </Badge>
                         </div>
                       </div>
                     </Card>
@@ -787,29 +691,36 @@ const ContractorsList = () => {
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="project">Select Project</Label>
-
+                  {/* Project Select */}
+                  <div className="space-y-2">
+                    <Label htmlFor="project">Project</Label>
                     <Select
-                      value={formData.project}
-                      onValueChange={(value) => {
-                        setFormData({
-                          ...formData,
-                          project: value,
-                        });
-                      }}
+                      value={selectedProject}
+                      onValueChange={setSelectedProject}
+                      required
+                      disabled={isLoadingProjects}
                     >
-                      <SelectTrigger className="w-full border p-2 rounded">
-                        <SelectValue placeholder="Select Project" />
+                      <SelectTrigger id="project">
+                        <SelectValue
+                          placeholder={
+                            isLoadingProjects ? "Loading..." : "Select project"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        {allProjects.map((proj) => (
-                          <SelectItem key={proj._id} value={proj._id}>
-                            {typeof proj.projectId === "object"
-                              ? proj.projectId?.projectName || "Unnamed Project"
-                              : proj.projectId}
-                          </SelectItem>
-                        ))}
+                        {isLoadingProjects ? (
+                          <SelectItem value="">Loading...</SelectItem>
+                        ) : (
+                          allProjects?.map((p: any) => (
+                            <SelectItem key={p?._id} value={p?._id}>
+                              {p.projectId?.projectName +
+                                " floor no: " +
+                                p?.floorUnit?.floorNumber +
+                                " unit: " +
+                                p?.unit?.plotNo || "Unnamed Project"}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -822,7 +733,23 @@ const ContractorsList = () => {
                       setFormData({ ...formData, taskTitle: e.target.value })
                     }
                   />
-
+                  {/* <div className="space-y-2">
+                    <Label htmlFor="phase">Construction Phase</Label>
+                    <Select value={phase} onValueChange={setPhase} required>
+                      <SelectTrigger id="phase">
+                        <SelectValue placeholder="Select phase" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CONSTRUCTION_PHASES).map(
+                          ([key, value]) => (
+                            <SelectItem key={key} value={key}>
+                              {value.title}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div> */}
                   {/* Deadline Input */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium">
@@ -982,22 +909,6 @@ const ContractorsList = () => {
 
                       <div>
                         <div className="font-semibold text-muted-foreground">
-                          Status
-                        </div>
-                        <Badge
-                          className={statusColors[selectedContractor.status]}
-                        >
-                          {selectedContractor.status === "on_hold"
-                            ? "On Hold"
-                            : selectedContractor.status
-                                .charAt(0)
-                                .toUpperCase() +
-                              selectedContractor.status.slice(1)}
-                        </Badge>
-                      </div>
-
-                      <div>
-                        <div className="font-semibold text-muted-foreground">
                           Phone
                         </div>
                         <div>{selectedContractor.phone}</div>
@@ -1016,9 +927,10 @@ const ContractorsList = () => {
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {selectedContractor.projects.map((project, i) => (
-                            <Badge key={i} variant="outline">
-                              {project}
-                            </Badge>
+                            <div className="px-3 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700 border border-slate-200 w-fit">
+                              {project.projectName} — Floor{" "}
+                              {project.floorNumber}, Unit {project.unitType}
+                            </div>
                           ))}
                         </div>
                       </div>

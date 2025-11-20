@@ -21,10 +21,10 @@ export interface Task {
   title: string;
   statusForContractor: "In progress" | "completed" | "pending review";
   statusForSiteIncharge:
-    | "pending verification"
-    | "approved"
-    | "rework"
-    | "rejected";
+  | "pending verification"
+  | "approved"
+  | "rework"
+  | "rejected";
   deadline: string | Date;
   progressPercentage: number;
   isApprovedByContractor: boolean;
@@ -41,11 +41,11 @@ export interface Task {
   priority?: string;
   description?: string;
   status?:
-    | "pending verification"
-    | "approved"
-    | "completed"
-    | "rejected"
-    | "in progress";
+  | "pending verification"
+  | "approved"
+  | "completed"
+  | "rejected"
+  | "in progress";
 }
 
 export interface Project {
@@ -81,7 +81,12 @@ export interface Contractor {
   name: string;
   company: string;
   specialization: string;
-  projects: string[];
+  projects: [{
+    _id: string;
+    projectName: string,
+    floorNumber: string,
+    unitType: string
+  }];
   contactPerson: string;
   phone: string;
   email: string;
