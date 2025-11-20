@@ -33,6 +33,7 @@ import {
   LayoutGrid,
   Compass,
   Hash,
+  User,
 } from "lucide-react";
 
 import {
@@ -55,6 +56,8 @@ import { format } from "date-fns";
 import { fetchAgents } from "@/utils/buildings/CustomerConfig";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllLeads } from "@/utils/leads/LeadConfig";
+import { useLeadbyOpenLandId } from "@/utils/buildings/Projects";
+import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 
 type InterestedEntry = {
   _id: string;
@@ -143,179 +146,16 @@ export default function OpenLandDetails({
     queryFn: fetchAllLeads,
   });
 
-  const leads = leadsResponse ?? [];
-
-  /* -------------------- Refresh Single Land -------------------- */
-  const refreshLand = async () => {
-    try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/openLand/getOpenLandById/${land._id}`,
-        { withCredentials: true }
-      );
-      const fresh = data?.land ?? data;
-      if (fresh) {
-        setLand(fresh);
-        onRefresh?.(fresh);
-      }
-    } catch (err) {
-      console.error("refreshLand error", err);
-    }
-  };
-
-  /* -------------------- Add Interest -------------------- */
-  const openAddInterest = useCallback(() => {
-    setEditingInterest(null);
-    setSelectedLeadId(null);
-    setSelectedAgentId(null);
-    setInterestDialogOpen(true);
-  }, []);
-
-  /* -------------------- Edit Interest -------------------- */
-  const openEditInterest = useCallback((entry: InterestedEntry) => {
-    setEditingInterest(entry);
-    setSelectedLeadId(entry.lead?._id ?? null);
-    setSelectedAgentId(entry.agent?._id ?? null);
-    setInterestDialogOpen(true);
-  }, []);
-
-  /* -------------------- Save/Add Interested Lead -------------------- */
-  const submitInterest = async () => {
-    if (!selectedLeadId || !selectedAgentId) {
-      toast.error("Please select both lead and agent.");
-      return;
-    }
-
-    setSubmittingInterest(true);
-    try {
-      const landId = land._id;
-
-      if (editingInterest) {
-        await axios.put(
-          `${
-            import.meta.env.VITE_URL
-          }/api/openLand/${landId}/updateInterestedCustomer/${
-            editingInterest._id
-          }`,
-          { leadId: selectedLeadId, agentId: selectedAgentId },
-          { withCredentials: true }
-        );
-        toast.success("Interested lead updated");
-      } else {
-        await axios.post(
-          `${
-            import.meta.env.VITE_URL
-          }/api/openLand/${landId}/addInterestedCustomer`,
-          { leadId: selectedLeadId, agentId: selectedAgentId },
-          { withCredentials: true }
-        );
-        toast.success("Interested lead added");
-      }
-
-      setInterestDialogOpen(false);
-      await refreshLand();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to save interested lead");
-    } finally {
-      setSubmittingInterest(false);
-    }
-  };
-
-  /* -------------------- Delete Interest -------------------- */
-  const deleteInterest = async (id: string) => {
-    if (!window.confirm("Delete this interested lead?")) return;
-
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_URL}/api/openLand/${
-          land._id
-        }/removeInterestedCustomer/${id}`,
-        { withCredentials: true }
-      );
-      toast.success("Removed interested lead");
-      await refreshLand();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to remove interested lead");
-    }
-  };
-
-  /* -------------------- Mark as Sold -------------------- */
-  const openMarkSold = () => {
-    setSoldBuyerId(null);
-    setSoldDate(format(new Date(), "yyyy-MM-dd"));
-    setSoldDialogOpen(true);
-  };
-
-  const submitMarkSold = async () => {
-    if (!soldBuyerId) {
-      toast.error("Select buyer");
-      return;
-    }
-
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/openLand/${land._id}/markAsSold`,
-        { soldToCustomerId: soldBuyerId, soldDate },
-        { withCredentials: true }
-      );
-      toast.success("Marked as sold");
-      setSoldDialogOpen(false);
-      await refreshLand();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to mark as sold");
-    }
-  };
-
-  /* -------------------- Infinite Scroll (React-safe) -------------------- */
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const duplicatedInterested = useMemo(() => {
-    const list = land.interestedCustomers || [];
-    return [...list, ...list];
-  }, [land.interestedCustomers]);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    let frame: number;
-    let speed = 0.6;
-    let paused = false;
-
-    const tick = () => {
-      if (!paused) {
-        el.scrollTop += speed;
-        if (el.scrollTop >= el.scrollHeight / 2) {
-          el.scrollTop = 0;
-        }
-      }
-      frame = requestAnimationFrame(tick);
-    };
-
-    const pause = () => (paused = true);
-    const resume = () => (paused = false);
-
-    el.addEventListener("mouseenter", pause);
-    el.addEventListener("mouseleave", resume);
-
-    tick();
-
-    return () => {
-      cancelAnimationFrame(frame);
-      el.removeEventListener("mouseenter", pause);
-      el.removeEventListener("mouseleave", resume);
-    };
-  }, [duplicatedInterested]);
-
-  /* =============================================================
-      COMPONENT JSX
-  ============================================================= */
+  // const leads = leadsResponse ?? [];
+  const {
+    data: leads,
+    isLoading: leadsLoading,
+    isError: leadsError,
+    error: leadErr,
+  } = useLeadbyOpenLandId(land._id);
 
   return (
     <div className="space-y-6">
-      {/* ---------------- BACK + EDIT + DELETE ---------------- */}
       <div className="flex justify-between items-center">
         <Button variant="outline" size="sm" onClick={onBack}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Back to Open Lands
@@ -376,8 +216,7 @@ export default function OpenLandDetails({
                 variant="outline"
                 className="mt-4"
                 onClick={() => {
-                  const API_BASE =
-                    import.meta.env.VITE_URL || "http://localhost:3000";
+                  const API_BASE = import.meta.env.VITE_URL;
                   const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
                     land.brochureUrl
                   )}&filename=${encodeURIComponent(
@@ -395,7 +234,7 @@ export default function OpenLandDetails({
       </Card>
 
       {/* ---------------- DETAILS + INTERESTED LEADS ---------------- */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 items-start">
         {/* OWNER & DETAILS */}
         <Card>
           <CardHeader>
@@ -500,136 +339,28 @@ export default function OpenLandDetails({
 
         {/* INTERESTED LEADS */}
         <Card>
-          <CardHeader className="flex justify-between items-center">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <UserIcon className="h-5 w-5" /> Interested Leads
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <User className="mr-2 h-5 w-5" /> Interested Clients
             </CardTitle>
-
-            {canEdit && (
-              <div className="flex gap-2">
-                <Button size="sm" onClick={openAddInterest}>
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-
-                {land.landStatus !== "Sold" && (
-                  <Button
-                    size="sm"
-                    className="bg-orange-600 hover:bg-orange-700"
-                    onClick={openMarkSold}
-                  >
-                    <Pencil className="h-4 w-4 mr-1" /> Mark Sold
-                  </Button>
-                )}
-              </div>
-            )}
           </CardHeader>
-
-          <CardContent>
-            <div
-              ref={scrollRef}
-              className="h-64 overflow-hidden pr-3 space-y-4"
-            >
-              {duplicatedInterested.length ? (
-                duplicatedInterested.map((entry: any, idx) => {
-                  const lead = entry.lead;
-                  const ag = entry.agent;
-
-                  return (
-                    <div
-                      key={entry._id + "-" + idx}
-                      className="border rounded-lg p-3 shadow-sm bg-white flex justify-between items-start hover:bg-gray-50 transition"
-                    >
-                      <div className="space-y-1 text-sm">
-                        <p className="font-semibold text-base">
-                          {lead?.name || "Unknown"}{" "}
-                          {lead?.phone && (
-                            <span className="text-muted-foreground text-sm">
-                              • {lead.phone}
-                            </span>
-                          )}
-                        </p>
-
-                        {lead?.email && (
-                          <p className="text-xs text-muted-foreground">
-                            ✉️ {lead.email}
-                          </p>
-                        )}
-
-                        {lead?.source && (
-                          <p className="text-xs text-muted-foreground">
-                            Source:{" "}
-                            <span className="font-medium">{lead.source}</span>
-                          </p>
-                        )}
-
-                        {lead?.status && (
-                          <p className="text-xs text-muted-foreground">
-                            Status:{" "}
-                            <span className="font-medium">{lead.status}</span>
-                          </p>
-                        )}
-
-                        {lead?.propertyStatus && (
-                          <p className="text-xs text-muted-foreground">
-                            Property Status:{" "}
-                            <span className="font-medium">
-                              {lead.propertyStatus}
-                            </span>
-                          </p>
-                        )}
-
-                        {lead?.notes && (
-                          <p className="text-xs text-muted-foreground">
-                            Notes: {lead.notes}
-                          </p>
-                        )}
-
-                        <p className="text-xs text-muted-foreground">
-                          Agent: {ag?.name || "—"}{" "}
-                          {ag?.email ? <>• {ag.email}</> : ""}
-                        </p>
-
-                        <p className="text-xs text-muted-foreground">
-                          {entry.createdAt
-                            ? format(
-                                new Date(entry.createdAt),
-                                "dd MMM yyyy, hh:mm a"
-                              )
-                            : ""}
-                        </p>
-                      </div>
-
-                      {canEdit &&
-                        idx < (land.interestedCustomers?.length || 0) && (
-                          <div className="flex flex-col gap-2">
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              onClick={() => openEditInterest(entry)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              className="h-8 w-8"
-                              onClick={() => deleteInterest(entry._id)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  No interested leads
-                </p>
-              )}
-            </div>
+          <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+            {leadsLoading && <p>Loading leads...</p>}
+            {leadsError && <p className="text-red-500">{leadErr?.message}</p>}
+            {!leadsLoading && !leadsError && leads.length === 0 && (
+              <p className="text-gray-500 italic">
+                No interested clients found.
+              </p>
+            )}
+            {!leadsLoading && !leadsError && leads.length > 0 && (
+              <ul className="list-disc list-inside">
+                {leads?.map((lead: Lead, idx: number) => (
+                  <li key={lead?._id || idx}>
+                    {lead?.name} - {lead?.phone} - {lead?.email}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -721,7 +452,7 @@ export default function OpenLandDetails({
                   <SelectValue placeholder="Select Lead" />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((l: any) => (
+                  {leads?.map((l: any) => (
                     <SelectItem key={l._id} value={l._id}>
                       {l.name} {l.phone ? `• ${l.phone}` : ""}
                     </SelectItem>
@@ -749,22 +480,6 @@ export default function OpenLandDetails({
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setInterestDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={submitInterest} disabled={submittingInterest}>
-                {submittingInterest
-                  ? "Saving..."
-                  : editingInterest
-                  ? "Update"
-                  : "Add"}
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -790,7 +505,7 @@ export default function OpenLandDetails({
                   <SelectValue placeholder="Select Lead" />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((l: any) => (
+                  {leads?.map((l: any) => (
                     <SelectItem key={l._id} value={l._id}>
                       {l.name} {l.phone ? `• ${l.phone}` : ""}
                     </SelectItem>
@@ -809,18 +524,6 @@ export default function OpenLandDetails({
                 value={soldDate || ""}
                 onChange={(e) => setSoldDate(e.target.value)}
               />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setSoldDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button disabled={markingSold} onClick={submitMarkSold}>
-                {markingSold ? "Processing..." : "Mark as Sold"}
-              </Button>
             </div>
           </div>
         </DialogContent>

@@ -170,7 +170,7 @@ const ProjectDetailsPage = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
         url
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;

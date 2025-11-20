@@ -171,7 +171,6 @@ const NewProperties = () => {
       }
     },
   });
-
   const updateOpenPlotMutation = useMutation({
     mutationFn: async ({
       id,
@@ -189,11 +188,18 @@ const NewProperties = () => {
     },
     onSuccess: (updatedData) => {
       toast.success("Open plot updated");
+
+      const updated = updatedData?.plot || updatedData?.data || updatedData;
+
+      // 🔥 instantly re-render right-side details
+      setSelectedOpenPlot(updated);
+      setCurrentOpenPlot(updated);
+
       setDialogOpenPlot(false);
-      setCurrentOpenPlot(undefined);
+
       queryClient.invalidateQueries({ queryKey: ["openPlots"] });
-      if (updatedData?.data) setSelectedOpenPlot(updatedData.data);
     },
+
     onError: (err: any) => {
       console.error("updateOpenPlot error:", err?.response || err);
       if (axios.isAxiosError(err)) {
@@ -205,7 +211,6 @@ const NewProperties = () => {
       }
     },
   });
-
   const deleteOpenPlotMutation = useMutation({
     mutationFn: async () => {
       if (!currentOpenPlot) return;
@@ -227,6 +232,7 @@ const NewProperties = () => {
       toast.error(err?.response?.data?.message || "Failed to delete open plot");
     },
   });
+
   const deleteOpenLandMutation = useMutation({
     mutationFn: async () => {
       if (!currentOpenLand) return;
@@ -251,7 +257,6 @@ const NewProperties = () => {
       toast.error(err?.response?.data?.message || "Failed to delete open land");
     },
   });
-
   const createOpenLandMutation = useMutation({
     mutationFn: async (payload: Partial<OpenLand>) => {
       const { data } = await axios.post(
@@ -500,7 +505,7 @@ const NewProperties = () => {
     if (!url) return toast.error("No brochure available to download.");
 
     try {
-      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
+      const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
         url
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
