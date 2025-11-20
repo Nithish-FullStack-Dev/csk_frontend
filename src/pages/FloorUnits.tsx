@@ -348,7 +348,7 @@ const FloorUnits = () => {
                           </div> */}
                         </div>
 
-                        {apartment.status !== "Available" && (
+                        {/* {apartment.status !== "Available" && (
                           <div>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="flex items-center">
@@ -362,7 +362,7 @@ const FloorUnits = () => {
                               className="h-2"
                             />
                           </div>
-                        )}
+                        )} */}
                       </div>
 
                       <Button

@@ -88,10 +88,37 @@ export const fetchAllCustomer_purchased = async () => {
 
 export const fetchLeadByUnitId = async (unitId: string) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/leads/getLeadsByUserId/${unitId}`,
+    `${import.meta.env.VITE_URL}/api/leads/getLeadsByUnitId/${unitId}`,
     { withCredentials: true }
   );
-  return data || [];
+  return data?.data || [];
+};
+
+export const fetchCompletedTaskVerfication = async (
+  projectId: string,
+  unit: string
+) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/project/units/${projectId}/${unit}/completed-tasks`,
+    { withCredentials: true }
+  );
+  return data?.data || [];
+};
+
+export const fetchUnitProgress = async (
+  projectId: string,
+  floorUnitId: string,
+  unit: string
+) => {
+  const { data } = await axios.get(
+    `${
+      import.meta.env.VITE_URL
+    }/api/project/getProject/${projectId}/${floorUnitId}/${unit}/unit-progress`,
+    { withCredentials: true }
+  );
+  return data?.data || [];
 };
 
 //! SAVE UPDATE AND DELETE
@@ -195,6 +222,33 @@ export const useLeadbyUnitId = (unitId: string) => {
     queryKey: ["leadByUnitId", unitId],
     queryFn: () => fetchLeadByUnitId(unitId),
     enabled: !!unitId,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCompletedTaskVerfication = (
+  projectId: string,
+  unit: string
+) => {
+  return useQuery({
+    queryKey: ["completedTaskVerfication", projectId, unit],
+    queryFn: () => fetchCompletedTaskVerfication(projectId, unit),
+    enabled: !!projectId && !!unit,
+    placeholderData: (prev) => prev,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useUnitProgress = (
+  projectId: string,
+  floorUnitId: string,
+  unit: string
+) => {
+  return useQuery({
+    queryKey: ["unitProgress", projectId, floorUnitId, unit],
+    queryFn: () => fetchUnitProgress(projectId, floorUnitId, unit),
+    enabled: !!projectId && !!floorUnitId && !!unit,
     placeholderData: (prev) => prev,
     staleTime: 5 * 60 * 1000,
   });
