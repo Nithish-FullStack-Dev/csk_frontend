@@ -27,6 +27,7 @@ const ProfileForm = () => {
     address: user?.address || "",
     department: user?.department || "",
     avatar: user?.avatar || "",
+    specialization: user?.specialization || "",
   });
 
   const handleSave = async () => {
@@ -78,6 +79,7 @@ const ProfileForm = () => {
       address: user?.address || "",
       department: user?.department || "",
       avatar: user?.avatar || "",
+      specialization: user?.specialization || "",
     });
     setIsEditing(false);
   };
@@ -234,13 +236,27 @@ const ProfileForm = () => {
                     disabled={!isEditing}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
                   <Input
                     id="address"
                     value={formData.address}
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
+                    }
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="specialization">Specialization</Label>
+                  <Input
+                    id="specialization"
+                    value={formData.specialization}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        specialization: e.target.value,
+                      })
                     }
                     disabled={!isEditing}
                   />
