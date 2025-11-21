@@ -247,11 +247,54 @@ export const fetchTasksForPhotoEvidence = async () => {
   return res.data || [];
 };
 
+export const fetchTasksForPhotoEvidenceList = async () => {
+  const res = await axios.get(`${import.meta.env.VITE_URL}/api/project/tasks`, {
+    withCredentials: true,
+  });
+  const tasks = res.data || [];
+
+  const transformed = tasks
+    .filter((task: any) => (task.contractorUploadedPhotos || []).length > 0)
+    .map((task: any) => ({
+      _id: task._id || task._id,
+      title: task.evidenceTitleByContractor || "Photo Submission",
+      task: task.taskTitle || "Untitled Task",
+      project: task.projectName,
+      projectId: task.projectId || task.projectId,
+      floorNumber: task.floorNumber || "",
+      plotNo: task.plotNo || "",
+      unit: task.unit,
+      category: task.constructionPhase || "",
+      date: task.submittedByContractorOn || task.deadline || new Date(),
+      status:
+        (task.status &&
+          String(task.status).toLowerCase().replace(/\s/g, "_")) ||
+        (task.status === undefined &&
+          (task.statusForContractor || task.statusForSiteIncharge)) ||
+        "In progress",
+      images: (task.contractorUploadedPhotos || []).map((url: string) => ({
+        url,
+        caption: "",
+      })),
+      notes: task.noteBySiteIncharge || "",
+    }));
+  return transformed;
+};
+
 export const useTasksForPhotoEvidence = () => {
   return useQuery<PhotoEvidence[]>({
     queryKey: ["photoEvidenceTasks"],
     queryFn: fetchTasksForPhotoEvidence,
-    staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useTasksForPhotoEvidenceList = () => {
+  return useQuery<PhotoEvidence[]>({
+    queryKey: ["photoEvidenceTasksList"],
+    queryFn: fetchTasksForPhotoEvidenceList,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 };

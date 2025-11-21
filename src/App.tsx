@@ -21,6 +21,7 @@ import Settings from "./pages/Settings";
 import AuthRedirect from "./config/AuthRedirect";
 import ScrollToTop from "./ScrollToTop";
 import ProtectedRoute from "./config/ProtectedRoute";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 // Owner specific pages
 const BusinessAnalytics = lazy(() => import("./pages/BusinessAnalytics"));
@@ -210,6 +211,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} position="bottom" />
       <TooltipProvider>
         <AuthProvider>
           <Toaster />

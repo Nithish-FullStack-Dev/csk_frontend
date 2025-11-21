@@ -4,26 +4,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import { ChevronLeft, ChevronRight, Download, Printer } from "lucide-react";
+import { PhotoEvidence } from "@/utils/contractor/ContractorConfig";
 
 interface PhotoDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
-  photoEvidence: {
-    id: string;
-    title: string;
-    project: string;
-    unit: string;
-    task: string;
-    date: string;
-    category: string;
-    status: "completed" | "in_progress" | "pending_review";
-    images: { url: string; caption: string }[];
-  } | null;
+  photoEvidence: PhotoEvidence;
 }
 
 const statusColors: Record<string, string> = {
@@ -108,6 +100,7 @@ const PhotoDetailsDialog = ({
       <DialogHeader>
         <DialogTitle>{photoEvidence.title}</DialogTitle>
       </DialogHeader>
+      <DialogDescription></DialogDescription>
 
       <Tabs defaultValue="photos" className="w-full mt-4">
         <TabsList className="grid w-full grid-cols-2">
@@ -119,13 +112,13 @@ const PhotoDetailsDialog = ({
           <div className="relative bg-black rounded-md overflow-hidden">
             <div className="aspect-video flex items-center justify-center">
               <img
-                src={images[currentImageIndex].url}
-                alt={images[currentImageIndex].caption}
+                src={images[currentImageIndex]?.url}
+                alt={images[currentImageIndex]?.caption}
                 className="max-h-[400px] max-w-full object-contain"
               />
             </div>
 
-            {images.length > 1 && (
+            {images?.length > 1 && (
               <>
                 <Button
                   variant="ghost"
@@ -199,9 +192,15 @@ const PhotoDetailsDialog = ({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Unit/Block
+                Floor Number
               </p>
-              <p>{photoEvidence.unit}</p>
+              <p>{photoEvidence.floorNumber || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Unit Plot No
+              </p>
+              <p>{photoEvidence?.plotNo}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">

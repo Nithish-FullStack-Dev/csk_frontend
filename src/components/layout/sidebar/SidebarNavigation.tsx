@@ -2,21 +2,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "react-router-dom";
 import SidebarLink from "./SidebarLink";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { buildNavigationForRole } from "./navigationConfig";
 import "./SidebarNavigation.css";
+import { fetchRolePermissions } from "@/pages/UserManagement";
 
 interface SidebarNavigationProps {
   collapsed: boolean;
 }
-
-const fetchRolePermissions = async (roleName: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
-    { withCredentials: true }
-  );
-  return data?.permissions || [];
-};
 
 const SidebarNavigation = ({ collapsed }: SidebarNavigationProps) => {
   const { user } = useAuth();
