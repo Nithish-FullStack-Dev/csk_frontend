@@ -63,7 +63,6 @@ import { Property } from "@/types/property";
 import { useAuth } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "../UserManagement";
 import {
   useAvaliableUnits,
   useFloorUnits,
@@ -84,6 +83,7 @@ import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog
 import { Building } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 const LeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");

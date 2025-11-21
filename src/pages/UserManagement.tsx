@@ -39,6 +39,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
 import Loader from "@/components/Loader";
 import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 // API functions
 export const fetchAllRoles = async () => {
@@ -56,14 +57,6 @@ const fetchAllUsers = async () => {
     { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
   );
   return data.users || [];
-};
-
-export const fetchRolePermissions = async (roleName: string) => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
-    { withCredentials: true }
-  );
-  return data || null;
 };
 
 const UserManagement = () => {

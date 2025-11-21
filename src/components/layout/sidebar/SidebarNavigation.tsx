@@ -4,11 +4,19 @@ import SidebarLink from "./SidebarLink";
 import { useQuery } from "@tanstack/react-query";
 import { buildNavigationForRole } from "./navigationConfig";
 import "./SidebarNavigation.css";
-import { fetchRolePermissions } from "@/pages/UserManagement";
+import axios from "axios";
 
 interface SidebarNavigationProps {
   collapsed: boolean;
 }
+
+const fetchRolePermissions = async (roleName: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
+    { withCredentials: true }
+  );
+  return data?.permissions || [];
+};
 
 const SidebarNavigation = ({ collapsed }: SidebarNavigationProps) => {
   const { user } = useAuth();

@@ -45,40 +45,17 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
-import axios from "axios";
 import { format, formatDistanceToNow, set } from "date-fns";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
 import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "../UserManagement";
-import { AddCustomerDialog } from "../agent/AddCustomerDialog";
-import {
-  useAvaliableUnits,
-  useFloorUnits,
-  useProjects,
-} from "@/utils/buildings/Projects";
-import {
-  fetchAllAgents,
-  fetchAllCustomer_purchased,
-  fetchAllLeads,
-  fetchLeads,
-  Lead,
-  useSaveLead,
-  useUpdateLead,
-} from "@/utils/leads/LeadConfig";
+import { fetchAllLeads, Lead } from "@/utils/leads/LeadConfig";
 import { Property } from "@/types/property";
 import CircleLoader from "@/components/CircleLoader";
 import { Building } from "@/types/building";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 const AdminLeadManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");

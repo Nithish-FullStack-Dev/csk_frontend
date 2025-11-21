@@ -63,13 +63,13 @@ import { CalendarIcon } from "lucide-react";
 import { useAuth, User } from "@/contexts/AuthContext";
 import { Calendar } from "@/components/ui/calendar";
 import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "../UserManagement";
 import {
   Commission,
   CommissionEligibleLead,
   fetchAllCommission,
   fetchCommissionEligibleLeads,
 } from "@/utils/leads/CommissionConfig";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 const MyCommissions = () => {
   const { user } = useAuth();

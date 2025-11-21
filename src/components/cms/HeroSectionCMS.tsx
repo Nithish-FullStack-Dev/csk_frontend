@@ -10,9 +10,9 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "@/pages/UserManagement";
 import { toast } from "sonner";
 import Loader from "../Loader";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 const HeroSectionCMS = () => {
   const { user } = useAuth();

@@ -40,7 +40,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Permission } from "@/types/permission";
-import { fetchRolePermissions } from "./UserManagement";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 
 export interface TeamMember {
   _id: string;
