@@ -2,9 +2,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "react-router-dom";
 import SidebarLink from "./SidebarLink";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { buildNavigationForRole } from "./navigationConfig";
 import "./SidebarNavigation.css";
+import axios from "axios";
 
 interface SidebarNavigationProps {
   collapsed: boolean;

@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchRolePermissions } from "@/pages/UserManagement";
 import { Permission } from "@/types/permission";
+import { fetchRolePermissions } from "@/utils/units/Methods";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 

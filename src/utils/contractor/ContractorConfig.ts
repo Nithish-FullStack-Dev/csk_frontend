@@ -77,6 +77,27 @@ export interface Task {
   noteBySiteIncharge: string;
 }
 
+export interface VerificationTask {
+  _id: string;
+  taskTitle: string;
+  projectName: string;
+  unit: string;
+  contractorName: string;
+  submittedByContractorOn: Date;
+  submittedBySiteInchargeOn: Date;
+  priority: "high" | "medium" | "low";
+  status: "pending verification" | "approved" | "rejected" | "rework";
+  contractorUploadedPhotos: string[];
+  constructionPhase: string;
+  projectId: string;
+  plotNo: string;
+  floorNumber: string;
+  verificationDecision?: string;
+  qualityAssessment?: string;
+  noteBySiteIncharge?: string;
+  siteInchargeUploadedPhotos?: string[];
+}
+
 export const statusColors: Record<string, string> = {
   pending: "bg-gray-100 text-gray-800",
   in_progress: "bg-blue-100 text-blue-800",
@@ -117,7 +138,7 @@ export const fetchTasks = async () => {
 
 export const useTasks = () => {
   return useQuery({
-    queryKey: ["tasks"],
+    queryKey: ["contractorTasks"],
     queryFn: fetchTasks,
     staleTime: 5 * 60 * 1000, // 5 minutes
     placeholderData: keepPreviousData,
@@ -247,11 +268,78 @@ export const fetchTasksForPhotoEvidence = async () => {
   return res.data || [];
 };
 
+export const fetchTasksForPhotoEvidenceList = async () => {
+  const res = await axios.get(`${import.meta.env.VITE_URL}/api/project/tasks`, {
+    withCredentials: true,
+  });
+  const tasks = res.data || [];
+
+  const transformed = tasks
+    .filter((task: any) => (task.contractorUploadedPhotos || []).length > 0)
+    .map((task: any) => ({
+      _id: task._id || task._id,
+      title: task.evidenceTitleByContractor || "Photo Submission",
+      task: task.taskTitle || "Untitled Task",
+      project: task.projectName,
+      projectId: task.projectId || task.projectId,
+      floorNumber: task.floorNumber || "",
+      plotNo: task.plotNo || "",
+      unit: task.unit,
+      category: task.constructionPhase || "",
+      date: task.submittedByContractorOn || task.deadline || new Date(),
+      status:
+        (task.status &&
+          String(task.status).toLowerCase().replace(/\s/g, "_")) ||
+        (task.status === undefined &&
+          (task.statusForContractor || task.statusForSiteIncharge)) ||
+        "In progress",
+      images: (task.contractorUploadedPhotos || []).map((url: string) => ({
+        url,
+        caption: "",
+      })),
+      notes: task.noteBySiteIncharge || "",
+    }));
+  return transformed;
+};
+
 export const useTasksForPhotoEvidence = () => {
   return useQuery<PhotoEvidence[]>({
     queryKey: ["photoEvidenceTasks"],
     queryFn: fetchTasksForPhotoEvidence,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const useTasksForPhotoEvidenceList = () => {
+  return useQuery<PhotoEvidence[]>({
+    queryKey: ["photoEvidenceTasksList"],
+    queryFn: fetchTasksForPhotoEvidenceList,
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+};
+
+export const fetchContractors = async () => {
+  const res = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/contractors`
+  );
+  return res.data.data;
+};
+
+export const assignContractor = async ({ projectId, unit, contractorId }) => {
+  return axios.post(
+    `${import.meta.env.VITE_URL}/api/project/assign-contractor`,
+    { projectId, unit, contractorId },
+    { withCredentials: true }
+  );
+};
+
+export const useContractors = () => {
+  return useQuery({
+    queryKey: ["contractors"],
+    queryFn: fetchContractors,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     placeholderData: keepPreviousData,
   });
 };

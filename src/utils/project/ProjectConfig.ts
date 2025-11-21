@@ -15,16 +15,26 @@ export const mapPriority = (priority: string): "high" | "medium" | "low" => {
   }
 };
 
+export const statusColors: Record<string, string> = {
+  "in progress": "text-blue-600 bg-blue-50 border-blue-200",
+  completed: "text-green-600 bg-green-50 border-green-200",
+  "Not Started": "text-gray-600 bg-gray-50 border-gray-200",
+  planning: "text-indigo-600 bg-indigo-50 border-indigo-200",
+  "on hold": "text-yellow-600 bg-yellow-50 border-yellow-200",
+  delayed: "text-red-600 bg-red-50 border-red-200",
+  "under inspection": "text-purple-600 bg-purple-50 border-purple-200",
+};
+
 export interface Task {
   _id?: string;
   contractor: User | string;
   title: string;
   statusForContractor: "In progress" | "completed" | "pending review";
   statusForSiteIncharge:
-  | "pending verification"
-  | "approved"
-  | "rework"
-  | "rejected";
+    | "pending verification"
+    | "approved"
+    | "rework"
+    | "rejected";
   deadline: string | Date;
   progressPercentage: number;
   isApprovedByContractor: boolean;
@@ -41,11 +51,11 @@ export interface Task {
   priority?: string;
   description?: string;
   status?:
-  | "pending verification"
-  | "approved"
-  | "completed"
-  | "rejected"
-  | "in progress";
+    | "pending verification"
+    | "approved"
+    | "completed"
+    | "rejected"
+    | "in progress";
 }
 
 export interface Project {
@@ -81,12 +91,13 @@ export interface Contractor {
   name: string;
   company: string;
   specialization: string;
-  projects: [{
+  projects: {
     _id: string;
-    projectName: string,
-    floorNumber: string,
-    unitType: string
-  }];
+    projectName: string;
+    floorNumber: string;
+    unitType: string;
+  }[];
+
   contactPerson: string;
   phone: string;
   email: string;
@@ -187,9 +198,10 @@ export const fetchFormattedTasks = async () => {
     .sort((a, b) => a.daysRemaining - b.daysRemaining);
 };
 
-export const fetchTasks = async (): Promise<Task[]> => {
+export const fetchTasks = async () => {
   const response = await axios.get(
-    `${import.meta.env.VITE_URL}/api/project/tasks`
+    `${import.meta.env.VITE_URL}/api/project/tasks`,
+    { withCredentials: true }
   );
   return response.data;
 };

@@ -33,6 +33,7 @@ export interface User {
   address?: string;
   department?: string;
   avatar?: string;
+  specialization?: string;
   updatedAt?: Date;
   createdAt?: Date;
   lastLogin?: Date;

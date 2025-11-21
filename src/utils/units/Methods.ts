@@ -58,3 +58,11 @@ export const useCustomerPurchasedUnits = (customerId: string) => {
     enabled: !!customerId,
   });
 };
+
+export const fetchRolePermissions = async (roleName: string) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
+    { withCredentials: true }
+  );
+  return data || null;
+};

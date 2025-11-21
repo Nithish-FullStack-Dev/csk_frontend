@@ -54,6 +54,7 @@ interface ProjectFormValues {
   description: string;
   teamSize: number;
   siteIncharge: User | string;
+  status: string;
 }
 
 // Validation function
@@ -106,6 +107,7 @@ const ContractorProjects = () => {
     description: "",
     teamSize: 1,
     siteIncharge: "",
+    status: "",
   });
   const [formErrors, setFormErrors] = useState<
     Partial<Record<keyof ProjectFormValues, string>>
@@ -166,6 +168,7 @@ const ContractorProjects = () => {
         description: "",
         teamSize: 1,
         siteIncharge: "",
+        status: "",
       });
       setFormErrors({});
     },
@@ -230,11 +233,11 @@ const ContractorProjects = () => {
         endDate: new Date(formData.estimatedEndDate),
         estimatedBudget: formData.estimatedBudget,
         description: formData.description,
-        status: "New",
         teamSize: formData.teamSize,
         floorUnit: formData.floorUnit,
         unit: formData.unit,
         siteIncharge: user.role === "site_incharge" ? user._id : null,
+        status: formData.status,
       };
 
       createProject.mutate(newProject);
@@ -325,7 +328,7 @@ const ContractorProjects = () => {
           </CardContent>
         </Card>
 
-        <h2 className="text-2xl font-semibold">Project List</h2>
+        {/* <h2 className="text-2xl font-semibold">Project List</h2>
         <div className="space-y-4">
           {projects.map((project) => {
             return (
@@ -395,14 +398,14 @@ const ContractorProjects = () => {
                           {project?.estimatedBudget?.toLocaleString()}
                         </span>
                       </div>
-                      {/* <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
                         <Clock className="mr-1 h-4 w-4" />
                         <span>
                           {typeof project.floorUnit === "object" &&
                             project?.floorUnit?.floorNumber}
                           % completed
                         </span>
-                      </div> */}
+                      </div>
                     </div>
                   </div>
 
@@ -428,7 +431,7 @@ const ContractorProjects = () => {
               </Card>
             );
           })}
-        </div>
+        </div> */}
       </div>
 
       {/* Add Project Dialog */}
@@ -597,6 +600,33 @@ const ContractorProjects = () => {
               </div>
 
               <div>
+                <label className="text-sm font-medium">Project Status</label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => handleInputChange(value, "status")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select project status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Not Started">Not Started</SelectItem>
+                    <SelectItem value="Planning">Planning</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="On Hold">On Hold</SelectItem>
+                    <SelectItem value="Delayed">Delayed</SelectItem>
+                    <SelectItem value="Under Inspection">
+                      Under Inspection
+                    </SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {formErrors.status && (
+                  <p className="text-sm text-red-500">{formErrors.status}</p>
+                )}
+              </div>
+
+              <div>
                 <label className="text-sm font-medium">Start Date</label>
                 <Input
                   type="date"
@@ -693,6 +723,7 @@ const ContractorProjects = () => {
                     description: "",
                     teamSize: 1,
                     siteIncharge: "",
+                    status: "",
                   });
                   setFormErrors({});
                 }}

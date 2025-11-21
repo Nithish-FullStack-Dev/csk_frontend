@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,17 +9,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Filter,
-  RefreshCw,
-  Camera,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Upload,
-} from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Camera } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -29,12 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
-import TaskVerificationDialog from "./TaskVerificationDialog";
 import { toast } from "sonner";
 import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { TabsContent } from "@/components/ui/tabs";
 import {
   DialogContent,
   DialogHeader,
@@ -44,23 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-interface VerificationTask {
-  _id: string;
-  taskTitle: string;
-  projectName: string;
-  unit: string;
-  contractorName: string;
-  phase: string;
-  submittedDate: string;
-  priority: "high" | "medium" | "low";
-  status: "pending verification" | "approved" | "rejected" | "rework";
-  contractorUploadedPhotos: [string];
-  submittedByContractorOn: Date;
-  submittedBySiteInchargeOn: Date;
-  constructionPhase: string;
-  projectId: string;
-}
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { VerificationTask } from "@/utils/contractor/ContractorConfig";
 
 const priorityColors: Record<string, string> = {
   high: "bg-red-100 text-red-800",
@@ -75,234 +48,92 @@ const statusColors: Record<string, string> = {
   rework: "bg-amber-100 text-amber-800",
 };
 
-const TaskVerificationList = ({
-  setApprovedCount,
-  setReworkCount,
-  setPendingCount,
-}) => {
-  const [tasks, setTasks] = useState<VerificationTask[]>([]);
+const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectFilter, setProjectFilter] = useState("");
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState("");
-  const [verificationStatus, setVerificationStatus] = useState<
-    "approved" | "rejected" | "rework"
-  >("approved");
+  const [verificationStatus, setVerificationStatus] = useState("approved");
   const [notes, setNotes] = useState("");
-  const [quality, setQuality] = useState<
-    "excellent" | "good" | "acceptable" | "poor"
-  >("good");
+  const [quality, setQuality] = useState("good");
   const [photos, setPhotos] = useState<File[]>([]);
-  const [selectedTask, setSelectedTask] = useState<VerificationTask>();
+  const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(
+    null
+  );
 
-  const fetchTasks = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/tasks`,
-        {
-          withCredentials: true,
-        }
-      ); // Update this to your actual API endpoint
-      const formattedTasks: VerificationTask[] = res.data.map(
-        (task: any, index: number) => ({
-          _id: task._id,
-          taskTitle: task.taskTitle,
-          projectName: task.projectName,
-          unit: task.unit,
-          contractorName: task.contractorName,
-          submittedByContractorOn: task.submittedByContractorOn,
-          status: task.status,
-          priority: mapPriority(task.priority),
-          contractorUploadedPhotos: task.contractorUploadedPhotos,
-          constructionPhase: task.constructionPhase,
-          projectId: task.projectId,
-        })
-      );
-      setTasks(formattedTasks);
-      const pending = tasks.filter(
-        (t) => t.status === "pending verification"
-      ).length;
-      const approved = tasks.filter((t) => {
-        return (
-          t.status === "approved" &&
-          t.submittedBySiteInchargeOn &&
-          new Date(t.submittedBySiteInchargeOn).getMonth() ===
-            new Date().getMonth() &&
-          new Date(t.submittedBySiteInchargeOn).getFullYear() ===
-            new Date().getFullYear()
-        );
-      }).length;
-      const rework = tasks.filter((t) => t.status === "rework").length;
+  const queryClient = useQueryClient();
 
-      setPendingCount(pending);
-      setApprovedCount(approved);
-      setReworkCount(rework);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-      setError("Failed to load tasks.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // 1. Upload photos one-by-one
-    const uploadedImageUrls: string[] = [];
-    for (const photo of photos) {
-      const formData = new FormData();
-      formData.append("file", photo);
-
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        if (res.data.url) uploadedImageUrls.push(res.data.url);
-      } catch (err) {
-        console.error("Upload failed", err);
-      }
-    }
-
-    // 2. Create new task object
-    const newTask = {
-      noteBySiteIncharge: notes,
-      qualityAssessment: quality,
-      verificationDecision: verificationStatus,
-      photos: uploadedImageUrls,
-    };
-
-    // 3. Send task data to backend
-    try {
-      await axios.patch(
+  const mutation = useMutation({
+    mutationFn: async (updatedTaskData: any) => {
+      return axios.patch(
         `${import.meta.env.VITE_URL}/api/project/site-incharge/${
-          selectedTask.projectId
-        }/${selectedTask._id}/task`,
-        newTask,
+          selectedTask?.projectId
+        }/${selectedTask?._id}/task`,
+        updatedTaskData,
         { withCredentials: true }
       );
+    },
+    onSuccess: () => {
       toast.success("Task Updated successfully!");
-      fetchTasks();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ["taskVerificationList"] });
+    },
+    onError: () => {
       toast.error("Failed to update task.");
-      console.error("Updation error:", error);
-    } finally {
+    },
+    onSettled: () => {
       setVerificationDialogOpen(false);
       setNotes("");
       setPhotos([]);
       setQuality("good");
       setVerificationStatus("approved");
-      setIsUpdating(false);
+    },
+  });
+
+  const mapPriority = (priority: string): any => {
+    const lower = priority?.toLowerCase();
+    if (["low", "medium", "high"].includes(lower)) return lower;
+    return "medium";
+  };
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    const uploadedImageUrls: string[] = [];
+
+    for (const photo of photos) {
+      const formData = new FormData();
+      formData.append("file", photo);
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/uploads/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      if (res.data.url) uploadedImageUrls.push(res.data.url);
     }
+
+    mutation.mutate({
+      noteBySiteIncharge: notes,
+      qualityAssessment: quality,
+      verificationDecision: verificationStatus,
+      siteInchargeUploadedPhotos: uploadedImageUrls,
+    });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setPhotos((prevPhotos) => [...prevPhotos, ...newFiles]);
-    }
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotos((prevPhotos) => prevPhotos.filter((_, i) => i !== index));
-  };
-
-  // const mapStatus = (status: string): VerificationTask["status"] => {
-  //   switch (status.toLowerCase()) {
-  //     case "pending verification":
-  //       return "pending_verification";
-  //     case "rejected":
-  //     case "rework":
-  //       return status.toLowerCase() as VerificationTask["status"];
-  //     default:
-  //       return "pending_verification";
-  //   }
-  // };
-
-  const mapPriority = (priority: string): VerificationTask["priority"] => {
-    const lower = priority.toLowerCase();
-    if (["low", "medium", "high"].includes(lower)) return lower as any;
-    if (["good", "excellent"].includes(lower)) return lower as any;
-    return "medium"; // default fallback
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const filteredTasks = tasks.filter((task) => {
-    // Apply status filter
-    if (filter !== "all" && task.status !== filter) {
+  const filteredTasks = tasks.filter((task: any) => {
+    if (filter !== "all" && task.status?.toLowerCase() !== filter.toLowerCase())
       return false;
-    }
-
-    // Apply project filter
-    if (projectFilter && task.projectName !== projectFilter) {
-      return false;
-    }
-
-    // Apply search query
     if (
       searchQuery &&
       !task.taskTitle.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
+    )
       return false;
-    }
-
     return true;
   });
 
-  const handleVerify = (taskId: string) => {
-    setSelectedTaskId(taskId);
-    setVerificationDialogOpen(true);
-  };
-
-  const handleQuickAction = (
-    taskId: string,
-    action: "approve" | "reject" | "rework"
-  ) => {
-    // Update task status
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task._id === taskId
-          ? {
-              ...task,
-              status:
-                action === "approve"
-                  ? "approved"
-                  : action === "reject"
-                  ? "rejected"
-                  : "rework",
-            }
-          : task
-      )
-    );
-
-    // Show notification
-    const task = tasks.find((t) => t._id === taskId);
-
-    if (action === "approve") {
-      toast.success(`Task approved`, {
-        description: `${task?.taskTitle} has been approved and sent for payment processing`,
-      });
-    } else if (action === "reject") {
-      toast.error(`Task rejected`, {
-        description: `${task?.taskTitle} has been rejected. Contractor has been notified.`,
-      });
-    } else {
-      toast.warning(`Task requires rework`, {
-        description: `${task?.taskTitle} has been sent back for rework. Contractor has been notified.`,
-      });
-    }
-  };
+  if (isError) {
+    console.log(tasks);
+    return <div className="text-red-500">Error loading tasks.</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -321,29 +152,14 @@ const TaskVerificationList = ({
       <Tabs defaultValue="all" onValueChange={setFilter}>
         <TabsList className="hidden md:block">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending_verification">Pending</TabsTrigger>
+          <TabsTrigger value="pending verification">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rework">Rework</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
-        <div className="block md:hidden">
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="pending_verification">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rework">Rework</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </Tabs>
 
       <div className="border rounded-md">
-        {/* Desktop Table */}
         <div className="hidden md:block">
           <Table>
             <TableHeader>
@@ -358,214 +174,74 @@ const TaskVerificationList = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-6 text-muted-foreground"
-                  >
+                  <TableCell colSpan={7} className="text-center py-6">
                     Loading tasks...
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-6 text-red-500"
-                  >
-                    {error}
                   </TableCell>
                 </TableRow>
               ) : filteredTasks.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-6 text-muted-foreground"
-                  >
-                    No tasks found matching your filters
+                  <TableCell colSpan={7} className="text-center py-6">
+                    No tasks found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTasks.map((task) => (
-                  <TableRow key={task._id}>
-                    <TableCell className="font-medium">
-                      {task.taskTitle}
-                    </TableCell>
+                filteredTasks.map((task: any) => (
+                  <TableRow key={task?._id}>
+                    <TableCell>{task?.taskTitle}</TableCell>
                     <TableCell>
-                      {task.projectName} / {task.unit}
+                      {task?.projectName} / {task?.floorNumber} - {task?.plotNo}
                     </TableCell>
-                    <TableCell>{task.contractorName}</TableCell>
+                    <TableCell>{task?.contractorName}</TableCell>
                     <TableCell>
                       {new Date(
-                        task.submittedByContractorOn
+                        task?.submittedByContractorOn
                       ).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={statusColors[task.status]}
+                        className={statusColors[task?.status]}
                       >
-                        {task.status === "pending verification"
+                        {task?.status === "pending_verification"
                           ? "Pending Verification"
-                          : task.status.charAt(0).toUpperCase() +
-                            task.status.slice(1)}
+                          : task?.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={priorityColors[task.priority]}
+                        className={priorityColors[task?.priority]}
                       >
-                        {task.priority.charAt(0).toUpperCase() +
-                          task.priority.slice(1)}
+                        {task?.priority}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end space-x-1">
-                        {task.status === "pending verification" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-green-600 hover:text-green-800 hover:bg-green-100"
-                              title="Approve"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-amber-600 hover:text-amber-800 hover:bg-amber-100"
-                              title="Request Rework"
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                              title="Reject"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setPhotos([]); // or task.photos if applicable
-                            setVerificationDialogOpen(true);
-                          }}
-                        >
-                          <Camera className="h-4 w-4 mr-1" />
-                          {task.status === "pending verification"
-                            ? "Verify"
-                            : "View"}
-                        </Button>
-                      </div>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setVerificationStatus(
+                            task?.verificationDecision || "approved"
+                          );
+                          setQuality(task?.qualityAssessment || "good");
+                          setNotes(task?.noteBySiteIncharge || "");
+                          setVerificationDialogOpen(true);
+                        }}
+                      >
+                        <Camera className="h-4 w-4 mr-1" />
+                        {task?.status === "pending_verification"
+                          ? "Verify"
+                          : "View"}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="block md:hidden">
-          {loading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              Loading tasks...
-            </div>
-          ) : error ? (
-            <div className="p-4 text-center text-red-500">{error}</div>
-          ) : filteredTasks.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
-              No tasks found matching your filters
-            </div>
-          ) : (
-            filteredTasks.map((task) => (
-              <div
-                key={task._id}
-                className="border rounded-lg p-4 mb-3 shadow-sm bg-white"
-              >
-                <div className="font-medium text-lg mb-2">{task.taskTitle}</div>
-                <div className="text-sm text-muted-foreground mb-1">
-                  <span className="font-semibold">Project / Unit: </span>
-                  {task.projectName} / {task.unit}
-                </div>
-                <div className="text-sm text-muted-foreground mb-1">
-                  <span className="font-semibold">Contractor: </span>
-                  {task.contractorName}
-                </div>
-                <div className="text-sm text-muted-foreground mb-1">
-                  <span className="font-semibold">Submitted: </span>
-                  {new Date(task.submittedByContractorOn).toLocaleDateString()}
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <Badge
-                    variant="outline"
-                    className={statusColors[task.status]}
-                  >
-                    {task.status === "pending verification"
-                      ? "Pending Verification"
-                      : task.status.charAt(0).toUpperCase() +
-                        task.status.slice(1)}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={priorityColors[task.priority]}
-                  >
-                    {task.priority.charAt(0).toUpperCase() +
-                      task.priority.slice(1)}
-                  </Badge>
-                </div>
-                <div className="flex justify-end space-x-2 mt-3">
-                  {task.status === "pending verification" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-green-600 hover:text-green-800 hover:bg-green-100"
-                        title="Approve"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-amber-600 hover:text-amber-800 hover:bg-amber-100"
-                        title="Request Rework"
-                      >
-                        <AlertCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-600 hover:text-red-800 hover:bg-red-100"
-                        title="Reject"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTask(task);
-                      setVerificationDialogOpen(true);
-                    }}
-                  >
-                    <Camera className="h-4 w-4 mr-1" />
-                    {task.status === "pending verification" ? "Verify" : "View"}
-                  </Button>
-                </div>
-              </div>
-            ))
-          )}
         </div>
       </div>
 
@@ -576,37 +252,20 @@ const TaskVerificationList = ({
         <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Verify Task Completion</DialogTitle>
-            <DialogDescription>
-              Review the contractor's work and verify task completion.
-            </DialogDescription>
+            <DialogDescription />
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="bg-muted p-3 rounded-md">
-              <p className="font-medium">
-                {selectedTask && selectedTask.taskTitle}
-              </p>
+              <p className="font-medium">{selectedTask?.taskTitle}</p>
               <p className="text-sm text-muted-foreground">
-                {(selectedTask && selectedTask?.projectName) || "Untitled"} /{" "}
-                {selectedTask && selectedTask.unit}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Phase: {selectedTask && selectedTask.constructionPhase}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Contractor: {selectedTask && selectedTask.contractorName}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Completed on:{" "}
-                {selectedTask &&
-                  new Date(
-                    selectedTask.submittedByContractorOn
-                  ).toLocaleDateString()}
+                {selectedTask?.projectName} / {selectedTask?.floorNumber} -{" "}
+                {selectedTask?.plotNo}
               </p>
             </div>
 
             <Tabs defaultValue="contractor" className="w-full">
-              <TabsList className="w-full flex  sm:flex-row">
+              <TabsList className="w-full flex sm:flex-row">
                 <TabsTrigger value="contractor" className="flex-1">
                   Contractor Photos
                 </TabsTrigger>
@@ -614,94 +273,54 @@ const TaskVerificationList = ({
                   Your Verification
                 </TabsTrigger>
               </TabsList>
+
               <TabsContent value="contractor" className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {selectedTask &&
-                    selectedTask.contractorUploadedPhotos?.map(
-                      (photo, index) => (
-                        <div
-                          key={index}
-                          className="relative rounded-md overflow-hidden border border-border"
-                        >
-                          <img
-                            src={photo}
-                            alt={`Contractor Evidence ${index + 1}`}
-                            className="w-full h-48 object-cover"
-                          />
-                        </div>
-                      )
-                    )}
+                  {selectedTask?.contractorUploadedPhotos?.map(
+                    (photo, index) => (
+                      <img
+                        key={index}
+                        src={photo}
+                        className="w-full h-48 object-cover rounded-md"
+                      />
+                    )
+                  )}
                 </div>
               </TabsContent>
-              <TabsContent value="verification" className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label>Upload Verification Photos</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-                    {photos.map((photo, index) => (
-                      <div
-                        key={index}
-                        className="relative rounded-md overflow-hidden border border-border"
-                      >
-                        <img
-                          src={URL.createObjectURL(photo)}
-                          alt={`Verification ${index + 1}`}
-                          className="w-full h-48 object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-1 right-1 bg-black bg-opacity-60 hover:bg-opacity-80 rounded-full"
-                          onClick={() => removePhoto(index)}
-                        >
-                          <XCircle className="h-4 w-4 text-white" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1 border-dashed"
-                      onClick={() =>
-                        document
-                          .getElementById("verification-photo-upload")
-                          ?.click()
-                      }
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Photos
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="border-dashed"
-                      onClick={() =>
-                        document
-                          .getElementById("verification-camera-capture")
-                          ?.click()
-                      }
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
+              <TabsContent value="verification" className="space-y-4 pt-4">
+                <div>
+                  <Label>Previous Verification Photos</Label>
+                  {selectedTask?.siteInchargeUploadedPhotos?.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No verification photos uploaded yet.
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedTask?.siteInchargeUploadedPhotos?.map(
+                      (photo, index) => (
+                        <img
+                          key={index}
+                          src={photo}
+                          className="w-full h-48 object-cover rounded-md"
+                        />
+                      )
+                    )}
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Upload New Verification Photos</Label>
                   <Input
-                    id="verification-photo-upload"
                     type="file"
-                    className="hidden"
-                    accept="image/*"
                     multiple
-                    onChange={handleFileChange}
-                  />
-                  <Input
-                    id="verification-camera-capture"
-                    type="file"
-                    className="hidden"
                     accept="image/*"
-                    capture="environment"
-                    onChange={handleFileChange}
+                    onChange={(e) =>
+                      setPhotos((prev) => [
+                        ...prev,
+                        ...Array.from(e.target.files || []),
+                      ])
+                    }
                   />
                 </div>
               </TabsContent>
@@ -711,24 +330,24 @@ const TaskVerificationList = ({
               <Label>Quality Assessment</Label>
               <RadioGroup
                 value={quality}
-                onValueChange={setQuality as any}
-                className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0"
+                onValueChange={setQuality}
+                className="flex flex-col sm:flex-row sm:space-x-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="excellent" id="excellent" />
-                  <Label htmlFor="excellent">Excellent</Label>
+                  <RadioGroupItem value="excellent" />
+                  <Label>Excellent</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="good" id="good" />
-                  <Label htmlFor="good">Good</Label>
+                  <RadioGroupItem value="good" />
+                  <Label>Good</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="acceptable" id="acceptable" />
-                  <Label htmlFor="acceptable">Acceptable</Label>
+                  <RadioGroupItem value="acceptable" />
+                  <Label>Acceptable</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="poor" id="poor" />
-                  <Label htmlFor="poor">Poor</Label>
+                  <RadioGroupItem value="poor" />
+                  <Label>Poor</Label>
                 </div>
               </RadioGroup>
             </div>
@@ -737,79 +356,41 @@ const TaskVerificationList = ({
               <Label>Verification Decision</Label>
               <Select
                 value={verificationStatus}
-                onValueChange={setVerificationStatus as any}
-                required
+                onValueChange={setVerificationStatus}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="approved">
-                    <div className="flex items-center">
-                      <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                      <span>Approved - Work meets requirements</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="rework">
-                    <div className="flex items-center">
-                      <AlertCircle className="mr-2 h-4 w-4 text-amber-600" />
-                      <span>Needs Rework - Specific corrections required</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="rejected">
-                    <div className="flex items-center">
-                      <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                      <span>Rejected - Work fails to meet standards</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rework">Rework</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes & Feedback</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={
-                  verificationStatus !== "approved"
-                    ? "Please describe the issues that need to be addressed"
-                    : "Add any comments or feedback (optional)"
-                }
-                rows={3}
-                required={verificationStatus !== "approved"}
-              />
-            </div>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
 
-            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full sm:w-auto"
                 onClick={() => {
                   setVerificationDialogOpen(false);
                   setNotes("");
                   setPhotos([]);
                   setQuality("good");
                   setVerificationStatus("approved");
-                  setIsUpdating(false);
                 }}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                className="w-full sm:w-auto"
-                variant={
-                  verificationStatus === "approved"
-                    ? "default"
-                    : verificationStatus === "rework"
-                    ? "secondary"
-                    : "destructive"
-                }
-              >
-                {isUpdating ? "Updating..." : "Submit Verification"}
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? "Updating..." : "Submit Verification"}
               </Button>
             </DialogFooter>
           </form>

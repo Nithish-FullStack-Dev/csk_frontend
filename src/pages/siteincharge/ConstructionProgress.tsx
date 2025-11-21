@@ -203,8 +203,6 @@ const ConstructionProgress = () => {
     return aggregatePhaseProgress(tasks, selectedProject);
   };
 
-  const getProjectName = () => selectedProject || "Select a Project";
-
   const progressData = getProgressData();
   const overallProgress =
     projectsProgress.reduce((sum, project) => sum + project.progress, 0) /

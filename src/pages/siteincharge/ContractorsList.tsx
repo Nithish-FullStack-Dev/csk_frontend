@@ -17,6 +17,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -64,18 +65,11 @@ import { User } from "@/contexts/AuthContext";
 import { set } from "date-fns";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 
-const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-800",
-  on_hold: "bg-amber-100 text-amber-800",
-  inactive: "bg-gray-100 text-gray-800",
-};
-
 const ContractorsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("");
-  const [projectFilter, setProjectFilter] = useState("");
+  // const [projectFilter, setProjectFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  // const [contractors, setContractors] = useState([]);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [selectedContractor, setSelectedContractor] = useState(null);
@@ -86,7 +80,6 @@ const ContractorsList = () => {
   // const [allProjects, setAllProjects] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
-  const [phase, setPhase] = useState("");
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -140,8 +133,6 @@ const ContractorsList = () => {
   }
   if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
-  const projects = Array.from(new Set(contractors.flatMap((c) => c.projects)));
-
   const filteredContractors = contractors.filter((contractor) => {
     // Apply search query
     const matchesSearch =
@@ -156,10 +147,10 @@ const ContractorsList = () => {
       contractor.specialization === specializationFilter;
 
     // Apply project filter
-    const matchesProject =
-      projectFilter === "" ||
-      projectFilter === "all-projects" ||
-      contractor.projects.filter((p) => p._id === projectFilter).length > 0;
+    // const matchesProject =
+    //   projectFilter === "" ||
+    //   projectFilter === "all-projects" ||
+    //   contractor.projects.filter((p) => p._id === projectFilter).length > 0;
 
     // Apply status filter
     const matchesStatus =
@@ -167,9 +158,7 @@ const ContractorsList = () => {
       statusFilter === "all-statuses" ||
       contractor.status === statusFilter;
 
-    return (
-      matchesSearch && matchesSpecialization && matchesProject && matchesStatus
-    );
+    return matchesSearch && matchesSpecialization && matchesStatus;
   });
 
   const specializations = Array.from(
@@ -270,11 +259,16 @@ const ContractorsList = () => {
                 <SelectItem value="all-specializations">
                   All Specializations
                 </SelectItem>
-                {specializations.map((specialization) => (
-                  <SelectItem key={specialization} value={specialization}>
-                    {specialization}
-                  </SelectItem>
-                ))}
+                {specializations?.map((specialization, index) => {
+                  if (!specialization || specialization.trim() === "")
+                    return null;
+
+                  return (
+                    <SelectItem key={index} value={specialization}>
+                      {specialization}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -320,7 +314,7 @@ const ContractorsList = () => {
               <SelectContent>
                 <SelectItem value="all-statuses">All Statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
@@ -372,17 +366,25 @@ const ContractorsList = () => {
                             Status: {contractor?.status}
                           </div>
                         </TableCell>
-                        <TableCell>{contractor.specialization}</TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            {contractor.projects.map((project, index) => (
-                              <div
+                          {contractor.specialization || "General"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1.5">
+                            {contractor?.projects?.length === 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                No projects assigned
+                              </span>
+                            )}
+                            {contractor?.projects?.map((project, index) => (
+                              <Badge
                                 key={index}
-                                className="px-3 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700 border border-slate-200 w-fit"
+                                variant="secondary"
+                                className="text-xs"
                               >
-                                {project.projectName} — Floor{" "}
-                                {project.floorNumber}, Unit {project.unitType}
-                              </div>
+                                {project.projectName} — F{project.floorNumber}/U
+                                {project.unitType}
+                              </Badge>
                             ))}
                           </div>
                         </TableCell>
@@ -569,7 +571,7 @@ const ContractorsList = () => {
                           <span className="font-semibold">
                             Specialization:{" "}
                           </span>
-                          {contractor.specialization}
+                          {contractor.specialization || "General"}
                         </p>
                         <p className="mt-1">
                           <span className="font-semibold">Contact: </span>
@@ -680,7 +682,7 @@ const ContractorsList = () => {
                             (contractor: User, idx) => (
                               <SelectItem
                                 key={contractor?._id || idx}
-                                value={contractor?._id}
+                                value={contractor?._id || idx}
                               >
                                 {contractor?.name}
                               </SelectItem>
@@ -709,7 +711,7 @@ const ContractorsList = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {isLoadingProjects ? (
-                          <SelectItem value="">Loading...</SelectItem>
+                          <SelectLabel>Loading...</SelectLabel>
                         ) : (
                           allProjects?.map((p: any) => (
                             <SelectItem key={p?._id} value={p?._id}>
@@ -904,7 +906,9 @@ const ContractorsList = () => {
                         <div className="font-semibold text-muted-foreground">
                           Specialization
                         </div>
-                        <div>{selectedContractor.specialization}</div>
+                        <div>
+                          {selectedContractor.specialization || "General"}
+                        </div>
                       </div>
 
                       <div>
