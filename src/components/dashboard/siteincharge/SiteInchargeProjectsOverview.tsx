@@ -1,14 +1,6 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -24,194 +16,205 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
 import { Label } from "@radix-ui/react-dropdown-menu";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  assignContractor,
+  useContractors,
+} from "@/utils/contractor/ContractorConfig";
+import { statusColors } from "@/utils/project/ProjectConfig";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TaskList from "../contractor/TaskList";
+import { Badge } from "@/components/ui/badge";
 
-interface Project {
-  id: number;
-  name: string;
-  progress: number;
-  pendingVerifications: number;
-  qualityIssues: number;
-  nextInspection?: {
-    task: string;
-    date: string;
-  };
-  lastUpdated: string;
-}
-
-// const projects: Project[] = [
-//   {
-//     id: 1,
-//     name: "Riverside Tower",
-//     progress: 68,
-//     pendingVerifications: 3,
-//     qualityIssues: 1,
-//     nextInspection: {
-//       task: "Structural Framework - 5th Floor",
-//       date: "2025-04-13"
-//     },
-//     lastUpdated: "2025-04-10"
-//   },
-//   {
-//     id: 2,
-//     name: "Valley Heights",
-//     progress: 42,
-//     pendingVerifications: 5,
-//     qualityIssues: 3,
-//     nextInspection: {
-//       task: "Foundation Inspection - Block B",
-//       date: "2025-04-12"
-//     },
-//     lastUpdated: "2025-04-09"
-//   },
-//   {
-//     id: 3,
-//     name: "Green Villa",
-//     progress: 16,
-//     pendingVerifications: 0,
-//     qualityIssues: 1,
-//     lastUpdated: "2025-04-08"
-//   }
-// ];
-
-const SiteInchargeProjectsOverview = ({ projects }) => {
+const SiteInchargeProjectsOverview = ({
+  projects,
+  isLoading,
+  isError,
+  error,
+}) => {
   const [open, setOpen] = useState(false);
-  const [contractors, setContractors] = useState([]);
   const [selectedUnit, setSelectedUnit] = useState("");
   const [selectedContractor, setSelectedContractor] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const handleAssign = async (e) => {
-    e.preventDefault();
-    if (!selectedUnit || !selectedContractor) return;
+  const {
+    data: contractors = [],
+    isLoading: contractorsLoading,
+    isError: contractorsError,
+  } = useContractors();
 
-    try {
-      const payload = {
-        projectId: selectedProject._id,
-        unit: selectedUnit,
-        contractorId: selectedContractor,
-      };
-
-      const res = await axios.post(
-        `${import.meta.env.VITE_URL}/api/project/assign-contractor`,
-        payload,
-        { withCredentials: true }
-      ); // Replace with your real endpoint
-
+  const mutation = useMutation({
+    mutationFn: assignContractor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       setOpen(false);
       setSelectedUnit("");
       setSelectedContractor("");
-    } catch (error) {
-      console.error("Error assigning contractor:", error);
-    }
-  };
+    },
+  });
 
-  const fetchContractors = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/contractors`
-      );
-      setContractors(res.data.data);
-    } catch (error) {
-      console.error("Failed to fetch contractors:", error);
-    }
+  const handleAssign = (e) => {
+    e.preventDefault();
+    if (!selectedUnit || !selectedContractor) return;
+    mutation.mutate({
+      projectId: selectedProject._id,
+      unit: selectedUnit,
+      contractorId: selectedContractor,
+    });
   };
-  useEffect(() => {
-    fetchContractors();
-  }, []);
 
   return (
     <div className="space-y-6">
-      {projects &&
-        projects.map((project) => (
-          <div key={project._id} className="border rounded-lg p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-lg">{project.projectTitle}</h3>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setOpen(true);
-                      setSelectedProject(project);
-                    }}
-                  >
-                    Assign Contractor
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      navigate("/schedule");
-                    }}
-                  >
-                    Schedule Inspection
-                  </DropdownMenuItem>
-                  {/* <DropdownMenuItem>Assign Contractor</DropdownMenuItem> */}
-                  {/* <DropdownMenuItem>Generate Progress Report</DropdownMenuItem> */}
-                </DropdownMenuContent>
-              </DropdownMenu>
+      {isLoading && <p>Loading projects...</p>}
+      {isError && <p>Error loading projects: {error.message}</p>}
+      {projects?.map((project) => {
+        const unitsMap = project.units || {};
+        const allTasks = Object.values(unitsMap).flat();
+
+        const pendingTasks = allTasks.filter(
+          (t: any) => t.statusForContractor?.toLowerCase() === "pending"
+        );
+        const inProgressTasks = allTasks.filter(
+          (t: any) => t.statusForContractor?.toLowerCase() === "in progress"
+        );
+        const completedTasks = allTasks.filter(
+          (t: any) => t.statusForContractor?.toLowerCase() === "completed"
+        );
+        const approvedTasks = allTasks.filter(
+          (t: any) => t.isApprovedBySiteManager === true
+        );
+        const rejectedTasks = allTasks.filter(
+          (t: any) =>
+            t.statusForSiteIncharge?.toLowerCase() === "rejected" ||
+            t.verificationDecision?.toLowerCase() === "rejected"
+        );
+
+        const progress =
+          allTasks.length > 0
+            ? Math.round((completedTasks.length / allTasks.length) * 100)
+            : 0;
+
+        return (
+          <div
+            key={project._id}
+            className="border rounded-xl p-6 bg-card shadow-sm relative"
+          >
+            {/* Project Header */}
+            <div className="flex items-center justify-between pr-10">
+              <h2 className="text-xl font-semibold">
+                {typeof project.projectId === "object"
+                  ? project.projectId.projectName
+                  : "Untitled Project"}
+              </h2>
+
+              <Badge
+                variant="outline"
+                className={`text-sm ${
+                  statusColors[
+                    (project.status || "not started").toLowerCase()
+                  ] || statusColors["not started"]
+                }`}
+              >
+                {project?.status || "Status Unknown"}
+              </Badge>
             </div>
 
-            <div className="space-y-2">
+            <p className="text-sm text-muted-foreground mt-1">
+              {typeof project.projectId === "object" &&
+                project.projectId?.location}
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              {project.floorUnit &&
+                `Floor ${
+                  typeof project.floorUnit === "object" &&
+                  project.floorUnit.floorNumber
+                }, ${
+                  typeof project.floorUnit === "object" &&
+                  project.floorUnit.unitType
+                }`}
+              {project.unit &&
+                ` • Plot ${
+                  typeof project.unit === "object" && project.unit.plotNo
+                }`}
+            </p>
+
+            <div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Client: {project.clientName || "N/A"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Estimated Budget: ₹
+                {project.estimatedBudget
+                  ? project.estimatedBudget.toLocaleString("en-IN")
+                  : "N/A"}
+              </p>
+            </div>
+
+            {/* Progress */}
+            <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Overall Progress</span>
-                <span>{project.progress}%</span>
+                <span>Overall Progress</span>
+                <span className="text-muted-foreground">
+                  {completedTasks.length} of {allTasks.length} tasks
+                </span>
               </div>
-              <Progress value={project.progress} className="h-2" />
+              <Progress value={progress} />
+              <p className="text-right text-xs text-muted-foreground">
+                {progress}% Complete
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Pending Verifications</p>
-                <p
-                  className={
-                    project.pendingVerifications > 0 ? "font-medium" : ""
-                  }
-                >
-                  {project.pendingVerifications}{" "}
-                  {project.pendingVerifications === 1 ? "task" : "tasks"}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Quality Issues</p>
-                <p
-                  className={
-                    project.qualityIssues > 0 ? "text-red-600 font-medium" : ""
-                  }
-                >
-                  {project.qualityIssues}{" "}
-                  {project.qualityIssues === 1 ? "issue" : "issues"}
-                </p>
-              </div>
-            </div>
+            {/* Tabs */}
+            <Tabs defaultValue="all" className="mt-6">
+              <TabsList className="flex flex-wrap gap-2">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="pending">Pending</TabsTrigger>
+                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="approved">Approved</TabsTrigger>
+                <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              </TabsList>
 
-            <div className="mt-4 text-sm">
-              {project.nextInspection ? (
-                <div>
-                  <p className="text-muted-foreground">Next Inspection</p>
-                  <p>{project.nextInspection.task}</p>
-                  <p className="text-blue-600">
-                    {new Date(project.nextInspection.date).toLocaleDateString()}
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-muted-foreground">Next Inspection</p>
-                  <p>None scheduled</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-2 text-xs text-muted-foreground">
-              Last updated: {new Date(project.lastUpdated).toLocaleDateString()}
-            </div>
+              <TabsContent value="all">
+                <TaskList tasks={allTasks} contractors={project.contractors} />
+              </TabsContent>
+              <TabsContent value="pending">
+                <TaskList
+                  tasks={pendingTasks}
+                  contractors={project.contractors}
+                />
+              </TabsContent>
+              <TabsContent value="in_progress">
+                <TaskList
+                  tasks={inProgressTasks}
+                  contractors={project.contractors}
+                />
+              </TabsContent>
+              <TabsContent value="completed">
+                <TaskList
+                  tasks={completedTasks}
+                  contractors={project.contractors}
+                />
+              </TabsContent>
+              <TabsContent value="approved">
+                <TaskList
+                  tasks={approvedTasks}
+                  contractors={project.contractors}
+                />
+              </TabsContent>
+              <TabsContent value="rejected">
+                <TaskList
+                  tasks={rejectedTasks}
+                  contractors={project.contractors}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-        ))}
+        );
+      })}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
@@ -246,6 +249,7 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
                 value={selectedContractor}
                 onValueChange={setSelectedContractor}
                 required
+                disabled={contractorsLoading || contractorsError}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select contractor" />
@@ -253,8 +257,8 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
                 <SelectContent>
                   {contractors &&
                     contractors?.map((contractor) => (
-                      <SelectItem key={contractor._id} value={contractor._id}>
-                        {contractor.name}
+                      <SelectItem key={contractor?._id} value={contractor?._id}>
+                        {contractor?.name}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -269,7 +273,9 @@ const SiteInchargeProjectsOverview = ({ projects }) => {
               >
                 Cancel
               </Button>
-              <Button type="submit">Assign</Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? "Assigning..." : "Assign"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -24,118 +24,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  fetchTasks,
+  usefetchProjects,
+  useQualityIssues,
+  useTasks,
+} from "@/utils/project/ProjectConfig";
+import { useSchedules } from "@/utils/buildings/Projects";
+import { VerificationTask } from "@/utils/contractor/ContractorConfig";
+import { useQuery } from "@tanstack/react-query";
 
 const SiteInchargeDashboard = () => {
   const [selectedTab, setSelectedTab] = useState("overview");
-  const [projects, setProjects] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [qualityIssues, setQualityIssues] = useState([]);
-  const [error, setError] = useState(null);
-  const [tasks, setTasks] = useState([]);
-  const [approvedCount, setApprovedCount] = useState(0);
-  const [reworkCount, setReworkCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [appointments, setAppointments] = useState([]);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        {
-          withCredentials: true,
-        }
-      );
-      setProjects(res.data);
-    } catch (err) {
-      console.error("Error fetching project data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+    error: projectsErrorDetails,
+  } = usefetchProjects();
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  const {
+    data: qualityIssues,
+    isLoading: qualityIssuesLoading,
+    isError: qualityIssuesError,
+    error: qualityIssuesErrorDetails,
+  } = useQualityIssues();
 
-  const fetchQualityIssues = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
-        { withCredentials: true }
-      );
-      setQualityIssues(res.data.issues); // Ensure backend sends an array
-    } catch (err) {
-      setError("Failed to load issues");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: tasks,
+    isLoading: tasksLoading,
+    isError: tasksError,
+    error: tasksErrorDetails,
+  } = useQuery<VerificationTask[]>({
+    queryKey: ["taskVerificationList"],
+    queryFn: fetchTasks,
+  });
 
-  useEffect(() => {
-    fetchQualityIssues();
-  }, []);
-
-  const fetchTasks = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/tasks`,
-        {
-          withCredentials: true,
-        }
-      );
-      setTasks(res.data);
-      const pending = res.data.filter(
-        (t) => t.status === "pending verification"
-      ).length;
-      const approved = res.data.filter((t) => {
-        return (
-          t.status === "approved" &&
-          t.submittedBySiteInchargeOn &&
-          new Date(t.submittedBySiteInchargeOn).getMonth() ===
-            new Date().getMonth() &&
-          new Date(t.submittedBySiteInchargeOn).getFullYear() ===
-            new Date().getFullYear()
-        );
-      }).length;
-      const rework = res.data.filter((t) => t.status === "rework").length;
-
-      setPendingCount(pending);
-      setApprovedCount(approved);
-      setReworkCount(rework);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchAppointments = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user-schedule/schedules`,
-        { withCredentials: true }
-      );
-
-      const schedules = response.data.schedules || [];
-
-      const processedSchedules = schedules.map((appt) => ({
-        ...appt,
-        date: new Date(appt.date),
-        startTime: new Date(appt.startTime),
-        endTime: new Date(appt.endTime),
-      }));
-
-      setAppointments(processedSchedules);
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
+  const {
+    data: appointments,
+    isLoading: schedulesLoading,
+    isError: schedulesError,
+    error: schedulesErrorDetails,
+  } = useSchedules();
 
   return (
     <MainLayout>
@@ -236,7 +167,12 @@ const SiteInchargeDashboard = () => {
                   <CardTitle>Projects Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <SiteInchargeProjectsOverview projects={projects} />
+                  <SiteInchargeProjectsOverview
+                    projects={projects}
+                    isLoading={projectsLoading}
+                    isError={projectsError}
+                    error={projectsErrorDetails}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -246,7 +182,12 @@ const SiteInchargeDashboard = () => {
                   <CardTitle>Quality Issues</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <SiteInchargeQualityIssues qualityIssues={qualityIssues} />
+                  <SiteInchargeQualityIssues
+                    qualityIssues={qualityIssues}
+                    isLoading={qualityIssuesLoading}
+                    isError={qualityIssuesError}
+                    error={qualityIssuesErrorDetails}
+                  />
                   <div className="flex justify-center mt-4">
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/quality">View All Quality Issues</Link>
@@ -260,30 +201,37 @@ const SiteInchargeDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {tasks.slice(0, 2).map((task, index) => (
-                      <div
-                        key={task._id || index}
-                        className="flex items-start space-x-2"
-                      >
-                        <Calendar className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div>
-                          <p className="font-medium">{task.taskTitle}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {task.projectName}, {task.unit}
-                          </p>
-                          <p className="text-xs">
-                            {task.submittedByContractorOn
-                              ? new Date(
-                                  task.submittedByContractorOn
-                                ).toLocaleString("en-IN", {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                })
-                              : "Date not available"}
-                          </p>
+                    {tasksLoading ? (
+                      <p>Loading tasks...</p>
+                    ) : tasksError ? (
+                      <p>Error loading tasks: {tasksErrorDetails?.message}</p>
+                    ) : (
+                      tasks?.slice(0, 2).map((task, index) => (
+                        <div
+                          key={task._id || index}
+                          className="flex items-start space-x-2"
+                        >
+                          <Calendar className="h-5 w-5 text-blue-500 mt-0.5" />
+                          <div>
+                            <p className="font-medium">{task?.taskTitle}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {task?.projectName} / {task?.floorNumber} /{" "}
+                              {task?.plotNo}
+                            </p>
+                            <p className="text-xs">
+                              {task.submittedByContractorOn
+                                ? new Date(
+                                    task.submittedByContractorOn
+                                  ).toLocaleString("en-IN", {
+                                    dateStyle: "medium",
+                                    timeStyle: "short",
+                                  })
+                                : "Date not available"}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
 
                     <div className="flex justify-center mt-4">
                       <Button variant="outline" size="sm" asChild>
@@ -303,9 +251,9 @@ const SiteInchargeDashboard = () => {
               </CardHeader>
               <CardContent>
                 <TaskVerificationList
-                  setApprovedCount={setApprovedCount}
-                  setReworkCount={setReworkCount}
-                  setPendingCount={setPendingCount}
+                  isError={tasksError}
+                  isLoading={tasksLoading}
+                  tasks={tasks}
                 />
                 <div className="flex justify-center mt-4">
                   <Button variant="outline" size="sm" asChild>
@@ -322,7 +270,12 @@ const SiteInchargeDashboard = () => {
                 <CardTitle>Quality Control</CardTitle>
               </CardHeader>
               <CardContent>
-                <SiteInchargeQualityIssues qualityIssues={qualityIssues} />
+                <SiteInchargeQualityIssues
+                  qualityIssues={qualityIssues}
+                  isLoading={qualityIssuesLoading}
+                  isError={qualityIssuesError}
+                  error={qualityIssuesErrorDetails}
+                />
                 <div className="flex justify-center mt-4">
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/quality">Manage Quality Control</Link>

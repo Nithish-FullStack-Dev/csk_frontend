@@ -2,7 +2,7 @@ import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import exp from "constants";
 
@@ -203,4 +203,13 @@ export const fetchInspections = async () => {
     { withCredentials: true }
   );
   return response.data.inspections || [];
+};
+
+export const useSchedules = () => {
+  return useQuery({
+    queryKey: ["schedules"],
+    queryFn: fetchSchedules,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
 };

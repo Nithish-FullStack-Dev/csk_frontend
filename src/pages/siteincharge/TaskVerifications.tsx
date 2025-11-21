@@ -4,50 +4,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TaskVerificationList from "@/components/dashboard/siteincharge/TaskVerificationList";
 import { ClipboardCheck, CheckCircle2, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { fetchTasks } from "@/utils/project/ProjectConfig";
+import { useQuery } from "@tanstack/react-query";
+import { VerificationTask } from "@/utils/contractor/ContractorConfig";
 
 const TaskVerifications = () => {
-  const [tasks, setTasks] = useState([]);
-  const [approvedCount, setApprovedCount] = useState(0);
-  const [reworkCount, setReworkCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
-
-  const fetchTasks = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/tasks`,
-        {
-          withCredentials: true,
-        }
-      );
-      setTasks(res.data);
-      const pending = res.data.filter(
-        (t) => t.status === "pending verification"
-      ).length;
-      const approved = res.data.filter((t) => {
-        return (
-          t.status === "approved" &&
-          t.submittedBySiteInchargeOn &&
-          new Date(t.submittedBySiteInchargeOn).getMonth() ===
-            new Date().getMonth() &&
-          new Date(t.submittedBySiteInchargeOn).getFullYear() ===
-            new Date().getFullYear()
-        );
-      }).length;
-      const rework = res.data.filter((t) => t.status === "rework").length;
-
-      setPendingCount(pending);
-      setApprovedCount(approved);
-      setReworkCount(rework);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const {
+    data: tasks = [],
+    isLoading,
+    isError,
+  } = useQuery<VerificationTask[]>({
+    queryKey: ["taskVerificationList"],
+    queryFn: fetchTasks,
+  });
 
   return (
     <MainLayout>
@@ -70,7 +39,7 @@ const TaskVerifications = () => {
               <ClipboardCheck className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingCount}</div>
+              {/* <div className="text-2xl font-bold">{pendingCount}</div> */}
               <p className="text-xs text-muted-foreground">
                 Requires your inspection
               </p>
@@ -85,7 +54,7 @@ const TaskVerifications = () => {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{approvedCount}</div>
+              {/* <div className="text-2xl font-bold">{approvedCount}</div> */}
               <p className="text-xs text-muted-foreground">This month</p>
             </CardContent>
           </Card>
@@ -98,7 +67,7 @@ const TaskVerifications = () => {
               <AlertTriangle className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reworkCount}</div>
+              {/* <div className="text-2xl font-bold">{reworkCount}</div> */}
               <p className="text-xs text-muted-foreground">
                 Returned to contractors
               </p>
@@ -106,58 +75,18 @@ const TaskVerifications = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="rework">Rework</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Task Verifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TaskVerificationList
-                  setApprovedCount={setApprovedCount}
-                  setReworkCount={setReworkCount}
-                  setPendingCount={setPendingCount}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="completed" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Completed Task Verifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TaskVerificationList
-                  setApprovedCount={setApprovedCount}
-                  setReworkCount={setReworkCount}
-                  setPendingCount={setPendingCount}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rework" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tasks Sent For Rework</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TaskVerificationList
-                  setApprovedCount={setApprovedCount}
-                  setReworkCount={setReworkCount}
-                  setPendingCount={setPendingCount}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>Task Verifications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TaskVerificationList
+              isError={isError}
+              isLoading={isLoading}
+              tasks={tasks}
+            />
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

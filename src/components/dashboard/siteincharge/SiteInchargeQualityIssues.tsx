@@ -1,21 +1,7 @@
-import React from "react";
 import { AlertTriangle, MessageSquare, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
-interface QualityIssue {
-  id: string;
-  title: string;
-  project: string;
-  unit: string;
-  phase: string;
-  contractor: string;
-  severity: "critical" | "major" | "minor";
-  reportedDate: string;
-  status: "open" | "in_progress" | "resolved";
-  description: string;
-}
 
 const severityColors: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
@@ -29,13 +15,26 @@ const statusColors: Record<string, string> = {
   resolved: "bg-green-100 text-green-800",
 };
 
-const SiteInchargeQualityIssues = ({ qualityIssues }) => {
+const SiteInchargeQualityIssues = ({
+  qualityIssues,
+  isLoading,
+  isError,
+  error,
+}) => {
   const navigate = useNavigate();
+
+  if (isLoading) {
+    return <div>Loading quality issues...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading quality issues: {error.message}</div>;
+  }
 
   // Filter out resolved issues and sort by severity
   const activeIssues = qualityIssues
-    .filter((issue) => issue.status !== "resolved")
-    .sort((a, b) => {
+    ?.filter((issue) => issue.status !== "resolved")
+    ?.sort((a, b) => {
       const severityOrder = { critical: 0, major: 1, minor: 2 };
       return severityOrder[a.severity] - severityOrder[b.severity];
     });
