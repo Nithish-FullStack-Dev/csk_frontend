@@ -55,6 +55,21 @@ export interface Lead {
   createdAt: string;
 }
 
+export interface TeamMember {
+  _id: string;
+  agentId: User;
+  teamLeadId: User;
+  status: "active" | "training" | "inactive" | "on-leave";
+  performance: {
+    sales: number;
+    target: number;
+    deals: number;
+    leads: number;
+    conversionRate: number;
+    lastActivity: string;
+  };
+}
+
 //! FETCH
 export const fetchLeads = async () => {
   const { data } = await axios.get(
@@ -119,6 +134,14 @@ export const fetchUnitProgress = async (
     { withCredentials: true }
   );
   return data?.data || [];
+};
+
+export const fetchUnassignedMem = async (): Promise<User[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/team/unassigned`,
+    { withCredentials: false }
+  );
+  return data.data || [];
 };
 
 //! SAVE UPDATE AND DELETE
@@ -251,5 +274,13 @@ export const useUnitProgress = (
     enabled: !!projectId && !!floorUnitId && !!unit,
     placeholderData: (prev) => prev,
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useUnAssignedAgents = () => {
+  return useQuery<User[]>({
+    queryKey: ["unassignedAgents"],
+    queryFn: fetchUnassignedMem,
+    staleTime: 0,
   });
 };
