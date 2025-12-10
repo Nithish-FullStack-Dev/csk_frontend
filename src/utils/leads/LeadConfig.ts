@@ -70,6 +70,15 @@ export interface TeamMember {
   };
 }
 
+export type Populated<T> = string | T | null;
+
+export interface ApiResponse<T> {
+  statusCode: number;
+  data: T;
+  message: string;
+  success: boolean;
+}
+
 //! FETCH
 export const fetchLeads = async () => {
   const { data } = await axios.get(
@@ -139,9 +148,24 @@ export const fetchUnitProgress = async (
 export const fetchUnassignedMem = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/team/unassigned`,
-    { withCredentials: false }
+    { withCredentials: true }
   );
   return data.data || [];
+};
+
+export type AgentDropdownItem = {
+  _id: string;
+  agentId: User;
+};
+
+type UserResponse = ApiResponse<AgentDropdownItem[]>;
+
+export const fetchAgentsForDropDown = async (): Promise<UserResponse> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/agentlist/getAllAgentsListsForDropDown`,
+    { withCredentials: true }
+  );
+  return data;
 };
 
 //! SAVE UPDATE AND DELETE
@@ -281,6 +305,14 @@ export const useUnAssignedAgents = () => {
   return useQuery<User[]>({
     queryKey: ["unassignedAgents"],
     queryFn: fetchUnassignedMem,
+    staleTime: 0,
+  });
+};
+
+export const useUnAssignedAgentsDropDown = () => {
+  return useQuery<UserResponse>({
+    queryKey: ["agent-dropdown"],
+    queryFn: fetchAgentsForDropDown,
     staleTime: 0,
   });
 };

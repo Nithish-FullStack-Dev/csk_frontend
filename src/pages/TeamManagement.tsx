@@ -26,7 +26,7 @@ import {
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import {
@@ -43,7 +43,14 @@ import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "@/utils/units/Methods";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamManagementTable from "@/components/helpers/TeamManagementTable";
-import { TeamMember, useUnAssignedAgents } from "@/utils/leads/LeadConfig";
+import {
+  AgentDropdownItem,
+  TeamMember,
+  useUnAssignedAgents,
+  useUnAssignedAgentsDropDown,
+} from "@/utils/leads/LeadConfig";
+import { AgentList } from "@/utils/agent/AgentConfig";
+import { Populated } from "@/types/contractor";
 
 const TeamManagement = () => {
   const { user } = useAuth();
@@ -137,11 +144,11 @@ const TeamManagement = () => {
   });
 
   const {
-    data: availableAgents,
+    data: response,
     isLoading: isTeamMemLoading,
     isError: teamMemError,
     error: isTeamMemErr,
-  } = useUnAssignedAgents();
+  } = useUnAssignedAgentsDropDown();
 
   const addTeamMemberMutation = useMutation({
     mutationFn: async ({
@@ -759,11 +766,23 @@ const TeamManagement = () => {
                     <SelectValue placeholder="Select an agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableAgents?.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>
-                        {agent?.name} ({agent?.email})
+                    {(response?.data?.length ?? 0) === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No agents available
                       </SelectItem>
-                    ))}
+                    ) : (
+                      response?.data?.map(
+                        (item: AgentDropdownItem, idx: number) => {
+                          const user = item.agentId;
+
+                          return (
+                            <SelectItem key={user._id || idx} value={user._id}>
+                              {user.name} ({user.email})
+                            </SelectItem>
+                          );
+                        }
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>

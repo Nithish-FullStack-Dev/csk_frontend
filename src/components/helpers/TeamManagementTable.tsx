@@ -117,6 +117,7 @@ const TeamManagementTable = () => {
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["agent-list"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-dropdown"] });
       setOpenDialog(false);
       reset();
       toast.success(data?.message ?? "Agent added Successfully !!!");
@@ -146,6 +147,7 @@ const TeamManagementTable = () => {
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["agent-list"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-dropdown"] });
       setOpenDialog(false);
       reset();
       toast.success(data?.message ?? "Agent updated Successfully !!!");
@@ -168,6 +170,7 @@ const TeamManagementTable = () => {
     },
     onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ["agent-list"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-dropdown"] });
       setDeleteDialogOpen(false);
       setDeleteId(null);
       reset();
