@@ -420,7 +420,9 @@ const TeamManagement = () => {
         <Tabs defaultValue="add">
           <TabsList>
             <TabsTrigger value="add">Add Agents</TabsTrigger>
-            <TabsTrigger value="team">Team Management</TabsTrigger>
+            {user.role !== "accountant" && (
+              <TabsTrigger value="team">Team Management</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="add">
             <TeamManagementTable />

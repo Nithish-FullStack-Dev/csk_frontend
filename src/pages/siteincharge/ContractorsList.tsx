@@ -68,7 +68,7 @@ import {
 } from "@/utils/project/ProjectConfig";
 import Loader from "@/components/Loader";
 import { Label } from "@/components/ui/label";
-import { User } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import { set } from "date-fns";
 import { CONSTRUCTION_PHASES } from "@/types/construction";
 import AddContractorDialog from "./AddContractorDialog";
@@ -76,6 +76,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ContractorList } from "@/types/contractor";
 
 const ContractorsList = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -359,9 +360,11 @@ const ContractorsList = () => {
                 <TabsTrigger value="contractorlist">
                   Contractor List
                 </TabsTrigger>
-                <TabsTrigger value="assignedcontractor">
-                  Assigned Contractors
-                </TabsTrigger>
+                {user.role !== "accountant" && (
+                  <TabsTrigger value="assignedcontractor">
+                    Assigned Contractors
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="assignedcontractor">

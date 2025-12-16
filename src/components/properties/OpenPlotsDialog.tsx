@@ -12,7 +12,7 @@ interface OpenPlotDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   openPlot?: OpenPlot;
-  onSubmit: (data: any) => void;
+  onSubmit: (data) => void;
 }
 
 export function OpenPlotDialog({
