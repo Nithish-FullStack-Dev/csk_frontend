@@ -1,26 +1,5 @@
 import { User } from "@/contexts/AuthContext";
-import { Building, FloorUnit } from "./building";
-
-export interface CustomerPropertyDetail {
-  _id?: string;
-  property: string | Building;
-  floorUnit: string | FloorUnit;
-  unit: string | Property;
-  bookingDate: string;
-  finalPrice: number;
-  paymentPlan: "Down Payment" | "EMI" | "Full Payment";
-  paymentStatus: "Pending" | "In Progress" | "Completed";
-  documents?: string[];
-}
-
-export interface Customer {
-  _id: string;
-  user: User;
-  purchasedFrom: User;
-  properties: CustomerPropertyDetail[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { Customer } from "@/utils/buildings/CustomerConfig";
 
 export type VillaFacing =
   | "North"

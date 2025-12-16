@@ -2,6 +2,8 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "../project/ProjectConfig";
 import { FloorUnit } from "@/types/building";
+import { ApiResponse } from "../leads/LeadConfig";
+import { User } from "@/contexts/AuthContext";
 
 //! Task List
 export const constructionPhases = [
@@ -327,6 +329,13 @@ export const fetchContractors = async () => {
   return res.data.data;
 };
 
+export const fetchContractorsForDropDown = async (): Promise<User[]> => {
+  const res = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/getControctorsForDropDown`
+  );
+  return res.data;
+};
+
 export const assignContractor = async ({ projectId, unit, contractorId }) => {
   return axios.post(
     `${import.meta.env.VITE_URL}/api/project/assign-contractor`,
@@ -335,11 +344,33 @@ export const assignContractor = async ({ projectId, unit, contractorId }) => {
   );
 };
 
+export const fetchSiteInchargesForDropDown = async (): Promise<User[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/user/site-incharges`
+  );
+  return data;
+};
+
 export const useContractors = () => {
   return useQuery({
     queryKey: ["contractors"],
     queryFn: fetchContractors,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    placeholderData: keepPreviousData,
+  });
+};
+
+export const useContractorsFroDropDown = () => {
+  return useQuery<User[]>({
+    queryKey: ["contractors-dropdown"],
+    queryFn: fetchContractorsForDropDown,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useSiteInchargeFroDropDown = () => {
+  return useQuery<User[]>({
+    queryKey: ["siteincharge-dropdown"],
+    queryFn: fetchSiteInchargesForDropDown,
+    staleTime: 5 * 60 * 1000,
   });
 };

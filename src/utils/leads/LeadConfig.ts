@@ -55,6 +55,30 @@ export interface Lead {
   createdAt: string;
 }
 
+export interface TeamMember {
+  _id: string;
+  agentId: User;
+  teamLeadId: User;
+  status: "active" | "training" | "inactive" | "on-leave";
+  performance: {
+    sales: number;
+    target: number;
+    deals: number;
+    leads: number;
+    conversionRate: number;
+    lastActivity: string;
+  };
+}
+
+export type Populated<T> = string | T | null;
+
+export interface ApiResponse<T> {
+  statusCode: number;
+  data: T;
+  message: string;
+  success: boolean;
+}
+
 //! FETCH
 export const fetchLeads = async () => {
   const { data } = await axios.get(
@@ -119,6 +143,29 @@ export const fetchUnitProgress = async (
     { withCredentials: true }
   );
   return data?.data || [];
+};
+
+export const fetchUnassignedMem = async (): Promise<User[]> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/team/unassigned`,
+    { withCredentials: true }
+  );
+  return data.data || [];
+};
+
+export type AgentDropdownItem = {
+  _id: string;
+  agentId: User;
+};
+
+type UserResponse = ApiResponse<AgentDropdownItem[]>;
+
+export const fetchAgentsForDropDown = async (): Promise<UserResponse> => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/agentlist/getAllAgentsListsForDropDown`,
+    { withCredentials: true }
+  );
+  return data;
 };
 
 //! SAVE UPDATE AND DELETE
@@ -251,5 +298,21 @@ export const useUnitProgress = (
     enabled: !!projectId && !!floorUnitId && !!unit,
     placeholderData: (prev) => prev,
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useUnAssignedAgents = () => {
+  return useQuery<User[]>({
+    queryKey: ["unassignedAgents"],
+    queryFn: fetchUnassignedMem,
+    staleTime: 0,
+  });
+};
+
+export const useUnAssignedAgentsDropDown = () => {
+  return useQuery<UserResponse>({
+    queryKey: ["agent-dropdown"],
+    queryFn: fetchAgentsForDropDown,
+    staleTime: 0,
   });
 };

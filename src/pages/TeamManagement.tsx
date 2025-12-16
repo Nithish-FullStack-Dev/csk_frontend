@@ -26,7 +26,7 @@ import {
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import {
@@ -41,37 +41,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Permission } from "@/types/permission";
 import { fetchRolePermissions } from "@/utils/units/Methods";
-
-export interface TeamMember {
-  _id: string;
-  agentId: User;
-  teamLeadId: User;
-  status: "active" | "training" | "inactive" | "on-leave";
-  performance: {
-    sales: number;
-    target: number;
-    deals: number;
-    leads: number;
-    conversionRate: number;
-    lastActivity: string;
-  };
-}
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar: string;
-}
-
-const fetchUnassignedMem = async (): Promise<User[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/team/unassigned`,
-    { withCredentials: false }
-  );
-  return data.data || [];
-};
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TeamManagementTable from "@/components/helpers/TeamManagementTable";
+import {
+  AgentDropdownItem,
+  TeamMember,
+  useUnAssignedAgents,
+  useUnAssignedAgentsDropDown,
+} from "@/utils/leads/LeadConfig";
+import { AgentList } from "@/utils/agent/AgentConfig";
+import { Populated } from "@/types/contractor";
 
 const TeamManagement = () => {
   const { user } = useAuth();
@@ -165,15 +144,11 @@ const TeamManagement = () => {
   });
 
   const {
-    data: availableAgents,
+    data: response,
     isLoading: isTeamMemLoading,
     isError: teamMemError,
     error: isTeamMemErr,
-  } = useQuery<User[]>({
-    queryKey: ["unassignedAgents"],
-    queryFn: fetchUnassignedMem,
-    staleTime: 0,
-  });
+  } = useUnAssignedAgentsDropDown();
 
   const addTeamMemberMutation = useMutation({
     mutationFn: async ({
@@ -439,292 +414,333 @@ const TeamManagement = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
-            {userCanAddUser && (
-              <Button onClick={handleOpenAddDialog}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Member
-              </Button>
-            )}
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Team Size
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  {teamMembers?.length}
-                </span>
-                <Users className="h-6 w-6 text-estate-navy" />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Team Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  {teamPerformance.toFixed(1)}%
-                </span>
-                <Target className="h-6 w-6 text-estate-teal" />
+        <Tabs defaultValue="add">
+          <TabsList>
+            <TabsTrigger value="add">Add Agents</TabsTrigger>
+            {user.role !== "accountant" && (
+              <TabsTrigger value="team">Team Management</TabsTrigger>
+            )}
+          </TabsList>
+          <TabsContent value="add">
+            <TeamManagementTable />
+          </TabsContent>
+          <TabsContent value="team">
+            <div className="flex flex-col gap-5">
+              <div className="flex justify-end mr-5">
+                {userCanAddUser && (
+                  <Button onClick={handleOpenAddDialog}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Member
+                  </Button>
+                )}
               </div>
-            </CardContent>
-          </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Team Size
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold">
+                        {teamMembers?.length}
+                      </span>
+                      <Users className="h-6 w-6 text-estate-navy" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Sales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  ₹{(totalTeamSales / 1000000).toFixed(1)}M
-                </span>
-                <DollarSign className="h-6 w-6 text-estate-gold" />
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Team Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold">
+                        {teamPerformance.toFixed(1)}%
+                      </span>
+                      <Target className="h-6 w-6 text-estate-teal" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Total Sales
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold">
+                        ₹{(totalTeamSales / 1000000).toFixed(1)}M
+                      </span>
+                      <DollarSign className="h-6 w-6 text-estate-gold" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Active Members
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold">
+                        {
+                          teamMembers?.filter((m) => m.status === "active")
+                            .length
+                        }
+                      </span>
+                      <Award className="h-6 w-6 text-estate-success" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {sortedAndFilteredTeamMembers?.map((member) => {
+                  const performancePercentage =
+                    (member.performance.sales / member.performance.target) *
+                    100;
+                  const performanceLevel = getPerformanceLevel(
+                    performancePercentage
+                  );
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Active Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">
-                  {teamMembers?.filter((m) => m.status === "active").length}
-                </span>
-                <Award className="h-6 w-6 text-estate-success" />
+                  return (
+                    <Card key={member._id}>
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage
+                                src={member?.agentId?.avatar}
+                                alt={member?.agentId?.name}
+                              />
+                              <AvatarFallback>
+                                {member?.agentId?.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="font-semibold">
+                                {member?.agentId?.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {member?.agentId?.role}
+                              </p>
+                              <Badge className={getStatusColor(member?.status)}>
+                                {member?.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          {userCanEditUser && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleOpenEditDialog(member)}
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Sales</p>
+                            <p className="font-semibold">
+                              ₹
+                              {member.performance.sales.toLocaleString(
+                                "en-IN",
+                                {
+                                  maximumFractionDigits: 0,
+                                }
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Target</p>
+                            <p className="font-semibold">
+                              ₹
+                              {member.performance.target.toLocaleString(
+                                "en-IN",
+                                {
+                                  maximumFractionDigits: 0,
+                                }
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Deals</p>
+                            <p className="font-semibold">
+                              {member.performance.deals}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Conversion</p>
+                            <p className="font-semibold">
+                              {member.performance.conversionRate}%
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Target Achievement</span>
+                            <span className={performanceLevel.color}>
+                              {performanceLevel.level}
+                            </span>
+                          </div>
+                          <Progress
+                            value={performancePercentage}
+                            className="h-2"
+                          />
+                          <p className="text-xs text-muted-foreground text-right">
+                            {performancePercentage.toFixed(1)}% of target
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>
+                            Last activity:{" "}
+                            {new Date(
+                              member.performance.lastActivity
+                            ).toLocaleDateString()}{" "}
+                            {new Date(
+                              member.performance.lastActivity
+                            ).toLocaleTimeString()}
+                          </span>
+                        </div>
+
+                        <div className="flex space-x-2">
+                          <a href={`tel:${user.phone}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              <Phone className="mr-2 h-3 w-3" />
+                              Call
+                            </Button>
+                          </a>
+                          <a
+                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                              user.email
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1"
+                          >
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                            >
+                              <Mail className="mr-2 h-3 w-3" />
+                              Email
+                            </Button>
+                          </a>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {sortedAndFilteredTeamMembers?.map((member) => {
-            const performancePercentage =
-              (member.performance.sales / member.performance.target) * 100;
-            const performanceLevel = getPerformanceLevel(performancePercentage);
-
-            return (
-              <Card key={member._id}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={member?.agentId?.avatar}
-                          alt={member?.agentId?.name}
-                        />
-                        <AvatarFallback>
-                          {member?.agentId?.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold">
-                          {member?.agentId?.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {member?.agentId?.role}
-                        </p>
-                        <Badge className={getStatusColor(member?.status)}>
-                          {member?.status}
-                        </Badge>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
+                    Team Performance Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Top Performers</h4>
+                      <div className="space-y-1">
+                        {teamMembers
+                          ?.sort(
+                            (a, b) =>
+                              b.performance.sales / b.performance.target -
+                              a.performance.sales / a.performance.target
+                          )
+                          .slice(0, 3)
+                          .map((member, index) => (
+                            <div
+                              key={member._id}
+                              className="flex items-center justify-between text-sm"
+                            >
+                              <span>
+                                {index + 1}. {member.agentId?.name}
+                              </span>
+                              <span className="font-medium">
+                                {(
+                                  (member.performance.sales /
+                                    member.performance.target) *
+                                  100
+                                ).toFixed(1)}
+                                %
+                              </span>
+                            </div>
+                          ))}
                       </div>
                     </div>
-                    {userCanEditUser && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleOpenEditDialog(member)}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Sales</p>
-                      <p className="font-semibold">
-                        ₹
-                        {member.performance.sales.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Target</p>
-                      <p className="font-semibold">
-                        ₹
-                        {member.performance.target.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Deals</p>
-                      <p className="font-semibold">
-                        {member.performance.deals}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Conversion</p>
-                      <p className="font-semibold">
-                        {member.performance.conversionRate}%
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Target Achievement</span>
-                      <span className={performanceLevel.color}>
-                        {performanceLevel.level}
-                      </span>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Recent Activities</h4>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p>• Emily closed 2 deals yesterday</p>
+                        <p>• Robert scheduled 5 site visits</p>
+                        <p>• David added 8 new leads</p>
+                        <p>• Lisa completed sales training</p>
+                      </div>
                     </div>
-                    <Progress value={performancePercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground text-right">
-                      {performancePercentage.toFixed(1)}% of target
-                    </p>
-                  </div>
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Last activity:{" "}
-                      {new Date(
-                        member.performance.lastActivity
-                      ).toLocaleDateString()}{" "}
-                      {new Date(
-                        member.performance.lastActivity
-                      ).toLocaleTimeString()}
-                    </span>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <a href={`tel:${user.phone}`}>
-                      <Button size="sm" variant="outline" className="flex-1">
-                        <Phone className="mr-2 h-3 w-3" />
-                        Call
-                      </Button>
-                    </a>
-                    <a
-                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                        user.email
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button size="sm" variant="outline" className="flex-1">
-                        <Mail className="mr-2 h-3 w-3" />
-                        Email
-                      </Button>
-                    </a>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Quick Actions</h4>
+                      <div className="space-y-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <Calendar className="mr-2 h-3 w-3" />
+                          Schedule Team Meeting
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <BarChart3 className="mr-2 h-3 w-3" />
+                          Generate Team Report
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full justify-start"
+                        >
+                          <Target className="mr-2 h-3 w-3" />
+                          Set Team Goals
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
-              Team Performance Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <h4 className="font-medium">Top Performers</h4>
-                <div className="space-y-1">
-                  {teamMembers
-                    ?.sort(
-                      (a, b) =>
-                        b.performance.sales / b.performance.target -
-                        a.performance.sales / a.performance.target
-                    )
-                    .slice(0, 3)
-                    .map((member, index) => (
-                      <div
-                        key={member._id}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span>
-                          {index + 1}. {member.agentId?.name}
-                        </span>
-                        <span className="font-medium">
-                          {(
-                            (member.performance.sales /
-                              member.performance.target) *
-                            100
-                          ).toFixed(1)}
-                          %
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Recent Activities</h4>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p>• Emily closed 2 deals yesterday</p>
-                  <p>• Robert scheduled 5 site visits</p>
-                  <p>• David added 8 new leads</p>
-                  <p>• Lisa completed sales training</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Quick Actions</h4>
-                <div className="space-y-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Calendar className="mr-2 h-3 w-3" />
-                    Schedule Team Meeting
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <BarChart3 className="mr-2 h-3 w-3" />
-                    Generate Team Report
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Target className="mr-2 h-3 w-3" />
-                    Set Team Goals
-                  </Button>
-                </div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
@@ -752,11 +768,23 @@ const TeamManagement = () => {
                     <SelectValue placeholder="Select an agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableAgents?.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>
-                        {agent?.name} ({agent?.email})
+                    {(response?.data?.length ?? 0) === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No agents available
                       </SelectItem>
-                    ))}
+                    ) : (
+                      response?.data?.map(
+                        (item: AgentDropdownItem, idx: number) => {
+                          const user = item.agentId;
+
+                          return (
+                            <SelectItem key={user._id || idx} value={user._id}>
+                              {user.name} ({user.email})
+                            </SelectItem>
+                          );
+                        }
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>

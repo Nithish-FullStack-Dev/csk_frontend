@@ -41,8 +41,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { getCsrfToken, useAuth, User } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { OpenPlot } from "@/types/OpenPlots";
-import { fetchAgents, fetchCustomers } from "@/utils/buildings/CustomerConfig";
-import { Customer } from "@/types/property";
+import {
+  Customer,
+  fetchAgents,
+  fetchCustomers,
+  useGetCustomers,
+} from "@/utils/buildings/CustomerConfig";
 
 /**
  * Zod schema: kept original validation but added brochureUrl as optional
@@ -122,7 +126,7 @@ export type OpenPlotFormValues = z.infer<typeof openPlotFormSchema>;
 
 interface OpenPlotFormProps {
   openPlot?: OpenPlot;
-  onSubmit: (data: any) => void; // parent expects the saved object; keep `any` if parent expects server object
+  onSubmit: (data: OpenPlotFormValues) => void; // parent expects the saved object
   onCancel: () => void;
 }
 
@@ -165,7 +169,7 @@ export function OpenPlotForm({
     data: customers,
     isLoading: loadingCustomers,
     error: errorCustomers,
-  } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
+  } = useGetCustomers(user);
 
   const defaultValues: Partial<OpenPlotFormValues> = openPlot
     ? {
@@ -248,8 +252,9 @@ export function OpenPlotForm({
       if (url && url.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(url);
-        } catch (e) {}
-        setCreatedBlobUrls((prevBlobs) => prevBlobs.filter((b) => b !== url));
+        } catch (e) {
+          setCreatedBlobUrls((prevBlobs) => prevBlobs.filter((b) => b !== url));
+        }
       }
       return prev.filter((_, index) => index !== indexToRemove);
     });
@@ -260,8 +265,11 @@ export function OpenPlotForm({
     if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(thumbnailPreview);
-      } catch (e) {}
-      setCreatedBlobUrls((prev) => prev.filter((b) => b !== thumbnailPreview));
+      } catch (e) {
+        setCreatedBlobUrls((prev) =>
+          prev.filter((b) => b !== thumbnailPreview)
+        );
+      }
     }
     setThumbnailFile(null);
     setThumbnailPreview("");
@@ -292,8 +300,9 @@ export function OpenPlotForm({
     if (brochurePreview && brochurePreview.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(brochurePreview);
-      } catch (e) {}
-      setCreatedBlobUrls((prev) => prev.filter((b) => b !== brochurePreview));
+      } catch (e) {
+        setCreatedBlobUrls((prev) => prev.filter((b) => b !== brochurePreview));
+      }
     }
     // Clear file + preview
     setBrochureFile(null);
@@ -313,7 +322,9 @@ export function OpenPlotForm({
       createdBlobUrls.forEach((url) => {
         try {
           URL.revokeObjectURL(url);
-        } catch (e) {}
+        } catch (e) {
+          console.log("error occured while blob url", e);
+        }
       });
     };
   }, [createdBlobUrls]);
@@ -350,9 +361,7 @@ export function OpenPlotForm({
       }
 
       // 2. Prepare final image URLs (filter out blob: and upload new files)
-      let finalImageUrls: string[] = imageUrls.filter(
-        (url) => !url.startsWith("blob:")
-      );
+      let finalImageUrls = imageUrls.filter((url) => !url.startsWith("blob:"));
       if (imageFiles.length > 0) {
         for (const photo of imageFiles) {
           const formData = new FormData();
@@ -442,7 +451,7 @@ export function OpenPlotForm({
       onSubmit(saved);
 
       onCancel();
-    } catch (error: any) {
+    } catch (error) {
       console.error(
         "Error submitting Open Plot form:",
         error.response?.data || error.message
@@ -883,9 +892,10 @@ export function OpenPlotForm({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No Selection</SelectItem>
-                        {customers?.map((customer: Customer) => (
+                        {customers?.data?.map((customer: Customer) => (
                           <SelectItem key={customer._id} value={customer._id}>
-                            {customer.user?.name}
+                            {typeof customer.customerId === "object" &&
+                              customer.customerId?.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

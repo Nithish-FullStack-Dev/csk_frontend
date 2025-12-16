@@ -1,5 +1,6 @@
 import { User } from "@/contexts/AuthContext";
 import { Building, FloorUnit } from "@/types/building";
+import { ContractorResponse } from "@/types/contractor";
 import { Property } from "@/types/property";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -168,6 +169,16 @@ export const fetchContractorProjects = async () => {
   return data;
 };
 
+export const fetchContractorListProjects = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/contractor/getContractorsForDropDown`,
+    {
+      withCredentials: true,
+    }
+  );
+  return data;
+};
+
 export const fetchFormattedTasks = async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/tasks`,
@@ -225,12 +236,22 @@ export const fetchQualityIssues = async (): Promise<QualityIssue[]> => {
   return res.data.issues;
 };
 
+export const fetchContractorList = async () => {
+  const res = await axios.get(
+    `${import.meta.env.VITE_URL}/api/contractor/getAllContractorList`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return res.data;
+};
+
 export const usefetchProjectsForDropdown = () => {
   return useQuery<Project[]>({
     queryKey: ["ProjectsForDropdown"],
     queryFn: fetchProjectsForDropdown,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 
@@ -239,7 +260,6 @@ export const usefetchContractors = () => {
     queryKey: ["fetchContractors"],
     queryFn: fetchContractors,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 
@@ -248,7 +268,14 @@ export const usefetchContractorDropDown = () => {
     queryKey: ["ContractorProjects"],
     queryFn: fetchContractorProjects,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
+  });
+};
+
+export const usefetchContractorListDropDown = () => {
+  return useQuery({
+    queryKey: ["contractor-list-dropdown"],
+    queryFn: fetchContractorListProjects,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -257,7 +284,6 @@ export const useFetchTasks = () => {
     queryKey: ["formattedTasks"],
     queryFn: fetchFormattedTasks,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 export const useTasks = () => {
@@ -265,7 +291,6 @@ export const useTasks = () => {
     queryKey: ["tasks"],
     queryFn: fetchTasks,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 
@@ -274,6 +299,13 @@ export const useQualityIssues = () => {
     queryKey: ["qualityIssues"],
     queryFn: fetchQualityIssues,
     staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
+  });
+};
+
+export const useContractorList = () => {
+  return useQuery<ContractorResponse>({
+    queryKey: ["contractors-list"],
+    queryFn: fetchContractorList,
+    staleTime: 5 * 60 * 1000,
   });
 };

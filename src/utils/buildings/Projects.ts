@@ -4,7 +4,6 @@ import { OpenPlot } from "@/types/OpenPlots";
 import { Property } from "@/types/property";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import exp from "constants";
 
 //! BUILDINGS, FLOOR AND UNITS
 export const getAllBuildings = async (): Promise<Building[]> => {
