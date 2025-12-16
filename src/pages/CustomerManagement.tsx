@@ -49,6 +49,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PurchaseCrud from "@/components/customer/PurchaseCrud";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
@@ -189,272 +191,295 @@ const CustomerManagement = () => {
               Manage your customer base and their property purchase details.
             </p>
           </div>
-          {isSalesManager && (
-            <Button
-              onClick={() => setDialogOpen(true)}
-              className="mt-4 md:mt-0 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Customer
-            </Button>
-          )}
         </div>
 
-        <div className="rounded-lg border border-gray-200 shadow-sm p-4 bg-white">
-          {isLoadingCustomers ? (
-            <div className="flex justify-center items-center gap-2 text-gray-600 py-8">
-              <Loader2 className="animate-spin" />
-              <span>Loading customers...</span>
-            </div>
-          ) : isErrorCustomers ? (
-            <div className="text-red-500 text-sm py-4">
-              {(customersError as Error)?.message ||
-                "Something went wrong while fetching customers."}
-            </div>
-          ) : customers.length === 0 ? (
-            <p className="text-center text-gray-500 py-6">
-              No customers found.
-            </p>
-          ) : (
+        <Tabs defaultValue="add">
+          <TabsList>
+            <TabsTrigger value="add">Add Customer</TabsTrigger>
+            <TabsTrigger value="purchase">Add Purchase Sheet</TabsTrigger>
+          </TabsList>
+          <TabsContent value="add">
             <>
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Agent</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Advance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Payment Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customers.map((customer) => (
-                      <TableRow key={customer._id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {(typeof customer.customerId === "object" &&
-                                customer.customerId?.name) ||
-                                "N/A"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {typeof customer.customerId === "object" &&
-                                customer.customerId?.email}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {(typeof customer.purchasedFrom === "object" &&
-                                customer.purchasedFrom?.name) ||
-                                "N/A"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {typeof customer.purchasedFrom === "object" &&
-                                customer.purchasedFrom?.email}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
+              {isSalesManager && (
+                <div className="flex justify-end w-full mb-5">
+                  <Button
+                    onClick={() => setDialogOpen(true)}
+                    className="mt-4 md:mt-0 text-white"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New Customer
+                  </Button>
+                </div>
+              )}
+              <div className="rounded-lg border border-gray-200 shadow-sm p-4 bg-white">
+                {isLoadingCustomers ? (
+                  <div className="flex justify-center items-center gap-2 text-gray-600 py-8">
+                    <Loader2 className="animate-spin" />
+                    <span>Loading customers...</span>
+                  </div>
+                ) : isErrorCustomers ? (
+                  <div className="text-red-500 text-sm py-4">
+                    {(customersError as Error)?.message ||
+                      "Something went wrong while fetching customers."}
+                  </div>
+                ) : customers.length === 0 ? (
+                  <p className="text-center text-gray-500 py-6">
+                    No customers found.
+                  </p>
+                ) : (
+                  <>
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Agent</TableHead>
+                            <TableHead>Project</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Advance</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Payment Status</TableHead>
+                            <TableHead className="text-right">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customers.map((customer) => (
+                            <TableRow key={customer._id}>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {(typeof customer.customerId === "object" &&
+                                      customer.customerId?.name) ||
+                                      "N/A"}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {typeof customer.customerId === "object" &&
+                                      customer.customerId?.email}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {(typeof customer.purchasedFrom ===
+                                      "object" &&
+                                      customer.purchasedFrom?.name) ||
+                                      "N/A"}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {typeof customer.purchasedFrom ===
+                                      "object" && customer.purchasedFrom?.email}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {(typeof customer.property === "object" &&
+                                      customer.property?.projectName) ||
+                                      "N/A"}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {typeof customer.property === "object" &&
+                                      customer.property?.location}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {(typeof customer.unit === "object" &&
+                                      customer.unit?.plotNo) ||
+                                      "N/A"}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {typeof customer.floorUnit === "object" &&
+                                    customer.floorUnit?.floorNumber
+                                      ? `Floor ${
+                                          typeof customer.floorUnit ===
+                                            "object" &&
+                                          customer.floorUnit.floorNumber
+                                        }`
+                                      : ""}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                ₹{customer.totalAmount?.toLocaleString("en-IN")}
+                              </TableCell>
+                              <TableCell>
+                                {customer.advanceReceived != null
+                                  ? `₹${customer.advanceReceived.toLocaleString(
+                                      "en-IN"
+                                    )}`
+                                  : "-"}
+                              </TableCell>
+                              <TableCell>
+                                {renderStatusBadge(customer.status)}
+                              </TableCell>
+                              <TableCell>
+                                {renderPaymentStatusBadge(
+                                  customer.paymentStatus
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleView(customer)}
+                                    >
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleEdit(customer)}
+                                    >
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedCustomer(customer);
+                                        setUploadPdfOpen(true);
+                                      }}
+                                    >
+                                      Upload PDF
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      onClick={() =>
+                                        handleDeleteClick(customer)
+                                      }
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:hidden">
+                      {customers.map((customer) => (
+                        <Card key={customer._id} className="shadow-sm">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base flex justify-between items-center">
+                              <span>
+                                {(typeof customer.customerId === "object" &&
+                                  customer.customerId?.name) ||
+                                  "N/A"}
+                              </span>
+                              {renderStatusBadge(customer.status)}
+                            </CardTitle>
+                            <CardDescription className="text-xs">
                               {(typeof customer.property === "object" &&
                                 customer.property?.projectName) ||
-                                "N/A"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {typeof customer.property === "object" &&
-                                customer.property?.location}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {(typeof customer.unit === "object" &&
-                                customer.unit?.plotNo) ||
-                                "N/A"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {typeof customer.floorUnit === "object" &&
-                              customer.floorUnit?.floorNumber
-                                ? `Floor ${
-                                    typeof customer.floorUnit === "object" &&
-                                    customer.floorUnit.floorNumber
-                                  }`
-                                : ""}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          ₹{customer.totalAmount?.toLocaleString("en-IN")}
-                        </TableCell>
-                        <TableCell>
-                          {customer.advanceReceived != null
-                            ? `₹${customer.advanceReceived.toLocaleString(
-                                "en-IN"
-                              )}`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {renderStatusBadge(customer.status)}
-                        </TableCell>
-                        <TableCell>
-                          {renderPaymentStatusBadge(customer.paymentStatus)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
+                                "No project"}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Agent</span>
+                              <span>
+                                {(typeof customer.purchasedFrom === "object" &&
+                                  customer.purchasedFrom?.name) ||
+                                  "N/A"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Unit</span>
+                              <span>
+                                {(typeof customer.unit === "object" &&
+                                  customer.unit?.plotNo) ||
+                                  "N/A"}
+                                {typeof customer.floorUnit === "object" &&
+                                customer?.floorUnit?.floorNumber
+                                  ? ` · Floor ${
+                                      typeof customer.floorUnit === "object" &&
+                                      customer.floorUnit.floorNumber
+                                    }`
+                                  : ""}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Total</span>
+                              <span>
+                                ₹{customer.totalAmount?.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Advance</span>
+                              <span>
+                                {customer.advanceReceived != null
+                                  ? `₹${customer.advanceReceived.toLocaleString(
+                                      "en-IN"
+                                    )}`
+                                  : "-"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-500 text-xs">
+                                Payment Status
+                              </span>
+                              {renderPaymentStatusBadge(customer.paymentStatus)}
+                            </div>
+                            <div className="pt-2 flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleView(customer)}
                               >
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => handleEdit(customer)}
                               >
                                 Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 onClick={() => {
                                   setSelectedCustomer(customer);
                                   setUploadPdfOpen(true);
                                 }}
                               >
                                 Upload PDF
-                              </DropdownMenuItem>
+                              </Button>
 
-                              <DropdownMenuItem
-                                className="text-red-600"
+                              <Button
+                                size="sm"
+                                variant="destructive"
                                 onClick={() => handleDeleteClick(customer)}
                               >
                                 Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {customers.map((customer) => (
-                  <Card key={customer._id} className="shadow-sm">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base flex justify-between items-center">
-                        <span>
-                          {(typeof customer.customerId === "object" &&
-                            customer.customerId?.name) ||
-                            "N/A"}
-                        </span>
-                        {renderStatusBadge(customer.status)}
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        {(typeof customer.property === "object" &&
-                          customer.property?.projectName) ||
-                          "No project"}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Agent</span>
-                        <span>
-                          {(typeof customer.purchasedFrom === "object" &&
-                            customer.purchasedFrom?.name) ||
-                            "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Unit</span>
-                        <span>
-                          {(typeof customer.unit === "object" &&
-                            customer.unit?.plotNo) ||
-                            "N/A"}
-                          {typeof customer.floorUnit === "object" &&
-                          customer?.floorUnit?.floorNumber
-                            ? ` · Floor ${
-                                typeof customer.floorUnit === "object" &&
-                                customer.floorUnit.floorNumber
-                              }`
-                            : ""}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Total</span>
-                        <span>
-                          ₹{customer.totalAmount?.toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Advance</span>
-                        <span>
-                          {customer.advanceReceived != null
-                            ? `₹${customer.advanceReceived.toLocaleString(
-                                "en-IN"
-                              )}`
-                            : "-"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-xs">
-                          Payment Status
-                        </span>
-                        {renderPaymentStatusBadge(customer.paymentStatus)}
-                      </div>
-                      <div className="pt-2 flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleView(customer)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(customer)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedCustomer(customer);
-                            setUploadPdfOpen(true);
-                          }}
-                        >
-                          Upload PDF
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteClick(customer)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </>
-          )}
-        </div>
+          </TabsContent>
+          <TabsContent value="purchase">
+            <PurchaseCrud />
+          </TabsContent>
+        </Tabs>
 
         <CustomerDialog
           onOpenChange={setDialogOpen}
