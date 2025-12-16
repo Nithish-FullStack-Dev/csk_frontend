@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -62,6 +63,8 @@ const CustomerManagement = () => {
   );
   const [editOpen, setEditOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [uploadPdfOpen, setUploadPdfOpen] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const isSalesManager =
     (user && user.role === "sales_manager") || user.role === "accountant";
@@ -93,6 +96,39 @@ const CustomerManagement = () => {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to delete customer");
+    },
+  });
+
+  const uploadPdfMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedCustomer?._id || !pdfFile) {
+        throw new Error("Missing customer or PDF");
+      }
+
+      const formData = new FormData();
+      formData.append("pdf", pdfFile);
+
+      const { data } = await axios.put(
+        `${import.meta.env.VITE_URL}/api/customer/customers/${
+          selectedCustomer._id
+        }/upload-pdf`,
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "PDF uploaded successfully");
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      setUploadPdfOpen(false);
+      setPdfFile(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || "PDF upload failed");
     },
   });
 
@@ -291,6 +327,15 @@ const CustomerManagement = () => {
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedCustomer(customer);
+                                  setUploadPdfOpen(true);
+                                }}
+                              >
+                                Upload PDF
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => handleDeleteClick(customer)}
                               >
@@ -384,6 +429,17 @@ const CustomerManagement = () => {
                         >
                           Edit
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setUploadPdfOpen(true);
+                          }}
+                        >
+                          Upload PDF
+                        </Button>
+
                         <Button
                           size="sm"
                           variant="destructive"
@@ -677,6 +733,25 @@ const CustomerManagement = () => {
                           </div>
                         );
                       })}
+
+                      {selectedCustomer.pdfDocument ? (
+                        <div className="space-y-2">
+                          <SectionTitle title="PDF Document" />
+
+                          <a
+                            href={selectedCustomer.pdfDocument}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-blue-600 hover:underline"
+                          >
+                            View Uploaded PDF
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">
+                          No PDF uploaded.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <p className="text-gray-500 text-sm">
@@ -722,6 +797,74 @@ const CustomerManagement = () => {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={uploadPdfOpen} onOpenChange={setUploadPdfOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Upload PDF</DialogTitle>
+              <DialogDescription>
+                Upload a PDF document for{" "}
+                <span className="font-medium">
+                  {typeof selectedCustomer?.customerId === "object"
+                    ? selectedCustomer.customerId.name
+                    : "this customer"}
+                </span>
+                .
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  if (file.type !== "application/pdf") {
+                    toast.error("Only PDF files are allowed");
+                    return;
+                  }
+
+                  setPdfFile(file);
+                }}
+              />
+
+              {pdfFile && (
+                <p className="text-sm text-gray-600">
+                  Selected: <span className="font-medium">{pdfFile.name}</span>
+                </p>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setUploadPdfOpen(false);
+                  setPdfFile(null);
+                }}
+                disabled={uploadPdfMutation.isPending}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={() => uploadPdfMutation.mutate()}
+                disabled={!pdfFile || uploadPdfMutation.isPending}
+              >
+                {uploadPdfMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  "Upload PDF"
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
