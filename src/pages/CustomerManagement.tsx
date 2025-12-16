@@ -51,6 +51,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PurchaseCrud from "@/components/customer/PurchaseCrud";
+import CashExpenseDialog from "@/components/accountant/CashExpenseDialog";
+import CashExpensesPage from "@/components/accountant/CashExpensesPage";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
@@ -197,6 +199,7 @@ const CustomerManagement = () => {
           <TabsList>
             <TabsTrigger value="add">Add Customer</TabsTrigger>
             <TabsTrigger value="purchase">Add Purchase Sheet</TabsTrigger>
+            <TabsTrigger value="cash">Add Cash Expenses</TabsTrigger>
           </TabsList>
           <TabsContent value="add">
             <>
@@ -478,6 +481,9 @@ const CustomerManagement = () => {
           </TabsContent>
           <TabsContent value="purchase">
             <PurchaseCrud />
+          </TabsContent>
+          <TabsContent value="cash">
+            <CashExpensesPage />
           </TabsContent>
         </Tabs>
 
