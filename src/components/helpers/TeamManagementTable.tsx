@@ -540,35 +540,37 @@ const TeamManagementTable = () => {
             </DialogHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1">
-                <Label>Agent</Label>
-                <Select
-                  onValueChange={(val) => {
-                    setSelectedAgent(val);
-                    setForm((prev) => ({ ...prev, agentId: val }));
-                  }}
-                  value={selectedAgent}
-                  disabled={isTeamMemLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableAgents?.map((agent) => (
-                      <SelectItem key={agent._id} value={agent._id}>
-                        {agent.name} ({agent.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <div className="text-xs text-muted-foreground mt-2">
-                  {isTeamMemLoading
-                    ? "Loading available agents..."
-                    : teamMemError
-                    ? "Failed to load available agents"
-                    : `${availableAgents?.length ?? 0} agent(s) available`}
+              {mode === "add" && (
+                <div className="flex flex-col gap-1">
+                  <Label>Agent</Label>
+                  <Select
+                    onValueChange={(val) => {
+                      setSelectedAgent(val);
+                      setForm((prev) => ({ ...prev, agentId: val }));
+                    }}
+                    value={selectedAgent}
+                    disabled={isTeamMemLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select agent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableAgents?.map((agent) => (
+                        <SelectItem key={agent._id} value={agent._id}>
+                          {agent.name} ({agent.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {isTeamMemLoading
+                      ? "Loading available agents..."
+                      : teamMemError
+                      ? "Failed to load available agents"
+                      : `${availableAgents?.length ?? 0} agent(s) available`}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="flex flex-col gap-1">
                 <Label htmlFor="project">Project</Label>
                 <Select

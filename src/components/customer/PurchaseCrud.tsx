@@ -274,111 +274,111 @@ export default function PurchaseCrud() {
           Add Purchase
         </Button>
       </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Party</TableHead>
-            <TableHead>Project</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Balance</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
+      <div className="rounded-lg border border-gray-200">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
-                <Loader2 className="animate-spin inline" />
-              </TableCell>
+              <TableHead>Party</TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ) : (
-            purchases?.map((p: any) => (
-              <TableRow key={p._id}>
-                <TableCell>{p.partyName}</TableCell>
-                <TableCell>
-                  {p?.project?.projectId?.projectName +
-                    "/" +
-                    p?.project?.floorUnit?.floorNumber +
-                    "/" +
-                    p?.project?.unit?.plotNo || "N/A"}
-                </TableCell>
-                <TableCell>{p.totalSaleConsideration}</TableCell>
-                <TableCell>{p.balance}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical size={16} />
-                      </Button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelected(p);
-                          setViewOpen(true);
-                        }}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setMode("edit");
-                          setSelected(p);
-                          form.reset({
-                            partyName: p.partyName || "",
-                            companyName: p.companyName || "",
-                            project:
-                              typeof p.project === "object"
-                                ? p.project._id
-                                : p.project,
-                            agent:
-                              typeof p.agent === "object"
-                                ? p.agent._id
-                                : p.agent,
-                            propertyDescription: p.propertyDescription || "",
-                            paymentPlan: p.paymentPlan,
-                            registrationStatus:
-                              p.registrationStatus || "Not Registered",
-                            totalSaleConsideration:
-                              p.totalSaleConsideration || 0,
-                            advance: p.advance || 0,
-                            lastPaymentDate: formatDateForInput(
-                              p.lastPaymentDate
-                            ),
-                            nextPaymentDate: formatDateForInput(
-                              p.nextPaymentDate
-                            ),
-                            paymentDetails: p.paymentDetails || "",
-                            notes: p.notes || "",
-                          });
-                          setOpen(true);
-                        }}
-                      >
-                        Edit
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => {
-                          setDeleteId(p._id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  <Loader2 className="animate-spin inline" />
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              purchases?.map((p: any) => (
+                <TableRow key={p._id}>
+                  <TableCell>{p.partyName}</TableCell>
+                  <TableCell>
+                    {p?.project?.projectId?.projectName +
+                      "/" +
+                      p?.project?.floorUnit?.floorNumber +
+                      "/" +
+                      p?.project?.unit?.plotNo || "N/A"}
+                  </TableCell>
+                  <TableCell>{p.totalSaleConsideration}</TableCell>
+                  <TableCell>{p.balance}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
 
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelected(p);
+                            setViewOpen(true);
+                          }}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setMode("edit");
+                            setSelected(p);
+                            form.reset({
+                              partyName: p.partyName || "",
+                              companyName: p.companyName || "",
+                              project:
+                                typeof p.project === "object"
+                                  ? p.project._id
+                                  : p.project,
+                              agent:
+                                typeof p.agent === "object"
+                                  ? p.agent._id
+                                  : p.agent,
+                              propertyDescription: p.propertyDescription || "",
+                              paymentPlan: p.paymentPlan,
+                              registrationStatus:
+                                p.registrationStatus || "Not Registered",
+                              totalSaleConsideration:
+                                p.totalSaleConsideration || 0,
+                              advance: p.advance || 0,
+                              lastPaymentDate: formatDateForInput(
+                                p.lastPaymentDate
+                              ),
+                              nextPaymentDate: formatDateForInput(
+                                p.nextPaymentDate
+                              ),
+                              paymentDetails: p.paymentDetails || "",
+                              notes: p.notes || "",
+                            });
+                            setOpen(true);
+                          }}
+                        >
+                          Edit
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => {
+                            setDeleteId(p._id);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[60%] max-h-[80vh] flex flex-col">
           <DialogHeader>

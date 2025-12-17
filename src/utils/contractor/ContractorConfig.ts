@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Project } from "../project/ProjectConfig";
 import { FloorUnit } from "@/types/building";
-import { ApiResponse } from "../leads/LeadConfig";
+import { z } from "zod";
 import { User } from "@/contexts/AuthContext";
 
 //! Task List
@@ -374,3 +374,118 @@ export const useSiteInchargeFroDropDown = () => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+//! Contactor List
+
+const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+const ACCOUNT_NUMBER_REGEX = /^[0-9]{9,18}$/;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+export const contractorSchema = z.object({
+  userId: z.string().min(1, { message: "Please select a contractor" }),
+
+  companyName: z.string().min(1, { message: "Company name is required" }),
+
+  gstNumber: z
+    .string()
+    .min(1, { message: "GST number is required" })
+    .regex(GST_REGEX, {
+      message: "Invalid GST format (e.g. 22ABCDE1234F1Z5)",
+    }),
+
+  panCardNumber: z
+    .string()
+    .min(1, { message: "PAN number is required" })
+    .regex(PAN_REGEX, {
+      message: "Invalid PAN format (e.g. ABCDE1234F)",
+    }),
+
+  contractorType: z
+    .string()
+    .min(1, { message: "Please select contractor type" }),
+
+  accountsIncharge: z.string().optional(),
+
+  amount: z.coerce.number().min(0, { message: "Amount must be at least 0" }),
+
+  advancePaid: z.coerce
+    .number()
+    .min(0, { message: "Advance must be at least 0" }),
+
+  balancePaid: z.coerce.number().min(0),
+
+  billInvoiceNumber: z.string().optional(),
+
+  contractStartDate: z
+    .string()
+    .regex(DATE_REGEX, { message: "Invalid date format (YYYY-MM-DD)" })
+    .optional(),
+
+  contractEndDate: z
+    .string()
+    .regex(DATE_REGEX, { message: "Invalid date format (YYYY-MM-DD)" })
+    .optional(),
+
+  billedDate: z
+    .string()
+    .regex(DATE_REGEX, { message: "Invalid date format (YYYY-MM-DD)" })
+    .optional(),
+
+  finalPaymentDate: z
+    .string()
+    .regex(DATE_REGEX, { message: "Invalid date format (YYYY-MM-DD)" })
+    .optional(),
+
+  workDetails: z.string().optional(),
+
+  billApprovedBySiteIncharge: z.boolean(),
+  billProcessedByAccountant: z.boolean(),
+  isActive: z.boolean(),
+
+  bankName: z.string().min(1, { message: "Bank Name is required" }),
+
+  accountNumber: z
+    .string()
+    .min(1, { message: "Account number is required" })
+    .regex(ACCOUNT_NUMBER_REGEX, {
+      message: "Account number must be 9–18 digits",
+    }),
+
+  ifscCode: z
+    .string()
+    .min(1, { message: "ifsc code is required" })
+    .regex(IFSC_REGEX, {
+      message: "Invalid IFSC format (e.g. SBIN0001234)",
+    }),
+
+  branchName: z.string().min(1, { message: "Branch Name is required" }),
+
+  projectsAssigned: z.array(z.string()),
+
+  paymentDetails: z
+    .array(
+      z.object({
+        modeOfPayment: z
+          .string()
+          .min(1, { message: "Please select payment mode" }),
+
+        paymentDate: z.string().regex(DATE_REGEX, {
+          message: "Invalid date format (YYYY-MM-DD)",
+        }),
+
+        lastPaymentDate: z
+          .string()
+          .regex(DATE_REGEX, {
+            message: "Invalid date format (YYYY-MM-DD)",
+          })
+          .optional(),
+      })
+    )
+    .min(1, {
+      message: "At least one complete payment record is required",
+    }),
+});
+
+export type FormValues = z.infer<typeof contractorSchema>;

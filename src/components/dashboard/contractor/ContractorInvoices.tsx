@@ -708,7 +708,7 @@ const ContractorInvoices = () => {
 
       {/* Create Invoice Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className=" max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+        <DialogContent className=" max-w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>

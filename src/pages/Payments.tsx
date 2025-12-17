@@ -96,11 +96,9 @@ const Payments = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [viewInvoiceDialogOpen, setViewInvoiceDialogOpen] = useState(false);
   const [showMethodDropdown, setShowMethodDropdown] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [invoices, setInvoices] = useState([]);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
   const [error, setError] = useState("");
@@ -116,40 +114,6 @@ const Payments = () => {
     startDate: null as Date | null,
     endDate: null as Date | null,
   });
-
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    setDateFilters({
-      startDate: range?.from || null,
-      endDate: range?.to || null,
-    });
-  };
-
-  const handleMarkAsPaid = async (invoiceId: any, paymentMethod: any) => {
-    try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_URL}/api/invoices/${invoiceId}/mark-paid`,
-        { paymentMethod }, // no body, just params
-        { withCredentials: true } // if you're using cookies/auth
-      );
-
-      toast(`Invoice has been marked as paid.`);
-      // Optionally refresh list
-      //fetchInvoices();
-    } catch (error) {
-      toast("Could not make payment status.");
-    } finally {
-      setPaymentMethod("");
-      setSelectedInvoiceId("");
-      setShowPaymentDialog(false);
-    }
-  };
-
-  const currentRange: DateRange | undefined = dateFilters.startDate
-    ? {
-        from: dateFilters.startDate,
-        to: dateFilters.endDate || undefined,
-      }
-    : undefined;
 
   const [filters, setFilters] = useState({
     paymentMethod: "",
@@ -259,7 +223,6 @@ const Payments = () => {
 
     saveAs(fileData, "Payments.xlsx");
   };
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -654,7 +617,7 @@ const Payments = () => {
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl shadow-xl border p-8 bg-white">
+              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl shadow-xl border p-8 bg-white">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-semibold">
                     <Receipt className="h-6 w-6 text-green-600 mb-2" />
@@ -675,11 +638,8 @@ const Payments = () => {
                       <div>
                         <p className="font-semibold">Project / Unit</p>
                         <p>
-                          {
-                            selectedPayment?.invoice?.project?.projectId
-                              ?.projectName
-                          }{" "}
-                          / {selectedPayment?.invoice?.unit}
+                          {selectedPayment?.invoice?.project?.projectName} /{" "}
+                          {selectedPayment?.invoice?.unit?.plotNo}
                         </p>
                       </div>
                       <div>
@@ -690,7 +650,7 @@ const Payments = () => {
                       </div>
                       <div>
                         <p className="font-semibold">Payment Method</p>
-                        <p>{selectedPayment?.invoice?.paymentMethod}</p>
+                        <p>{selectedPayment?.invoice?.paymentMethod[0]}</p>
                       </div>
                       <div>
                         <p className="font-semibold">Amount</p>

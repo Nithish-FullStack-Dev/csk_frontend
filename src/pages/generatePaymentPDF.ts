@@ -5,13 +5,11 @@ interface PaymentData {
   invoice: {
     invoiceNumber: string;
     project: {
-      projectId: {
-        basicInfo: {
-          projectName: string;
-        };
-      };
+      projectName: string;
     };
-    unit: string;
+    unit: {
+      plotNo: string;
+    };
     paymentMethod: string;
     total: number;
     paymentDate: string;
@@ -153,7 +151,7 @@ export const generatePaymentPdf = async (
   // Right column
   drawField(
     "Project / Unit",
-    `${paymentData.invoice.project.projectId.basicInfo.projectName} / ${paymentData.invoice.unit}`,
+    `${paymentData.invoice.project.projectName} / ${paymentData.invoice.unit.plotNo}`,
     rightColumnX,
     yPosition
   );
