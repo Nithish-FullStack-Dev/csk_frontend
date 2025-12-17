@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -116,6 +116,7 @@ export default function PurchaseCrud() {
   const [mode, setMode] = useState<"add" | "edit">("add");
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const {
     data: projects,
@@ -133,12 +134,67 @@ export default function PurchaseCrud() {
     staleTime: 0,
   });
 
+  const {
+    data: purchases,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["purchases"],
+    queryFn: fetchPurchases,
+  });
+
   useEffect(() => {
     if (projectError) toast.error("Failed to load projects");
   }, [projectError]);
   useEffect(() => {
     if (agentError) toast.error("Failed to load agents");
   }, [agentError]);
+
+  const filteredPurchases = useMemo(() => {
+    // Always return array
+    if (!Array.isArray(purchases) || purchases.length === 0) {
+      return [];
+    }
+
+    const query = (search ?? "").trim().toLowerCase();
+    if (!query) return purchases;
+
+    return purchases.filter((p: any) => {
+      if (!p || typeof p !== "object") return false;
+
+      const partyName = String(p.partyName ?? "").toLowerCase();
+      const companyName = String(p.companyName ?? "").toLowerCase();
+
+      const projectName =
+        typeof p.project === "object"
+          ? String(p.project?.projectId?.projectName ?? "").toLowerCase()
+          : "";
+
+      const floorNo =
+        typeof p.project === "object"
+          ? String(p.project?.floorUnit?.floorNumber ?? "").toLowerCase()
+          : "";
+
+      const unitNo =
+        typeof p.project === "object"
+          ? String(p.project?.unit?.plotNo ?? "").toLowerCase()
+          : "";
+
+      const agentName =
+        typeof p.agent === "object"
+          ? String(p.agent?.name ?? "").toLowerCase()
+          : "";
+
+      return (
+        partyName.includes(query) ||
+        companyName.includes(query) ||
+        projectName.includes(query) ||
+        floorNo.includes(query) ||
+        unitNo.includes(query) ||
+        agentName.includes(query)
+      );
+    });
+  }, [purchases, search]);
 
   const form = useForm<PurchaseForm>({
     resolver: zodResolver(purchaseSchema),
@@ -157,15 +213,6 @@ export default function PurchaseCrud() {
       paymentDetails: "",
       notes: "",
     },
-  });
-
-  const {
-    data: purchases,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["purchases"],
-    queryFn: fetchPurchases,
   });
 
   useEffect(() => {
@@ -249,7 +296,16 @@ export default function PurchaseCrud() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-5">
+        <div className=" mb-3">
+          <Input
+            placeholder="Search party, project, unit, agent..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
+
         <Button
           onClick={() => {
             setMode("add");
@@ -292,8 +348,21 @@ export default function PurchaseCrud() {
                   <Loader2 className="animate-spin inline" />
                 </TableCell>
               </TableRow>
+            ) : filteredPurchases.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-32 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <span className="text-sm font-medium">
+                      No Purchase records found
+                    </span>
+                    <span className="text-xs">
+                      Start by adding a new purchases using the button above
+                    </span>
+                  </div>
+                </TableCell>
+              </TableRow>
             ) : (
-              purchases?.map((p: any) => (
+              filteredPurchases?.map((p: any) => (
                 <TableRow key={p._id}>
                   <TableCell>{p.partyName}</TableCell>
                   <TableCell>

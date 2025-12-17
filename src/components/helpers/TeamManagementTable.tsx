@@ -717,7 +717,9 @@ const TeamManagementTable = () => {
 
             <DialogFooter>
               <DialogClose>
-                <Button variant="destructive">Cancel</Button>
+                <Button variant="destructive" type="button">
+                  Cancel
+                </Button>
               </DialogClose>
 
               <Button variant="secondary" type="button" onClick={reset}>

@@ -49,7 +49,6 @@ export default function CashExpenseDialog({ open, onClose, editData }: any) {
   const watchedFile = form.watch("proofBill");
 
   useEffect(() => {
-    console.log("file", watchedFile);
     if (watchedFile && watchedFile.length > 0) {
       const file = watchedFile[0];
       const objectUrl = URL.createObjectURL(file);

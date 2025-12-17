@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,6 +95,7 @@ const ContractorsList = () => {
   const [editingContractor, setEditingContractor] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewContractor, setViewContractor] = useState<any>(null);
+  const [contractorListSearch, setContractorListSearch] = useState("");
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -183,24 +184,94 @@ const ContractorsList = () => {
   }
   if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
-  const filteredContractors = contractors.filter((contractor) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      contractor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contractor.company.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredAssignedContractors = useMemo(() => {
+    if (!Array.isArray(contractors) || contractors.length === 0) return [];
 
-    const matchesSpecialization =
-      specializationFilter === "" ||
-      specializationFilter === "all-specializations" ||
-      contractor.specialization === specializationFilter;
+    const query = searchQuery.trim().toLowerCase();
 
-    const matchesStatus =
-      statusFilter === "" ||
-      statusFilter === "all-statuses" ||
-      contractor.status === statusFilter;
+    return contractors.filter((contractor: any) => {
+      if (!contractor) return false;
 
-    return matchesSearch && matchesSpecialization && matchesStatus;
-  });
+      // SEARCH
+      const matchesSearch =
+        !query ||
+        String(contractor.name ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.company ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.phone ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.email ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.specialization ?? "")
+          .toLowerCase()
+          .includes(query);
+
+      // SPECIALIZATION FILTER
+      const matchesSpecialization =
+        !specializationFilter ||
+        specializationFilter === "all-specializations" ||
+        contractor.specialization === specializationFilter;
+
+      // STATUS FILTER
+      const matchesStatus =
+        !statusFilter ||
+        statusFilter === "all-statuses" ||
+        contractor.status === statusFilter;
+
+      return matchesSearch && matchesSpecialization && matchesStatus;
+    });
+  }, [contractors, searchQuery, specializationFilter, statusFilter]);
+
+  const filteredContractorList = useMemo(() => {
+    const list = contractorList?.data;
+
+    if (!Array.isArray(list) || list.length === 0) return [];
+
+    const query = contractorListSearch.trim().toLowerCase();
+    if (!query) return list;
+
+    return list.filter((contractor: any) => {
+      if (!contractor) return false;
+
+      return (
+        String(contractor.companyName ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.gstNumber ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.contractorType ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.workDetails ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.billInvoiceNumber ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.amount ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.advancePaid ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor.balancePaid ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor?.userId?.email ?? "")
+          .toLowerCase()
+          .includes(query) ||
+        String(contractor?.userId?.phone ?? "")
+          .toLowerCase()
+          .includes(query)
+      );
+    });
+  }, [contractorList?.data, contractorListSearch]);
 
   const specializations = Array.from(
     new Set(contractors.map((c) => c.specialization))
@@ -290,78 +361,6 @@ const ContractorsList = () => {
           </Card>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-          <div className="flex flex-wrap items-center space-x-0 space-y-2 sm:space-x-2 sm:space-y-0 md:gap-4">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search contractors..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <Select
-              value={specializationFilter}
-              onValueChange={setSpecializationFilter}
-            >
-              <SelectTrigger className="w-fit">
-                <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <span>
-                    {specializationFilter === "all-specializations" ||
-                    !specializationFilter
-                      ? "All Specializations"
-                      : specializationFilter}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-specializations">
-                  All Specializations
-                </SelectItem>
-                {specializations?.map((specialization, index) => {
-                  if (!specialization || specialization.trim() === "")
-                    return null;
-
-                  return (
-                    <SelectItem key={index} value={specialization}>
-                      {specialization}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-fit">
-                <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <span>
-                    {statusFilter === "all-statuses" || !statusFilter
-                      ? "All Statuses"
-                      : statusFilter
-                          .replace("_", " ")
-                          .split(" ")
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1)
-                          )
-                          .join(" ")}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all-statuses">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
         <Card>
           <CardContent className="p-0">
             <Tabs defaultValue="contractorlist">
@@ -377,16 +376,95 @@ const ContractorsList = () => {
               </TabsList>
 
               <TabsContent value="assignedcontractor">
-                <div className="p-4 sm:p-6 lg:p-8">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Assigned Contractors</h2>
+                <div className="rounded-xl border bg-background p-4 sm:p-5 mb-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Title */}
+                    <div>
+                      <h2 className="text-2xl font-semibold tracking-tight">
+                        Assigned Contractors
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Contractors currently working on assigned projects
+                      </p>
+                    </div>
+
+                    {/* Primary Action */}
                     <Button onClick={() => setOpenDialog(true)}>
                       <Users className="h-4 w-4 mr-2" />
                       Assign Contractor
                     </Button>
                   </div>
-                  <div className="hidden md:block">
-                    <div className="overflow-x-auto rounded-md border">
+
+                  {/* Filters */}
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by name, phone, email, specialization..."
+                        className="pl-9"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Specialization */}
+                    <Select
+                      value={specializationFilter}
+                      onValueChange={setSpecializationFilter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Specializations" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all-specializations">
+                          All Specializations
+                        </SelectItem>
+                        {specializations?.map((spec, i) =>
+                          spec ? (
+                            <SelectItem key={i} value={spec}>
+                              {spec}
+                            </SelectItem>
+                          ) : null
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Status */}
+                    <Select
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all-statuses">
+                          All Statuses
+                        </SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Clear */}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSpecializationFilter("");
+                        setStatusFilter("");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+
+                <Card className="hidden md:block">
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -406,7 +484,7 @@ const ContractorsList = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredContractors.length === 0 ? (
+                          {filteredAssignedContractors.length === 0 ? (
                             <TableRow>
                               <TableCell
                                 colSpan={6}
@@ -416,7 +494,7 @@ const ContractorsList = () => {
                               </TableCell>
                             </TableRow>
                           ) : (
-                            filteredContractors.map((contractor) => (
+                            filteredAssignedContractors.map((contractor) => (
                               <TableRow key={contractor._id}>
                                 <TableCell className="font-medium">
                                   {contractor?.name}
@@ -549,132 +627,132 @@ const ContractorsList = () => {
                         </TableBody>
                       </Table>
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="block md:hidden space-y-4">
-                    {filteredContractors.length === 0 ? (
-                      <div className="text-center py-6 text-muted-foreground">
-                        No contractors found matching your filters
-                      </div>
-                    ) : (
-                      filteredContractors.map((contractor) => (
-                        <Card
-                          key={contractor._id}
-                          className="p-4 rounded-xl border shadow-sm"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="font-semibold text-lg">
-                                {contractor.name}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {contractor?.status}
-                              </p>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedContractor(contractor);
-                                    setIsContractorDialogOpen(true);
-                                  }}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={async () => {
-                                    setSelectedContractor(contractor);
-                                    setViewTasksDialogOpen(true);
-                                    setIsLoadingTasks(true);
-                                    try {
-                                      const res = await axios.get(
-                                        `${
-                                          import.meta.env.VITE_URL
-                                        }/api/project/site-incharge/${
-                                          contractor._id
-                                        }/contractor/tasks`,
-                                        { withCredentials: true }
-                                      );
-                                      setContractorTasks(res.data.tasks);
-                                    } catch (err) {
-                                      console.error(err);
-                                    } finally {
-                                      setIsLoadingTasks(false);
-                                    }
-                                  }}
-                                >
-                                  View Tasks
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => navigate("/messaging")}
-                                >
-                                  Send Message
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedContractor(contractor);
-                                    setNewStatus(contractor.status);
-                                    setStatusDialogOpen(true);
-                                  }}
-                                >
-                                  Update Status
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                <div className="block md:hidden space-y-4">
+                  {filteredAssignedContractors.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      No contractors found matching your filters
+                    </div>
+                  ) : (
+                    filteredAssignedContractors.map((contractor) => (
+                      <Card
+                        key={contractor._id}
+                        className="p-4 rounded-xl border shadow-sm"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {contractor.name}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {contractor?.status}
+                            </p>
                           </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedContractor(contractor);
+                                  setIsContractorDialogOpen(true);
+                                }}
+                              >
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  setSelectedContractor(contractor);
+                                  setViewTasksDialogOpen(true);
+                                  setIsLoadingTasks(true);
+                                  try {
+                                    const res = await axios.get(
+                                      `${
+                                        import.meta.env.VITE_URL
+                                      }/api/project/site-incharge/${
+                                        contractor._id
+                                      }/contractor/tasks`,
+                                      { withCredentials: true }
+                                    );
+                                    setContractorTasks(res.data.tasks);
+                                  } catch (err) {
+                                    console.error(err);
+                                  } finally {
+                                    setIsLoadingTasks(false);
+                                  }
+                                }}
+                              >
+                                View Tasks
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => navigate("/messaging")}
+                              >
+                                Send Message
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedContractor(contractor);
+                                  setNewStatus(contractor.status);
+                                  setStatusDialogOpen(true);
+                                }}
+                              >
+                                Update Status
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
 
-                          <div className="space-y-2 text-sm">
-                            <p>
-                              <span className="font-medium">
-                                Specialization:{" "}
-                              </span>
-                              {contractor.specialization || "General"}
-                            </p>
-                            <p>
-                              <span className="font-medium">Contact: </span>
-                              {contractor.phone}, {contractor.email}
-                            </p>
-                            <div>
-                              <span className="font-medium">Projects: </span>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {contractor?.projects?.map((project, index) => (
-                                  <Badge
-                                    key={index}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {project.projectName} — F
-                                    {project.floorNumber} / U{project.unitType}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="font-medium">Progress: </span>
-                              <div className="text-xs">
-                                {contractor.completedTasks} /{" "}
-                                {contractor.totalTasks} Tasks
-                              </div>
-                              <Progress
-                                value={
-                                  (contractor.completedTasks /
-                                    contractor.totalTasks) *
-                                  100
-                                }
-                                className="h-2 mt-1"
-                              />
+                        <div className="space-y-2 text-sm">
+                          <p>
+                            <span className="font-medium">
+                              Specialization:{" "}
+                            </span>
+                            {contractor.specialization || "General"}
+                          </p>
+                          <p>
+                            <span className="font-medium">Contact: </span>
+                            {contractor.phone}, {contractor.email}
+                          </p>
+                          <div>
+                            <span className="font-medium">Projects: </span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {contractor?.projects?.map((project, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {project.projectName} — F{project.floorNumber}{" "}
+                                  / U{project.unitType}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
-                        </Card>
-                      ))
-                    )}
-                  </div>
+                          <div>
+                            <span className="font-medium">Progress: </span>
+                            <div className="text-xs">
+                              {contractor.completedTasks} /{" "}
+                              {contractor.totalTasks} Tasks
+                            </div>
+                            <Progress
+                              value={
+                                (contractor.completedTasks /
+                                  contractor.totalTasks) *
+                                100
+                              }
+                              className="h-2 mt-1"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </TabsContent>
 
@@ -682,15 +760,26 @@ const ContractorsList = () => {
                 <div className="container mx-auto p-4 sm:p-6 lg:p-8">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold">Contractor List</h2>
-                    <Button
-                      onClick={() => {
-                        setEditingContractor(null);
-                        setOpenConDialog(true);
-                      }}
-                    >
-                      <Users className="h-4 w-4 mr-2" />
-                      Add Contractor
-                    </Button>
+                    <div className="flex gap-5">
+                      <Input
+                        placeholder="Search contractors..."
+                        value={contractorListSearch}
+                        onChange={(e) =>
+                          setContractorListSearch(e.target.value)
+                        }
+                        className="w-full md:w-64"
+                      />
+
+                      <Button
+                        onClick={() => {
+                          setEditingContractor(null);
+                          setOpenConDialog(true);
+                        }}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Add Contractor
+                      </Button>
+                    </div>
                   </div>
                   {isLoadingContractorList ? (
                     <Loader />
@@ -719,7 +808,7 @@ const ContractorsList = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {contractorList?.data?.map((contractor) => (
+                              {filteredContractorList?.map((contractor) => (
                                 <TableRow key={contractor._id}>
                                   <TableCell className="font-medium">
                                     {contractor.companyName}
@@ -830,7 +919,7 @@ const ContractorsList = () => {
                       </div>
 
                       <div className="md:hidden space-y-4">
-                        {contractorList?.data?.map((contractor) => (
+                        {filteredContractorList?.map((contractor) => (
                           <Card key={contractor._id}>
                             <CardHeader>
                               <div className="flex items-center justify-between">
@@ -955,7 +1044,7 @@ const ContractorsList = () => {
                     </>
                   )}
 
-                  {contractorList?.data?.length === 0 && (
+                  {filteredContractorList?.length === 0 && (
                     <Card className="text-center py-12">
                       <CardContent>
                         <p className="text-muted-foreground">
@@ -990,6 +1079,8 @@ const ContractorsList = () => {
                     e.preventDefault();
                     try {
                       setIsContractorAdding(true);
+                      console.log("first", formData);
+                      console.log("projects", allProjects);
                       const res = await axios.post(
                         `${
                           import.meta.env.VITE_URL
