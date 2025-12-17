@@ -231,7 +231,7 @@ const CustomerManagement = () => {
                   </p>
                 ) : (
                   <>
-                    <div className="hidden md:block">
+                    <div>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -370,109 +370,6 @@ const CustomerManagement = () => {
                           ))}
                         </TableBody>
                       </Table>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 md:hidden">
-                      {customers.map((customer) => (
-                        <Card key={customer._id} className="shadow-sm">
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex justify-between items-center">
-                              <span>
-                                {(typeof customer.customerId === "object" &&
-                                  customer.customerId?.name) ||
-                                  "N/A"}
-                              </span>
-                              {renderStatusBadge(customer.status)}
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                              {(typeof customer.property === "object" &&
-                                customer.property?.projectName) ||
-                                "No project"}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Agent</span>
-                              <span>
-                                {(typeof customer.purchasedFrom === "object" &&
-                                  customer.purchasedFrom?.name) ||
-                                  "N/A"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Unit</span>
-                              <span>
-                                {(typeof customer.unit === "object" &&
-                                  customer.unit?.plotNo) ||
-                                  "N/A"}
-                                {typeof customer.floorUnit === "object" &&
-                                customer?.floorUnit?.floorNumber
-                                  ? ` · Floor ${
-                                      typeof customer.floorUnit === "object" &&
-                                      customer.floorUnit.floorNumber
-                                    }`
-                                  : ""}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Total</span>
-                              <span>
-                                ₹{customer.totalAmount?.toLocaleString("en-IN")}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-500">Advance</span>
-                              <span>
-                                {customer.advanceReceived != null
-                                  ? `₹${customer.advanceReceived.toLocaleString(
-                                      "en-IN"
-                                    )}`
-                                  : "-"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-500 text-xs">
-                                Payment Status
-                              </span>
-                              {renderPaymentStatusBadge(customer.paymentStatus)}
-                            </div>
-                            <div className="pt-2 flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleView(customer)}
-                              >
-                                View
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEdit(customer)}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedCustomer(customer);
-                                  setUploadPdfOpen(true);
-                                }}
-                              >
-                                Upload PDF
-                              </Button>
-
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteClick(customer)}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
                     </div>
                   </>
                 )}

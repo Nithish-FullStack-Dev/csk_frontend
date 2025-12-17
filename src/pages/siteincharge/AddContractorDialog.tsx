@@ -5,9 +5,9 @@ import axios from "axios";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,13 @@ import {
   usefetchContractorDropDown,
   usefetchProjectsForDropdown,
 } from "@/utils/project/ProjectConfig";
-import { ContractorList, PaymentRecord } from "@/types/contractor";
+import { ContractorList } from "@/types/contractor";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import {
+  contractorSchema,
+  FormValues,
+} from "@/utils/contractor/ContractorConfig";
 
 type Props = {
   openDialog: boolean;
@@ -48,112 +54,143 @@ const AddContractorDialog = ({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  const [form, setForm] = useState({
-    userId: "",
-    companyName: "",
-    gstNumber: "",
-    panCardNumber: "",
-    contractorType: "",
-    accountsIncharge: "",
-    amount: "",
-    advancePaid: "",
-    balancePaid: "",
-    billInvoiceNumber: "",
-    contractStartDate: "",
-    contractEndDate: "",
-    billedDate: "",
-    finalPaymentDate: "",
-    workDetails: "",
-    billApprovedBySiteIncharge: false,
-    billProcessedByAccountant: false,
-    isActive: true,
-    bankName: "",
-    accountNumber: "",
-    ifscCode: "",
-    branchName: "",
-  });
-
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [billCopy, setBillCopy] = useState<File | null>(null);
-  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(contractorSchema),
+    defaultValues: {
+      userId: "",
+      companyName: "",
+      gstNumber: "",
+      panCardNumber: "",
+      contractorType: "",
+      accountsIncharge: "",
+      amount: 0,
+      advancePaid: 0,
+      balancePaid: 0,
+      billInvoiceNumber: "",
+      contractStartDate: "",
+      contractEndDate: "",
+      billedDate: "",
+      finalPaymentDate: "",
+      workDetails: "",
+      billApprovedBySiteIncharge: false,
+      billProcessedByAccountant: false,
+      isActive: true,
+      bankName: "",
+      accountNumber: "",
+      ifscCode: "",
+      branchName: "",
+      projectsAssigned: [],
+      paymentDetails: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "paymentDetails",
+  });
+
+  const amount = watch("amount");
+  const advancePaid = watch("advancePaid");
+
+  useEffect(() => {
+    setValue("balancePaid", Math.max((amount ?? 0) - (advancePaid ?? 0), 0));
+  }, [amount, advancePaid, setValue]);
 
   const { data: contractorDropDown = [] } = usefetchContractorDropDown();
   const { data: allProjects = [] } = usefetchProjectsForDropdown();
 
   useEffect(() => {
+    if (!openDialog) return;
+
     if (mode === "edit" && contractor) {
-      setForm({
+      const projects =
+        contractor.projectsAssigned?.map((p: any) =>
+          typeof p === "string" ? p : p._id
+        ) || [];
+
+      const payments =
+        contractor.paymentDetails?.map((p: any) => ({
+          modeOfPayment: p.modeOfPayment || "",
+          paymentDate: p.paymentDate ? p.paymentDate.split("T")[0] : "",
+          lastPaymentDate: p.lastPaymentDate
+            ? p.lastPaymentDate.split("T")[0]
+            : "",
+        })) || [];
+
+      reset({
         userId:
           typeof contractor.userId === "string"
             ? contractor.userId
             : contractor.userId?._id || "",
-
         companyName: contractor.companyName || "",
         gstNumber: contractor.gstNumber || "",
         panCardNumber: contractor.panCardNumber || "",
         contractorType: contractor.contractorType || "",
-
         accountsIncharge:
           typeof contractor.accountsIncharge === "string"
             ? contractor.accountsIncharge
             : contractor.accountsIncharge?._id || "",
-
-        amount: String(contractor.amount || ""),
-        advancePaid: String(contractor.advancePaid || ""),
-        balancePaid: String(contractor.balancePaid || ""),
-
+        amount: contractor.amount || 0,
+        advancePaid: contractor.advancePaid || 0,
+        balancePaid: contractor.balancePaid || 0,
         billInvoiceNumber: contractor.billInvoiceNumber || "",
-
         contractStartDate: contractor.contractStartDate
           ? contractor.contractStartDate.split("T")[0]
           : "",
         contractEndDate: contractor.contractEndDate
           ? contractor.contractEndDate.split("T")[0]
           : "",
-
         billedDate: contractor.billedDate
           ? contractor.billedDate.split("T")[0]
           : "",
-
         finalPaymentDate: contractor.finalPaymentDate
           ? contractor.finalPaymentDate.split("T")[0]
           : "",
-
         workDetails: contractor.workDetails || "",
-        billApprovedBySiteIncharge: contractor.billApprovedBySiteIncharge,
-        billProcessedByAccountant: contractor.billProcessedByAccountant,
-        isActive: contractor.isActive,
-
-        // NEW MODEL BANK FIELDS
+        billApprovedBySiteIncharge:
+          contractor.billApprovedBySiteIncharge ?? false,
+        billProcessedByAccountant:
+          contractor.billProcessedByAccountant ?? false,
+        isActive: contractor.isActive ?? true,
         bankName: contractor.bankName || "",
         accountNumber: contractor.accountNumber || "",
         ifscCode: contractor.ifscCode || "",
         branchName: contractor.branchName || "",
+        projectsAssigned: projects,
+        paymentDetails: payments,
       });
 
-      setPaymentRecords(
-        contractor.paymentDetails?.map((p) => ({
-          modeOfPayment: p.modeOfPayment,
-          paymentDate: p.paymentDate ? p.paymentDate.split("T")[0] : "",
-          lastPaymentDate: p.lastPaymentDate
-            ? p.lastPaymentDate.split("T")[0]
-            : "",
-        })) || []
-      );
+      setSelectedProjects(projects);
 
-      setSelectedProjects(
-        contractor.projectsAssigned?.map((p) =>
-          typeof p === "string" ? p : p._id
-        ) || []
-      );
+      // ✅ IMPORTANT: show existing image
+      setImagePreview(contractor.billCopy || null);
     } else {
-      setForm((prev) => ({ ...prev }));
+      reset();
       setSelectedProjects([]);
-      setPaymentRecords([]);
-      setBillCopy(null);
+      setImagePreview(null);
     }
-  }, [contractor, mode]);
+
+    setBillCopy(null);
+  }, [openDialog, mode, contractor, reset]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const addContractorMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -169,8 +206,9 @@ const AddContractorDialog = ({
       setOpenConDialog(false);
       toast.success(data?.message ?? "Contractor added successfully");
     },
-    onError: (error) => {
-      toast.error(error?.message || "Something went wrong");
+    onError: (error: any) => {
+      console.log(error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
     },
   });
 
@@ -190,100 +228,79 @@ const AddContractorDialog = ({
       setOpenConDialog(false);
       toast.success(data?.message ?? "Contractor updated successfully");
     },
-    onError: (error) => {
-      toast.error(error?.message || "Something went wrong");
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Something went wrong");
     },
   });
 
-  const addPaymentRecord = () => {
-    setPaymentRecords([
-      ...paymentRecords,
-      { modeOfPayment: undefined, paymentDate: "", lastPaymentDate: "" },
-    ]);
-  };
-
-  const removePaymentRecord = (index: number) => {
-    setPaymentRecords(paymentRecords.filter((_, i) => i !== index));
-  };
-
-  const updatePaymentRecord = (
-    index: number,
-    field: keyof PaymentRecord,
-    value: string
-  ) => {
-    const updated = [...paymentRecords];
-    updated[index] = { ...updated[index], [field]: value };
-    setPaymentRecords(updated);
-  };
+  const isPending =
+    addContractorMutation.isPending || updateContractorMutation.isPending;
 
   const handleAddProject = (value: string) => {
     if (value && !selectedProjects.includes(value)) {
-      setSelectedProjects([...selectedProjects, value]);
+      const newProjects = [...selectedProjects, value];
+      setSelectedProjects(newProjects);
+      setValue("projectsAssigned", newProjects);
     }
   };
 
   const handleRemoveProject = (id: string) => {
-    setSelectedProjects(selectedProjects.filter((p) => p !== id));
+    const newProjects = selectedProjects.filter((p) => p !== id);
+    setSelectedProjects(newProjects);
+    setValue("projectsAssigned", newProjects);
   };
 
-  const onSubmit = () => {
+  const onSubmit = (data: FormValues) => {
     const formData = new FormData();
 
     if (mode === "add") {
-      formData.append("userId", form.userId);
-      formData.append("siteIncharge", String(user?._id));
+      formData.append("userId", data.userId);
+      formData.append("siteIncharge", String(user?._id ?? ""));
     }
 
-    formData.append("companyName", form.companyName);
-    formData.append("gstNumber", form.gstNumber);
-    formData.append("panCardNumber", form.panCardNumber);
-    formData.append("contractorType", form.contractorType);
-    if (form.accountsIncharge && form.accountsIncharge.trim() !== "") {
-      formData.append("accountsIncharge", form.accountsIncharge);
+    formData.append("companyName", data.companyName);
+    formData.append("gstNumber", data.gstNumber ?? "");
+    formData.append("panCardNumber", data.panCardNumber ?? "");
+    formData.append("contractorType", data.contractorType);
+    if (data.accountsIncharge?.trim()) {
+      formData.append("accountsIncharge", data.accountsIncharge);
     }
-    formData.append("amount", form.amount);
-    formData.append("advancePaid", form.advancePaid);
-    formData.append("balancePaid", form.balancePaid);
-    formData.append("billInvoiceNumber", form.billInvoiceNumber);
-    formData.append("billedDate", form.billedDate);
-    formData.append("finalPaymentDate", form.finalPaymentDate);
-    formData.append("workDetails", form.workDetails);
+    formData.append("amount", String(data.amount));
+    formData.append("advancePaid", String(data.advancePaid));
+    formData.append("balancePaid", String(data.balancePaid));
+    formData.append("billInvoiceNumber", data.billInvoiceNumber ?? "");
+    formData.append("contractStartDate", data.contractStartDate ?? "");
+    formData.append("contractEndDate", data.contractEndDate ?? "");
+    formData.append("billedDate", data.billedDate ?? "");
+    formData.append("finalPaymentDate", data.finalPaymentDate ?? "");
+    formData.append("workDetails", data.workDetails ?? "");
     formData.append(
       "billApprovedBySiteIncharge",
-      String(form.billApprovedBySiteIncharge)
+      String(data.billApprovedBySiteIncharge)
     );
     formData.append(
       "billProcessedByAccountant",
-      String(form.billProcessedByAccountant)
+      String(data.billProcessedByAccountant)
     );
-    formData.append("isActive", String(form.isActive));
+    formData.append("isActive", String(data.isActive));
+    formData.append("bankName", data.bankName ?? "");
+    formData.append("accountNumber", data.accountNumber ?? "");
+    formData.append("ifscCode", data.ifscCode ?? "");
+    formData.append("branchName", data.branchName ?? "");
 
-    selectedProjects.forEach((id, index) => {
+    data.projectsAssigned.forEach((id, index) => {
       formData.append(`projectsAssigned[${index}]`, id);
     });
 
-    formData.append("bankName", form.bankName);
-    formData.append("accountNumber", form.accountNumber);
-    formData.append("ifscCode", form.ifscCode);
-    formData.append("branchName", form.branchName);
-
-    formData.append("contractStartDate", form.contractStartDate);
-    formData.append("contractEndDate", form.contractEndDate);
-
-    if (paymentRecords.length === 0) {
-      toast.error("At least one payment record is required");
-      return;
-    }
-
-    paymentRecords.forEach((rec, index) => {
+    data.paymentDetails.forEach((rec, index) => {
       formData.append(
         `paymentDetails[${index}][modeOfPayment]`,
-        rec.modeOfPayment || ""
+        rec.modeOfPayment ?? ""
       );
       formData.append(`paymentDetails[${index}][paymentDate]`, rec.paymentDate);
       formData.append(
         `paymentDetails[${index}][lastPaymentDate]`,
-        rec.lastPaymentDate
+        rec.lastPaymentDate ?? ""
       );
     });
 
@@ -291,28 +308,16 @@ const AddContractorDialog = ({
       formData.append("billcopy", billCopy);
     }
 
-    if (mode === "edit") updateContractorMutation.mutate(formData);
-    else addContractorMutation.mutate(formData);
-  };
-
-  const updateAmountFields = (field: string, value: string) => {
-    const updated = { ...form, [field]: value };
-
-    const total = Number(field === "amount" ? value : updated.amount);
-    const advance = Number(
-      field === "advancePaid" ? value : updated.advancePaid
-    );
-
-    if (!isNaN(total) && !isNaN(advance)) {
-      updated.balancePaid = String(Math.max(total - advance, 0));
+    if (mode === "edit") {
+      updateContractorMutation.mutate(formData);
+    } else {
+      addContractorMutation.mutate(formData);
     }
-
-    setForm(updated);
   };
 
   return (
     <Dialog open={openDialog} onOpenChange={setOpenConDialog}>
-      <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
+      <DialogContent className="max-w-[75vw] max-h-[90vh] flex flex-col rounded-xl">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Edit Contractor" : "Add Contractor"}
@@ -324,30 +329,42 @@ const AddContractorDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4 space-y-2">
-          <div className="col-span-2 space-y-1">
-            <Label>Select Contractor</Label>
-            <Select
-              value={form.userId}
-              onValueChange={(v) => setForm({ ...form, userId: v })}
-              disabled={mode === "edit"}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Contractor" />
-              </SelectTrigger>
-              <SelectContent>
-                {contractorDropDown?.data?.map((u: any) => (
-                  <SelectItem key={u._id} value={u._id}>
-                    {u.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid grid-cols-2 gap-4 flex-1 overflow-y-scroll p-2"
+        >
+          {mode === "add" && (
+            <div className="col-span-2 space-y-1">
+              <Label>Select Contractor</Label>
+              <Controller
+                name="userId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a contractor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contractorDropDown?.data?.map((u: any) => (
+                        <SelectItem key={u._id} value={u._id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.userId && (
+                <p className="text-sm font-medium text-destructive">
+                  {errors.userId.message}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="col-span-2 space-y-1">
             <Label>Add Project</Label>
-            <Select onValueChange={handleAddProject}>
+            <Select value="" onValueChange={handleAddProject}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a project" />
               </SelectTrigger>
@@ -358,7 +375,7 @@ const AddContractorDialog = ({
                       " floor no: " +
                       p?.floorUnit?.floorNumber +
                       " unit: " +
-                      p?.unit?.plotNo || "Unnamed Project"}
+                      p?.unit?.plotNo}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -401,173 +418,188 @@ const AddContractorDialog = ({
 
           <div className="space-y-1">
             <Label>Company Name</Label>
-            <Input
-              value={form.companyName}
-              onChange={(e) =>
-                setForm({ ...form, companyName: e.target.value })
-              }
-            />
+            <Input {...register("companyName")} />
+            {errors.companyName && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.companyName.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>GST Number</Label>
             <Input
-              value={form.gstNumber}
-              onChange={(e) => setForm({ ...form, gstNumber: e.target.value })}
+              className="uppercase"
+              {...register("gstNumber", {
+                setValueAs: (v) => v?.toUpperCase(),
+              })}
             />
+            {errors.gstNumber && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.gstNumber.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>PAN Number</Label>
             <Input
-              value={form.panCardNumber}
-              onChange={(e) =>
-                setForm({ ...form, panCardNumber: e.target.value })
-              }
+              className="uppercase"
+              {...register("panCardNumber", {
+                setValueAs: (v) => v?.toUpperCase(),
+              })}
             />
+            {errors.panCardNumber && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.panCardNumber.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>Contractor Type</Label>
-            <Select
-              value={form.contractorType}
-              onValueChange={(v) => setForm({ ...form, contractorType: v })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Contractor Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Individual">Individual</SelectItem>
-                <SelectItem value="Firm">Firm</SelectItem>
-                <SelectItem value="Private Ltd">Private Ltd</SelectItem>
-                <SelectItem value="LLP">LLP</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              name="contractorType"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Contractor Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Individual">Individual</SelectItem>
+                    <SelectItem value="Firm">Firm</SelectItem>
+                    <SelectItem value="Private Ltd">Private Ltd</SelectItem>
+                    <SelectItem value="LLP">LLP</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.contractorType && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.contractorType.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>Accounts Incharge ID</Label>
-            <Input
-              value={form.accountsIncharge}
-              onChange={(e) =>
-                setForm({ ...form, accountsIncharge: e.target.value })
-              }
-            />
+            <Input {...register("accountsIncharge")} />
           </div>
 
           <div className="space-y-1">
             <Label>Total Amount</Label>
             <Input
               type="number"
-              value={form.amount}
-              onChange={(e) => updateAmountFields("amount", e.target.value)}
+              {...register("amount", { valueAsNumber: true })}
             />
+            {errors.amount && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.amount.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>Advance Paid</Label>
             <Input
               type="number"
-              value={form.advancePaid}
-              onChange={(e) =>
-                updateAmountFields("advancePaid", e.target.value)
-              }
+              {...register("advancePaid", { valueAsNumber: true })}
             />
+            {errors.advancePaid && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.advancePaid.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>Balance Paid</Label>
-            <Input type="number" value={form.balancePaid} readOnly />
+            <Input type="number" value={watch("balancePaid")} readOnly />
           </div>
 
           <div className="space-y-1">
             <Label>Invoice Number</Label>
-            <Input
-              value={form.billInvoiceNumber}
-              onChange={(e) =>
-                setForm({ ...form, billInvoiceNumber: e.target.value })
-              }
-            />
+            <Input {...register("billInvoiceNumber")} />
           </div>
 
           <div className="space-y-1">
             <Label>Contract Start Date</Label>
-            <Input
-              type="date"
-              value={form.contractStartDate}
-              onChange={(e) =>
-                setForm({ ...form, contractStartDate: e.target.value })
-              }
-            />
+            <Input type="date" {...register("contractStartDate")} />
           </div>
 
           <div className="space-y-1">
             <Label>Contract End Date</Label>
-            <Input
-              type="date"
-              value={form.contractEndDate}
-              onChange={(e) =>
-                setForm({ ...form, contractEndDate: e.target.value })
-              }
-            />
+            <Input type="date" {...register("contractEndDate")} />
           </div>
 
           <div className="space-y-1">
             <Label>Bank Name</Label>
-            <Input
-              value={form.bankName}
-              onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-            />
+            <Input {...register("bankName")} />
           </div>
 
           <div className="space-y-1">
             <Label>Account Number</Label>
-            <Input
-              value={form.accountNumber}
-              onChange={(e) =>
-                setForm({ ...form, accountNumber: e.target.value })
-              }
-            />
+            <Input {...register("accountNumber")} />
+            {errors.accountNumber && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.accountNumber.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>IFSC Code</Label>
             <Input
-              value={form.ifscCode}
-              onChange={(e) => setForm({ ...form, ifscCode: e.target.value })}
+              className="uppercase"
+              {...register("ifscCode", {
+                setValueAs: (v) => v?.toUpperCase(),
+              })}
             />
+            {errors.ifscCode && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.ifscCode.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <Label>Branch Name</Label>
-            <Input
-              value={form.branchName}
-              onChange={(e) => setForm({ ...form, branchName: e.target.value })}
-            />
+            <Input {...register("branchName")} />
           </div>
 
-          <div className="space-y-1 col-span-2">
+          <div className="col-span-2 space-y-2 flex flex-col">
             <Label>Payment Records</Label>
             <Button
               type="button"
               variant="outline"
-              onClick={addPaymentRecord}
+              onClick={() =>
+                append({
+                  modeOfPayment: "",
+                  paymentDate: "",
+                  lastPaymentDate: "",
+                })
+              }
               className="mb-2"
             >
               <Plus className="h-4 w-4 mr-2" /> Add Payment Record
             </Button>
-
+            {errors.paymentDetails?.message && (
+              <p className="text-sm font-medium text-destructive">
+                {errors.paymentDetails.message}
+              </p>
+            )}
             <div className="space-y-4">
-              {paymentRecords.map((record, index) => (
-                <div key={index} className="border p-4 rounded-lg space-y-2">
+              {fields.map((field, index) => (
+                <div key={field.id} className="border p-4 rounded-lg space-y-2">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">Payment Record {index + 1}</h4>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removePaymentRecord(index)}
+                      onClick={() => remove(index)}
                       className="text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -575,54 +607,54 @@ const AddContractorDialog = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Mode of Payment</Label>
-                      <Select
-                        value={record.modeOfPayment}
-                        onValueChange={(v) =>
-                          updatePaymentRecord(index, "modeOfPayment", v)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Mode" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Cash">Cash</SelectItem>
-                          <SelectItem value="Cheque">Cheque</SelectItem>
-                          <SelectItem value="NEFT">NEFT</SelectItem>
-                          <SelectItem value="RTGS">RTGS</SelectItem>
-                          <SelectItem value="UPI">UPI</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Controller
+                        name={`paymentDetails.${index}.modeOfPayment`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Select
+                            value={f.value ?? ""}
+                            onValueChange={f.onChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Mode" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Cash">Cash</SelectItem>
+                              <SelectItem value="Cheque">Cheque</SelectItem>
+                              <SelectItem value="NEFT">NEFT</SelectItem>
+                              <SelectItem value="RTGS">RTGS</SelectItem>
+                              <SelectItem value="UPI">UPI</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.paymentDetails?.[index]?.modeOfPayment && (
+                        <p className="text-sm font-medium text-destructive">
+                          {errors.paymentDetails[index]?.modeOfPayment?.message}
+                        </p>
+                      )}
                     </div>
 
-                    <div>
+                    <div className="space-y-1">
                       <Label>Payment Date</Label>
                       <Input
                         type="date"
-                        value={record.paymentDate}
-                        onChange={(e) =>
-                          updatePaymentRecord(
-                            index,
-                            "paymentDate",
-                            e.target.value
-                          )
-                        }
+                        {...register(`paymentDetails.${index}.paymentDate`)}
                       />
+                      {errors.paymentDetails?.[index]?.paymentDate && (
+                        <p className="text-sm font-medium text-destructive">
+                          {errors.paymentDetails[index]?.paymentDate?.message}
+                        </p>
+                      )}
                     </div>
 
-                    <div>
+                    <div className="space-y-1">
                       <Label>Last Payment Date</Label>
                       <Input
                         type="date"
-                        value={record.lastPaymentDate}
-                        onChange={(e) =>
-                          updatePaymentRecord(
-                            index,
-                            "lastPaymentDate",
-                            e.target.value
-                          )
-                        }
+                        {...register(`paymentDetails.${index}.lastPaymentDate`)}
                       />
                     </div>
                   </div>
@@ -633,79 +665,80 @@ const AddContractorDialog = ({
 
           <div className="space-y-1">
             <Label>Billed Date</Label>
-            <Input
-              type="date"
-              value={form.billedDate}
-              onChange={(e) => setForm({ ...form, billedDate: e.target.value })}
-            />
+            <Input type="date" {...register("billedDate")} />
           </div>
 
           <div className="space-y-1">
             <Label>Final Payment Date</Label>
-            <Input
-              type="date"
-              value={form.finalPaymentDate}
-              onChange={(e) =>
-                setForm({ ...form, finalPaymentDate: e.target.value })
-              }
-            />
+            <Input type="date" {...register("finalPaymentDate")} />
           </div>
 
           <div className="col-span-2 flex items-center space-x-2">
-            <Checkbox
-              checked={form.billApprovedBySiteIncharge}
-              onCheckedChange={(v) =>
-                setForm({ ...form, billApprovedBySiteIncharge: Boolean(v) })
-              }
-              id="site-approved"
+            <Controller
+              name="billApprovedBySiteIncharge"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  id="site-approved"
+                />
+              )}
             />
-            <Label htmlFor="site-approved">
+            <Label htmlFor="site-approved" className="cursor-pointer">
               Bill Approved by Site Incharge
             </Label>
           </div>
 
           <div className="col-span-2 flex items-center space-x-2">
-            <Checkbox
-              checked={form.billProcessedByAccountant}
-              onCheckedChange={(v) =>
-                setForm({ ...form, billProcessedByAccountant: Boolean(v) })
-              }
-              id="account-processed"
+            <Controller
+              name="billProcessedByAccountant"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  id="account-processed"
+                />
+              )}
             />
-            <Label htmlFor="account-processed">
+            <Label htmlFor="account-processed" className="cursor-pointer">
               Bill Processed by Accountant
             </Label>
           </div>
 
           <div className="col-span-2 flex items-center space-x-2">
-            <Checkbox
-              checked={form.isActive}
-              onCheckedChange={(v) =>
-                setForm({ ...form, isActive: Boolean(v) })
-              }
-              id="active"
+            <Controller
+              name="isActive"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  id="active"
+                />
+              )}
             />
-            <Label htmlFor="active">Is Active</Label>
+            <Label htmlFor="active" className="cursor-pointer">
+              Is Active
+            </Label>
           </div>
 
           <div className="col-span-2 space-y-1">
             <Label>Work Details</Label>
             <Textarea
-              value={form.workDetails}
-              onChange={(e) =>
-                setForm({ ...form, workDetails: e.target.value })
-              }
+              {...register("workDetails")}
               placeholder="Enter work details"
             />
           </div>
 
           <div className="col-span-2 space-y-1">
             {imagePreview && (
-              <div className="col-span-2 mt-2">
+              <div className="mt-2">
                 <img
                   src={imagePreview}
                   alt="Bill Copy Preview"
-                  className="w-full h-auto rounded-lg border"
+                  className="w-full max-h-64 object-contain rounded-lg border"
                 />
               </div>
             )}
@@ -713,9 +746,11 @@ const AddContractorDialog = ({
             <Label>Bill Copy</Label>
             <Input
               type="file"
+              accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0] || null;
                 setBillCopy(file);
+
                 if (file) {
                   setImagePreview(URL.createObjectURL(file));
                 }
@@ -724,22 +759,15 @@ const AddContractorDialog = ({
           </div>
 
           <div className="col-span-2 flex justify-end">
-            <Button
-              onClick={onSubmit}
-              disabled={
-                (mode === "add" && addContractorMutation.isPending) ||
-                (mode === "edit" && updateContractorMutation.isPending)
-              }
-            >
-              {(mode === "add" && addContractorMutation.isPending) ||
-              (mode === "edit" && updateContractorMutation.isPending)
+            <Button type="submit" disabled={isPending}>
+              {isPending
                 ? "Saving..."
                 : mode === "edit"
                 ? "Update Contractor"
                 : "Add Contractor"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

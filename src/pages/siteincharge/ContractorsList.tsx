@@ -39,6 +39,7 @@ import {
   FileText,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -74,6 +75,7 @@ import { CONSTRUCTION_PHASES } from "@/types/construction";
 import AddContractorDialog from "./AddContractorDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ContractorList } from "@/types/contractor";
+import ViewContractorDetailsCard from "@/components/helpers/ViewContractorDetailsCard";
 
 const ContractorsList = () => {
   const { user } = useAuth();
@@ -91,6 +93,8 @@ const ContractorsList = () => {
   const [openConDialog, setOpenConDialog] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [editingContractor, setEditingContractor] = useState(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewContractor, setViewContractor] = useState<any>(null);
 
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -216,6 +220,11 @@ const ContractorsList = () => {
   const handleCloseEditDialog = () => {
     setEditingContractor(null);
     setOpenConDialog(false);
+  };
+
+  const handleView = (contractor: any) => {
+    setViewContractor(contractor);
+    setViewOpen(true);
   };
 
   return (
@@ -790,6 +799,12 @@ const ContractorsList = () => {
                                           Actions
                                         </DropdownMenuLabel>
                                         <DropdownMenuItem
+                                          onClick={() => handleView(contractor)}
+                                        >
+                                          <Eye className="h-4 w-4 mr-2" />
+                                          View Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
                                           onClick={() => handleEdit(contractor)}
                                         >
                                           <Edit className="h-4 w-4 mr-2" />
@@ -1344,6 +1359,12 @@ const ContractorsList = () => {
             </Dialog>
           </CardContent>
         </Card>
+
+        <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <ViewContractorDetailsCard contractor={viewContractor} />
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
