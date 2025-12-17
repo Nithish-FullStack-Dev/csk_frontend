@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
@@ -174,7 +174,19 @@ const AddContractorDialog = ({
       setSelectedProjects(projects);
 
       // ✅ IMPORTANT: show existing image
-      setImagePreview(contractor.billCopy || null);
+      if (contractor.billCopy) {
+        const isAbsolute =
+          contractor.billCopy.startsWith("http") ||
+          contractor.billCopy.startsWith("blob:");
+
+        setImagePreview(
+          isAbsolute
+            ? contractor.billCopy
+            : `${import.meta.env.VITE_URL}/${contractor.billCopy}`
+        );
+      } else {
+        setImagePreview(null);
+      }
     } else {
       reset();
       setSelectedProjects([]);
@@ -734,11 +746,12 @@ const AddContractorDialog = ({
 
           <div className="col-span-2 space-y-1">
             {imagePreview && (
-              <div className="mt-2">
+              <div className="mb-4 rounded-lg border bg-muted p-3">
+                <Label className="mb-2 block">Bill Copy Preview</Label>
                 <img
                   src={imagePreview}
                   alt="Bill Copy Preview"
-                  className="w-full max-h-64 object-contain rounded-lg border"
+                  className="w-full max-h-64 object-contain rounded-md bg-white"
                 />
               </div>
             )}
@@ -748,11 +761,20 @@ const AddContractorDialog = ({
               type="file"
               accept="image/*"
               onChange={(e) => {
-                const file = e.target.files?.[0] || null;
+                const file = e.target.files?.[0] ?? null;
+
+                // cleanup old blob
+                if (imagePreview?.startsWith("blob:")) {
+                  URL.revokeObjectURL(imagePreview);
+                }
+
                 setBillCopy(file);
 
                 if (file) {
-                  setImagePreview(URL.createObjectURL(file));
+                  const previewUrl = URL.createObjectURL(file);
+                  setImagePreview(previewUrl);
+                } else {
+                  setImagePreview(null);
                 }
               }}
             />
@@ -773,4 +795,4 @@ const AddContractorDialog = ({
   );
 };
 
-export default AddContractorDialog;
+export default memo(AddContractorDialog);

@@ -45,7 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Customer, useGetCustomers } from "@/utils/buildings/CustomerConfig";
 import { Loader2, MoreHorizontal, Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -53,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PurchaseCrud from "@/components/customer/PurchaseCrud";
 import CashExpenseDialog from "@/components/accountant/CashExpenseDialog";
 import CashExpensesPage from "@/components/accountant/CashExpensesPage";
+import { Input } from "@/components/ui/input";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
@@ -69,6 +70,7 @@ const CustomerManagement = () => {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [uploadPdfOpen, setUploadPdfOpen] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [search, setSearch] = useState("");
 
   const isSalesManager =
     (user && user.role === "sales_manager") || user.role === "accountant";
@@ -80,7 +82,58 @@ const CustomerManagement = () => {
     error: customersError,
   } = useGetCustomers(user);
 
-  const customers = customersResponse?.data || [];
+  const customers = customersResponse?.data ?? [];
+
+  const filteredCustomers = useMemo(() => {
+    // Always return array
+    if (!Array.isArray(customers) || customers.length === 0) {
+      return [];
+    }
+
+    const query = (search ?? "").trim().toLowerCase();
+
+    // If no search, return original list
+    if (!query) {
+      return customers;
+    }
+
+    return customers.filter((customer) => {
+      if (!customer || typeof customer !== "object") return false;
+
+      const customerName =
+        typeof customer.customerId === "object"
+          ? String(customer.customerId?.name ?? "").toLowerCase()
+          : "";
+
+      const customerEmail =
+        typeof customer.customerId === "object"
+          ? String(customer.customerId?.email ?? "").toLowerCase()
+          : "";
+
+      const agentName =
+        typeof customer.purchasedFrom === "object"
+          ? String(customer.purchasedFrom?.name ?? "").toLowerCase()
+          : "";
+
+      const projectName =
+        typeof customer.property === "object"
+          ? String(customer.property?.projectName ?? "").toLowerCase()
+          : "";
+
+      const unitNo =
+        typeof customer.unit === "object"
+          ? String(customer.unit?.plotNo ?? "").toLowerCase()
+          : "";
+
+      return (
+        customerName.includes(query) ||
+        customerEmail.includes(query) ||
+        agentName.includes(query) ||
+        projectName.includes(query) ||
+        unitNo.includes(query)
+      );
+    });
+  }, [customers, search]);
 
   const queryClient = useQueryClient();
 
@@ -204,7 +257,15 @@ const CustomerManagement = () => {
           <TabsContent value="add">
             <>
               {isSalesManager && (
-                <div className="flex justify-end w-full mb-5">
+                <div className="flex justify-end w-full mb-5 gap-5">
+                  <div className="mb-4">
+                    <Input
+                      placeholder="Search by customer, agent, project, unit..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
                   <Button
                     onClick={() => setDialogOpen(true)}
                     className="mt-4 md:mt-0 text-white"
@@ -249,125 +310,149 @@ const CustomerManagement = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {customers.map((customer) => (
-                            <TableRow key={customer._id}>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {(typeof customer.customerId === "object" &&
-                                      customer.customerId?.name) ||
-                                      "N/A"}
+                          {filteredCustomers.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={9}
+                                className="h-32 text-center"
+                              >
+                                <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                                  <span className="text-sm font-medium">
+                                    No Customer records found
                                   </span>
-                                  <span className="text-xs text-gray-500">
-                                    {typeof customer.customerId === "object" &&
-                                      customer.customerId?.email}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {(typeof customer.purchasedFrom ===
-                                      "object" &&
-                                      customer.purchasedFrom?.name) ||
-                                      "N/A"}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {typeof customer.purchasedFrom ===
-                                      "object" && customer.purchasedFrom?.email}
+                                  <span className="text-xs">
+                                    Start by adding a new customer using the
+                                    button above
                                   </span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {(typeof customer.property === "object" &&
-                                      customer.property?.projectName) ||
-                                      "N/A"}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {typeof customer.property === "object" &&
-                                      customer.property?.location}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {(typeof customer.unit === "object" &&
-                                      customer.unit?.plotNo) ||
-                                      "N/A"}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {typeof customer.floorUnit === "object" &&
-                                    customer.floorUnit?.floorNumber
-                                      ? `Floor ${
-                                          typeof customer.floorUnit ===
-                                            "object" &&
-                                          customer.floorUnit.floorNumber
-                                        }`
-                                      : ""}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                ₹{customer.totalAmount?.toLocaleString("en-IN")}
-                              </TableCell>
-                              <TableCell>
-                                {customer.advanceReceived != null
-                                  ? `₹${customer.advanceReceived.toLocaleString(
-                                      "en-IN"
-                                    )}`
-                                  : "-"}
-                              </TableCell>
-                              <TableCell>
-                                {renderStatusBadge(customer.status)}
-                              </TableCell>
-                              <TableCell>
-                                {renderPaymentStatusBadge(
-                                  customer.paymentStatus
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => handleView(customer)}
-                                    >
-                                      View Details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleEdit(customer)}
-                                    >
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setSelectedCustomer(customer);
-                                        setUploadPdfOpen(true);
-                                      }}
-                                    >
-                                      Upload PDF
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      className="text-red-600"
-                                      onClick={() =>
-                                        handleDeleteClick(customer)
-                                      }
-                                    >
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
-                          ))}
+                          ) : (
+                            filteredCustomers.map((customer) => (
+                              <TableRow key={customer._id}>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {(typeof customer.customerId ===
+                                        "object" &&
+                                        customer.customerId?.name) ||
+                                        "N/A"}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {typeof customer.customerId ===
+                                        "object" && customer.customerId?.email}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {(typeof customer.purchasedFrom ===
+                                        "object" &&
+                                        customer.purchasedFrom?.name) ||
+                                        "N/A"}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {typeof customer.purchasedFrom ===
+                                        "object" &&
+                                        customer.purchasedFrom?.email}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {(typeof customer.property === "object" &&
+                                        customer.property?.projectName) ||
+                                        "N/A"}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {typeof customer.property === "object" &&
+                                        customer.property?.location}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">
+                                      {(typeof customer.unit === "object" &&
+                                        customer.unit?.plotNo) ||
+                                        "N/A"}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {typeof customer.floorUnit === "object" &&
+                                      customer.floorUnit?.floorNumber
+                                        ? `Floor ${
+                                            typeof customer.floorUnit ===
+                                              "object" &&
+                                            customer.floorUnit.floorNumber
+                                          }`
+                                        : ""}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  ₹
+                                  {customer.totalAmount?.toLocaleString(
+                                    "en-IN"
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {customer.advanceReceived != null
+                                    ? `₹${customer.advanceReceived.toLocaleString(
+                                        "en-IN"
+                                      )}`
+                                    : "-"}
+                                </TableCell>
+                                <TableCell>
+                                  {renderStatusBadge(customer.status)}
+                                </TableCell>
+                                <TableCell>
+                                  {renderPaymentStatusBadge(
+                                    customer.paymentStatus
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={() => handleView(customer)}
+                                      >
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleEdit(customer)}
+                                      >
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelectedCustomer(customer);
+                                          setUploadPdfOpen(true);
+                                        }}
+                                      >
+                                        Upload PDF
+                                      </DropdownMenuItem>
+
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() =>
+                                          handleDeleteClick(customer)
+                                        }
+                                      >
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>

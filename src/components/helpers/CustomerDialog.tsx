@@ -38,7 +38,7 @@ import {
   useContractorsFroDropDown,
   useSiteInchargeFroDropDown,
 } from "@/utils/contractor/ContractorConfig";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
 type CustomerForm = z.infer<typeof CustomerValidationSchema>;
@@ -283,7 +283,11 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       onOpenChange(false);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Failed to add customer");
+      if (err instanceof AxiosError) {
+        toast.error(err?.response?.data?.message || "Failed to add customer");
+      } else {
+        toast.error(err?.message || "Failed to add customer");
+      }
     },
   });
 
@@ -302,6 +306,15 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       toast.success("Customer updated");
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       onOpenChange(false);
+    },
+    onError: (err) => {
+      if (err instanceof AxiosError) {
+        toast.error(
+          err?.response?.data?.message || "Failed to updated customer"
+        );
+      } else {
+        toast.error(err?.message || "Failed to updated customer");
+      }
     },
   });
 
@@ -411,54 +424,56 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <Label>Customer</Label>
-                  <Select
-                    disabled={isLoadingCustomers || isErrorCustomers}
-                    onValueChange={(v) =>
-                      setValue("customerId", v, { shouldValidate: true })
-                    }
-                    value={watchedCustomerId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          isLoadingCustomers
-                            ? "Loading customers..."
-                            : isErrorCustomers
-                            ? "Failed to load customers"
-                            : "Select Customer"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.length === 0 &&
-                      !isLoadingCustomers &&
-                      !isErrorCustomers ? (
-                        <SelectItem value="no-customers" disabled>
-                          No customers available
-                        </SelectItem>
-                      ) : (
-                        customers.map((u) => (
-                          <SelectItem key={u._id} value={u._id}>
-                            {u.name}
+                {mode === "add" && (
+                  <div className="space-y-1">
+                    <Label>Customer</Label>
+                    <Select
+                      disabled={isLoadingCustomers || isErrorCustomers}
+                      onValueChange={(v) =>
+                        setValue("customerId", v, { shouldValidate: true })
+                      }
+                      value={watchedCustomerId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            isLoadingCustomers
+                              ? "Loading customers..."
+                              : isErrorCustomers
+                              ? "Failed to load customers"
+                              : "Select Customer"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.length === 0 &&
+                        !isLoadingCustomers &&
+                        !isErrorCustomers ? (
+                          <SelectItem value="no-customers" disabled>
+                            No customers available
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {errors.customerId?.message && (
-                    <p className="text-red-500 text-sm">
-                      {errors.customerId.message}
-                    </p>
-                  )}
-                  {isErrorCustomers && (
-                    <p className="text-red-500 text-xs">
-                      {(customersError as Error)?.message ||
-                        "Error loading customers"}
-                    </p>
-                  )}
-                </div>
+                        ) : (
+                          customers.map((u) => (
+                            <SelectItem key={u._id} value={u._id}>
+                              {u.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {errors.customerId?.message && (
+                      <p className="text-red-500 text-sm">
+                        {errors.customerId.message}
+                      </p>
+                    )}
+                    {isErrorCustomers && (
+                      <p className="text-red-500 text-xs">
+                        {(customersError as Error)?.message ||
+                          "Error loading customers"}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <Label>Purchased From (Agent)</Label>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+import { Input } from "../ui/input";
 
 export default function CashExpensesPage() {
   const qc = useQueryClient();
@@ -35,6 +36,7 @@ export default function CashExpensesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [search, setSearch] = useState("");
 
   const deleteMutation = useMutation({
     mutationFn: deleteCashExpense,
@@ -45,6 +47,35 @@ export default function CashExpensesPage() {
     onError: (err: any) =>
       toast.error(err?.response?.data?.message || "Failed to delete expense"),
   });
+
+  const filteredExpenses = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    const query = (search ?? "").trim().toLowerCase();
+    if (!query) return data;
+
+    return data.filter((item: any) => {
+      if (!item || typeof item !== "object") return false;
+
+      const partyName = String(item.partyName ?? "").toLowerCase();
+      const category = String(item.expenseCategory ?? "").toLowerCase();
+      const description = String(item.description ?? "").toLowerCase();
+      const mode = String(item.modeOfPayment ?? "").toLowerCase();
+      const type = String(item.transactionType ?? "").toLowerCase();
+      const amount = String(item.amount ?? "").toLowerCase();
+      const date = String(item.date ?? "").toLowerCase();
+
+      return (
+        partyName.includes(query) ||
+        category.includes(query) ||
+        description.includes(query) ||
+        mode.includes(query) ||
+        type.includes(query) ||
+        amount.includes(query) ||
+        date.includes(query)
+      );
+    });
+  }, [data, search]);
 
   if (isLoading) {
     return <Loader2 className="animate-spin" />;
@@ -61,10 +92,18 @@ export default function CashExpensesPage() {
 
   return (
     <>
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-semibold">Cash Expenses</h2>
-        <Button onClick={() => setOpen(true)}>Add Expense</Button>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div className="flex gap-2 justify-end w-full">
+          <Input
+            placeholder="Search expenses..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full md:w-64"
+          />
+          <Button onClick={() => setOpen(true)}>Add Expense</Button>
+        </div>
       </div>
+
       <div className="rounded-lg border bg-background overflow-hidden">
         <Table>
           <TableHeader>
@@ -78,7 +117,7 @@ export default function CashExpensesPage() {
           </TableHeader>
 
           <TableBody>
-            {data.length === 0 ? (
+            {filteredExpenses.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -92,7 +131,7 @@ export default function CashExpensesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((item: any) => (
+              filteredExpenses.map((item: any) => (
                 <TableRow key={item._id}>
                   <TableCell>{item.date?.split("T")[0]}</TableCell>
                   <TableCell>{item.amount}</TableCell>
