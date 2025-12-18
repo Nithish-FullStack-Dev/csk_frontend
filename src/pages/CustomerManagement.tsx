@@ -61,6 +61,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import * as XLSX from "xlsx";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
@@ -242,6 +243,103 @@ const CustomerManagement = () => {
     );
   };
 
+  const handleExportCustomersExcel = () => {
+    if (!filteredCustomers || filteredCustomers.length === 0) {
+      toast.error("No customers to export");
+      return;
+    }
+
+    const exportData = filteredCustomers.map((c, index) => {
+      const customer = typeof c.customerId === "object" && c.customerId;
+      const agent = typeof c.purchasedFrom === "object" && c.purchasedFrom;
+      const siteIncharge =
+        typeof c.siteInchargeId === "object" && c.siteInchargeId;
+      const contractor = typeof c.contractorId === "object" && c.contractorId;
+      const property = typeof c.property === "object" && c.property;
+      const unit = typeof c.unit === "object" && c.unit;
+      const floorUnit = typeof c.floorUnit === "object" && c.floorUnit;
+
+      return {
+        "S No": index + 1,
+
+        /* CUSTOMER */
+        "Customer Name": customer?.name ?? "N/A",
+        "Customer Email": customer?.email ?? "N/A",
+        "Customer Phone": customer?.phone ?? "N/A",
+
+        /* AGENT */
+        "Agent Name": agent?.name ?? "N/A",
+        "Agent Email": agent?.email ?? "N/A",
+        "Agent Phone": agent?.phone ?? "N/A",
+
+        /* PROPERTY */
+        "Project Name": property?.projectName ?? "N/A",
+        Location: property?.location ?? "N/A",
+        "Unit No": unit?.plotNo ?? "N/A",
+        "Floor No": floorUnit?.floorNumber ?? "N/A",
+
+        /* FINANCIAL */
+        "Total Amount": c.totalAmount ?? 0,
+        "Advance Received": c.advanceReceived ?? 0,
+        "Balance Payment": c.balancePayment ?? 0,
+        "Final Price": c.finalPrice ?? 0,
+
+        /* REGISTRATION & PAYMENT */
+        "Registration Status": c.registrationStatus ?? "N/A",
+        "Payment Status": c.paymentStatus ?? "N/A",
+        "Payment Plan": c.paymentPlan ?? "N/A",
+        "Booking Date": c.bookingDate?.split("T")[0] ?? "N/A",
+        "Last Payment Date": c.lastPaymentDate?.split("T")[0] ?? "N/A",
+
+        /* CONSTRUCTION */
+        "Construction Stage": c.constructionStage ?? "N/A",
+        "Expected Delivery Date":
+          c.expectedDeliveryDate?.split("T")[0] ?? "N/A",
+        "Delivery Date": c.deliveryDate?.split("T")[0] ?? "N/A",
+
+        /* SITE INCHARGE */
+        "Site Incharge Name": siteIncharge?.name ?? "N/A",
+        "Site Incharge Phone": siteIncharge?.phone ?? "N/A",
+        "Site Incharge Email": siteIncharge?.email ?? "N/A",
+
+        /* CONTRACTOR */
+        "Contractor Name": contractor?.name ?? "N/A",
+        "Contractor Phone": contractor?.phone ?? "N/A",
+        "Contractor Email": contractor?.email ?? "N/A",
+
+        /* REFERRAL */
+        "Referral Name": c.referralName ?? "N/A",
+        "Referral Contact": c.referralContact ?? "N/A",
+
+        /* NOTES */
+        Notes: c.notes ?? "N/A",
+
+        /* PAYMENT DETAILS (flattened) */
+        "Payment Records":
+          c.paymentDetails?.length > 0
+            ? c.paymentDetails
+                .map(
+                  (p: any) =>
+                    `₹${p.amount} | ${p.paymentMode} | ${
+                      p.date?.split("T")[0]
+                    } | ${p.referenceNumber ?? "-"}`
+                )
+                .join(" || ")
+            : "N/A",
+
+        /* DOCUMENTS */
+        Images: c.images?.length ? c.images.join(", ") : "N/A",
+        "PDF Document": c.pdfDocument ?? "N/A",
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customer Details");
+    XLSX.writeFile(workbook, "customer-details.xlsx");
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 md:p-6 p-4">
@@ -279,12 +377,20 @@ const CustomerManagement = () => {
             <>
               {isSalesManager && (
                 <div className="flex md:justify-end justify-normal w-full mb-5 md:gap-5 gap-2 md:flex-row flex-col">
+                  <Button
+                    variant="outline"
+                    onClick={handleExportCustomersExcel}
+                    disabled={filteredCustomers.length === 0}
+                  >
+                    Export to Excel
+                  </Button>
+
                   <div className="md:mb-4">
                     <Input
                       placeholder="Search by customer, agent, project, unit..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="max-w-sm"
+                      className="md:max-w-sm"
                     />
                   </div>
                   <Button
@@ -503,7 +609,7 @@ const CustomerManagement = () => {
         />
 
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="md:max-w-screen-lg max-w-[80%]">
+          <DialogContent className="md:max-w-screen-lg max-w-[80%] rounded-md">
             <DialogHeader>
               <DialogTitle>
                 {(typeof selectedCustomer?.customerId === "object" &&

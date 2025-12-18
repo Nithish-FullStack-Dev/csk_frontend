@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -294,15 +294,59 @@ export default function PurchaseCrud() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!filteredPurchases || filteredPurchases.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = filteredPurchases.map((p: any) => ({
+      "Party Name": p.partyName,
+      "Company Name": p.companyName ?? "",
+      Project:
+        p?.project?.projectId?.projectName +
+          "/" +
+          p?.project?.floorUnit?.floorNumber +
+          "/" +
+          p?.project?.unit?.plotNo || "",
+      Agent: p?.agent?.name ?? "",
+      "Payment Plan": p.paymentPlan,
+      "Registration Status": p.registrationStatus,
+      "Total Sale": p.totalSaleConsideration,
+      Advance: p.advance ?? 0,
+      Balance: p.balance ?? 0,
+      "Last Payment Date": p.lastPaymentDate
+        ? new Date(p.lastPaymentDate).toLocaleDateString()
+        : "-",
+      "Next Payment Date": p.nextPaymentDate
+        ? new Date(p.nextPaymentDate).toLocaleDateString()
+        : "-",
+      Notes: p.notes ?? "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchases");
+
+    XLSX.writeFile(workbook, "purchases.xlsx");
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end md:gap-5 md:flex-row flex-col">
-        <div className=" mb-3">
+      <div className="flex justify-end md:gap-5 gap-2 w-full md:flex-row flex-col">
+        <Button
+          variant="outline"
+          onClick={handleExportExcel}
+          disabled={filteredPurchases.length === 0}
+        >
+          Export to Excel
+        </Button>
+        <div className="mb-3">
           <Input
             placeholder="Search party, project, unit, agent..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
           />
         </div>
 
