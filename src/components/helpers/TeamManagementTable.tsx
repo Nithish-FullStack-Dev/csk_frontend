@@ -309,6 +309,32 @@ const TeamManagementTable = () => {
     setErrors({});
   };
 
+  const resetFormState = () => {
+    setMode("add");
+    setEditId(null);
+    setSelectedAgent("");
+    setSelectedProject("");
+    setErrors({});
+    setForm({
+      agentId: "",
+      panCard: "",
+      aadharCard: "",
+      accountHolderName: "",
+      accountNumber: "",
+      ifsc: "",
+      bankName: "",
+      branchName: "",
+      project: "",
+      totalAmount: 0,
+      agreedCommissionPercent: 0,
+      amountReceived: 0,
+      commissionPaid: 0,
+      paymentDate: "",
+      notes: "",
+      approvedBy: null,
+    });
+  };
+
   const isFormInvalid =
     Object.keys(errors).length > 0 ||
     !form.agentId ||
@@ -329,6 +355,8 @@ const TeamManagementTable = () => {
   };
 
   const handleEditAgent = (agent: AgentList) => {
+    resetFormState();
+    setMode("edit");
     setEditId(agent._id ?? null);
     const getId = (field: any): string => {
       if (!field) return null;
@@ -391,10 +419,10 @@ const TeamManagementTable = () => {
       )}
 
       <div className="flex flex-col gap-2">
-        <div className="flex justify-end">
+        <div className="flex md:justify-end justify-normal">
           <Button
             onClick={() => {
-              setMode("add");
+              resetFormState();
               setOpenDialog(true);
             }}
           >
@@ -529,216 +557,233 @@ const TeamManagementTable = () => {
         </div>
       </div>
 
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent className="max-w-3xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>Add the Agent</DialogTitle>
-              <DialogDescription>
-                Enter the agent details below.
-              </DialogDescription>
-            </DialogHeader>
+      <Dialog
+        open={openDialog}
+        onOpenChange={(open) => {
+          if (!open) resetFormState();
+          setOpenDialog(open);
+        }}
+      >
+        <DialogContent className="max-w-3xl w-[90vw] h-[85vh] rounded-md flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add the Agent</DialogTitle>
+            <DialogDescription>
+              Enter the agent details below.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {mode === "add" && (
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4 flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {mode === "add" && (
+                  <div className="flex flex-col gap-1">
+                    <Label>Agent</Label>
+                    <Select
+                      onValueChange={(val) => {
+                        setSelectedAgent(val);
+                        setForm((prev) => ({ ...prev, agentId: val }));
+                      }}
+                      value={selectedAgent}
+                      disabled={isTeamMemLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select agent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableAgents?.map((agent) => (
+                          <SelectItem key={agent._id} value={agent._id}>
+                            {agent.name} ({agent.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {isTeamMemLoading
+                        ? "Loading available agents..."
+                        : teamMemError
+                        ? "Failed to load available agents"
+                        : `${availableAgents?.length ?? 0} agent(s) available`}
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1">
-                  <Label>Agent</Label>
+                  <Label htmlFor="project">Project</Label>
                   <Select
+                    value={selectedProject}
                     onValueChange={(val) => {
-                      setSelectedAgent(val);
-                      setForm((prev) => ({ ...prev, agentId: val }));
+                      setSelectedProject(val);
+                      setForm((preVal) => ({
+                        ...preVal,
+                        project: val,
+                      }));
                     }}
-                    value={selectedAgent}
-                    disabled={isTeamMemLoading}
+                    required
+                    disabled={projectsLoading}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select agent" />
+                    <SelectTrigger id="project">
+                      <SelectValue
+                        placeholder={
+                          projectsLoading ? "Loading..." : "Select project"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableAgents?.map((agent) => (
-                        <SelectItem key={agent._id} value={agent._id}>
-                          {agent.name} ({agent.email})
-                        </SelectItem>
-                      ))}
+                      {projectsLoading ? (
+                        <SelectItem value="">Loading...</SelectItem>
+                      ) : (
+                        projects?.map((p: any) => (
+                          <SelectItem key={p?._id} value={p?._id}>
+                            {p.projectId?.projectName +
+                              " floor no: " +
+                              p?.floorUnit?.floorNumber +
+                              " unit: " +
+                              p?.unit?.plotNo || "Unnamed Project"}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <div className="text-xs text-muted-foreground mt-2">
-                    {isTeamMemLoading
-                      ? "Loading available agents..."
-                      : teamMemError
-                      ? "Failed to load available agents"
-                      : `${availableAgents?.length ?? 0} agent(s) available`}
+                    {projectsLoading
+                      ? "Loading available projects..."
+                      : projectsError
+                      ? (projectsErrorDetails as any)
+                        ? projectsErrorDetails?.message ??
+                          "Failed to load available projects"
+                        : "Failed to load available projects"
+                      : `${projects?.length ?? 0} project(s) available`}
                   </div>
                 </div>
-              )}
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="project">Project</Label>
-                <Select
-                  value={selectedProject}
-                  onValueChange={(val) => {
-                    setSelectedProject(val);
-                    setForm((preVal) => ({
-                      ...preVal,
-                      project: val,
-                    }));
-                  }}
-                  required
-                  disabled={projectsLoading}
-                >
-                  <SelectTrigger id="project">
-                    <SelectValue
-                      placeholder={
-                        projectsLoading ? "Loading..." : "Select project"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projectsLoading ? (
-                      <SelectItem value="">Loading...</SelectItem>
-                    ) : (
-                      projects?.map((p: any) => (
-                        <SelectItem key={p?._id} value={p?._id}>
-                          {p.projectId?.projectName +
-                            " floor no: " +
-                            p?.floorUnit?.floorNumber +
-                            " unit: " +
-                            p?.unit?.plotNo || "Unnamed Project"}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <div className="text-xs text-muted-foreground mt-2">
-                  {projectsLoading
-                    ? "Loading available projects..."
-                    : projectsError
-                    ? (projectsErrorDetails as any)
-                      ? projectsErrorDetails?.message ??
-                        "Failed to load available projects"
-                      : "Failed to load available projects"
-                    : `${projects?.length ?? 0} project(s) available`}
-                </div>
+
+                <InputField
+                  label="PAN Card"
+                  name="panCard"
+                  value={form.panCard}
+                  onChange={handleChange}
+                  error={errors.panCard}
+                />
+                <InputField
+                  label="Aadhar"
+                  name="aadharCard"
+                  value={form.aadharCard}
+                  onChange={handleChange}
+                  error={errors.aadharCard}
+                />
+                <InputField
+                  label="Account Holder"
+                  name="accountHolderName"
+                  value={form.accountHolderName}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Account Number"
+                  name="accountNumber"
+                  value={form.accountNumber}
+                  onChange={handleChange}
+                  error={errors.accountNumber}
+                />
+                <InputField
+                  label="IFSC"
+                  name="ifsc"
+                  value={form.ifsc}
+                  onChange={handleChange}
+                  error={errors.ifsc}
+                />
+                <InputField
+                  label="Bank Name"
+                  name="bankName"
+                  value={form.bankName}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Branch Name"
+                  name="branchName"
+                  value={form.branchName}
+                  onChange={handleChange}
+                />
+
+                <InputField
+                  label="Total Amount"
+                  name="totalAmount"
+                  value={form.totalAmount.toString()}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Commission %"
+                  name="agreedCommissionPercent"
+                  value={form.agreedCommissionPercent.toString()}
+                  onChange={handleChange}
+                />
+
+                <InputField
+                  label="Amount Received"
+                  name="amountReceived"
+                  value={form.amountReceived?.toString() || ""}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Commission Paid"
+                  name="commissionPaid"
+                  value={form.commissionPaid?.toString() || ""}
+                  onChange={handleChange}
+                />
+
+                <InputField
+                  label="Payment Date"
+                  name="paymentDate"
+                  value={form.paymentDate || ""}
+                  onChange={handleChange}
+                  type="date"
+                />
+
+                <InputField
+                  label="Notes"
+                  name="notes"
+                  value={form.notes || ""}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Approved By"
+                  name="approvedBy"
+                  value={form.approvedBy}
+                  onChange={handleChange}
+                />
               </div>
-
-              <InputField
-                label="PAN Card"
-                name="panCard"
-                value={form.panCard}
-                onChange={handleChange}
-                error={errors.panCard}
-              />
-              <InputField
-                label="Aadhar"
-                name="aadharCard"
-                value={form.aadharCard}
-                onChange={handleChange}
-                error={errors.aadharCard}
-              />
-              <InputField
-                label="Account Holder"
-                name="accountHolderName"
-                value={form.accountHolderName}
-                onChange={handleChange}
-              />
-              <InputField
-                label="Account Number"
-                name="accountNumber"
-                value={form.accountNumber}
-                onChange={handleChange}
-                error={errors.accountNumber}
-              />
-              <InputField
-                label="IFSC"
-                name="ifsc"
-                value={form.ifsc}
-                onChange={handleChange}
-                error={errors.ifsc}
-              />
-              <InputField
-                label="Bank Name"
-                name="bankName"
-                value={form.bankName}
-                onChange={handleChange}
-              />
-              <InputField
-                label="Branch Name"
-                name="branchName"
-                value={form.branchName}
-                onChange={handleChange}
-              />
-
-              <InputField
-                label="Total Amount"
-                name="totalAmount"
-                value={form.totalAmount.toString()}
-                onChange={handleChange}
-              />
-              <InputField
-                label="Commission %"
-                name="agreedCommissionPercent"
-                value={form.agreedCommissionPercent.toString()}
-                onChange={handleChange}
-              />
-
-              <InputField
-                label="Amount Received"
-                name="amountReceived"
-                value={form.amountReceived?.toString() || ""}
-                onChange={handleChange}
-              />
-              <InputField
-                label="Commission Paid"
-                name="commissionPaid"
-                value={form.commissionPaid?.toString() || ""}
-                onChange={handleChange}
-              />
-
-              <InputField
-                label="Payment Date"
-                name="paymentDate"
-                value={form.paymentDate || ""}
-                onChange={handleChange}
-                type="date"
-              />
-
-              <InputField
-                label="Notes"
-                name="notes"
-                value={form.notes || ""}
-                onChange={handleChange}
-              />
-              <InputField
-                label="Approved By"
-                name="approvedBy"
-                value={form.approvedBy}
-                onChange={handleChange}
-              />
             </div>
 
             <DialogFooter>
-              <DialogClose>
-                <Button variant="destructive" type="button">
-                  Cancel
+              <div className="flex flex-col-reverse gap-2 w-full sm:flex-row sm:justify-end">
+                <DialogClose asChild>
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    onClick={resetFormState}
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="submit"
+                  disabled={
+                    isFormInvalid ||
+                    addMutation.isPending ||
+                    updateMutation.isPending
+                  }
+                  className="sm:min-w-[140px]"
+                >
+                  {mode === "add" ? "Save Changes" : "Edit Changes"}
                 </Button>
-              </DialogClose>
-
-              <Button variant="secondary" type="button" onClick={reset}>
-                Reset
-              </Button>
-
-              <Button
-                type="submit"
-                disabled={isFormInvalid || addMutation.isPending}
-              >
-                {mode === "add" ? "Save Changes" : "Edit Changes"}
-              </Button>
+              </div>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-scroll">
+        <DialogContent className="md:w-xl w-[90%] h-[80vh] flex flex-col rounded-md">
           <DialogHeader>
             <DialogTitle>Agent Details</DialogTitle>
             <DialogDescription>
@@ -747,107 +792,103 @@ const TeamManagementTable = () => {
           </DialogHeader>
 
           {viewData && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Agent Name</p>
-                <p>
-                  {typeof viewData.agentId === "object"
-                    ? viewData.agentId.name
-                    : "-"}
-                </p>
-              </div>
+            <div className="flex-1 overflow-y-scroll mt-4 pr-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Agent Name</p>
+                  <p>
+                    {typeof viewData.agentId === "object"
+                      ? viewData.agentId.name
+                      : "-"}
+                  </p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Contact</p>
-                <p>
-                  {typeof viewData.agentId === "object"
-                    ? viewData.agentId.phone
-                    : "-"}
-                </p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Contact</p>
+                  <p>
+                    {typeof viewData.agentId === "object"
+                      ? viewData.agentId.phone
+                      : "-"}
+                  </p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">PAN</p>
-                <p>{viewData.panCard}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">PAN</p>
+                  <p>{viewData.panCard}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Aadhar</p>
-                <p>{viewData.aadharCard}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Aadhar</p>
+                  <p>{viewData.aadharCard}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Account Holder</p>
-                <p>{viewData.accountHolderName}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Account Holder</p>
+                  <p>{viewData.accountHolderName}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Account Number</p>
-                <p>{viewData.accountNumber}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Account Number</p>
+                  <p>{viewData.accountNumber}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">IFSC</p>
-                <p>{viewData.ifsc}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">IFSC</p>
+                  <p>{viewData.ifsc}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Bank</p>
-                <p>{viewData.bankName}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Bank</p>
+                  <p>{viewData.bankName}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Branch</p>
-                <p>{viewData.branchName}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Branch</p>
+                  <p>{viewData.branchName}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Project</p>
-                <p>
-                  {typeof viewData.project === "object" &&
-                  typeof viewData.project.projectId === "object"
-                    ? viewData.project?.projectId?.projectName || "-"
-                    : "-"}
-                </p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Project</p>
+                  <p>
+                    {typeof viewData.project === "object" &&
+                    typeof viewData.project.projectId === "object"
+                      ? viewData.project?.projectId?.projectName || "-"
+                      : "-"}
+                  </p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Total Amount</p>
-                <p>{viewData.totalAmount}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Total Amount</p>
+                  <p>{viewData.totalAmount}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Commission %</p>
-                <p>{viewData.agreedCommissionPercent}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Commission %</p>
+                  <p>{viewData.agreedCommissionPercent}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Amount Received</p>
-                <p>{viewData.amountReceived}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Amount Received</p>
+                  <p>{viewData.amountReceived}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Commission Paid</p>
-                <p>{viewData.commissionPaid}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Commission Paid</p>
+                  <p>{viewData.commissionPaid}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20">
-                <p className="font-semibold">Payment Date</p>
-                <p>{viewData.paymentDate || "-"}</p>
-              </div>
+                <div className="border rounded-lg p-3 bg-muted/20">
+                  <p className="font-semibold">Payment Date</p>
+                  <p>{viewData.paymentDate || "-"}</p>
+                </div>
 
-              <div className="border rounded-lg p-3 bg-muted/20 col-span-full">
-                <p className="font-semibold">Notes</p>
-                <p>{viewData.notes || "—"}</p>
+                <div className="border rounded-lg p-3 bg-muted/20 col-span-full">
+                  <p className="font-semibold">Notes</p>
+                  <p>{viewData.notes || "—"}</p>
+                </div>
               </div>
             </div>
           )}
-
-          <DialogFooter className="mt-4">
-            <DialogClose>
-              <Button variant="default">Close</Button>
-            </DialogClose>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

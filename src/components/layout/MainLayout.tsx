@@ -42,7 +42,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <TopBar />
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto md:p-6 p-2">{children}</main>
       </div>
     </div>
   );

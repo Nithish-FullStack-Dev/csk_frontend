@@ -1232,22 +1232,23 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <DialogFooter className="flex justify-between">
+            <DialogFooter className="flex justify-between gap-2">
               <Button
-                variant="destructive"
+                variant="outline"
                 type="button"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button
+                variant="default"
                 disabled={
                   isSubmitting ||
                   addMutation.isPending ||
                   updateMutation.isPending
                 }
                 type="submit"
-                className="flex gap-1 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex gap-1 px-4 "
               >
                 {mode === "edit"
                   ? updateMutation?.isPending

@@ -13,6 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import EditProjectDialog from "./EditProjectDialog";
 import TaskList from "./TaskList";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ContractorProjectsOverviewProps {
   projects?: Project[];
@@ -28,6 +35,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
   error,
 }) => {
   const [editProject, setEditProject] = useState<Project | null>(null);
+  const [selectedTab, setSelectedTab] = useState("all");
 
   if (isLoading) {
     return (
@@ -176,8 +184,29 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               </div>
 
               {/* Tabs */}
-              <Tabs defaultValue="all" className="mt-6">
-                <TabsList className="flex flex-wrap gap-2">
+              <Tabs
+                value={selectedTab}
+                onValueChange={setSelectedTab}
+                className="mt-6"
+              >
+                {/* Mobile: Select */}
+                <div className="md:hidden">
+                  <Select value={selectedTab} onValueChange={setSelectedTab}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Tab" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <TabsList className="hidden md:inline-block">
                   <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="pending">Pending</TabsTrigger>
                   <TabsTrigger value="in_progress">In Progress</TabsTrigger>

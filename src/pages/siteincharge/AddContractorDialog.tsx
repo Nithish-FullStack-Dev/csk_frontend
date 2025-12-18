@@ -219,8 +219,11 @@ const AddContractorDialog = ({
       toast.success(data?.message ?? "Contractor added successfully");
     },
     onError: (error: any) => {
-      console.log(error);
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      if (axios.isAxiosError(error)) {
+        toast.error(error?.response?.data?.message || "Something went wrong");
+      } else {
+        toast.error(error?.message || "Something went wrong");
+      }
     },
   });
 
@@ -241,7 +244,9 @@ const AddContractorDialog = ({
       toast.success(data?.message ?? "Contractor updated successfully");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Something went wrong");
+      if (axios.isAxiosError(error))
+        toast.error(error?.response?.data?.message || "Something went wrong");
+      else toast.error(error?.message || "Something went wrong");
     },
   });
 
@@ -329,7 +334,7 @@ const AddContractorDialog = ({
 
   return (
     <Dialog open={openDialog} onOpenChange={setOpenConDialog}>
-      <DialogContent className="max-w-[75vw] max-h-[90vh] flex flex-col rounded-xl">
+      <DialogContent className="md:w-[75vw] w-[90vw] max-h-[90vh] flex flex-col rounded-xl">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Edit Contractor" : "Add Contractor"}
@@ -343,451 +348,497 @@ const AddContractorDialog = ({
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="grid grid-cols-2 gap-4 flex-1 overflow-y-scroll p-2"
+          className="flex flex-col flex-1 overflow-hidden"
         >
-          {mode === "add" && (
-            <div className="col-span-2 space-y-1">
-              <Label>Select Contractor</Label>
-              <Controller
-                name="userId"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a contractor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contractorDropDown?.data?.map((u: any) => (
-                        <SelectItem key={u._id} value={u._id}>
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.userId && (
-                <p className="text-sm font-medium text-destructive">
-                  {errors.userId.message}
-                </p>
+          <div className="flex-1 overflow-y-auto md:p-6 p-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6 gap-2">
+              {mode === "add" && (
+                <div className="col-span-full space-y-2">
+                  <Label>Select Contractor</Label>
+                  <Controller
+                    name="userId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a contractor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contractorDropDown?.data?.map((u: any) => (
+                            <SelectItem key={u._id} value={u._id}>
+                              {u.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.userId && (
+                    <p className="text-sm font-medium text-destructive">
+                      {errors.userId.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          <div className="col-span-2 space-y-1">
-            <Label>Add Project</Label>
-            <Select value="" onValueChange={handleAddProject}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {allProjects.map((p: any) => (
-                  <SelectItem key={p?._id} value={p?._id}>
-                    {p.projectId?.projectName +
-                      " floor no: " +
-                      p?.floorUnit?.floorNumber +
-                      " unit: " +
-                      p?.unit?.plotNo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="col-span-2 space-y-1">
-            <Label>Selected Projects</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {selectedProjects.map((id) => {
-                const proj = allProjects.find((p: any) => p._id === id);
-                return (
-                  <Badge
-                    key={id}
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    {(typeof proj?.projectId === "object" &&
-                      proj?.projectId?.projectName) ||
-                      "Unknown"}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 ml-1"
-                      onClick={() => handleRemoveProject(id)}
-                    >
-                      ×
-                    </Button>
-                  </Badge>
-                );
-              })}
-              {selectedProjects.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No projects selected
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <Label>Company Name</Label>
-            <Input {...register("companyName")} />
-            {errors.companyName && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.companyName.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>GST Number</Label>
-            <Input
-              className="uppercase"
-              {...register("gstNumber", {
-                setValueAs: (v) => v?.toUpperCase(),
-              })}
-            />
-            {errors.gstNumber && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.gstNumber.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>PAN Number</Label>
-            <Input
-              className="uppercase"
-              {...register("panCardNumber", {
-                setValueAs: (v) => v?.toUpperCase(),
-              })}
-            />
-            {errors.panCardNumber && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.panCardNumber.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Contractor Type</Label>
-            <Controller
-              name="contractorType"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Contractor Type" />
+              <div className="col-span-full space-y-2">
+                <Label>Add Project</Label>
+                <Select value="" onValueChange={handleAddProject}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Individual">Individual</SelectItem>
-                    <SelectItem value="Firm">Firm</SelectItem>
-                    <SelectItem value="Private Ltd">Private Ltd</SelectItem>
-                    <SelectItem value="LLP">LLP</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {allProjects.map((p: any) => (
+                      <SelectItem key={p?._id} value={p?._id}>
+                        {p.projectId?.projectName +
+                          " floor no: " +
+                          p?.floorUnit?.floorNumber +
+                          " unit: " +
+                          p?.unit?.plotNo}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              )}
-            />
-            {errors.contractorType && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.contractorType.message}
-              </p>
-            )}
-          </div>
+              </div>
 
-          <div className="space-y-1">
-            <Label>Accounts Incharge ID</Label>
-            <Input {...register("accountsIncharge")} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Total Amount</Label>
-            <Input
-              type="number"
-              {...register("amount", { valueAsNumber: true })}
-            />
-            {errors.amount && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.amount.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Advance Paid</Label>
-            <Input
-              type="number"
-              {...register("advancePaid", { valueAsNumber: true })}
-            />
-            {errors.advancePaid && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.advancePaid.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Balance Paid</Label>
-            <Input type="number" value={watch("balancePaid")} readOnly />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Invoice Number</Label>
-            <Input {...register("billInvoiceNumber")} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Contract Start Date</Label>
-            <Input type="date" {...register("contractStartDate")} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Contract End Date</Label>
-            <Input type="date" {...register("contractEndDate")} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Bank Name</Label>
-            <Input {...register("bankName")} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Account Number</Label>
-            <Input {...register("accountNumber")} />
-            {errors.accountNumber && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.accountNumber.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>IFSC Code</Label>
-            <Input
-              className="uppercase"
-              {...register("ifscCode", {
-                setValueAs: (v) => v?.toUpperCase(),
-              })}
-            />
-            {errors.ifscCode && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.ifscCode.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Branch Name</Label>
-            <Input {...register("branchName")} />
-          </div>
-
-          <div className="col-span-2 space-y-2 flex flex-col">
-            <Label>Payment Records</Label>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                append({
-                  modeOfPayment: "",
-                  paymentDate: "",
-                  lastPaymentDate: "",
-                })
-              }
-              className="mb-2"
-            >
-              <Plus className="h-4 w-4 mr-2" /> Add Payment Record
-            </Button>
-            {errors.paymentDetails?.message && (
-              <p className="text-sm font-medium text-destructive">
-                {errors.paymentDetails.message}
-              </p>
-            )}
-            <div className="space-y-4">
-              {fields.map((field, index) => (
-                <div key={field.id} className="border p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">Payment Record {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <Label>Mode of Payment</Label>
-                      <Controller
-                        name={`paymentDetails.${index}.modeOfPayment`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Select
-                            value={f.value ?? ""}
-                            onValueChange={f.onChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Mode" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Cash">Cash</SelectItem>
-                              <SelectItem value="Cheque">Cheque</SelectItem>
-                              <SelectItem value="NEFT">NEFT</SelectItem>
-                              <SelectItem value="RTGS">RTGS</SelectItem>
-                              <SelectItem value="UPI">UPI</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      {errors.paymentDetails?.[index]?.modeOfPayment && (
-                        <p className="text-sm font-medium text-destructive">
-                          {errors.paymentDetails[index]?.modeOfPayment?.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Payment Date</Label>
-                      <Input
-                        type="date"
-                        {...register(`paymentDetails.${index}.paymentDate`)}
-                      />
-                      {errors.paymentDetails?.[index]?.paymentDate && (
-                        <p className="text-sm font-medium text-destructive">
-                          {errors.paymentDetails[index]?.paymentDate?.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label>Last Payment Date</Label>
-                      <Input
-                        type="date"
-                        {...register(`paymentDetails.${index}.lastPaymentDate`)}
-                      />
-                    </div>
-                  </div>
+              <div className="col-span-full space-y-2">
+                <Label>Selected Projects</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedProjects.map((id) => {
+                    const proj = allProjects.find((p: any) => p._id === id);
+                    return (
+                      <Badge
+                        key={id}
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {(typeof proj?.projectId === "object" &&
+                          proj?.projectId?.projectName) ||
+                          "Unknown"}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 ml-1"
+                          onClick={() => handleRemoveProject(id)}
+                        >
+                          ×
+                        </Button>
+                      </Badge>
+                    );
+                  })}
+                  {selectedProjects.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No projects selected
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="space-y-1">
-            <Label>Billed Date</Label>
-            <Input type="date" {...register("billedDate")} />
-          </div>
+              <div className="space-y-2">
+                <Label>Company Name</Label>
+                <Input className="w-full" {...register("companyName")} />
+                {errors.companyName && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.companyName.message}
+                  </p>
+                )}
+              </div>
 
-          <div className="space-y-1">
-            <Label>Final Payment Date</Label>
-            <Input type="date" {...register("finalPaymentDate")} />
-          </div>
-
-          <div className="col-span-2 flex items-center space-x-2">
-            <Controller
-              name="billApprovedBySiteIncharge"
-              control={control}
-              render={({ field }) => (
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  id="site-approved"
+              <div className="space-y-2">
+                <Label>GST Number</Label>
+                <Input
+                  className="w-full uppercase"
+                  {...register("gstNumber", {
+                    setValueAs: (v) => v?.toUpperCase(),
+                  })}
                 />
-              )}
-            />
-            <Label htmlFor="site-approved" className="cursor-pointer">
-              Bill Approved by Site Incharge
-            </Label>
-          </div>
+                {errors.gstNumber && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.gstNumber.message}
+                  </p>
+                )}
+              </div>
 
-          <div className="col-span-2 flex items-center space-x-2">
-            <Controller
-              name="billProcessedByAccountant"
-              control={control}
-              render={({ field }) => (
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  id="account-processed"
+              <div className="space-y-2">
+                <Label>PAN Number</Label>
+                <Input
+                  className="w-full uppercase"
+                  {...register("panCardNumber", {
+                    setValueAs: (v) => v?.toUpperCase(),
+                  })}
                 />
-              )}
-            />
-            <Label htmlFor="account-processed" className="cursor-pointer">
-              Bill Processed by Accountant
-            </Label>
-          </div>
+                {errors.panCardNumber && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.panCardNumber.message}
+                  </p>
+                )}
+              </div>
 
-          <div className="col-span-2 flex items-center space-x-2">
-            <Controller
-              name="isActive"
-              control={control}
-              render={({ field }) => (
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  id="active"
+              <div className="space-y-2">
+                <Label>Contractor Type</Label>
+                <Controller
+                  name="contractorType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Contractor Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Individual">Individual</SelectItem>
+                        <SelectItem value="Firm">Firm</SelectItem>
+                        <SelectItem value="Private Ltd">Private Ltd</SelectItem>
+                        <SelectItem value="LLP">LLP</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
-              )}
-            />
-            <Label htmlFor="active" className="cursor-pointer">
-              Is Active
-            </Label>
-          </div>
+                {errors.contractorType && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.contractorType.message}
+                  </p>
+                )}
+              </div>
 
-          <div className="col-span-2 space-y-1">
-            <Label>Work Details</Label>
-            <Textarea
-              {...register("workDetails")}
-              placeholder="Enter work details"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label>Accounts Incharge ID</Label>
+                <Input className="w-full" {...register("accountsIncharge")} />
+              </div>
 
-          <div className="col-span-2 space-y-1">
-            {imagePreview && (
-              <div className="mb-4 rounded-lg border bg-muted p-3">
-                <Label className="mb-2 block">Bill Copy Preview</Label>
-                <img
-                  src={imagePreview}
-                  alt="Bill Copy Preview"
-                  className="w-full max-h-64 object-contain rounded-md bg-white"
+              <div className="space-y-2">
+                <Label>Total Amount</Label>
+                <Input
+                  className="w-full"
+                  type="number"
+                  {...register("amount", { valueAsNumber: true })}
+                />
+                {errors.amount && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.amount.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Advance Paid</Label>
+                <Input
+                  className="w-full"
+                  type="number"
+                  {...register("advancePaid", { valueAsNumber: true })}
+                />
+                {errors.advancePaid && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.advancePaid.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Balance Paid</Label>
+                <Input
+                  className="w-full"
+                  type="number"
+                  value={watch("balancePaid")}
+                  readOnly
                 />
               </div>
-            )}
 
-            <Label>Bill Copy</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
+              <div className="space-y-2">
+                <Label>Invoice Number</Label>
+                <Input className="w-full" {...register("billInvoiceNumber")} />
+              </div>
 
-                // cleanup old blob
-                if (imagePreview?.startsWith("blob:")) {
-                  URL.revokeObjectURL(imagePreview);
-                }
+              <div className="space-y-2">
+                <Label>Contract Start Date</Label>
+                <Input
+                  className="w-full"
+                  type="date"
+                  {...register("contractStartDate")}
+                />
+              </div>
 
-                setBillCopy(file);
+              <div className="space-y-2">
+                <Label>Contract End Date</Label>
+                <Input
+                  className="w-full"
+                  type="date"
+                  {...register("contractEndDate")}
+                />
+              </div>
 
-                if (file) {
-                  const previewUrl = URL.createObjectURL(file);
-                  setImagePreview(previewUrl);
-                } else {
-                  setImagePreview(null);
-                }
-              }}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label>Bank Name</Label>
+                <Input className="w-full" {...register("bankName")} />
+              </div>
 
-          <div className="col-span-2 flex justify-end">
-            <Button type="submit" disabled={isPending}>
-              {isPending
-                ? "Saving..."
-                : mode === "edit"
-                ? "Update Contractor"
-                : "Add Contractor"}
-            </Button>
+              <div className="space-y-2">
+                <Label>Account Number</Label>
+                <Input className="w-full" {...register("accountNumber")} />
+                {errors.accountNumber && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.accountNumber.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>IFSC Code</Label>
+                <Input
+                  className="w-full uppercase"
+                  {...register("ifscCode", {
+                    setValueAs: (v) => v?.toUpperCase(),
+                  })}
+                />
+                {errors.ifscCode && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.ifscCode.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Branch Name</Label>
+                <Input className="w-full" {...register("branchName")} />
+              </div>
+
+              <div className="col-span-full space-y-4">
+                <Label>Payment Records</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    append({
+                      modeOfPayment: "",
+                      paymentDate: "",
+                      lastPaymentDate: "",
+                    })
+                  }
+                  className="mb-4"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Payment Record
+                </Button>
+                {errors.paymentDetails?.message && (
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.paymentDetails.message}
+                  </p>
+                )}
+                <div className="space-y-6">
+                  {fields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="border p-6 rounded-lg space-y-4"
+                    >
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">
+                          Payment Record {index + 1}
+                        </h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Mode of Payment</Label>
+                          <Controller
+                            name={`paymentDetails.${index}.modeOfPayment`}
+                            control={control}
+                            render={({ field: f }) => (
+                              <Select
+                                value={f.value ?? ""}
+                                onValueChange={f.onChange}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select Mode" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Cash">Cash</SelectItem>
+                                  <SelectItem value="Cheque">Cheque</SelectItem>
+                                  <SelectItem value="NEFT">NEFT</SelectItem>
+                                  <SelectItem value="RTGS">RTGS</SelectItem>
+                                  <SelectItem value="UPI">UPI</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          {errors.paymentDetails?.[index]?.modeOfPayment && (
+                            <p className="text-sm font-medium text-destructive">
+                              {
+                                errors.paymentDetails[index]?.modeOfPayment
+                                  ?.message
+                              }
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Payment Date</Label>
+                          <Input
+                            className="w-full"
+                            type="date"
+                            {...register(`paymentDetails.${index}.paymentDate`)}
+                          />
+                          {errors.paymentDetails?.[index]?.paymentDate && (
+                            <p className="text-sm font-medium text-destructive">
+                              {
+                                errors.paymentDetails[index]?.paymentDate
+                                  ?.message
+                              }
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Last Payment Date</Label>
+                          <Input
+                            className="w-full"
+                            type="date"
+                            {...register(
+                              `paymentDetails.${index}.lastPaymentDate`
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Billed Date</Label>
+                <Input
+                  className="w-full"
+                  type="date"
+                  {...register("billedDate")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Final Payment Date</Label>
+                <Input
+                  className="w-full"
+                  type="date"
+                  {...register("finalPaymentDate")}
+                />
+              </div>
+
+              <div className="col-span-full flex items-center space-x-2">
+                <Controller
+                  name="billApprovedBySiteIncharge"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      id="site-approved"
+                    />
+                  )}
+                />
+                <Label htmlFor="site-approved" className="cursor-pointer">
+                  Bill Approved by Site Incharge
+                </Label>
+              </div>
+
+              <div className="col-span-full flex items-center space-x-2">
+                <Controller
+                  name="billProcessedByAccountant"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      id="account-processed"
+                    />
+                  )}
+                />
+                <Label htmlFor="account-processed" className="cursor-pointer">
+                  Bill Processed by Accountant
+                </Label>
+              </div>
+
+              <div className="col-span-full flex items-center space-x-2">
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      id="active"
+                    />
+                  )}
+                />
+                <Label htmlFor="active" className="cursor-pointer">
+                  Is Active
+                </Label>
+              </div>
+
+              <div className="col-span-full space-y-2">
+                <Label>Work Details</Label>
+                <Textarea
+                  className="w-full"
+                  {...register("workDetails")}
+                  placeholder="Enter work details"
+                />
+              </div>
+
+              <div className="col-span-full space-y-2">
+                {imagePreview && (
+                  <div className="mb-4 rounded-lg border bg-muted p-3">
+                    <Label className="mb-2 block">Bill Copy Preview</Label>
+                    <img
+                      src={imagePreview}
+                      alt="Bill Copy Preview"
+                      className="w-full max-h-64 object-contain rounded-md bg-white"
+                    />
+                  </div>
+                )}
+
+                <Label>Bill Copy</Label>
+                <Input
+                  className="w-full"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+
+                    if (imagePreview?.startsWith("blob:")) {
+                      URL.revokeObjectURL(imagePreview);
+                    }
+
+                    setBillCopy(file);
+
+                    if (file) {
+                      const previewUrl = URL.createObjectURL(file);
+                      setImagePreview(previewUrl);
+                    } else {
+                      setImagePreview(null);
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="col-span-full flex justify-end">
+                <Button type="submit" disabled={isPending}>
+                  {isPending
+                    ? "Saving..."
+                    : mode === "edit"
+                    ? "Update Contractor"
+                    : "Add Contractor"}
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </DialogContent>

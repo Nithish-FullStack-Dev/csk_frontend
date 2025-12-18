@@ -76,6 +76,7 @@ import AddContractorDialog from "./AddContractorDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ContractorList } from "@/types/contractor";
 import ViewContractorDetailsCard from "@/components/helpers/ViewContractorDetailsCard";
+import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 
 const ContractorsList = () => {
   const { user } = useAuth();
@@ -91,8 +92,10 @@ const ContractorsList = () => {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [openConDialog, setOpenConDialog] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [editingContractor, setEditingContractor] = useState(null);
+  const [deletecontractorId, setDeletecontractorId] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewContractor, setViewContractor] = useState<any>(null);
   const [contractorListSearch, setContractorListSearch] = useState("");
@@ -119,12 +122,20 @@ const ContractorsList = () => {
       );
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
-      toast.success("Contractor deleted successfully");
+      toast.success(data?.message ?? "Contractor deleted successfully");
+      setDeletecontractorId(null);
+      setDeleteDialogOpen(false);
     },
     onError: (error) => {
-      toast.error(error?.message || "Failed to delete contractor");
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error?.response.data.message || "Failed to delete contractor"
+        );
+      } else {
+        toast.error(error?.message || "Failed to delete contractor");
+      }
     },
   });
 
@@ -155,34 +166,7 @@ const ContractorsList = () => {
     isLoading: isLoadingContractorList,
     isError: isErrorContractorList,
     error: contractorListError,
-    refetch: refetchContractorList,
   } = useContractorList();
-
-  if (isErrorProjects) {
-    console.error(
-      "Error fetching projects for dropdown:",
-      projectsDropdownError
-    );
-    toast.error("Error fetching projects for dropdown");
-  }
-  if (isErrorContractors) {
-    console.error("Error fetching contractors:", contractorsDropdownError);
-    toast.error("Error fetching contractors");
-  }
-  if (isErrorContractorProjects) {
-    console.error(
-      "Error fetching contractor projects:",
-      contractorProjectsDropdownError
-    );
-    toast.error("Error fetching contractor projects");
-  }
-  if (isErrorContractorList) {
-    console.error("Error fetching contractor List:", contractorListError);
-    toast.error(
-      contractorListError?.message ?? "Error fetching contractor projects"
-    );
-  }
-  if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
   const filteredAssignedContractors = useMemo(() => {
     if (!Array.isArray(contractors) || contractors.length === 0) return [];
@@ -273,6 +257,32 @@ const ContractorsList = () => {
     });
   }, [contractorList?.data, contractorListSearch]);
 
+  if (isErrorProjects) {
+    console.error(
+      "Error fetching projects for dropdown:",
+      projectsDropdownError
+    );
+    toast.error("Error fetching projects for dropdown");
+  }
+  if (isErrorContractors) {
+    console.error("Error fetching contractors:", contractorsDropdownError);
+    toast.error("Error fetching contractors");
+  }
+  if (isErrorContractorProjects) {
+    console.error(
+      "Error fetching contractor projects:",
+      contractorProjectsDropdownError
+    );
+    toast.error("Error fetching contractor projects");
+  }
+  if (isErrorContractorList) {
+    console.error("Error fetching contractor List:", contractorListError);
+    toast.error(
+      contractorListError?.message ?? "Error fetching contractor projects"
+    );
+  }
+  if (isLoadingProjects || isLoadingContractors) return <Loader />;
+
   const specializations = Array.from(
     new Set(contractors.map((c) => c.specialization))
   );
@@ -282,10 +292,9 @@ const ContractorsList = () => {
     setOpenConDialog(true);
   };
 
-  const handleDelete = (contractorId) => {
-    if (confirm("Are you sure you want to delete this contractor?")) {
-      deleteContractorMutation.mutate(contractorId);
-    }
+  const handleDelete = () => {
+    if (!deletecontractorId) return;
+    deleteContractorMutation.mutate(deletecontractorId);
   };
 
   const handleCloseEditDialog = () => {
@@ -758,9 +767,9 @@ const ContractorsList = () => {
 
               <TabsContent value="contractorlist">
                 <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between md:items-center items-start md:flex-row flex-col mb-6 gap-3">
                     <h2 className="text-2xl font-bold">Contractor List</h2>
-                    <div className="flex gap-5">
+                    <div className="flex md:gap-5 gap-2 md:flex-row flex-col w-full">
                       <Input
                         placeholder="Search contractors..."
                         value={contractorListSearch}
@@ -900,9 +909,12 @@ const ContractorsList = () => {
                                           Edit
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
-                                          onClick={() =>
-                                            handleDelete(contractor._id)
-                                          }
+                                          onClick={() => {
+                                            setDeletecontractorId(
+                                              contractor._id
+                                            );
+                                            setDeleteDialogOpen(true);
+                                          }}
                                           className="text-destructive"
                                         >
                                           <Trash2 className="h-4 w-4 mr-2" />
@@ -922,7 +934,7 @@ const ContractorsList = () => {
                         {filteredContractorList?.map((contractor) => (
                           <Card key={contractor._id}>
                             <CardHeader>
-                              <div className="flex items-center justify-between">
+                              <div className="flex md:items-center items-start justify-between  md:flex-row flex-col mb-6 gap-3">
                                 <CardTitle className="flex items-center">
                                   <span>{contractor.companyName}</span>
                                 </CardTitle>
@@ -938,7 +950,10 @@ const ContractorsList = () => {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    onClick={() => handleDelete(contractor._id)}
+                                    onClick={() => {
+                                      setDeletecontractorId(contractor._id);
+                                      setDeleteDialogOpen(true);
+                                    }}
                                   >
                                     <Trash2 className="h-4 w-4 mr-1" />
                                     Delete
@@ -1456,6 +1471,14 @@ const ContractorsList = () => {
             <ViewContractorDetailsCard contractor={viewContractor} />
           </DialogContent>
         </Dialog>
+
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDelete}
+          title="Delete Contractor"
+          description="Are you sure you want to delete this contractor? This action cannot be undone."
+        />
       </div>
     </MainLayout>
   );

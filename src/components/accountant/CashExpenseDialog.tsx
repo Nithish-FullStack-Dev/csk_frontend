@@ -136,7 +136,7 @@ export default function CashExpenseDialog({ open, onClose, editData }: any) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="md:w-2xl w-[90%] rounded-md">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Expense" : "Add Expense"}</DialogTitle>
           <DialogDescription></DialogDescription>

@@ -93,7 +93,7 @@ export default function CashExpensesPage() {
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-        <div className="flex gap-2 justify-end w-full">
+        <div className="flex gap-2 justify-end w-full flex-col md:flex-row">
           <Input
             placeholder="Search expenses..."
             value={search}
