@@ -38,6 +38,7 @@ const SiteInchargeProjectsOverview = ({
   const [selectedContractor, setSelectedContractor] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const queryClient = useQueryClient();
+  const [selectedTab, setSelectedTab] = useState("all");
 
   const {
     data: contractors = [],
@@ -168,50 +169,77 @@ const SiteInchargeProjectsOverview = ({
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="all" className="mt-6">
-              <TabsList className="flex flex-wrap gap-2">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="approved">Approved</TabsTrigger>
-                <TabsTrigger value="rejected">Rejected</TabsTrigger>
-              </TabsList>
+            <div>
+              <h1>Tasks</h1>
+              <Tabs
+                value={selectedTab}
+                onValueChange={setSelectedTab}
+                className="mt-6"
+              >
+                {/* Mobile: Select */}
+                <div className="md:hidden">
+                  <Select value={selectedTab} onValueChange={setSelectedTab}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Tab" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <TabsContent value="all">
-                <TaskList tasks={allTasks} contractors={project.contractors} />
-              </TabsContent>
-              <TabsContent value="pending">
-                <TaskList
-                  tasks={pendingTasks}
-                  contractors={project.contractors}
-                />
-              </TabsContent>
-              <TabsContent value="in_progress">
-                <TaskList
-                  tasks={inProgressTasks}
-                  contractors={project.contractors}
-                />
-              </TabsContent>
-              <TabsContent value="completed">
-                <TaskList
-                  tasks={completedTasks}
-                  contractors={project.contractors}
-                />
-              </TabsContent>
-              <TabsContent value="approved">
-                <TaskList
-                  tasks={approvedTasks}
-                  contractors={project.contractors}
-                />
-              </TabsContent>
-              <TabsContent value="rejected">
-                <TaskList
-                  tasks={rejectedTasks}
-                  contractors={project.contractors}
-                />
-              </TabsContent>
-            </Tabs>
+                <TabsList className="hidden md:inline-block">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+                  <TabsTrigger value="completed">Completed</TabsTrigger>
+                  <TabsTrigger value="approved">Approved</TabsTrigger>
+                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all">
+                  <TaskList
+                    tasks={allTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+                <TabsContent value="pending">
+                  <TaskList
+                    tasks={pendingTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+                <TabsContent value="in_progress">
+                  <TaskList
+                    tasks={inProgressTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+                <TabsContent value="completed">
+                  <TaskList
+                    tasks={completedTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+                <TabsContent value="approved">
+                  <TaskList
+                    tasks={approvedTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+                <TabsContent value="rejected">
+                  <TaskList
+                    tasks={rejectedTasks}
+                    contractors={project.contractors}
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         );
       })}

@@ -54,6 +54,13 @@ import PurchaseCrud from "@/components/customer/PurchaseCrud";
 import CashExpenseDialog from "@/components/accountant/CashExpenseDialog";
 import CashExpensesPage from "@/components/accountant/CashExpensesPage";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
@@ -71,6 +78,7 @@ const CustomerManagement = () => {
   const [uploadPdfOpen, setUploadPdfOpen] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
+  const [selectedTab, setSelectedTab] = useState("add");
 
   const isSalesManager =
     (user && user.role === "sales_manager") || user.role === "accountant";
@@ -248,8 +256,21 @@ const CustomerManagement = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="add">
-          <TabsList>
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <div className="md:hidden">
+            <Select value={selectedTab} onValueChange={setSelectedTab}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Tab"></SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="add">Add Customer</SelectItem>
+                <SelectItem value="purchase">Add Purchase Sheet</SelectItem>
+                <SelectItem value="cash">Add Cash Expenses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TabsList className="hidden md:inline-block">
             <TabsTrigger value="add">Add Customer</TabsTrigger>
             <TabsTrigger value="purchase">Add Purchase Sheet</TabsTrigger>
             <TabsTrigger value="cash">Add Cash Expenses</TabsTrigger>
@@ -257,8 +278,8 @@ const CustomerManagement = () => {
           <TabsContent value="add">
             <>
               {isSalesManager && (
-                <div className="flex justify-end w-full mb-5 gap-5">
-                  <div className="mb-4">
+                <div className="flex md:justify-end justify-normal w-full mb-5 md:gap-5 gap-2 md:flex-row flex-col">
+                  <div className="md:mb-4">
                     <Input
                       placeholder="Search by customer, agent, project, unit..."
                       value={search}
@@ -268,7 +289,7 @@ const CustomerManagement = () => {
                   </div>
                   <Button
                     onClick={() => setDialogOpen(true)}
-                    className="mt-4 md:mt-0 text-white"
+                    className="mt-2 md:mt-0 text-white"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add New Customer

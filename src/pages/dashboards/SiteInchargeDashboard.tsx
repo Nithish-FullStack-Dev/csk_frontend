@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import SiteInchargeProjectsOverview from "@/components/dashboard/siteincharge/SiteInchargeProjectsOverview";
 import TaskVerificationList from "@/components/dashboard/siteincharge/TaskVerificationList";
 import SiteInchargeQualityIssues from "@/components/dashboard/siteincharge/SiteInchargeQualityIssues";
-import SiteInchargeSchedule from "@/components/dashboard/siteincharge/SiteInchargeSchedule";
 import MainLayout from "@/components/layout/MainLayout";
 import {
   Select,
@@ -60,13 +59,6 @@ const SiteInchargeDashboard = () => {
     queryKey: ["taskVerificationList"],
     queryFn: fetchTasks,
   });
-
-  const {
-    data: appointments,
-    isLoading: schedulesLoading,
-    isError: schedulesError,
-    error: schedulesErrorDetails,
-  } = useSchedules();
 
   return (
     <MainLayout>

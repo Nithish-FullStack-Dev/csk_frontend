@@ -391,7 +391,7 @@ const TeamManagement = () => {
               Manage your team lead team and track their performance
             </p>
           </div>
-          <div className="flex md:items-center items-start space-x-2 mt-4 md:mt-0 md:flex-row flex-col gap-5">
+          <div className="flex md:items-center items-start md:space-x-2 space-x-0 mt-4 md:mt-0  md:gap-5 gap-2 ">
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Sort by" />

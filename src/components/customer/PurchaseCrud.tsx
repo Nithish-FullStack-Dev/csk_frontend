@@ -296,7 +296,7 @@ export default function PurchaseCrud() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-5">
+      <div className="flex justify-end md:gap-5 md:flex-row flex-col">
         <div className=" mb-3">
           <Input
             placeholder="Search party, project, unit, agent..."
@@ -449,7 +449,7 @@ export default function PurchaseCrud() {
         </Table>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[60%] max-h-[80vh] flex flex-col">
+        <DialogContent className="md:w-[60%] w-[90%] max-h-[80vh] flex flex-col rounded-md">
           <DialogHeader>
             <DialogTitle>
               {mode === "add" ? "Add Purchase" : "Edit Purchase"}
