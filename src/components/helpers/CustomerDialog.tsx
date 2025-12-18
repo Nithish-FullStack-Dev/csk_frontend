@@ -402,7 +402,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="min-w-[80vw] max-h-[80vh] overflow-y-scroll rounded-xl">
+      <DialogContent className="min-w-[80vw] max-h-[80vh] rounded-xl flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Edit Customer" : "Add New Customer"}
@@ -421,7 +421,10 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
             </span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6 max-h-[80vh] overflow-y-scroll"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 {mode === "add" && (

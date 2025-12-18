@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
+import * as XLSX from "xlsx";
 
 export default function CashExpensesPage() {
   const qc = useQueryClient();
@@ -90,10 +91,41 @@ export default function CashExpensesPage() {
     deleteMutation.mutate(deleteId);
   };
 
+  const handleExportExcel = () => {
+    if (!filteredExpenses || filteredExpenses.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = filteredExpenses.map((e: any, i: number) => ({
+      S_No: i + 1,
+      Date: e.date?.split("T")[0] ?? "-",
+      Amount: e.amount ?? 0,
+      "Mode of Payment": e.modeOfPayment ?? "-",
+      "Transaction Type": e.transactionType ?? "-",
+      Category: e.expenseCategory ?? "-",
+      Party: e.partyName ?? "-",
+      Description: e.description ?? "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cash Expenses");
+    XLSX.writeFile(workbook, "cash-expenses.xlsx");
+  };
+
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div className="flex gap-2 justify-end w-full flex-col md:flex-row">
+          <Button
+            variant="outline"
+            onClick={handleExportExcel}
+            disabled={filteredExpenses.length === 0}
+          >
+            Export to Excel
+          </Button>
           <Input
             placeholder="Search expenses..."
             value={search}
