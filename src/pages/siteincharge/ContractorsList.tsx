@@ -942,6 +942,14 @@ const ContractorsList = () => {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    onClick={() => handleView(contractor)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View Details
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
                                     onClick={() => handleEdit(contractor)}
                                   >
                                     <Edit className="h-4 w-4 mr-1" />
@@ -1467,7 +1475,14 @@ const ContractorsList = () => {
         </Card>
 
         <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] flex flex-col rounded-md">
+            <DialogHeader>
+              <DialogTitle>View Contractor Details</DialogTitle>
+              <DialogDescription>
+                Detailed information about the selected contractor.
+              </DialogDescription>
+            </DialogHeader>
+
             <ViewContractorDetailsCard contractor={viewContractor} />
           </DialogContent>
         </Dialog>

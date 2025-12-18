@@ -88,7 +88,7 @@ const EditProjectDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md rounded-md">
         <DialogHeader>
           <DialogTitle>Edit Project Details</DialogTitle>
           <DialogDescription>
@@ -156,7 +156,7 @@ const EditProjectDialog = ({
             </SelectContent>
           </Select>
 
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
             <Button
               type="button"
               variant="outline"

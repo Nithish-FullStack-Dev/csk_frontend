@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -436,16 +437,20 @@ const ContractorProjects = () => {
 
       {/* Add Project Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] w-[90vw] overflow-y-scroll rounded-xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] w-[90vw] h-[80vh] flex flex-col rounded-xl">
+          {/* HEADER (STATIC) */}
+          <DialogHeader className="pb-3">
             <DialogTitle>Add New Project</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to add a new construction project to
+              your portfolio.
+            </DialogDescription>
           </DialogHeader>
-          <DialogDescription>
-            Fill in the details below to add a new construction project to your
-            portfolio.
-          </DialogDescription>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 min-h-0 overflow-y-auto px-1"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Building</label>
@@ -705,34 +710,34 @@ const ContractorProjects = () => {
                 <p className="text-sm text-red-500">{formErrors.description}</p>
               )}
             </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setDialogOpen(false);
-                  setFormData({
-                    project: "",
-                    clientName: "",
-                    floorUnit: "",
-                    unit: "",
-                    startDate: "",
-                    estimatedEndDate: "",
-                    estimatedBudget: 0,
-                    description: "",
-                    teamSize: 1,
-                    siteIncharge: "",
-                    status: "",
-                  });
-                  setFormErrors({});
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Add Project</Button>
-            </div>
           </form>
+          <DialogFooter className="flex flex-col gap-2 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDialogOpen(false);
+                setFormData({
+                  project: "",
+                  clientName: "",
+                  floorUnit: "",
+                  unit: "",
+                  startDate: "",
+                  estimatedEndDate: "",
+                  estimatedBudget: 0,
+                  description: "",
+                  teamSize: 1,
+                  siteIncharge: "",
+                  status: "",
+                });
+                setFormErrors({});
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button type="submit">Add Project</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MainLayout>
