@@ -14,7 +14,7 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
   if (!contractor) return null;
 
   return (
-    <Card className="w-full">
+    <Card className="w-full overflow-y-auto max-h-[90vh]">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           Contractor Details
@@ -71,7 +71,11 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
             {contractor.projectsAssigned?.length ? (
               contractor.projectsAssigned.map((p: any) => (
                 <Badge key={p._id} variant="secondary">
-                  {p.projectName || p._id}
+                  {p.projectId.projectName +
+                    " / " +
+                    p.floorUnit.floorNumber +
+                    " / " +
+                    p.unit.plotNo || p._id}
                 </Badge>
               ))
             ) : (

@@ -301,27 +301,29 @@ export default function PurchaseCrud() {
     }
 
     const exportData = filteredPurchases.map((p: any) => ({
-      "Party Name": p.partyName,
-      "Company Name": p.companyName ?? "",
+      "Party Name": p.partyName || "N/A",
+      "Company Name": p.companyName || "N/A",
       Project:
         p?.project?.projectId?.projectName +
           "/" +
           p?.project?.floorUnit?.floorNumber +
           "/" +
           p?.project?.unit?.plotNo || "",
-      Agent: p?.agent?.name ?? "",
-      "Payment Plan": p.paymentPlan,
-      "Registration Status": p.registrationStatus,
-      "Total Sale": p.totalSaleConsideration,
-      Advance: p.advance ?? 0,
-      Balance: p.balance ?? 0,
+      Agent: p?.agent?.name || "",
+      "Payment Plan": p.paymentPlan || "N/A",
+      "Property Description": p.propertyDescription || "N/A",
+      "Registration Status": p.registrationStatus || "N/A",
+      "Total Sale": p.totalSaleConsideration || "N/A",
+      "Payment Details": p.paymentDetails || "N/A",
+      Advance: p.advance || 0,
+      Balance: p.balance || 0,
       "Last Payment Date": p.lastPaymentDate
         ? new Date(p.lastPaymentDate).toLocaleDateString()
-        : "-",
+        : "N/A",
       "Next Payment Date": p.nextPaymentDate
         ? new Date(p.nextPaymentDate).toLocaleDateString()
-        : "-",
-      Notes: p.notes ?? "-",
+        : "N/A",
+      Notes: p.notes || "N/A",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -699,7 +701,7 @@ export default function PurchaseCrud() {
       </Dialog>
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="md:max-w-4xl max-w-[90vw] rounded-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Purchase Details</DialogTitle>
             <DialogDescription></DialogDescription>
@@ -724,7 +726,7 @@ export default function PurchaseCrud() {
             <div className="col-span-2">
               <p className="text-muted-foreground">Property Description</p>
               <p className="font-medium whitespace-pre-wrap">
-                {selected?.propertyDescription ?? "—"}
+                {selected?.propertyDescription || "N/A"}
               </p>
             </div>
 

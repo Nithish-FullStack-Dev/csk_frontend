@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Dialog,
   DialogContent,
@@ -29,9 +27,9 @@ import {
 } from "@/utils/accountant/AccountantConfig";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function CashExpenseDialog({ open, onClose, editData }: any) {
+function CashExpenseDialog({ open, onClose, editData }: any) {
   const isEdit = Boolean(editData);
   const qc = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -105,6 +103,7 @@ export default function CashExpenseDialog({ open, onClose, editData }: any) {
       toast.error(err?.response?.data?.message || "Failed to add expense");
     },
   });
+
   const updateMutation = useMutation({
     mutationFn: updateCashExpense,
     onSuccess: (data) => {
@@ -306,3 +305,5 @@ export default function CashExpenseDialog({ open, onClose, editData }: any) {
     </Dialog>
   );
 }
+
+export default React.memo(CashExpenseDialog);

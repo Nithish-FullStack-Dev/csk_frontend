@@ -263,56 +263,56 @@ const CustomerManagement = () => {
         "S No": index + 1,
 
         /* CUSTOMER */
-        "Customer Name": customer?.name ?? "N/A",
-        "Customer Email": customer?.email ?? "N/A",
-        "Customer Phone": customer?.phone ?? "N/A",
+        "Customer Name": customer?.name || "N/A",
+        "Customer Email": customer?.email || "N/A",
+        "Customer Phone": customer?.phone || "N/A",
 
         /* AGENT */
-        "Agent Name": agent?.name ?? "N/A",
-        "Agent Email": agent?.email ?? "N/A",
-        "Agent Phone": agent?.phone ?? "N/A",
+        "Agent Name": agent?.name || "N/A",
+        "Agent Email": agent?.email || "N/A",
+        "Agent Phone": agent?.phone || "N/A",
 
         /* PROPERTY */
-        "Project Name": property?.projectName ?? "N/A",
-        Location: property?.location ?? "N/A",
-        "Unit No": unit?.plotNo ?? "N/A",
-        "Floor No": floorUnit?.floorNumber ?? "N/A",
+        "Project Name": property?.projectName || "N/A",
+        Location: property?.location || "N/A",
+        "Unit No": unit?.plotNo || "N/A",
+        "Floor No": floorUnit?.floorNumber || "N/A",
 
         /* FINANCIAL */
-        "Total Amount": c.totalAmount ?? 0,
-        "Advance Received": c.advanceReceived ?? 0,
-        "Balance Payment": c.balancePayment ?? 0,
-        "Final Price": c.finalPrice ?? 0,
+        "Total Amount": c.totalAmount || 0,
+        "Advance Received": c.advanceReceived || 0,
+        "Balance Payment": c.balancePayment || 0,
+        "Final Price": c.finalPrice || 0,
 
         /* REGISTRATION & PAYMENT */
-        "Registration Status": c.registrationStatus ?? "N/A",
-        "Payment Status": c.paymentStatus ?? "N/A",
-        "Payment Plan": c.paymentPlan ?? "N/A",
-        "Booking Date": c.bookingDate?.split("T")[0] ?? "N/A",
-        "Last Payment Date": c.lastPaymentDate?.split("T")[0] ?? "N/A",
+        "Registration Status": c.registrationStatus || "N/A",
+        "Payment Status": c.paymentStatus || "N/A",
+        "Payment Plan": c.paymentPlan || "N/A",
+        "Booking Date": c.bookingDate?.split("T")[0] || "N/A",
+        "Last Payment Date": c.lastPaymentDate?.split("T")[0] || "N/A",
 
         /* CONSTRUCTION */
-        "Construction Stage": c.constructionStage ?? "N/A",
+        "Construction Stage": c.constructionStage || "N/A",
         "Expected Delivery Date":
-          c.expectedDeliveryDate?.split("T")[0] ?? "N/A",
-        "Delivery Date": c.deliveryDate?.split("T")[0] ?? "N/A",
+          c.expectedDeliveryDate?.split("T")[0] || "N/A",
+        "Delivery Date": c.deliveryDate?.split("T")[0] || "N/A",
 
         /* SITE INCHARGE */
-        "Site Incharge Name": siteIncharge?.name ?? "N/A",
-        "Site Incharge Phone": siteIncharge?.phone ?? "N/A",
-        "Site Incharge Email": siteIncharge?.email ?? "N/A",
+        "Site Incharge Name": siteIncharge?.name || "N/A",
+        "Site Incharge Phone": siteIncharge?.phone || "N/A",
+        "Site Incharge Email": siteIncharge?.email || "N/A",
 
         /* CONTRACTOR */
-        "Contractor Name": contractor?.name ?? "N/A",
-        "Contractor Phone": contractor?.phone ?? "N/A",
-        "Contractor Email": contractor?.email ?? "N/A",
+        "Contractor Name": contractor?.name || "N/A",
+        "Contractor Phone": contractor?.phone || "N/A",
+        "Contractor Email": contractor?.email || "N/A",
 
         /* REFERRAL */
-        "Referral Name": c.referralName ?? "N/A",
-        "Referral Contact": c.referralContact ?? "N/A",
+        "Referral Name": c.referralName || "N/A",
+        "Referral Contact": c.referralContact || "N/A",
 
         /* NOTES */
-        Notes: c.notes ?? "N/A",
+        Notes: c.notes || "N/A",
 
         /* PAYMENT DETAILS (flattened) */
         "Payment Records":
@@ -322,14 +322,14 @@ const CustomerManagement = () => {
                   (p: any) =>
                     `₹${p.amount} | ${p.paymentMode} | ${
                       p.date?.split("T")[0]
-                    } | ${p.referenceNumber ?? "-"}`
+                    } | ${p.referenceNumber || "-"}`
                 )
                 .join(" || ")
             : "N/A",
 
         /* DOCUMENTS */
         Images: c.images?.length ? c.images.join(", ") : "N/A",
-        "PDF Document": c.pdfDocument ?? "N/A",
+        "PDF Document": c.pdfDocument || "N/A",
       };
     });
 

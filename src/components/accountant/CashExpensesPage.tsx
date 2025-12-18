@@ -27,6 +27,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import * as XLSX from "xlsx";
+import DetailItem from "../helpers/DetailItem";
 
 export default function CashExpensesPage() {
   const qc = useQueryClient();
@@ -99,13 +100,14 @@ export default function CashExpensesPage() {
 
     const exportData = filteredExpenses.map((e: any, i: number) => ({
       S_No: i + 1,
-      Date: e.date?.split("T")[0] ?? "-",
+      Date: e.date?.split("T")[0] ?? "N/A",
       Amount: e.amount ?? 0,
-      "Mode of Payment": e.modeOfPayment ?? "-",
-      "Transaction Type": e.transactionType ?? "-",
-      Category: e.expenseCategory ?? "-",
-      Party: e.partyName ?? "-",
-      Description: e.description ?? "-",
+      "Mode of Payment": e.modeOfPayment ?? "N/A",
+      "Transaction Type": e.transactionType ?? "N/A",
+      Category: e.expenseCategory ?? "N/A",
+      Party: e.partyName ?? "N/A",
+      Description: e.description ?? "N/A",
+      PaymentDetails: e.paymentDetails ?? "N/A",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -242,43 +244,81 @@ export default function CashExpensesPage() {
       />
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg rounded-lg">
           <DialogHeader>
-            <DialogTitle>Expense Details</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              Expense Details
+            </DialogTitle>
           </DialogHeader>
 
           {viewData && (
-            <div className="space-y-2 text-sm">
-              <div>
-                <strong>Date:</strong> {viewData.date?.split("T")[0]}
-              </div>
-              <div>
-                <strong>Amount:</strong> ₹{viewData.amount}
-              </div>
-              <div>
-                <strong>Mode:</strong> {viewData.modeOfPayment}
-              </div>
-              <div>
-                <strong>Type:</strong> {viewData.transactionType}
-              </div>
-              <div>
-                <strong>Category:</strong> {viewData.expenseCategory}
-              </div>
-              <div>
-                <strong>Party:</strong> {viewData.partyName}
-              </div>
-              <div>
-                <strong>Description:</strong> {viewData.description}
+            <div className="mt-4 space-y-4 text-sm">
+              {/* BASIC INFO */}
+              <div className="grid grid-cols-2 gap-4 border rounded-lg p-4 bg-muted/10">
+                <DetailItem
+                  label="Date"
+                  value={viewData.date?.split("T")[0] || "—"}
+                />
+                <DetailItem
+                  label="Amount"
+                  value={`₹${viewData.amount}`}
+                  highlight
+                />
+                <DetailItem
+                  label="Payment Mode"
+                  value={viewData.modeOfPayment || "—"}
+                />
+                <DetailItem
+                  label="Transaction Type"
+                  value={viewData.transactionType || "—"}
+                />
+                <DetailItem
+                  label="Category"
+                  value={viewData.expenseCategory || "—"}
+                />
+                <DetailItem
+                  label="Party Name"
+                  value={viewData.partyName || "—"}
+                />
               </div>
 
+              {/* DESCRIPTION */}
+              <div className="border rounded-lg p-4 bg-muted/10">
+                <p className="text-muted-foreground mb-1">Description</p>
+                <p className="font-medium whitespace-pre-wrap">
+                  {viewData.description || "—"}
+                </p>
+              </div>
+
+              {/* PAYMENT DETAILS */}
+              {viewData.paymentDetails && (
+                <div className="border rounded-lg p-4 bg-muted/10">
+                  <p className="text-muted-foreground mb-1">Payment Details</p>
+                  <p className="font-medium whitespace-pre-wrap">
+                    {viewData.paymentDetails}
+                  </p>
+                </div>
+              )}
+
+              {/* PROOF DOCUMENT */}
               {viewData.proofBillUrl && (
-                <a
-                  href={viewData.proofBillUrl}
-                  target="_blank"
-                  className="text-blue-600 underline"
-                >
-                  View proof document
-                </a>
+                <div className="border rounded-lg p-4 bg-muted/10 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Proof Document</p>
+                    <p className="text-xs text-muted-foreground">
+                      Click to view attached bill
+                    </p>
+                  </div>
+
+                  <a
+                    href={viewData.proofBillUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 font-medium hover:underline"
+                  >
+                    View File
+                  </a>
+                </div>
               )}
             </div>
           )}
