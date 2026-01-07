@@ -273,31 +273,14 @@ const ContractorTaskList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2 md:flex-row flex-col gap-4">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search tasks..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Filter by Project</DropdownMenuLabel>
-              <DropdownMenuItem>Riverside Tower</DropdownMenuItem>
-              <DropdownMenuItem>Valley Heights</DropdownMenuItem>
-              <DropdownMenuItem>Green Villa</DropdownMenuItem>
-              <DropdownMenuItem>Urban Square</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="relative w-[50%]">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
@@ -345,8 +328,8 @@ const ContractorTaskList = () => {
         </div>
       </Tabs>
 
-      <div className="border rounded-md">
-        <Table className="space-y-4 lg:block hidden">
+      <div className="border rounded-md overflow-hidden">
+        <Table className="w-full border-collapse hidden lg:table">
           <TableHeader>
             <TableRow>
               <TableHead>Task</TableHead>
@@ -360,114 +343,122 @@ const ContractorTaskList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.map((task, idx) => {
-              return (
-                <TableRow key={task._id || idx}>
-                  <TableCell className="font-medium">{task.title}</TableCell>
-                  <TableCell>
-                    {task?.project}, floorNo: {task?.floorNumber} unit:{" "}
-                    {task?.plotNo}
-                  </TableCell>
-                  <TableCell>{task.phase}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={statusColors[task.status]}
-                    >
-                      {task.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(task.deadline).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {task.progress !== undefined ? `${task.progress}%` : "-"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={priorityColors[task.priority]}
-                    >
-                      {task.priority.charAt(0).toUpperCase() +
-                        task.priority.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setProgress(task.progress);
-                          //setStatus(task.status);
-                          handleUploadEvidence(task);
-                        }}
-                        className={
-                          task.hasEvidence
-                            ? "text-blue-600 hover:text-blue-800"
-                            : ""
-                        }
+            {filteredTasks.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center">
+                  No tasks found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredTasks.map((task, idx) => {
+                return (
+                  <TableRow key={task._id || idx}>
+                    <TableCell className="font-medium">{task.title}</TableCell>
+                    <TableCell>
+                      {task?.project}, floorNo: {task?.floorNumber} unit:{" "}
+                      {task?.plotNo}
+                    </TableCell>
+                    <TableCell>{task.phase}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={statusColors[task.status]}
                       >
-                        <Camera className="h-4 w-4" />
-                      </Button>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="max-h-[250px]"
-                          sideOffset={8}
+                        {task.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(task.deadline).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {task.progress !== undefined ? `${task.progress}%` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={priorityColors[task.priority]}
+                      >
+                        {task.priority.charAt(0).toUpperCase() +
+                          task.priority.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setProgress(task.progress);
+                            //setStatus(task.status);
+                            handleUploadEvidence(task);
+                          }}
+                          className={
+                            task.hasEvidence
+                              ? "text-blue-600 hover:text-blue-800"
+                              : ""
+                          }
                         >
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setViewDetailsOpen(true);
-                            }}
+                          <Camera className="h-4 w-4" />
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="max-h-[250px]"
+                            sideOffset={8}
                           >
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setProgress(task.progress);
-                              setSelectedPhase(task.phase);
-                              setEditTaskOpen(true);
-                            }}
-                          >
-                            Edit Task
-                          </DropdownMenuItem>
-                          {task.status === "pending" && (
-                            <DropdownMenuItem>
-                              Mark as In Progress
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTask(task);
+                                setViewDetailsOpen(true);
+                              }}
+                            >
+                              View Details
                             </DropdownMenuItem>
-                          )}
-                          {(task.status === "pending" ||
-                            task.status === "in_progress") && (
-                            <DropdownMenuItem>
-                              Mark as Completed
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTask(task);
+                                setProgress(task.progress);
+                                setSelectedPhase(task.phase);
+                                setEditTaskOpen(true);
+                              }}
+                            >
+                              Edit Task
                             </DropdownMenuItem>
-                          )}
-                          {task.status === "rejected" && (
-                            <DropdownMenuItem>Resume Work</DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              handleUploadEvidence(task);
-                            }}
-                          >
-                            Upload Photos
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                            {task.status === "pending" && (
+                              <DropdownMenuItem>
+                                Mark as In Progress
+                              </DropdownMenuItem>
+                            )}
+                            {(task.status === "pending" ||
+                              task.status === "in_progress") && (
+                              <DropdownMenuItem>
+                                Mark as Completed
+                              </DropdownMenuItem>
+                            )}
+                            {task.status === "rejected" && (
+                              <DropdownMenuItem>Resume Work</DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                handleUploadEvidence(task);
+                              }}
+                            >
+                              Upload Photos
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
         <div className="space-y-4 lg:hidden block">
@@ -587,7 +578,7 @@ const ContractorTaskList = () => {
       </Dialog> */}
 
       <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>
-        <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+        <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] flex flex-col rounded-xl">
           <DialogHeader>
             <DialogTitle>Upload Evidence</DialogTitle>
             <DialogDescription>
@@ -595,7 +586,7 @@ const ContractorTaskList = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5 pt-4 px-1">
+          <div className="space-y-5 overflow-y-scroll p-2">
             {/* Static display of project & unit */}
             <div className="space-y-1.5">
               <p className="text-sm text-muted-foreground">Project</p>
@@ -929,8 +920,10 @@ const ContractorTaskList = () => {
             <div className="space-y-1.5">
               <p className="text-sm text-muted-foreground">Unit / Block</p>
               <p className="font-medium text-base">
-                {selectedTask?.floorNumber + " unit: " + selectedTask?.plotNo ||
-                  "N/A"}
+                {" Floor no: " +
+                  selectedTask?.floorNumber +
+                  ", unit: " +
+                  selectedTask?.plotNo || "N/A"}
               </p>
             </div>
 

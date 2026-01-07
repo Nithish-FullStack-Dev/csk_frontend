@@ -574,7 +574,7 @@ const ContractorMaterials = () => {
 
       {/* Add Material Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Material</DialogTitle>
           </DialogHeader>

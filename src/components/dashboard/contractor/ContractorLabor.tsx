@@ -56,6 +56,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
+import CircleLoader from "@/components/CircleLoader";
 
 // Form schema
 const laborTeamSchema = z.object({
@@ -199,7 +200,7 @@ const ContractorLabor = () => {
     return null;
   }
 
-  if (laborTeamsLoading) return <Loader />;
+  if (laborTeamsLoading) return <CircleLoader />;
 
   const handleSaveAttendance = () => {
     if (!selectedTeam) return;
@@ -458,7 +459,7 @@ const ContractorLabor = () => {
 
       {/* Add Labor Team Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-auto rounded-xl">
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] flex flex-col rounded-xl">
           <DialogHeader>
             <DialogTitle>Add New Labor Team</DialogTitle>
           </DialogHeader>
@@ -468,7 +469,7 @@ const ContractorLabor = () => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-6"
+              className="space-y-6 max-h-[80vh] overflow-y-auto p-2"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField

@@ -106,7 +106,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
   }
 
   return (
-    <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+    <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] flex flex-col rounded-xl">
       <DialogHeader>
         <DialogTitle>Add New Construction Task</DialogTitle>
         <DialogDescription>
@@ -115,7 +115,10 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
         </DialogDescription>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 p-2 max-h-[80vh] overflow-y-scroll "
+      >
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title">Task Title</Label>
