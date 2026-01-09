@@ -34,7 +34,7 @@ const FeaturedProperties = () => {
   const fetchCarouselData = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/aboutSection/getAboutSec"
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
       );
       setCarouselData(data.gallery || []);
       setGalleryTitle(data.galleryTitle || "Featured Properties");
