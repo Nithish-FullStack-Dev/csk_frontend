@@ -412,11 +412,17 @@ export default function PurchaseCrud() {
                 <TableRow key={p._id}>
                   <TableCell>{p.partyName}</TableCell>
                   <TableCell>
-                    {p?.project?.projectId?.projectName +
-                      "/" +
-                      p?.project?.floorUnit?.floorNumber +
-                      "/" +
-                      p?.project?.unit?.plotNo || "N/A"}
+                    {p?.project?.projectId?.projectName ? (
+                      p?.project?.projectId?.projectName +
+                        "/" +
+                        p?.project?.floorUnit?.floorNumber +
+                        "/" +
+                        p?.project?.unit?.plotNo || "N/A"
+                    ) : (
+                      <span className="text-muted-foreground italic">
+                        Details not available
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>{p.totalSaleConsideration}</TableCell>
                   <TableCell>{p.balance}</TableCell>

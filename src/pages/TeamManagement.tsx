@@ -505,16 +505,16 @@ const TeamManagement = () => {
                   </p>
                 </div>
               ) : (
-                sortedAndFilteredTeamMembers?.map((member) => {
-                  const performancePercentage =
-                    (member.performance.sales / member.performance.target) *
-                    100;
-                  const performanceLevel = getPerformanceLevel(
-                    performancePercentage
-                  );
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {sortedAndFilteredTeamMembers?.map((member) => {
+                    const performancePercentage =
+                      (member.performance.sales / member.performance.target) *
+                      100;
+                    const performanceLevel = getPerformanceLevel(
+                      performancePercentage
+                    );
 
-                  return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    return (
                       <Card key={member._id}>
                         <CardHeader className="pb-4">
                           <div className="flex items-start justify-between">
@@ -657,9 +657,9 @@ const TeamManagement = () => {
                           </div>
                         </CardContent>
                       </Card>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
 
               {/* <Card>

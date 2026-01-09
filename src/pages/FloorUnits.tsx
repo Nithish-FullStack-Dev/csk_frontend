@@ -85,7 +85,7 @@ const FloorUnits = () => {
     queryKey: ["units", buildingId, floorId],
     queryFn: () => fetchUnits(buildingId!, floorId!),
     enabled: !!buildingId && !!floorId,
-    staleTime: 2000,
+    staleTime: 0,
   });
 
   const createUnitMutation = useMutation({
@@ -122,30 +122,11 @@ const FloorUnits = () => {
     },
   });
 
-  const deleteUnitMutation = useMutation({
-    mutationFn: deleteUnit,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["units", buildingId, floorId],
-      });
-      toast.success("Unit deleted successfully");
-      setDeleteDialogOpen(false);
-      setApartmentToDelete(null);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete unit");
-    },
-  });
-
   const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<
     Property | undefined
   >();
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
-    null
-  );
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
@@ -153,25 +134,6 @@ const FloorUnits = () => {
     setSelectedApartment(undefined);
     setDialogMode("add");
     setApartmentDialogOpen(true);
-  };
-
-  const handleEditApartment = (apartment: Property, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedApartment(apartment);
-    setDialogMode("edit");
-    setApartmentDialogOpen(true);
-  };
-
-  const handleDeleteClick = (apartmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setApartmentToDelete(apartmentId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (apartmentToDelete) {
-      deleteUnitMutation.mutate(apartmentToDelete);
-    }
   };
 
   const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
@@ -186,21 +148,6 @@ const FloorUnits = () => {
         unitData: data,
       });
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      Available: "bg-green-500",
-      Sold: "bg-blue-500",
-      "Under Construction": "bg-yellow-500",
-      Reserved: "bg-purple-500",
-      Blocked: "bg-red-500",
-    };
-    return (
-      <Badge className={`${statusColors[status] || "bg-gray-500"} text-white`}>
-        {status}
-      </Badge>
-    );
   };
 
   if (isError) {

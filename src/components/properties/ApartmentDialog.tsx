@@ -553,7 +553,7 @@ export const ApartmentDialog = ({
             />
           </div>
 
-          <div>
+          {/* <div>
             <Label className="font-semibold text-lg mb-2 block">
               Enquiry Customers
             </Label>
@@ -606,9 +606,9 @@ export const ApartmentDialog = ({
                 </div>
               </div>
             ))}
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <Label className="font-semibold text-lg mb-2 block">
               Purchased Customer
             </Label>
@@ -638,7 +638,7 @@ export const ApartmentDialog = ({
                 />
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">

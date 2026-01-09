@@ -9,6 +9,7 @@ import CustomerDashboard from "./dashboards/CustomerDashboard";
 import AccountantDashboard from "./dashboards/AccountantDashboard";
 import ContractorDashboard from "./dashboards/ContractorDashboard";
 import { Loader2 } from "lucide-react";
+import MainLayout from "@/components/layout/MainLayout";
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
@@ -45,7 +46,11 @@ const Dashboard = () => {
       case "customer_prospect":
         return <CustomerDashboard />;
       default:
-        return <p>Unknown role</p>;
+        return (
+          <MainLayout>
+            <p>Unknown role</p>
+          </MainLayout>
+        );
     }
   };
 

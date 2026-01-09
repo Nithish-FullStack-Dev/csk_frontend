@@ -35,12 +35,11 @@ const UnitDetails = () => {
     mutationFn: (id: string) => deleteUnit(id),
     onSuccess: () => {
       // Remove from cache
-      queryClient.setQueryData(
-        ["units", buildingId, floorId],
-        (oldData: any[] = []) => oldData.filter((u) => u._id !== unitId)
-      );
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
       toast.success("Unit deleted successfully");
-      navigate(-1); // Back to floor units page
+      navigate(`/properties/building/${buildingId}/floor/${floorId}`);
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Failed to delete unit");
