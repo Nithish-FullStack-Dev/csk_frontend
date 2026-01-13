@@ -168,6 +168,7 @@ import {
   ReceiptIndianRupee,
   Gauge,
   ListTodo,
+  LayoutDashboard,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -179,6 +180,12 @@ export const moduleToNavItem: Record<string, any> = {
     icon: Settings,
     label: "System Settings",
   },
+  "kanban": {
+    to: "/kanban",
+    icon: LayoutDashboard,
+    label: "Kanban",
+  },
+
   Communications: {
     to: "/messaging",
     icon: MessageCircle,
@@ -304,6 +311,7 @@ export const buildNavigationForRole = (
   // const topDefaults = [moduleToNavItem["Dashboard"]];
   const bottomDefaults = [
     moduleToNavItem["System Settings"],
+    moduleToNavItem["kanban"],
     moduleToNavItem["Profile"],
   ];
   let middle: any[] = [];

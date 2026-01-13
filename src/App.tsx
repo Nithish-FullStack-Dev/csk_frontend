@@ -158,6 +158,7 @@ import OpenLandsPage from "./pages/public/OpenLandPage";
 import PublicSkeleton from "./pages/public/PublicSkeleton";
 import Loader from "./components/Loader";
 import OpenLandDetails from "./pages/public/OpenLandDetails";
+import Kanban from "./pages/Kanban";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -245,6 +246,7 @@ const App = () => {
                 {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
                 {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                 <Route path="/public/contact" element={<ContactPage />} />
+                <Route path="/kanban" element={<Kanban />} />
               </Route>
 
               {/* Admin Routes */}
@@ -468,6 +470,9 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+
+                <Route path="/kanban" element={<Kanban />} />
+
                 <Route
                   path="/profile"
                   element={
@@ -704,7 +709,6 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Redirect index to dashboard */}
                 <Route path="/index" element={<Navigate to="/" replace />} />
 
