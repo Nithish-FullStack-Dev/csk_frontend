@@ -125,14 +125,14 @@ export const NewTaskModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       {/* <Toaster position="top-right" /> */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0a0a0a]">
+      <div className="relative w-full max-w-2xl h-[90vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-[#0a0a0a] flex flex-col pr-2 py-2">
         <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
           <div className="flex items-center justify-between ">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -147,7 +147,7 @@ export const NewTaskModal: React.FC<{
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
               Task Title *
@@ -251,7 +251,7 @@ export const NewTaskModal: React.FC<{
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
               Project *
             </label>
@@ -277,7 +277,7 @@ export const NewTaskModal: React.FC<{
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
@@ -1075,6 +1075,8 @@ const KanbanBoard: React.FC = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [transition, setTransition] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
 
   const fetchProjects = async () => {
     try {
@@ -1103,42 +1105,59 @@ const KanbanBoard: React.FC = () => {
       toast.error("Failed to load Me");
     }
   };
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
-  useEffect(() => {
-    if (selectedEmployee === "__ME__") {
-      fetchTasks(currentUser?.employeeId);
-      settaskemployee(currentUser?.employeeId);
-    } else {
-      fetchTasks(selectedEmployee);
-      settaskemployee(selectedEmployee);
-    }
-  }, [selectedEmployee]);
+  // const fetchUserRole = async () => {
+  //   const res = await fetch("http://localhost:3000/api/loginuser/", {
+  //     credentials: "include",
+  //   });
 
-  console.log("hello");
+  //   if (!res.ok) {
+  //     console.error("API failed", res.status);
+  //     return;
+  //   }
+
+  //   const data = await res.json();
+
+  //   console.log("current user", data.user);
+
+  //   const currentUser = data.user;
+
+  //   setCurrentUser(currentUser);
+
+  //   const role = currentUser.role?.toUpperCase();
+  //   setUserRole(role);
+
+  //   if (role === "ADMIN") {
+  //     fetchEmployees();
+  //   }
+  // };
+
+  // const fetchEmployees = async () => {
+  //   const res = await fetch("http://localhost:3000/api/user/getUsers", {
+  //     credentials: "include", // in case it becomes protected later
+  //   });
+
+  //   const data = await res.json();
+
+  //   console.log("ALL USERS", data.users);
+
+  //   setEmployees(data.users);
+  // };
 
   const fetchUserRole = async () => {
     const res = await fetch("http://localhost:3000/api/loginuser/", {
       credentials: "include",
     });
 
-    if (!res.ok) {
-      console.error("API failed", res.status);
-      return;
-    }
-
     const data = await res.json();
+    const user = data.user;
+    console.log(user);
 
-    console.log("current user", data.user);
+    setCurrentUser(user);
 
-    const currentUser = data.user;
-
-    setCurrentUser(currentUser);
-
-    const role = currentUser.role?.toUpperCase();
+    const role = user.role?.toUpperCase();
     setUserRole(role);
+    setSelectedRole(role);
 
     if (role === "ADMIN") {
       fetchEmployees();
@@ -1147,28 +1166,38 @@ const KanbanBoard: React.FC = () => {
 
   const fetchEmployees = async () => {
     const res = await fetch("http://localhost:3000/api/user/getUsers", {
-      credentials: "include", // in case it becomes protected later
+      credentials: "include",
     });
 
     const data = await res.json();
-
-    console.log("ALL USERS", data.users);
-
     setEmployees(data.users);
-  };
+    console.log(data.users);
 
-  useEffect(() => {
-    fetchAdmin();
-    fetchUserRole();
-    fetchTasks();
-    console.log("its called");
-  }, []);
+    // const uniqueRoles = [
+    //   ...new Set(
+    //     data.users.map((u: any) => u.role?.toUpperCase()).filter(Boolean)
+    //   ),
+    // ];
+    //     const rolesFromUsers = data.users
+    //       .map((u: any) => u.role?.toUpperCase())
+    //       .filter((r): r is string => Boolean(r));
+
+    //     const allRoles = new Set<string>(rolesFromUsers);
+
+    //     // 🔑 Force-add the logged-in user’s role (ADMIN)
+    //     if (currentUser && currentUser.role) {
+    //       allRoles.add(currentUser.role.toUpperCase());
+    //     }
+    // console.log(roles, allRoles, "ALL ROLES");
+
+    //     setRoles(Array.from(allRoles));
+  };
 
   const fetchTasks = async (employeeName?: string) => {
     try {
       setTasksLoading(true);
 
-      const url = new URL("/api/kanban/task", window.location.origin);
+      const url = new URL("http://localhost:3000/api/kanban/tasks", window.location.origin);
 
       if (employeeName && employeeName !== "__ME__") {
         url.searchParams.set("employeeId", employeeName);
@@ -1188,15 +1217,6 @@ const KanbanBoard: React.FC = () => {
       setTasksLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!selectedTaskId) return;
-
-    const task = tasks.find((t) => t.id === selectedTaskId);
-    if (task) {
-      setSelectedTask(task);
-    }
-  }, [tasks, selectedTaskId]);
 
   const columns = [
     { id: "on-hold", title: "On Hold", icon: BellElectric, color: "orange" },
@@ -1231,7 +1251,7 @@ const KanbanBoard: React.FC = () => {
         });
       }
 
-      const res = await fetch("/api/kanban/task", {
+      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
         method: "PUT",
         body: formData,
       });
@@ -1287,7 +1307,7 @@ const KanbanBoard: React.FC = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const res = await fetch("/api/kanban/task", {
+      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: taskId }),
@@ -1326,13 +1346,14 @@ const KanbanBoard: React.FC = () => {
     );
 
     try {
-      const res = await fetch("/api/kanban/task", {
+      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: draggedTask.id,
           status: newStatus,
         }),
+        credentials: "include" ,
       });
 
       if (draggedTask.projectId && newStatus === "completed") {
@@ -1504,25 +1525,21 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!selectedTask) return;
-    fetchReports(selectedTask.id);
-  }, [selectedTask?.id]);
-
   const handleCreateTask = async () => {
+    console.log("this is called create");
+
     if (!newTask.title.trim()) return;
 
     try {
       setTransition(true);
       const formData = new FormData();
       const assigneeName = assigne || "Unassigned";
-      const employeeId = taskemployee || currentUser.employeeId || "";
+      const userId = taskemployee || currentUser._id || "";
 
       formData.append("title", newTask.title.trim());
       formData.append("description", newTask.description.trim());
       formData.append("assignee", assigneeName);
-      formData.append("employeeId", employeeId);
-      formData.append("projectId", newTask.projectId);
+      formData.append("userId", userId);
       formData.append(
         "assigneeAvatar",
         assigneeName !== "Unassigned"
@@ -1544,9 +1561,10 @@ const KanbanBoard: React.FC = () => {
         });
       }
 
-      const res = await fetch("/api/kanban/task", {
+      const res = await fetch("http://localhost:3000/api/kanban/tasks/create", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -1637,6 +1655,81 @@ const KanbanBoard: React.FC = () => {
   const getTasksByStatus = (status: Task["status"]) =>
     filteredTasks.filter((task) => task.status === status);
 
+  const filteredEmployees = selectedRole
+    ? employees.filter((u) => u.role?.toUpperCase() === selectedRole)
+    : employees;
+
+  useEffect(() => {
+    if (!selectedRole || selectedRole === userRole) return;
+
+    const first = filteredEmployees[0];
+    if (first) {
+      setSelectedEmployee(first.employeeId);
+    }
+  }, [selectedRole, filteredEmployees, userRole]);
+
+  useEffect(() => {
+    console.log("iman called fetch task useeffect");
+    
+    if (selectedEmployee === "__ME__") {
+      console.log("useee",currentUser?._id);
+      
+      fetchTasks(currentUser?._id);
+      settaskemployee(currentUser?._id);
+    } else {
+      fetchTasks(selectedEmployee);
+      settaskemployee(selectedEmployee);
+    }
+  }, [selectedEmployee]);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    fetchReports(selectedTask.id);
+  }, [selectedTask?.id]);
+
+  useEffect(() => {
+    if (!selectedTaskId) return;
+
+    const task = tasks.find((t) => t.id === selectedTaskId);
+    if (task) {
+      setSelectedTask(task);
+    }
+  }, [tasks, selectedTaskId]);
+
+  useEffect(() => {
+    fetchAdmin();
+    fetchUserRole();
+    fetchTasks();
+    console.log("its called");
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    console.log(currentUser._id, "this is user");
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const roleSet = new Set<string>();
+
+    // roles from all employees
+    employees.forEach((u) => {
+      if (u.role) roleSet.add(u.role.toUpperCase());
+    });
+
+    // force-add current user's role (critical for ADMIN)
+    if (currentUser?.role) {
+      roleSet.add(currentUser.role.toUpperCase());
+    }
+
+    setRoles([...roleSet]);
+  }, [employees, currentUser]);
+
   return (
     <MainLayout>
       <div className="min-h-screen transition-colors duration-200">
@@ -1650,18 +1743,52 @@ const KanbanBoard: React.FC = () => {
 
               <div className="flex items-center gap-3">
                 {userRole === "ADMIN" && (
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className="px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="__ME__">My Tasks</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.employeeId}>
-                        {emp.name} - {emp.employeeId}
+                  <div className="flex items-center gap-3">
+                    {/* ROLE SELECT */}
+                    <select
+                      value={selectedRole || ""}
+                      onChange={(e) => {
+                        const role = e.target.value;
+                        setSelectedRole(role);
+
+                        // if switching away from own role, select first employee of that role
+                        if (role !== userRole) {
+                          setSelectedEmployee("");
+                        } else {
+                          setSelectedEmployee("__ME__");
+                        }
+                      }}
+                      className="px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {roles.map((role, i) => (
+                        <option key={i} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* EMPLOYEE SELECT */}
+                    <select
+                      value={selectedEmployee || ""}
+                      onChange={(e) => setSelectedEmployee(e.target.value)}
+                      className="px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {/* Placeholder when no employee selected */}
+                      <option value="" disabled>
+                        Choose…
                       </option>
-                    ))}
-                  </select>
+
+                      {selectedRole === userRole && (
+                        <option value="__ME__">My Tasks</option>
+                      )}
+
+                      {filteredEmployees.map((emp) => (
+                        <option key={emp._id} value={emp._id}>
+                          {emp.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 )}
 
                 <div className="relative">
