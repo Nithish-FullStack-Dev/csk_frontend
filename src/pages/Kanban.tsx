@@ -35,28 +35,31 @@ import RenderRichText from "@/components/common/editor/Render";
 import { htmlToText } from "@/components/common/editor/htmlToText";
 
 interface Comment {
-  id: string;
+  _id: string;
   user: { id: string; name: string; image: string };
   content: string;
   createdAt: Date;
+  username?: string;
+  userId?: string;
 }
 
 interface Task {
-  id: string;
+  _id: string;
+  id?: string;
   title: string;
   description: string;
   assignee: string;
   assigneeAvatar: string;
   priority: "low" | "medium" | "high";
   projectId?: string;
-  Project: { name: string; id: string };
+  Project?: { name: string; id: string };
   dueDate: string;
   tags: string[];
   comments: Comment[];
   attachments: Array<{
-    id: string;
+    id?: string;
     originalName: string;
-    name: string;
+    name?: string;
     size: string;
     type: string;
     url: string;
@@ -206,12 +209,13 @@ export const NewTaskModal: React.FC<{
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-semibold mb-2 text-gray-700 ">
                 Priority
               </label>
               <div className="flex gap-2">
                 {(["low", "medium", "high"] as const).map((priority) => (
                   <button
+                    type="button"
                     key={priority}
                     onClick={() => setNewTask({ ...newTask, priority })}
                     className={`flex-1 px-4 py-3 rounded-lg border font-medium capitalize transition-all ${
@@ -473,7 +477,7 @@ export const SidePanel: React.FC<{
   // }
 
   const startEdit = (comment: Comment) => {
-    setEditingCommentId(comment.id);
+    setEditingCommentId(comment._id);
     setEditContent(comment.content);
   };
 
@@ -592,9 +596,10 @@ export const SidePanel: React.FC<{
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br from-blue-400 to-green-400 text-white dark:from-blue-500 dark:to-green-500">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 dark:from-yellow-500 dark:via-yellow-600 dark:to-yellow-700">
                   {selectedTask.assignee.charAt(0)}
                 </div>
+
                 <span className="font-medium text-gray-900 dark:text-white">
                   {selectedTask.assignee}
                 </span>
@@ -654,7 +659,7 @@ export const SidePanel: React.FC<{
               </span>
             </div>
           </div>
-          {selectedTask?.Project && (
+          {/* {selectedTask?.Project && (
             <div className="w-full h-16 rounded-lg dark:bg-[#111] bg-gray-50 flex justify-start px-4 items-center">
               <p className="text-base">
                 Project:{" "}
@@ -663,7 +668,7 @@ export const SidePanel: React.FC<{
                 </span>
               </p>
             </div>
-          )}
+          )} */}
 
           <div className="p-4 rounded-xl border bg-red-50 border-red-200 dark:bg-red-500/5 dark:border-red-500/20">
             <div className="flex items-start gap-3">
@@ -817,21 +822,21 @@ export const SidePanel: React.FC<{
             <div className="space-y-4 mb-4">
               {selectedTask.comments?.map((comment) => (
                 <div
-                  key={comment.id}
+                  key={comment._id}
                   className="p-4 pt-3 rounded-xl bg-gray-50 dark:bg-[#111] group"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br from-green-400 to-teal-400 text-white dark:from-green-500 dark:to-teal-500 mt-2">
                       {comment.user?.image ? (
                         <div className="w-full h-full overflow-hidden rounded-full border border-blue-600">
-                          <img
-                            src={comment.user.image}
-                            alt="avatar"
-                            className="w-full h-full object-cover"
-                          />
+                          {comment.user?.image ? (
+                            <img src={comment.user.image} />
+                          ) : (
+                            <p>{comment.user.name.charAt(0)}</p>
+                          )}
                         </div>
                       ) : (
-                        <p>{comment.user.name.charAt(0)}</p>
+                        <p>{comment.username?.charAt(0) ?? "?"}</p>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -849,17 +854,19 @@ export const SidePanel: React.FC<{
                             )}
                           </span>
                           <span className="font-semibold text-gray-900 dark:text-white">
-                            {comment.user.name}
+                            {comment.username ||
+                              comment.user?.name ||
+                              "Unknown User"}
                           </span>
                         </div>
 
                         {/* EDIT/DELETE BUTTONS - Only show if current user is the author */}
-                        {comment.user.id === currentUserId && (
+                        {comment.userId === currentUserId && (
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {editingCommentId === comment.id ? (
+                            {editingCommentId === comment._id ? (
                               <>
                                 <button
-                                  onClick={() => saveEdit(comment.id)}
+                                  onClick={() => saveEdit(comment._id)}
                                   className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400"
                                   title="Save"
                                 >
@@ -885,8 +892,11 @@ export const SidePanel: React.FC<{
                                 <button
                                   onClick={() =>
                                     setDeleteComment({
-                                      id: comment.id,
-                                      author: comment.user.name,
+                                      id: comment._id,
+                                      author:
+                                        comment.username ??
+                                        comment.user?.name ??
+                                        "Unknown",
                                     })
                                   }
                                   className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400"
@@ -901,7 +911,7 @@ export const SidePanel: React.FC<{
                       </div>
 
                       {/* COMMENT CONTENT OR EDIT TEXTAREA */}
-                      {editingCommentId === comment.id ? (
+                      {editingCommentId === comment._id ? (
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
@@ -932,7 +942,11 @@ export const SidePanel: React.FC<{
                 <button
                   onClick={handleAddComment}
                   disabled={!commentText.trim()}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-white
+             bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600
+             hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-700
+             disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed
+             transition-colors"
                 >
                   <Send className="w-4 h-4" />
                   Comment
@@ -968,7 +982,7 @@ export const SidePanel: React.FC<{
                 disabled={deleting}
                 onClick={() => {
                   if (!selectedTask) return;
-                  onDeleteTask(selectedTask.id);
+                  onDeleteTask(selectedTask._id);
                   setConfirmDelete(null);
                 }}
                 className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
@@ -1077,6 +1091,40 @@ const KanbanBoard: React.FC = () => {
   const [transition, setTransition] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
+
+  const columns = [
+    {
+      id: "on-hold",
+      title: "On Hold",
+      icon: BellElectric,
+      color: "yellow-300", // light yellow
+    },
+    {
+      id: "assigned",
+      title: "Assigned",
+      icon: User,
+      color: "yellow-400", // base yellow
+    },
+    {
+      id: "in-progress",
+      title: "In Progress",
+      icon: Clock,
+      color: "yellow-500", // strong yellow
+    },
+    {
+      id: "completed",
+      title: "Completed",
+      icon: CheckCircle2,
+      color: "yellow-600", // dark yellow
+    },
+  ];
+
+  const columnColorClasses: Record<string, string> = {
+    "yellow-300": "bg-yellow-300/20 text-yellow-700",
+    "yellow-400": "bg-yellow-400/20 text-yellow-800",
+    "yellow-500": "bg-yellow-500/20 text-yellow-900",
+    "yellow-600": "bg-yellow-600/20 text-yellow-950",
+  };
 
   const fetchProjects = async () => {
     try {
@@ -1193,14 +1241,18 @@ const KanbanBoard: React.FC = () => {
     //     setRoles(Array.from(allRoles));
   };
 
-  const fetchTasks = async (employeeName?: string) => {
+  const fetchTasks = async (userId?: string) => {
     try {
       setTasksLoading(true);
 
-      const url = new URL("http://localhost:3000/api/kanban/tasks", window.location.origin);
+      const url = new URL(
+        "http://localhost:3000/api/kanban/tasks",
+        window.location.origin
+      );
 
-      if (employeeName && employeeName !== "__ME__") {
-        url.searchParams.set("employeeId", employeeName);
+      // ADMIN selecting another user
+      if (userId) {
+        url.searchParams.set("userId", userId);
       }
 
       const res = await fetch(url.toString(), {
@@ -1208,6 +1260,10 @@ const KanbanBoard: React.FC = () => {
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch tasks");
+      }
 
       setTasks(data.tasks ?? []);
     } catch (err) {
@@ -1217,13 +1273,6 @@ const KanbanBoard: React.FC = () => {
       setTasksLoading(false);
     }
   };
-
-  const columns = [
-    { id: "on-hold", title: "On Hold", icon: BellElectric, color: "orange" },
-    { id: "assigned", title: "Assigned", icon: User, color: "blue" },
-    { id: "in-progress", title: "In Progress", icon: Clock, color: "yellow" },
-    { id: "completed", title: "Completed", icon: CheckCircle2, color: "green" },
-  ];
 
   const handleDragStart = (task: Task) => {
     setDraggedTask(task);
@@ -1235,7 +1284,7 @@ const KanbanBoard: React.FC = () => {
     try {
       setTransition(true);
       const formData = new FormData();
-      formData.append("id", taskToEdit.id);
+      formData.append("id", taskToEdit._id);
       formData.append("title", newTask.title.trim());
       formData.append("description", newTask.description.trim());
       formData.append("assignee", assigne);
@@ -1243,7 +1292,6 @@ const KanbanBoard: React.FC = () => {
       formData.append("dueDate", newTask.dueDate);
       formData.append("status", newTask.status);
       formData.append("tags", newTask.tags.join(","));
-      formData.append("projectId", newTask.projectId);
 
       if (newTask.attachments?.length) {
         newTask.attachments.forEach((file) => {
@@ -1254,6 +1302,7 @@ const KanbanBoard: React.FC = () => {
       const res = await fetch("http://localhost:3000/api/kanban/tasks", {
         method: "PUT",
         body: formData,
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -1263,7 +1312,7 @@ const KanbanBoard: React.FC = () => {
       }
 
       setTasks((prev) =>
-        prev.map((t) => (t.id === data.task.id ? data.task : t))
+        prev.map((t) => (t._id === data.task._id ? data.task : t))
       );
 
       setSelectedTask(data.task);
@@ -1307,22 +1356,24 @@ const KanbanBoard: React.FC = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: taskId }),
-      });
+      const res = await fetch(
+        `http://localhost:3000/api/kanban/task/${taskId}`,
+        {
+          method: "DELETE",
+          credentials: "include", // 🔑 REQUIRED because of auth middleware
+        }
+      );
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message || "Failed to delete task");
+        toast.error(data.error || "Failed to delete task");
         return;
       }
 
       toast.success("Task deleted successfully");
 
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setTasks((prev) => prev.filter((t) => t._id !== taskId));
       setSelectedTask(null);
     } catch (err) {
       console.error("Delete error:", err);
@@ -1341,7 +1392,7 @@ const KanbanBoard: React.FC = () => {
 
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === draggedTask.id ? { ...task, status: newStatus } : task
+        task._id === draggedTask._id ? { ...task, status: newStatus } : task
       )
     );
 
@@ -1350,39 +1401,11 @@ const KanbanBoard: React.FC = () => {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: draggedTask.id,
+          id: draggedTask._id,
           status: newStatus,
         }),
-        credentials: "include" ,
+        credentials: "include",
       });
-
-      if (draggedTask.projectId && newStatus === "completed") {
-        await fetch("/api/project/work-done", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectId: draggedTask.projectId,
-            taskId: draggedTask.id,
-            title: draggedTask.title,
-            description: draggedTask.description,
-            priority: draggedTask.priority,
-            dueDate: draggedTask.dueDate,
-            tags: draggedTask.tags,
-            userId: currentUser.id,
-          }),
-        });
-      }
-
-      if (
-        draggedTask.projectId &&
-        draggedTask.status === "completed" &&
-        newStatus !== "completed"
-      ) {
-        await fetch(`/api/project/work-done?taskId=${draggedTask.id}`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        });
-      }
 
       if (!res.ok) {
         throw new Error("Failed to update");
@@ -1396,15 +1419,19 @@ const KanbanBoard: React.FC = () => {
   };
 
   const handleAddComment = async () => {
+    console.log("comment called");
+
     if (!commentText.trim() || !selectedTask) return;
 
     try {
-      const res = await fetch("/api/kanban/comment", {
+      const res = await fetch("http://localhost:3000/api/kanban/comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           content: commentText,
-          taskId: selectedTask.id,
+          taskId: selectedTask._id,
+          username: currentUser.name,
         }),
       });
 
@@ -1415,7 +1442,7 @@ const KanbanBoard: React.FC = () => {
 
         setTasks(
           tasks.map((task) =>
-            task.id === selectedTask.id
+            task._id === selectedTask._id
               ? { ...task, comments: [...(task.comments || []), newComment] }
               : task
           )
@@ -1437,9 +1464,10 @@ const KanbanBoard: React.FC = () => {
     if (!selectedTask) return;
 
     try {
-      const res = await fetch("/api/kanban/comment", {
+      const res = await fetch("http://localhost:3000/api/kanban/comment", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           commentId,
           content: newContent,
@@ -1447,15 +1475,16 @@ const KanbanBoard: React.FC = () => {
       });
 
       const data = await res.json();
+      console.log("called edit comeent", data);
 
       if (data.success) {
         const updatedComments = selectedTask.comments.map((c) =>
-          c.id === commentId ? { ...c, content: newContent } : c
+          c._id === commentId ? { ...c, content: newContent } : c
         );
 
         setTasks(
           tasks.map((task) =>
-            task.id === selectedTask.id
+            task._id === selectedTask._id
               ? { ...task, comments: updatedComments }
               : task
           )
@@ -1475,22 +1504,24 @@ const KanbanBoard: React.FC = () => {
     if (!selectedTask) return;
 
     try {
-      const res = await fetch("/api/kanban/comment", {
+      const res = await fetch("http://localhost:3000/api/kanban/comment", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ commentId }),
       });
 
       const data = await res.json();
+      console.log("comment delete", data);
 
       if (data.success) {
         const updatedComments = selectedTask.comments.filter(
-          (c) => c.id !== commentId
+          (c) => c._id !== commentId
         );
 
         setTasks(
           tasks.map((task) =>
-            task.id === selectedTask.id
+            task._id === selectedTask._id
               ? { ...task, comments: updatedComments }
               : task
           )
@@ -1511,8 +1542,15 @@ const KanbanBoard: React.FC = () => {
       setReportsLoading(true);
       setReportMessages([]);
 
-      const res = await fetch(`/api/kanban/report?taskId=${taskId}`);
+      const res = await fetch(
+        `http://localhost:3000/api/kanban/report?taskId=${taskId}`,
+        {
+          credentials: "include", // 🔑 REQUIRED
+        }
+      );
+
       const data = await res.json();
+      console.log(data, "report data");
 
       if (data.success) {
         setReportCount(data.count || 0);
@@ -1616,25 +1654,27 @@ const KanbanBoard: React.FC = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/kanban/report", {
+      const res = await fetch("http://localhost:3000/api/kanban/reports", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           message,
-          taskId: selectedTask.id,
+          taskId: selectedTask._id,
         }),
       });
 
       const data = await res.json();
+      console.log(data, "report post");
 
       if (data.success) {
         setReportCount((prev) => prev + 1);
         toast.success("Report submitted successfully");
         setMessage("");
         setOpen(false);
-        await fetchReports(selectedTask.id);
+        await fetchReports(selectedTask._id);
       } else {
         toast.error(data.error || "Failed to send report");
       }
@@ -1659,24 +1699,31 @@ const KanbanBoard: React.FC = () => {
     ? employees.filter((u) => u.role?.toUpperCase() === selectedRole)
     : employees;
 
-  useEffect(() => {
-    if (!selectedRole || selectedRole === userRole) return;
+  // useEffect(() => {
+  //   if (!selectedRole || selectedRole === userRole) return;
 
-    const first = filteredEmployees[0];
-    if (first) {
-      setSelectedEmployee(first.employeeId);
-    }
-  }, [selectedRole, filteredEmployees, userRole]);
+  //   const first = filteredEmployees[0];
+  //   if (first) {
+  //     setSelectedEmployee(first.employeeId);
+  //   }
+  // }, [selectedRole, filteredEmployees, userRole]);
 
   useEffect(() => {
     console.log("iman called fetch task useeffect");
-    
+
+    if (!selectedEmployee) {
+      setTasks([]); // 🔑 stay empty until user selects
+      return;
+    }
+
     if (selectedEmployee === "__ME__") {
-      console.log("useee",currentUser?._id);
-      
+      console.log("useee", currentUser?._id);
+
       fetchTasks(currentUser?._id);
       settaskemployee(currentUser?._id);
     } else {
+      console.log("employee select", selectedEmployee);
+
       fetchTasks(selectedEmployee);
       settaskemployee(selectedEmployee);
     }
@@ -1684,13 +1731,13 @@ const KanbanBoard: React.FC = () => {
 
   useEffect(() => {
     if (!selectedTask) return;
-    fetchReports(selectedTask.id);
-  }, [selectedTask?.id]);
+    fetchReports(selectedTask._id);
+  }, [selectedTask?._id]);
 
   useEffect(() => {
     if (!selectedTaskId) return;
 
-    const task = tasks.find((t) => t.id === selectedTaskId);
+    const task = tasks.find((t) => t._id === selectedTaskId);
     if (task) {
       setSelectedTask(task);
     }
@@ -1699,13 +1746,18 @@ const KanbanBoard: React.FC = () => {
   useEffect(() => {
     fetchAdmin();
     fetchUserRole();
-    fetchTasks();
+    // fetchTasks();
     console.log("its called");
   }, []);
 
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    if (!selectedTask) return;
+    console.log(selectedTask, "this is selected task");
+  }, [selectedTask]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -1730,35 +1782,63 @@ const KanbanBoard: React.FC = () => {
     setRoles([...roleSet]);
   }, [employees, currentUser]);
 
+  useEffect(() => {
+    if (!selectedTask) return;
+    fetchReports(selectedTask._id);
+  }, [selectedTask?._id]);
+
+  useEffect(() => {
+    if (selectedRole !== userRole) {
+      setTasks([]); // 🔑 clear board
+      setSelectedTask(null);
+    }
+  }, [selectedRole]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // nothing selected → show empty board
+    if (!selectedEmployee) {
+      setTasks([]);
+      return;
+    }
+
+    const targetUserId =
+      selectedEmployee === "__ME__" ? currentUser._id : selectedEmployee;
+
+    fetchTasks(targetUserId);
+  }, [selectedEmployee, currentUser]);
+
   return (
     <MainLayout>
       <div className="min-h-screen transition-colors duration-200">
         <Toaster position="top-right" />
+
+        {/* HEADER */}
         <div className="border-b">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Kanban Board
+                Task Manager
               </h1>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:w-auto">
                 {userRole === "ADMIN" && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 w-full sm:flex-row sm:w-auto">
                     {/* ROLE SELECT */}
                     <select
                       value={selectedRole || ""}
                       onChange={(e) => {
                         const role = e.target.value;
                         setSelectedRole(role);
-
-                        // if switching away from own role, select first employee of that role
                         if (role !== userRole) {
                           setSelectedEmployee("");
+                          setTasks([]);
                         } else {
                           setSelectedEmployee("__ME__");
                         }
                       }}
-                      className="px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {roles.map((role, i) => (
                         <option key={i} value={role}>
@@ -1771,9 +1851,8 @@ const KanbanBoard: React.FC = () => {
                     <select
                       value={selectedEmployee || ""}
                       onChange={(e) => setSelectedEmployee(e.target.value)}
-                      className="px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      {/* Placeholder when no employee selected */}
                       <option value="" disabled>
                         Choose…
                       </option>
@@ -1791,17 +1870,19 @@ const KanbanBoard: React.FC = () => {
                   </div>
                 )}
 
-                <div className="relative">
+                {/* SEARCH */}
+                <div className="relative w-full sm:w-80">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search tasks..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-80"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
+                {/* NEW TASK */}
                 <button
                   onClick={() => {
                     setShowNewTaskModal(true);
@@ -1817,7 +1898,10 @@ const KanbanBoard: React.FC = () => {
                       }));
                     }
                   }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-white
+             bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600
+             hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-700
+             transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   New Task
@@ -1827,112 +1911,58 @@ const KanbanBoard: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* BOARD */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
           {tasksLoading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Loading tasks...
-                </p>
-              </div>
-            </div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-gray-400 mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No tasks found
-              </h3>
-              <button
-                onClick={() => setShowNewTaskModal(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 mx-auto transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Create Task
-              </button>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {columns.map((column) => {
                 const Icon = column.icon;
+                const color = column.color;
                 const columnTasks = getTasksByStatus(
                   column.id as Task["status"]
                 );
 
                 return (
-                  <div key={column.id} className="flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 dark:border-gray-800">
+                  <div key={column.id} className="flex flex-col min-w-0">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b">
                       <div className="flex items-center gap-2">
                         <div
                           className={`p-2 rounded-lg ${
-                            column.color === "blue"
-                              ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
-                              : column.color === "yellow"
-                              ? "bg-yellow-50 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400"
-                              : column.color === "orange"
-                              ? "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400"
-                              : "bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                            columnColorClasses[column.color]
                           }`}
                         >
                           <Icon className="w-5 h-5" />
                         </div>
-                        <h2 className="font-semibold text-lg text-gray-900 dark:text-white">
+
+                        <h2 className="font-semibold text-lg">
                           {column.title}
                         </h2>
                       </div>
-                      <h2 className="font-medium text-base text-gray-600 dark:text-white mr-4">
-                        {" "}
-                        {columnTasks.length}
-                      </h2>
+                      <span className="font-medium">{columnTasks.length}</span>
                     </div>
 
                     <div
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(column.id as Task["status"])}
-                      className={`flex-1 space-y-3 min-h-[200px] p-1 rounded-lg ${
-                        draggedTask && draggedTask.status !== column.id
-                          ? "bg-gray-100/50 dark:bg-gray-800/30"
-                          : ""
-                      }`}
+                      className="flex-1 space-y-3 min-h-[200px]"
                     >
                       {columnTasks.map((task) => (
                         <div
-                          key={task.id}
+                          key={task._id}
                           draggable
                           onDragStart={() => handleDragStart(task)}
-                          onClick={() => setSelectedTaskId(task.id)}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all bg-white dark:bg-gray-800/[0.5] border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-lg hover:shadow-blue-500/10 dark:hover:shadow-blue-500/5 ${
-                            draggedTask?.id === task.id ? "opacity-50" : ""
-                          }`}
+                          onClick={() => setSelectedTaskId(task._id)}
+                          className="p-4 rounded-xl border cursor-pointer bg-white dark:bg-gray-800 active:scale-[0.98] transition"
                         >
-                          <div className="flex items-start justify-between mb-3">
-                            <h3 className="font-semibold text-gray-600 dark:text-white line-clamp-2">
-                              {task.title}
-                            </h3>
-                            <span
-                              className={`px-2 py-1 rounded-md text-xs font-medium border ${
-                                priorityClasses[task.priority]
-                              } flex-shrink-0 ml-2`}
-                            >
-                              {task.priority}
-                            </span>
-                          </div>
+                          <h3 className="font-semibold line-clamp-2 mb-2">
+                            {task.title}
+                          </h3>
 
-                          <p className="text-sm mb-3 line-clamp-2 text-gray-600 dark:text-gray-400">
+                          <p className="text-sm line-clamp-2 mb-3">
                             {htmlToText(task.description)}
                           </p>
 
@@ -1940,35 +1970,34 @@ const KanbanBoard: React.FC = () => {
                             {task.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                                className="px-2 py-1 text-xs rounded-md"
                               >
                                 {tag}
                               </span>
                             ))}
                           </div>
 
-                          <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-800">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {task.comments?.length}
-                                </span>
-                              </div>
+                          <div className="flex items-center justify-between pt-3 border-t">
+                            <div className="flex gap-3">
+                              <MessageSquare className="w-4 h-4 text-gray-400 dark:text-gray-500" />{" "}
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {" "}
+                                {task.comments?.length}{" "}
+                              </span>
                               {task.attachments.length > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <Paperclip className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                  {" "}
+                                  <Paperclip className="w-4 h-4 text-gray-400 dark:text-gray-500" />{" "}
                                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {task.attachments.length}
-                                  </span>
+                                    {" "}
+                                    {task.attachments.length}{" "}
+                                  </span>{" "}
                                 </div>
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold bg-gradient-to-br from-blue-500 to-green-500 text-white">
-                                {task.assignee.charAt(0)}
-                              </div>
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 shadow-sm ring-1 ring-yellow-700/30">
+                              {task.assignee.charAt(0)}
                             </div>
                           </div>
                         </div>
@@ -1998,7 +2027,7 @@ const KanbanBoard: React.FC = () => {
           handleReport={handleReport}
           reportCount={reportCount}
           reportMessages={reportMessages}
-          currentUserId={currentUser?.id || ""}
+          currentUserId={currentUser?._id || ""}
           handleEditComment={handleEditComment}
           handleDeleteComment={handleDeleteComment}
         />
