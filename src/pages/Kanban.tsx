@@ -33,6 +33,7 @@ import { Toaster, toast } from "react-hot-toast";
 import RichTextEditor from "@/components/common/editor/Editor";
 import RenderRichText from "@/components/common/editor/Render";
 import { htmlToText } from "@/components/common/editor/htmlToText";
+import { Project, usefetchProjects } from "@/utils/project/ProjectConfig";
 
 interface Comment {
   _id: string;
@@ -223,8 +224,8 @@ export const NewTaskModal: React.FC<{
                         ? priority === "low"
                           ? "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/50"
                           : priority === "medium"
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-500/20 dark:text-yellow-300 dark:border-yellow-500/50"
-                          : "bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50"
+                            ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-500/20 dark:text-yellow-300 dark:border-yellow-500/50"
+                            : "bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50"
                         : "bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-700"
                     }`}
                   >
@@ -1086,11 +1087,14 @@ const KanbanBoard: React.FC = () => {
   const [taskMode, setTaskMode] = useState<"create" | "edit">("create");
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [projectsLoading, setProjectsLoading] = useState(false);
+  // const [projects, setProjects] = useState<any[]>([]);
+  // const [projectsLoading, setProjectsLoading] = useState(false);
   const [transition, setTransition] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [roles, setRoles] = useState<string[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [projectRoles, setProjectRoles] = useState<string[]>([]);
+  const [projectPeople, setProjectPeople] = useState<any[]>([]);
 
   const columns = [
     {
@@ -1124,19 +1128,6 @@ const KanbanBoard: React.FC = () => {
     "yellow-400": "bg-yellow-400/20 text-yellow-800",
     "yellow-500": "bg-yellow-500/20 text-yellow-900",
     "yellow-600": "bg-yellow-600/20 text-yellow-950",
-  };
-
-  const fetchProjects = async () => {
-    try {
-      setProjectsLoading(true);
-      const res = await fetch("/api/project"); // your projects API
-      const data = await res.json();
-      setProjects(data.projects || []);
-    } catch (err) {
-      console.error("Failed to load projects", err);
-    } finally {
-      setProjectsLoading(false);
-    }
   };
 
   const fetchAdmin = async () => {
@@ -1269,6 +1260,7 @@ const KanbanBoard: React.FC = () => {
     } catch (err) {
       console.error("Kanban Fetch Error:", err);
       setTasks([]);
+      setTasksLoading(false);
     } finally {
       setTasksLoading(false);
     }
@@ -1699,6 +1691,31 @@ const KanbanBoard: React.FC = () => {
     ? employees.filter((u) => u.role?.toUpperCase() === selectedRole)
     : employees;
 
+  // const selectedProject = projects?.find(
+  //   (p: any) => p._id === selectedProjectId
+  // );
+
+  const {
+    data: Projects,
+    isError: projectError,
+    error: projectErr,
+    isLoading: projectLoad,
+  } = usefetchProjects();
+
+  const selectedProject = Projects?.find(
+    (p: any) => p._id === selectedProjectId
+  );
+
+  // roles depend on project
+  const effectiveRoles = selectedProject ? projectRoles : roles;
+
+  // people depend on project + role
+  const effectiveEmployees = selectedProject
+    ? projectPeople
+    : filteredEmployees;
+
+  console.log(Projects, projectError, projectErr, projectLoad, "project data");
+
   // useEffect(() => {
   //   if (!selectedRole || selectedRole === userRole) return;
 
@@ -1708,26 +1725,26 @@ const KanbanBoard: React.FC = () => {
   //   }
   // }, [selectedRole, filteredEmployees, userRole]);
 
-  useEffect(() => {
-    console.log("iman called fetch task useeffect");
+  // useEffect(() => {
+  //   console.log("iman called fetch task useeffect");
 
-    if (!selectedEmployee) {
-      setTasks([]); // 🔑 stay empty until user selects
-      return;
-    }
+  //   if (!selectedEmployee) {
+  //     setTasks([]); // 🔑 stay empty until user selects
+  //     return;
+  //   }
 
-    if (selectedEmployee === "__ME__") {
-      console.log("useee", currentUser?._id);
+  //   if (selectedEmployee === "__ME__") {
+  //     console.log("useee", currentUser?._id);
 
-      fetchTasks(currentUser?._id);
-      settaskemployee(currentUser?._id);
-    } else {
-      console.log("employee select", selectedEmployee);
+  //     fetchTasks(currentUser?._id);
+  //     settaskemployee(currentUser?._id);
+  //   } else {
+  //     console.log("employee select", selectedEmployee);
 
-      fetchTasks(selectedEmployee);
-      settaskemployee(selectedEmployee);
-    }
-  }, [selectedEmployee]);
+  //     fetchTasks(selectedEmployee);
+  //     settaskemployee(selectedEmployee);
+  //   }
+  // }, [selectedEmployee]);
 
   useEffect(() => {
     if (!selectedTask) return;
@@ -1748,10 +1765,6 @@ const KanbanBoard: React.FC = () => {
     fetchUserRole();
     // fetchTasks();
     console.log("its called");
-  }, []);
-
-  useEffect(() => {
-    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -1794,20 +1807,97 @@ const KanbanBoard: React.FC = () => {
     }
   }, [selectedRole]);
 
+  // useEffect(() => {
+  //   if (!currentUser) return;
+
+  //   // nothing selected → show empty board
+  //   if (!selectedEmployee) {
+  //     setTasks([]);
+  //     return;
+  //   }
+
+  //   const targetUserId =
+  //     selectedEmployee === "__ME__" ? currentUser._id : selectedEmployee;
+
+  //   fetchTasks(targetUserId);
+  // }, [selectedEmployee, currentUser]);
+
+  useEffect(() => {
+    if (!selectedProject) {
+      setProjectRoles([]);
+      setProjectPeople([]);
+      return;
+    }
+
+    const roles: string[] = [];
+
+    if (selectedProject.siteIncharge) {
+      roles.push("SUPERVISOR");
+    }
+
+    if (selectedProject.contractors?.length) {
+      roles.push("CONTRACTOR");
+    }
+
+    setProjectRoles(roles);
+
+    // reset downstream
+    setSelectedRole("");
+    setSelectedEmployee("");
+    setTasks([]);
+  }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (!selectedProject || !selectedRole) {
+      setProjectPeople([]);
+      return;
+    }
+
+    if (selectedRole === "SUPERVISOR") {
+      setProjectPeople(
+        selectedProject.siteIncharge ? [selectedProject.siteIncharge] : []
+      );
+    }
+
+    if (selectedRole === "CONTRACTOR") {
+      setProjectPeople(selectedProject.contractors || []);
+    }
+
+    setSelectedEmployee("");
+    setTasks([]);
+  }, [selectedRole, selectedProject]);
+
+  // useEffect(() => {
+  //   if (!selectedEmployee) return;
+
+  //   fetchTasks(selectedEmployee);
+  //   settaskemployee(selectedEmployee);
+  // }, [selectedEmployee]);
+
+  const isProjectMode = Boolean(selectedProjectId);
+
   useEffect(() => {
     if (!currentUser) return;
 
-    // nothing selected → show empty board
-    if (!selectedEmployee) {
+    // Project mode → wait until role & person selected
+    if (isProjectMode && (!selectedRole || !selectedEmployee)) {
       setTasks([]);
       return;
     }
 
-    const targetUserId =
+    // Normal mode → behave like old code
+    if (!selectedEmployee) {
+      setTasks([]);
+      setTasksLoading(false);
+      return;
+    }
+
+    const userId =
       selectedEmployee === "__ME__" ? currentUser._id : selectedEmployee;
 
-    fetchTasks(targetUserId);
-  }, [selectedEmployee, currentUser]);
+    fetchTasks(userId);
+    settaskemployee(userId);
+  }, [selectedEmployee, selectedRole, selectedProjectId, currentUser]);
 
   return (
     <MainLayout>
@@ -1825,23 +1915,62 @@ const KanbanBoard: React.FC = () => {
               <div className="flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:w-auto">
                 {userRole === "ADMIN" && (
                   <div className="flex flex-col gap-3 w-full sm:flex-row sm:w-auto">
+                    {/* PROJECT SELECT */}
+                    <select
+                      value={selectedProjectId}
+                      onChange={(e) => setSelectedProjectId(e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border
+             bg-white
+             border-gray-300
+             text-gray-900
+             focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="" className="text-gray-900 bg-white">
+                        All Projects
+                      </option>
+
+                      {(Projects || []).map((project: any) => (
+                        <option
+                          key={project._id}
+                          value={project._id}
+                          className="text-gray-900 bg-white"
+                        >
+                          {project.projectId.projectName}
+                        </option>
+                      ))}
+                    </select>
+
                     {/* ROLE SELECT */}
                     <select
-                      value={selectedRole || ""}
+                      value={selectedRole}
                       onChange={(e) => {
                         const role = e.target.value;
                         setSelectedRole(role);
-                        if (role !== userRole) {
-                          setSelectedEmployee("");
-                          setTasks([]);
-                        } else {
+
+                        // Normal mode → auto-select My Tasks
+                        if (!selectedProjectId && role === userRole) {
                           setSelectedEmployee("__ME__");
+                        } else {
+                          // Project mode or different role
+                          setSelectedEmployee("");
                         }
                       }}
-                      className="w-full sm:w-auto px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={
+                        !!selectedProjectId && effectiveRoles.length === 0
+                      }
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border
+                 bg-white dark:bg-gray-800
+                 border-gray-300 dark:border-gray-700
+                 text-gray-900 dark:text-white
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {roles.map((role, i) => (
-                        <option key={i} value={role}>
+                      <option value="" disabled>
+                        Select role
+                      </option>
+
+                      {effectiveRoles.map((role) => (
+                        <option key={role} value={role}>
                           {role}
                         </option>
                       ))}
@@ -1849,19 +1978,26 @@ const KanbanBoard: React.FC = () => {
 
                     {/* EMPLOYEE SELECT */}
                     <select
-                      value={selectedEmployee || ""}
+                      value={selectedEmployee}
                       onChange={(e) => setSelectedEmployee(e.target.value)}
-                      className="w-full sm:w-auto px-4 py-2 rounded-lg border bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={!selectedRole}
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border
+                 bg-white dark:bg-gray-800
+                 border-gray-300 dark:border-gray-700
+                 text-gray-900 dark:text-white
+                 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="" disabled>
                         Choose…
                       </option>
 
-                      {selectedRole === userRole && (
+                      {/* My Tasks only when NO project selected */}
+                      {!selectedProjectId && selectedRole === userRole && (
                         <option value="__ME__">My Tasks</option>
                       )}
 
-                      {filteredEmployees.map((emp) => (
+                      {effectiveEmployees.map((emp: any) => (
                         <option key={emp._id} value={emp._id}>
                           {emp.name}
                         </option>
@@ -2046,8 +2182,8 @@ const KanbanBoard: React.FC = () => {
           handleSubmit={handleSubmitTask}
           handleAddTag={handleAddTag}
           handleRemoveTag={handleRemoveTag}
-          projectsLoading={projectsLoading}
-          projects={projects}
+          projectsLoading={projectLoad}
+          projects={Projects || []}
           isLoading={transition}
         />
       </div>
