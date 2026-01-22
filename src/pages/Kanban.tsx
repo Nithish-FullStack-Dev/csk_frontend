@@ -851,7 +851,7 @@ export const SidePanel: React.FC<{
                                 day: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              }
+                              },
                             )}
                           </span>
                           <span className="font-semibold text-gray-900 dark:text-white">
@@ -1056,7 +1056,7 @@ const KanbanBoard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [reportCount, setReportCount] = useState(0);
   const [reportMessages, setReportMessages] = useState<{ message: string }[]>(
-    []
+    [],
   );
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState(String);
@@ -1095,7 +1095,6 @@ const KanbanBoard: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [projectRoles, setProjectRoles] = useState<string[]>([]);
   const [projectPeople, setProjectPeople] = useState<any[]>([]);
-
   const columns = [
     {
       id: "on-hold",
@@ -1132,7 +1131,7 @@ const KanbanBoard: React.FC = () => {
 
   const fetchAdmin = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/loginuser/", {
+      const res = await fetch(`${import.meta.env.VITE_URL}/api/loginuser/`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -1184,13 +1183,12 @@ const KanbanBoard: React.FC = () => {
   // };
 
   const fetchUserRole = async () => {
-    const res = await fetch("http://localhost:3000/api/loginuser/", {
+    const res = await fetch(`${import.meta.env.VITE_URL}/api/loginuser/`, {
       credentials: "include",
     });
 
     const data = await res.json();
     const user = data.user;
-    console.log(user);
 
     setCurrentUser(user);
 
@@ -1204,13 +1202,12 @@ const KanbanBoard: React.FC = () => {
   };
 
   const fetchEmployees = async () => {
-    const res = await fetch("http://localhost:3000/api/user/getUsers", {
+    const res = await fetch(`${import.meta.env.VITE_URL}/api/user/getUsers`, {
       credentials: "include",
     });
 
     const data = await res.json();
     setEmployees(data.users);
-    console.log(data.users);
 
     // const uniqueRoles = [
     //   ...new Set(
@@ -1237,8 +1234,8 @@ const KanbanBoard: React.FC = () => {
       setTasksLoading(true);
 
       const url = new URL(
-        "http://localhost:3000/api/kanban/tasks",
-        window.location.origin
+        `${import.meta.env.VITE_URL}/api/kanban/tasks`,
+        window.location.origin,
       );
 
       // ADMIN selecting another user
@@ -1291,7 +1288,7 @@ const KanbanBoard: React.FC = () => {
         });
       }
 
-      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
+      const res = await fetch(`${import.meta.env.VITE_URL}/api/kanban/tasks`, {
         method: "PUT",
         body: formData,
         credentials: "include",
@@ -1304,7 +1301,7 @@ const KanbanBoard: React.FC = () => {
       }
 
       setTasks((prev) =>
-        prev.map((t) => (t._id === data.task._id ? data.task : t))
+        prev.map((t) => (t._id === data.task._id ? data.task : t)),
       );
 
       setSelectedTask(data.task);
@@ -1349,11 +1346,11 @@ const KanbanBoard: React.FC = () => {
   const handleDeleteTask = async (taskId: string) => {
     try {
       const res = await fetch(
-        `http://localhost:3000/api/kanban/task/${taskId}`,
+        `${import.meta.env.VITE_URL}/api/kanban/task/${taskId}`,
         {
           method: "DELETE",
           credentials: "include", // 🔑 REQUIRED because of auth middleware
-        }
+        },
       );
 
       const data = await res.json();
@@ -1384,12 +1381,12 @@ const KanbanBoard: React.FC = () => {
 
     setTasks((prev) =>
       prev.map((task) =>
-        task._id === draggedTask._id ? { ...task, status: newStatus } : task
-      )
+        task._id === draggedTask._id ? { ...task, status: newStatus } : task,
+      ),
     );
 
     try {
-      const res = await fetch("http://localhost:3000/api/kanban/tasks", {
+      const res = await fetch(`${import.meta.env.VITE_URL}/api/kanban/tasks`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1411,21 +1408,23 @@ const KanbanBoard: React.FC = () => {
   };
 
   const handleAddComment = async () => {
-    console.log("comment called");
 
     if (!commentText.trim() || !selectedTask) return;
 
     try {
-      const res = await fetch("http://localhost:3000/api/kanban/comment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          content: commentText,
-          taskId: selectedTask._id,
-          username: currentUser.name,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}http://localhost:3000/api/kanban/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            content: commentText,
+            taskId: selectedTask._id,
+            username: currentUser.name,
+          }),
+        },
+      );
 
       const data = await res.json();
 
@@ -1436,8 +1435,8 @@ const KanbanBoard: React.FC = () => {
           tasks.map((task) =>
             task._id === selectedTask._id
               ? { ...task, comments: [...(task.comments || []), newComment] }
-              : task
-          )
+              : task,
+          ),
         );
 
         setSelectedTask({
@@ -1456,30 +1455,32 @@ const KanbanBoard: React.FC = () => {
     if (!selectedTask) return;
 
     try {
-      const res = await fetch("http://localhost:3000/api/kanban/comment", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          commentId,
-          content: newContent,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/comment`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            commentId,
+            content: newContent,
+          }),
+        },
+      );
 
       const data = await res.json();
-      console.log("called edit comeent", data);
 
       if (data.success) {
         const updatedComments = selectedTask.comments.map((c) =>
-          c._id === commentId ? { ...c, content: newContent } : c
+          c._id === commentId ? { ...c, content: newContent } : c,
         );
 
         setTasks(
           tasks.map((task) =>
             task._id === selectedTask._id
               ? { ...task, comments: updatedComments }
-              : task
-          )
+              : task,
+          ),
         );
 
         setSelectedTask({
@@ -1496,27 +1497,29 @@ const KanbanBoard: React.FC = () => {
     if (!selectedTask) return;
 
     try {
-      const res = await fetch("http://localhost:3000/api/kanban/comment", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ commentId }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/comment`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ commentId }),
+        },
+      );
 
       const data = await res.json();
-      console.log("comment delete", data);
 
       if (data.success) {
         const updatedComments = selectedTask.comments.filter(
-          (c) => c._id !== commentId
+          (c) => c._id !== commentId,
         );
 
         setTasks(
           tasks.map((task) =>
             task._id === selectedTask._id
               ? { ...task, comments: updatedComments }
-              : task
-          )
+              : task,
+          ),
         );
 
         setSelectedTask({
@@ -1535,14 +1538,13 @@ const KanbanBoard: React.FC = () => {
       setReportMessages([]);
 
       const res = await fetch(
-        `http://localhost:3000/api/kanban/report?taskId=${taskId}`,
+        `${import.meta.env.VITE_URL}/api/kanban/report?taskId=${taskId}`,
         {
           credentials: "include", // 🔑 REQUIRED
-        }
+        },
       );
 
       const data = await res.json();
-      console.log(data, "report data");
 
       if (data.success) {
         setReportCount(data.count || 0);
@@ -1556,7 +1558,6 @@ const KanbanBoard: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
-    console.log("this is called create");
 
     if (!newTask.title.trim()) return;
 
@@ -1578,7 +1579,7 @@ const KanbanBoard: React.FC = () => {
               .map((n) => n[0])
               .join("")
               .toUpperCase()
-          : ""
+          : "",
       );
       formData.append("priority", newTask.priority);
       formData.append("dueDate", newTask.dueDate);
@@ -1591,11 +1592,14 @@ const KanbanBoard: React.FC = () => {
         });
       }
 
-      const res = await fetch("http://localhost:3000/api/kanban/tasks/create", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        },
+      );
 
       const data = await res.json();
 
@@ -1646,20 +1650,22 @@ const KanbanBoard: React.FC = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:3000/api/kanban/reports", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/reports`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            message,
+            taskId: selectedTask._id,
+          }),
         },
-        credentials: "include",
-        body: JSON.stringify({
-          message,
-          taskId: selectedTask._id,
-        }),
-      });
+      );
 
       const data = await res.json();
-      console.log(data, "report post");
 
       if (data.success) {
         setReportCount((prev) => prev + 1);
@@ -1681,7 +1687,7 @@ const KanbanBoard: React.FC = () => {
   const filteredTasks = tasks.filter(
     (task) =>
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase())
+      task.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const getTasksByStatus = (status: Task["status"]) =>
@@ -1703,7 +1709,7 @@ const KanbanBoard: React.FC = () => {
   } = usefetchProjects();
 
   const selectedProject = Projects?.find(
-    (p: any) => p._id === selectedProjectId
+    (p: any) => p._id === selectedProjectId,
   );
 
   // roles depend on project
@@ -1713,8 +1719,6 @@ const KanbanBoard: React.FC = () => {
   const effectiveEmployees = selectedProject
     ? projectPeople
     : filteredEmployees;
-
-  console.log(Projects, projectError, projectErr, projectLoad, "project data");
 
   // useEffect(() => {
   //   if (!selectedRole || selectedRole === userRole) return;
@@ -1746,6 +1750,23 @@ const KanbanBoard: React.FC = () => {
   //   }
   // }, [selectedEmployee]);
 
+  const getContractorWorks = (contractorId: string) => {
+  if (!selectedProject?.units) return [];
+
+  const workSet = new Set<string>();
+
+  Object.values(selectedProject.units).forEach((unit: any[]) => {
+    unit.forEach((work) => {
+      if (work.contractor === contractorId && work.title) {
+        workSet.add(work.title.trim());
+      }
+    });
+  });
+
+  return Array.from(workSet);
+};
+
+
   useEffect(() => {
     if (!selectedTask) return;
     fetchReports(selectedTask._id);
@@ -1764,17 +1785,14 @@ const KanbanBoard: React.FC = () => {
     fetchAdmin();
     fetchUserRole();
     // fetchTasks();
-    console.log("its called");
   }, []);
 
   useEffect(() => {
     if (!selectedTask) return;
-    console.log(selectedTask, "this is selected task");
   }, [selectedTask]);
 
   useEffect(() => {
     if (!currentUser) return;
-    console.log(currentUser._id, "this is user");
   }, [currentUser]);
 
   useEffect(() => {
@@ -1855,7 +1873,7 @@ const KanbanBoard: React.FC = () => {
 
     if (selectedRole === "SUPERVISOR") {
       setProjectPeople(
-        selectedProject.siteIncharge ? [selectedProject.siteIncharge] : []
+        selectedProject.siteIncharge ? [selectedProject.siteIncharge] : [],
       );
     }
 
@@ -1997,11 +2015,19 @@ const KanbanBoard: React.FC = () => {
                         <option value="__ME__">My Tasks</option>
                       )}
 
-                      {effectiveEmployees.map((emp: any) => (
-                        <option key={emp._id} value={emp._id}>
-                          {emp.name}
-                        </option>
-                      ))}
+                      {effectiveEmployees.map((emp: any) => {
+                        const works =
+                          selectedRole === "CONTRACTOR"
+                            ? getContractorWorks(emp._id)
+                            : [];
+
+                        return (
+                          <option key={emp._id} value={emp._id}>
+                            {emp.name}
+                            {works.length > 0 && ` — ${works.join(", ")}`}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 )}
@@ -2059,7 +2085,7 @@ const KanbanBoard: React.FC = () => {
                 const Icon = column.icon;
                 const color = column.color;
                 const columnTasks = getTasksByStatus(
-                  column.id as Task["status"]
+                  column.id as Task["status"],
                 );
 
                 return (
