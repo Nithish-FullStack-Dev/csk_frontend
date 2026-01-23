@@ -27,8 +27,8 @@ import { Input } from "@/components/ui/input";
 import Loader from "@/components/Loader"; // Assuming you have this component
 import { useAuth, User } from "@/contexts/AuthContext"; // Assuming your Auth context is here
 import { DatePicker } from "@/components/ui/date-picker";
-import { TeamMember } from "./TeamManagement";
 import { useRBAC } from "@/config/RBAC";
+import { TeamMember } from "@/utils/leads/LeadConfig";
 
 // --- Interface Definitions (Ensure these match your backend types) ---
 
@@ -820,202 +820,216 @@ const CarAllocation = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {vehicles
-            ?.filter(
-              (vehicle) =>
-                filterStatus === "all" || vehicle.status === filterStatus
-            )
-            .map((vehicle) => (
-              <Card key={vehicle._id}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-12 w-12 rounded-full bg-estate-navy/10 flex items-center justify-center">
-                        <Car className="h-6 w-6 text-estate-navy" />
+        {vehicles.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center">
+            <p className="text-sm font-medium text-gray-700">
+              No Vehicles added
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Add Vehicles to assign for site visits.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {vehicles
+              ?.filter(
+                (vehicle) =>
+                  filterStatus === "all" || vehicle.status === filterStatus
+              )
+              .map((vehicle) => (
+                <Card key={vehicle._id}>
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-12 w-12 rounded-full bg-estate-navy/10 flex items-center justify-center">
+                          <Car className="h-6 w-6 text-estate-navy" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{vehicle.model}</h3>
+                          <p className="text-sm text-muted-foreground my-1">
+                            {vehicle.licensePlate}
+                          </p>
+                          <p className="text-sm text-muted-foreground my-1">
+                            {vehicle?.type}
+                          </p>
+                          <Badge className={getStatusColor(vehicle.status)}>
+                            {vehicle.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">{vehicle.model}</h3>
-                        <p className="text-sm text-muted-foreground my-1">
-                          {vehicle.licensePlate}
-                        </p>
-                        <p className="text-sm text-muted-foreground my-1">
-                          {vehicle?.type}
-                        </p>
-                        <Badge className={getStatusColor(vehicle.status)}>
-                          {vehicle.status}
-                        </Badge>
-                      </div>
+                      {userCanEditUser && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setDialogOpen(true);
+                            setSelectedVehicle(vehicle);
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {userCanEditUser && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setDialogOpen(true);
-                          setSelectedVehicle(vehicle);
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {vehicle.assignedTo && (
+                      <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={vehicle?.assignedTo?.agent?.avatar}
+                          />
+                          <AvatarFallback>
+                            {vehicle?.assignedTo?.agent?.name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {vehicle.assignedTo?.agent?.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Until:{" "}
+                            {vehicle?.assignedTo?.assignedUntil
+                              ? new Date(
+                                  vehicle.assignedTo.assignedUntil
+                                ).toLocaleDateString("en-IN", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {vehicle.assignedTo && (
-                    <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={vehicle?.assignedTo?.agent?.avatar} />
-                        <AvatarFallback>
-                          {vehicle?.assignedTo?.agent?.name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-sm font-medium">
-                          {vehicle.assignedTo?.agent?.name}
+                        <p className="text-muted-foreground">Fuel Level</p>
+                        <p
+                          className={`font-semibold ${getFuelColor(
+                            vehicle.fuelLevel
+                          )}`}
+                        >
+                          {vehicle.fuelLevel}%
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          Until:{" "}
-                          {vehicle?.assignedTo?.assignedUntil
-                            ? new Date(
-                                vehicle.assignedTo.assignedUntil
-                              ).toLocaleDateString("en-IN", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Mileage</p>
+                        <p className="font-semibold">
+                          {vehicle.mileage.toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Last Service</p>
+                        <p className="font-semibold">
+                          {vehicle?.lastService
+                            ? new Date(vehicle?.lastService).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )
                             : "N/A"}
                         </p>
                       </div>
+                      <div>
+                        <p className="text-muted-foreground">Location</p>
+                        <p className="font-semibold text-xs">
+                          {vehicle.location}
+                        </p>
+                      </div>
                     </div>
-                  )}
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Fuel Level</p>
-                      <p
-                        className={`font-semibold ${getFuelColor(
-                          vehicle.fuelLevel
-                        )}`}
-                      >
-                        {vehicle.fuelLevel}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Mileage</p>
-                      <p className="font-semibold">
-                        {vehicle.mileage.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Last Service</p>
-                      <p className="font-semibold">
-                        {vehicle?.lastService
-                          ? new Date(vehicle?.lastService).toLocaleDateString(
-                              "en-IN",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Location</p>
-                      <p className="font-semibold text-xs">
-                        {vehicle.location}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    {vehicle.status === "available" && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          {userCanAddUser && userCanEditUser && (
-                            <Button size="sm" className="flex-1">
-                              <Users className="mr-2 h-3 w-3" />
-                              Assign
-                            </Button>
-                          )}
-                        </DialogTrigger>
-                        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
-                          <DialogHeader>
-                            <DialogTitle>Assign Vehicle</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Select Team Member</Label>
-                              <Select
-                                value={assignedTo}
-                                onValueChange={setAssignedTo}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose team member" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {unassignedTeamMembers &&
-                                  unassignedTeamMembers.length > 0 ? (
-                                    unassignedTeamMembers.map((member) => (
-                                      <SelectItem
-                                        key={member._id}
-                                        value={member._id}
-                                      >
-                                        {member.agentId.name} -{" "}
-                                        {member.agentId.role}
+                    <div className="flex space-x-2">
+                      {vehicle.status === "available" && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            {userCanAddUser && userCanEditUser && (
+                              <Button size="sm" className="flex-1">
+                                <Users className="mr-2 h-3 w-3" />
+                                Assign
+                              </Button>
+                            )}
+                          </DialogTrigger>
+                          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+                            <DialogHeader>
+                              <DialogTitle>Assign Vehicle</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Select Team Member</Label>
+                                <Select
+                                  value={assignedTo}
+                                  onValueChange={setAssignedTo}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose team member" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {unassignedTeamMembers &&
+                                    unassignedTeamMembers.length > 0 ? (
+                                      unassignedTeamMembers.map((member) => (
+                                        <SelectItem
+                                          key={member._id}
+                                          value={member._id}
+                                        >
+                                          {member.agentId.name} -{" "}
+                                          {member.agentId.role}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="" disabled>
+                                        No unassigned team members available
                                       </SelectItem>
-                                    ))
-                                  ) : (
-                                    <SelectItem value="" disabled>
-                                      No unassigned team members available
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="assignment-date">
+                                  Assignment End Date
+                                </Label>
+                                <Input
+                                  id="assignment-date"
+                                  type="date"
+                                  value={assignedUntil}
+                                  onChange={(e) =>
+                                    setAssignedUntil(e.target.value)
+                                  }
+                                />
+                              </div>
+                              <Button
+                                className="w-full"
+                                onClick={() => {
+                                  handleAssign(vehicle);
+                                }}
+                              >
+                                Assign Vehicle
+                              </Button>
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="assignment-date">
-                                Assignment End Date
-                              </Label>
-                              <Input
-                                id="assignment-date"
-                                type="date"
-                                value={assignedUntil}
-                                onChange={(e) =>
-                                  setAssignedUntil(e.target.value)
-                                }
-                              />
-                            </div>
-                            <Button
-                              className="w-full"
-                              onClick={() => {
-                                handleAssign(vehicle);
-                              }}
-                            >
-                              Assign Vehicle
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                    {vehicle.status === "assigned" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleUnassign(vehicle)}
-                      >
-                        <Key className="mr-2 h-3 w-3" />
-                        Unassign
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                      {vehicle.status === "assigned" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => handleUnassign(vehicle)}
+                        >
+                          <Key className="mr-2 h-3 w-3" />
+                          Unassign
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

@@ -204,7 +204,7 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
               <b>Billed Date:</b> {formatDate(contractor.billedDate)}
             </div>
             <div>
-              <b>Work Details:</b> {contractor.workDetails}
+              <b>Work Details:</b> {contractor.workDetails || "N/A"}
             </div>
             {contractor.billCopy && (
               <Button variant="outline" size="sm" asChild>

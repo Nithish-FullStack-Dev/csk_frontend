@@ -391,30 +391,6 @@ const TeamManagement = () => {
               Manage your team lead team and track their performance
             </p>
           </div>
-          <div className="flex md:items-center items-start md:space-x-2 space-x-0 mt-4 md:mt-0  md:gap-5 gap-2 ">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="performance">Performance</SelectItem>
-                <SelectItem value="sales">Sales Volume</SelectItem>
-                <SelectItem value="deals">Deals Closed</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="training">Training</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         <Tabs defaultValue="add">
@@ -429,7 +405,20 @@ const TeamManagement = () => {
           </TabsContent>
           <TabsContent value="team">
             <div className="flex flex-col gap-5">
-              <div className="flex justify-end mr-5">
+              <div className="flex justify-end mr-5 gap-5">
+                <div className="flex md:items-center items-start md:space-x-2 space-x-0 mt-4 md:mt-0  md:gap-5 gap-2 ">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="training">Training</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {userCanAddUser && (
                   <Button onClick={handleOpenAddDialog}>
                     <UserPlus className="mr-2 h-4 w-4" />
@@ -505,158 +494,175 @@ const TeamManagement = () => {
                   </CardContent>
                 </Card>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {sortedAndFilteredTeamMembers?.map((member) => {
-                  const performancePercentage =
-                    (member.performance.sales / member.performance.target) *
-                    100;
-                  const performanceLevel = getPerformanceLevel(
-                    performancePercentage
-                  );
 
-                  return (
-                    <Card key={member._id}>
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage
-                                src={member?.agentId?.avatar}
-                                alt={member?.agentId?.name}
-                              />
-                              <AvatarFallback>
-                                {member?.agentId?.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
+              {sortedAndFilteredTeamMembers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 py-10 text-center">
+                  <p className="text-sm font-medium text-gray-700">
+                    No agents added in this team
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Add team members to keep track of sales and targets.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {sortedAndFilteredTeamMembers?.map((member) => {
+                    const performancePercentage =
+                      (member.performance.sales / member.performance.target) *
+                      100;
+                    const performanceLevel = getPerformanceLevel(
+                      performancePercentage
+                    );
+
+                    return (
+                      <Card key={member._id}>
+                        <CardHeader className="pb-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage
+                                  src={member?.agentId?.avatar}
+                                  alt={member?.agentId?.name}
+                                />
+                                <AvatarFallback>
+                                  {member?.agentId?.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="font-semibold">
+                                  {member?.agentId?.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {member?.agentId?.role}
+                                </p>
+                                <Badge
+                                  className={getStatusColor(member?.status)}
+                                >
+                                  {member?.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            {userCanEditUser && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleOpenEditDialog(member)}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <h3 className="font-semibold">
-                                {member?.agentId?.name}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {member?.agentId?.role}
+                              <p className="text-muted-foreground">Sales</p>
+                              <p className="font-semibold">
+                                ₹
+                                {member.performance.sales.toLocaleString(
+                                  "en-IN",
+                                  {
+                                    maximumFractionDigits: 0,
+                                  }
+                                )}
                               </p>
-                              <Badge className={getStatusColor(member?.status)}>
-                                {member?.status}
-                              </Badge>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Target</p>
+                              <p className="font-semibold">
+                                ₹
+                                {member.performance.target.toLocaleString(
+                                  "en-IN",
+                                  {
+                                    maximumFractionDigits: 0,
+                                  }
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Deals</p>
+                              <p className="font-semibold">
+                                {member.performance.deals}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">
+                                Conversion
+                              </p>
+                              <p className="font-semibold">
+                                {member.performance.conversionRate}%
+                              </p>
                             </div>
                           </div>
-                          {userCanEditUser && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleOpenEditDialog(member)}
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Sales</p>
-                            <p className="font-semibold">
-                              ₹
-                              {member.performance.sales.toLocaleString(
-                                "en-IN",
-                                {
-                                  maximumFractionDigits: 0,
-                                }
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Target</p>
-                            <p className="font-semibold">
-                              ₹
-                              {member.performance.target.toLocaleString(
-                                "en-IN",
-                                {
-                                  maximumFractionDigits: 0,
-                                }
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Deals</p>
-                            <p className="font-semibold">
-                              {member.performance.deals}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Conversion</p>
-                            <p className="font-semibold">
-                              {member.performance.conversionRate}%
-                            </p>
-                          </div>
-                        </div>
 
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Target Achievement</span>
-                            <span className={performanceLevel.color}>
-                              {performanceLevel.level}
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>Target Achievement</span>
+                              <span className={performanceLevel.color}>
+                                {performanceLevel.level}
+                              </span>
+                            </div>
+                            <Progress
+                              value={performancePercentage}
+                              className="h-2"
+                            />
+                            <p className="text-xs text-muted-foreground text-right">
+                              {performancePercentage.toFixed(1)}% of target
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>
+                              Last activity:{" "}
+                              {new Date(
+                                member.performance.lastActivity
+                              ).toLocaleDateString()}{" "}
+                              {new Date(
+                                member.performance.lastActivity
+                              ).toLocaleTimeString()}
                             </span>
                           </div>
-                          <Progress
-                            value={performancePercentage}
-                            className="h-2"
-                          />
-                          <p className="text-xs text-muted-foreground text-right">
-                            {performancePercentage.toFixed(1)}% of target
-                          </p>
-                        </div>
 
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>
-                            Last activity:{" "}
-                            {new Date(
-                              member.performance.lastActivity
-                            ).toLocaleDateString()}{" "}
-                            {new Date(
-                              member.performance.lastActivity
-                            ).toLocaleTimeString()}
-                          </span>
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <a href={`tel:${user.phone}`}>
-                            <Button
-                              size="sm"
-                              variant="outline"
+                          <div className="flex space-x-2">
+                            <a href={`tel:${user.phone}`}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <Phone className="mr-2 h-3 w-3" />
+                                Call
+                              </Button>
+                            </a>
+                            <a
+                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                user.email
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="flex-1"
                             >
-                              <Phone className="mr-2 h-3 w-3" />
-                              Call
-                            </Button>
-                          </a>
-                          <a
-                            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                              user.email
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1"
-                          >
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                            >
-                              <Mail className="mr-2 h-3 w-3" />
-                              Email
-                            </Button>
-                          </a>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-              <Card>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                              >
+                                <Mail className="mr-2 h-3 w-3" />
+                                Email
+                              </Button>
+                            </a>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
@@ -737,7 +743,7 @@ const TeamManagement = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </TabsContent>
         </Tabs>

@@ -13,6 +13,7 @@ const ContactCMS = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [contactInfo, setContactInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch contact info on component mount
   useEffect(() => {
@@ -40,6 +41,7 @@ const ContactCMS = () => {
   if (isRolePermissionsLoading) return <Loader />;
   const handleSave = async () => {
     try {
+      setIsSaving(true);
       await axios.post(
         `${import.meta.env.VITE_URL}/api/contact/updateContactInfo`,
         contactInfo
@@ -47,6 +49,8 @@ const ContactCMS = () => {
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to save contact info:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,6 +89,7 @@ const ContactCMS = () => {
                     onClick={handleSave}
                     size="sm"
                     className="w-full sm:w-auto"
+                    disabled={isSaving}
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes

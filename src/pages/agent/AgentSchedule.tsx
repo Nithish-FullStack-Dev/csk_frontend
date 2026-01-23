@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,16 @@ import AgentDetailsDialog from "./AgentDetailsDialog";
 import { useQuery } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
-import { DialogDescription } from "@radix-ui/react-dialog";
+
+const formatUTCTime = (date: Date) => {
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const h = hours % 12 || 12;
+
+  return `${h}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+};
 
 const AgentSchedule = () => {
   const { user } = useAuth();
@@ -122,7 +132,6 @@ const AgentSchedule = () => {
         date: formData.date,
         status: formData.status || "pending",
       };
-      console.log(payload);
       await axios.post(
         `${import.meta.env.VITE_URL}/api/agent-schedule/addSchedules`,
         payload,
@@ -183,7 +192,11 @@ const AgentSchedule = () => {
                       {Array.isArray(leads) &&
                         leads.map((lead) => (
                           <SelectItem key={lead._id} value={lead._id}>
-                            {lead.name}-{lead?.property?.basicInfo?.projectName}
+                            {lead.name}-
+                            {typeof lead?.property === "object" &&
+                            lead?.property?.projectName
+                              ? lead?.property?.projectName
+                              : ""}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -331,8 +344,8 @@ const AgentSchedule = () => {
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                           <div className="flex items-center">
                             <Clock className="mr-1 h-3 w-3" />
-                            {format(appointment.startTime, "h:mm a")} -{" "}
-                            {format(appointment.endTime, "h:mm a")}
+                            {formatUTCTime(appointment.startTime)} -{" "}
+                            {formatUTCTime(appointment.endTime)}
                           </div>
                           <div className="flex items-center">
                             <MapPin className="mr-1 h-3 w-3" />

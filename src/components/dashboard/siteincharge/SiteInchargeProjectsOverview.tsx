@@ -70,179 +70,180 @@ const SiteInchargeProjectsOverview = ({
     <div className="space-y-6">
       {isLoading && <p>Loading projects...</p>}
       {isError && <p>Error loading projects: {error.message}</p>}
-      {projects?.map((project) => {
-        const unitsMap = project.units || {};
-        const allTasks = Object.values(unitsMap).flat();
+      {projects &&
+        projects?.map((project) => {
+          const unitsMap = project.units || {};
+          const allTasks = Object.values(unitsMap).flat();
 
-        const pendingTasks = allTasks.filter(
-          (t: any) => t.statusForContractor?.toLowerCase() === "pending"
-        );
-        const inProgressTasks = allTasks.filter(
-          (t: any) => t.statusForContractor?.toLowerCase() === "in progress"
-        );
-        const completedTasks = allTasks.filter(
-          (t: any) => t.statusForContractor?.toLowerCase() === "completed"
-        );
-        const approvedTasks = allTasks.filter(
-          (t: any) => t.isApprovedBySiteManager === true
-        );
-        const rejectedTasks = allTasks.filter(
-          (t: any) =>
-            t.statusForSiteIncharge?.toLowerCase() === "rejected" ||
-            t.verificationDecision?.toLowerCase() === "rejected"
-        );
+          const pendingTasks = allTasks.filter(
+            (t: any) => t.statusForContractor?.toLowerCase() === "pending"
+          );
+          const inProgressTasks = allTasks.filter(
+            (t: any) => t.statusForContractor?.toLowerCase() === "in progress"
+          );
+          const completedTasks = allTasks.filter(
+            (t: any) => t.statusForContractor?.toLowerCase() === "completed"
+          );
+          const approvedTasks = allTasks.filter(
+            (t: any) => t.isApprovedBySiteManager === true
+          );
+          const rejectedTasks = allTasks.filter(
+            (t: any) =>
+              t.statusForSiteIncharge?.toLowerCase() === "rejected" ||
+              t.verificationDecision?.toLowerCase() === "rejected"
+          );
 
-        const progress =
-          allTasks.length > 0
-            ? Math.round((completedTasks.length / allTasks.length) * 100)
-            : 0;
+          const progress =
+            allTasks.length > 0
+              ? Math.round((completedTasks.length / allTasks.length) * 100)
+              : 0;
 
-        return (
-          <div
-            key={project._id}
-            className="border rounded-xl p-6 bg-card shadow-sm relative"
-          >
-            {/* Project Header */}
-            <div className="flex items-center justify-between pr-10">
-              <h2 className="text-xl font-semibold">
-                {typeof project.projectId === "object"
-                  ? project.projectId.projectName
-                  : "Untitled Project"}
-              </h2>
+          return (
+            <div
+              key={project._id}
+              className="border rounded-xl p-6 bg-card shadow-sm relative"
+            >
+              {/* Project Header */}
+              <div className="flex items-center justify-between pr-10">
+                <h2 className="text-xl font-semibold">
+                  {project.projectId && typeof project.projectId === "object"
+                    ? project.projectId.projectName
+                    : "Untitled Project"}
+                </h2>
 
-              <Badge
-                variant="outline"
-                className={`text-sm ${
-                  statusColors[
-                    (project.status || "not started").toLowerCase()
-                  ] || statusColors["not started"]
-                }`}
-              >
-                {project?.status || "Status Unknown"}
-              </Badge>
-            </div>
-
-            <p className="text-sm text-muted-foreground mt-1">
-              {typeof project.projectId === "object" &&
-                project.projectId?.location}
-            </p>
-
-            <p className="text-sm text-muted-foreground">
-              {project.floorUnit &&
-                `Floor ${
-                  typeof project.floorUnit === "object" &&
-                  project.floorUnit.floorNumber
-                }, ${
-                  typeof project.floorUnit === "object" &&
-                  project.floorUnit.unitType
-                }`}
-              {project.unit &&
-                ` • Plot ${
-                  typeof project.unit === "object" && project.unit.plotNo
-                }`}
-            </p>
-
-            <div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Client: {project.clientName || "N/A"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Estimated Budget: ₹
-                {project.estimatedBudget
-                  ? project.estimatedBudget.toLocaleString("en-IN")
-                  : "N/A"}
-              </p>
-            </div>
-
-            {/* Progress */}
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Overall Progress</span>
-                <span className="text-muted-foreground">
-                  {completedTasks.length} of {allTasks.length} tasks
-                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-sm ${
+                    statusColors[
+                      (project.status || "not started").toLowerCase()
+                    ] || statusColors["not started"]
+                  }`}
+                >
+                  {project?.status || "Status Unknown"}
+                </Badge>
               </div>
-              <Progress value={progress} />
-              <p className="text-right text-xs text-muted-foreground">
-                {progress}% Complete
+
+              <p className="text-sm text-muted-foreground mt-1">
+                {typeof project.projectId === "object" &&
+                  project.projectId?.location}
               </p>
-            </div>
 
-            {/* Tabs */}
-            <div>
-              <h1>Tasks</h1>
-              <Tabs
-                value={selectedTab}
-                onValueChange={setSelectedTab}
-                className="mt-6"
-              >
-                {/* Mobile: Select */}
-                <div className="md:hidden">
-                  <Select value={selectedTab} onValueChange={setSelectedTab}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Tab" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <p className="text-sm text-muted-foreground">
+                {project.floorUnit &&
+                  `Floor ${
+                    typeof project.floorUnit === "object" &&
+                    project.floorUnit.floorNumber
+                  }, ${
+                    typeof project.floorUnit === "object" &&
+                    project.floorUnit.unitType
+                  }`}
+                {project.unit &&
+                  ` • Plot ${
+                    typeof project.unit === "object" && project.unit.plotNo
+                  }`}
+              </p>
+
+              <div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Client: {project.clientName || "N/A"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Estimated Budget: ₹
+                  {project.estimatedBudget
+                    ? project.estimatedBudget.toLocaleString("en-IN")
+                    : "N/A"}
+                </p>
+              </div>
+
+              {/* Progress */}
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Overall Progress</span>
+                  <span className="text-muted-foreground">
+                    {completedTasks.length} of {allTasks.length} tasks
+                  </span>
                 </div>
+                <Progress value={progress} />
+                <p className="text-right text-xs text-muted-foreground">
+                  {progress}% Complete
+                </p>
+              </div>
 
-                <TabsList className="hidden md:inline-block">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-                  <TabsTrigger value="completed">Completed</TabsTrigger>
-                  <TabsTrigger value="approved">Approved</TabsTrigger>
-                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                </TabsList>
+              {/* Tabs */}
+              <div>
+                <h1>Tasks</h1>
+                <Tabs
+                  value={selectedTab}
+                  onValueChange={setSelectedTab}
+                  className="mt-6"
+                >
+                  {/* Mobile: Select */}
+                  <div className="md:hidden">
+                    <Select value={selectedTab} onValueChange={setSelectedTab}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Tab" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <TabsContent value="all">
-                  <TaskList
-                    tasks={allTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-                <TabsContent value="pending">
-                  <TaskList
-                    tasks={pendingTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-                <TabsContent value="in_progress">
-                  <TaskList
-                    tasks={inProgressTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-                <TabsContent value="completed">
-                  <TaskList
-                    tasks={completedTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-                <TabsContent value="approved">
-                  <TaskList
-                    tasks={approvedTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-                <TabsContent value="rejected">
-                  <TaskList
-                    tasks={rejectedTasks}
-                    contractors={project.contractors}
-                  />
-                </TabsContent>
-              </Tabs>
+                  <TabsList className="hidden md:inline-block">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="pending">Pending</TabsTrigger>
+                    <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+                    <TabsTrigger value="completed">Completed</TabsTrigger>
+                    <TabsTrigger value="approved">Approved</TabsTrigger>
+                    <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="all">
+                    <TaskList
+                      tasks={allTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                  <TabsContent value="pending">
+                    <TaskList
+                      tasks={pendingTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                  <TabsContent value="in_progress">
+                    <TaskList
+                      tasks={inProgressTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                  <TabsContent value="completed">
+                    <TaskList
+                      tasks={completedTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                  <TabsContent value="approved">
+                    <TaskList
+                      tasks={approvedTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                  <TabsContent value="rejected">
+                    <TaskList
+                      tasks={rejectedTasks}
+                      contractors={project.contractors}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">

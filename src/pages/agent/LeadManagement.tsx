@@ -522,6 +522,7 @@ const LeadManagement = () => {
                         placeholder="Phone number"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        maxLength={10}
                       />
                     </div>
                     <div className="space-y-2">

@@ -59,6 +59,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(
     null
   );
+  const [isUploading, setIsUploading] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -75,6 +76,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
     onSuccess: () => {
       toast.success("Task Updated successfully!");
       queryClient.invalidateQueries({ queryKey: ["taskVerificationList"] });
+      queryClient.invalidateQueries({ queryKey: ["completedTaskVerfication"] });
     },
     onError: () => {
       toast.error("Failed to update task.");
@@ -97,26 +99,31 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     const uploadedImageUrls: string[] = [];
-
-    for (const photo of photos) {
-      const formData = new FormData();
-      formData.append("file", photo);
-      const res = await axios.post(
-        `${import.meta.env.VITE_URL}/api/uploads/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      if (res.data.url) uploadedImageUrls.push(res.data.url);
+    setIsUploading(true);
+    try {
+      for (const photo of photos) {
+        const formData = new FormData();
+        formData.append("file", photo);
+        const res = await axios.post(
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        if (res.data.url) uploadedImageUrls.push(res.data.url);
+      }
+      mutation.mutate({
+        noteBySiteIncharge: notes,
+        qualityAssessment: quality,
+        verificationDecision: verificationStatus,
+        siteInchargeUploadedPhotos: uploadedImageUrls,
+      });
+    } catch (error) {
+      toast.error("failed while uploading the image");
+    } finally {
+      setIsUploading(false);
     }
-
-    mutation.mutate({
-      noteBySiteIncharge: notes,
-      qualityAssessment: quality,
-      verificationDecision: verificationStatus,
-      siteInchargeUploadedPhotos: uploadedImageUrls,
-    });
   };
 
   const filteredTasks = tasks.filter((task: any) => {
@@ -160,7 +167,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
       </Tabs>
 
       <div className="border rounded-md">
-        <div className="hidden md:block">
+        <div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -389,7 +396,10 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button
+                type="submit"
+                disabled={mutation.isPending || isUploading}
+              >
                 {mutation.isPending ? "Updating..." : "Submit Verification"}
               </Button>
             </DialogFooter>

@@ -180,13 +180,24 @@ export function PropertyDetails({
   // DELETE UNIT
   const deleteUnitMutation = useMutation({
     mutationFn: deleteUnit,
-    onSuccess: () => {
-      toast.success("Unit deleted successfully");
+    onSuccess: (_, deletedUnitId) => {
+      // queryClient.removeQueries({
+      //   queryKey: ["unit", deletedUnitId],
+      //   exact: true,
+      // });
+
       queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
       });
 
-      navigate(`/buildings/${buildingId}`); // or navigate(-1)
+      queryClient.refetchQueries({
+        queryKey: ["units", buildingId, floorId],
+        exact: true,
+      });
+
+      toast.success("Unit deleted successfully");
+
+      navigate(`/properties/building/${buildingId}/floor/${floorId}`);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete unit");
@@ -583,120 +594,139 @@ export function PropertyDetails({
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
-            {/* Loading State */}
-            {verfiedProjectLoading && <p>Loading completed tasks...</p>}
+          {!verfiedProjectLoading &&
+          !verfiedProjectError &&
+          verfiedProject?.length === 0 ? (
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 rounded-full bg-muted p-4">
+                <Check className="h-8 w-8 text-muted-foreground" />
+              </div>
 
-            {/* Error State */}
-            {verfiedProjectError && (
-              <p className="text-red-500">
-                {verfiedProjectErr?.message || "Error fetching tasks"}
+              <h3 className="text-lg font-semibold">No Tasks Found</h3>
+
+              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                No tasks have been assigned or completed for this unit yet.
+                Tasks will appear here once they are created and verified.
               </p>
-            )}
+            </CardContent>
+          ) : (
+            <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
+              {/* Loading State */}
+              {verfiedProjectLoading && <p>Loading completed tasks...</p>}
 
-            {/* No Tasks State */}
-            {!verfiedProjectLoading &&
-              !verfiedProjectError &&
-              verfiedProject?.completedTasks?.length === 0 && (
-                <p>No completed tasks available</p>
+              {/* Error State */}
+              {verfiedProjectError && (
+                <p className="text-red-500">
+                  {verfiedProjectErr?.message || "Error fetching tasks"}
+                </p>
               )}
 
-            {/* Render Tasks */}
-            {!verfiedProjectLoading && !verfiedProjectError && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {verfiedProject?.completedTasks?.map((task: any) => (
-                  <div
-                    key={task?._id}
-                    className="border p-4 rounded-lg shadow-sm hover:shadow transition"
-                  >
-                    {/* Task Title */}
-                    <h3 className="text-lg font-semibold mb-2">
-                      {task?.title || "Untitled Task"}
-                    </h3>
+              {/* No Tasks State */}
+              {!verfiedProjectLoading &&
+                !verfiedProjectError &&
+                verfiedProject?.completedTasks?.length === 0 && (
+                  <p>No completed tasks available</p>
+                )}
 
-                    {/* Basic Info */}
-                    <div className="text-sm space-y-1">
-                      <p>
-                        <strong>Phase:</strong>{" "}
-                        {task?.constructionPhase || "Not specified"}
-                      </p>
-                      <p>
-                        <strong>Progress:</strong>{" "}
-                        {task?.progressPercentage ?? "N/A"}%
-                      </p>
-                      <p>
-                        <strong>Deadline:</strong>{" "}
-                        {task?.deadline
-                          ? new Date(task.deadline).toLocaleDateString(
-                              "en-IN",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              }
-                            )
-                          : "N/A"}
-                      </p>
-                      <p>
-                        <strong>Submitted On:</strong>{" "}
-                        {task?.submittedOn
-                          ? new Date(task.submittedOn).toLocaleDateString(
-                              "en-IN",
-                              {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              }
-                            )
-                          : "Not submitted"}
-                      </p>
-                    </div>
+              {/* Render Tasks */}
+              {!verfiedProjectLoading && !verfiedProjectError && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {verfiedProject?.completedTasks?.map((task: any) => (
+                    <div
+                      key={task?._id}
+                      className="border p-4 rounded-lg shadow-sm hover:shadow transition"
+                    >
+                      {/* Task Title */}
+                      <h3 className="text-lg font-semibold mb-2">
+                        {task?.title || "Untitled Task"}
+                      </h3>
 
-                    {/* Contractor Info */}
-                    <div className="mt-3">
-                      <p className="text-sm font-medium">Assigned Contractor</p>
-                      {task?.contractor ? (
-                        <p className="text-sm text-muted-foreground">
-                          {task?.contractor?.name || "Unknown"} (
-                          {task?.contractor?.email || "N/A"})
+                      {/* Basic Info */}
+                      <div className="text-sm space-y-1">
+                        <p>
+                          <strong>Phase:</strong>{" "}
+                          {task?.constructionPhase || "Not specified"}
                         </p>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Not assigned
+                        <p>
+                          <strong>Progress:</strong>{" "}
+                          {task?.progressPercentage ?? "N/A"}%
                         </p>
-                      )}
-                    </div>
+                        <p>
+                          <strong>Deadline:</strong>{" "}
+                          {task?.deadline
+                            ? new Date(task.deadline).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                }
+                              )
+                            : "N/A"}
+                        </p>
+                        <p>
+                          <strong>Submitted On:</strong>{" "}
+                          {task?.submittedOn
+                            ? new Date(task.submittedOn).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                }
+                              )
+                            : "Not submitted"}
+                        </p>
+                      </div>
 
-                    {/* Task Photos */}
-                    <div className="mt-3">
-                      <p className="text-sm font-medium mb-1">
-                        Uploaded Photos:
-                      </p>
-                      {task?.siteInchargeUploadedPhotos?.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-2">
-                          {task.siteInchargeUploadedPhotos.map(
-                            (url: string, i: number) => (
-                              <img
-                                key={i}
-                                src={url}
-                                alt={`task-proof-${i}`}
-                                className="h-20 w-full object-cover rounded-md shadow-sm cursor-pointer hover:opacity-80 transition"
-                                onClick={() => setPreviewImage(url)}
-                              />
-                            )
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No images uploaded
+                      {/* Contractor Info */}
+                      <div className="mt-3">
+                        <p className="text-sm font-medium">
+                          Assigned Contractor
                         </p>
-                      )}
+                        {task?.contractor ? (
+                          <p className="text-sm text-muted-foreground">
+                            {task?.contractor?.name || "Unknown"} (
+                            {task?.contractor?.email || "N/A"})
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Not assigned
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Task Photos */}
+                      <div className="mt-3">
+                        <p className="text-sm font-medium mb-1">
+                          Uploaded Photos:
+                        </p>
+                        {task?.siteInchargeUploadedPhotos?.length > 0 ? (
+                          <div className="grid grid-cols-3 gap-2">
+                            {task.siteInchargeUploadedPhotos.map(
+                              (url: string, i: number) => (
+                                <img
+                                  key={i}
+                                  src={url}
+                                  alt={`task-proof-${i}`}
+                                  className="h-20 w-full object-cover rounded-md shadow-sm cursor-pointer hover:opacity-80 transition"
+                                  onClick={() => setPreviewImage(url)}
+                                />
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No images uploaded
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {/* Image Preview Modal */}
