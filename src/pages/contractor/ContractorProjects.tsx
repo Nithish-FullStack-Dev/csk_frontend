@@ -43,6 +43,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Loader from "@/components/Loader";
 
+import { useSiteIncharges } from "@/utils/useSiteIncharges";
+
 // Project form values type
 interface ProjectFormValues {
   project: string;
@@ -143,6 +145,9 @@ const ContractorProjects = () => {
     isLoading: projectLoad,
   } = usefetchProjects();
 
+  const { data: siteIncharges = [], isLoading: siteInchargesLoading } =
+    useSiteIncharges();
+
   const createProject = useMutation({
     mutationFn: async (payload: any) => {
       const { data } = await axios.post(
@@ -150,7 +155,7 @@ const ContractorProjects = () => {
         payload,
         {
           withCredentials: true,
-        }
+        },
       );
       return data;
     },
@@ -200,7 +205,7 @@ const ContractorProjects = () => {
   if (projectError) {
     console.log("Failed to load projects. Please try again.");
     toast.error(
-      projectErr.message || "Failed to load projects. Please try again."
+      projectErr.message || "Failed to load projects. Please try again.",
     );
     return null;
   }
@@ -209,7 +214,7 @@ const ContractorProjects = () => {
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-    field: keyof ProjectFormValues
+    field: keyof ProjectFormValues,
   ) => {
     const value = typeof e === "string" ? e : e.target.value;
     setFormData((prev) => ({
@@ -225,6 +230,8 @@ const ContractorProjects = () => {
     e.preventDefault();
     const errors = validateForm(formData);
     setFormErrors(errors);
+    console.log("form", formData);
+    
 
     if (Object.keys(errors).length === 0) {
       const newProject: Project = {
@@ -237,9 +244,10 @@ const ContractorProjects = () => {
         teamSize: formData.teamSize,
         floorUnit: formData.floorUnit,
         unit: formData.unit,
-        siteIncharge: user.role === "site_incharge" ? user._id : null,
+        siteIncharge: user.role === "site_incharge" ? user._id : formData.siteIncharge,
         status: formData.status,
       };
+console.log("see", newProject);
 
       createProject.mutate(newProject);
     }
@@ -512,8 +520,8 @@ const ContractorProjects = () => {
                         floorUnitsLoading
                           ? "Loading Floor Units..."
                           : !floorUnits || floorUnits.length === 0
-                          ? "No floor units available"
-                          : "Select Floor Unit"
+                            ? "No floor units available"
+                            : "Select Floor Unit"
                       }
                     />
                   </SelectTrigger>
@@ -561,8 +569,8 @@ const ContractorProjects = () => {
                         unitsByFloorLoading
                           ? "Loading Units..."
                           : !unitsByFloor || unitsByFloor.length === 0
-                          ? "No units available"
-                          : "Select Unit"
+                            ? "No units available"
+                            : "Select Unit"
                       }
                     />
                   </SelectTrigger>
@@ -696,6 +704,48 @@ const ContractorProjects = () => {
             </div>
 
             <div>
+              <label className="text-sm font-medium">Site Incharge</label>
+
+              <Select
+                value={formData.siteIncharge as string}
+                onValueChange={(value) =>
+                  handleInputChange(value, "siteIncharge")
+                }
+                disabled={siteInchargesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      siteInchargesLoading
+                        ? "Loading site incharges..."
+                        : "Select site incharge"
+                    }
+                  />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {siteIncharges.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No site incharges found
+                    </SelectItem>
+                  ) : (
+                    siteIncharges.map((user) => (
+                      <SelectItem key={user._id} value={user._id}>
+                        {user.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+
+              {formErrors.siteIncharge && (
+                <p className="text-sm text-red-500">
+                  {formErrors.siteIncharge}
+                </p>
+              )}
+            </div>
+
+            <div>
               <label className="text-sm font-medium">Project Description</label>
               <Textarea
                 value={formData.description}
@@ -736,7 +786,9 @@ const ContractorProjects = () => {
               Cancel
             </Button>
 
-            <Button type="submit">Add Project</Button>
+            <Button onClick={handleSubmit} type="submit">
+              Add Project
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
