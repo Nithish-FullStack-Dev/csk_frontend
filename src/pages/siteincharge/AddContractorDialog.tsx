@@ -94,6 +94,9 @@ const AddContractorDialog = ({
       paymentDetails: [],
     },
   });
+  useEffect(() => {
+    register("projectsAssigned");
+  }, [register]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -116,7 +119,7 @@ const AddContractorDialog = ({
     if (mode === "edit" && contractor) {
       const projects =
         contractor.projectsAssigned?.map((p: any) =>
-          typeof p === "string" ? p : p._id
+          typeof p === "string" ? p : p._id,
         ) || [];
 
       const payments =
@@ -182,7 +185,7 @@ const AddContractorDialog = ({
         setImagePreview(
           isAbsolute
             ? contractor.billCopy
-            : `${import.meta.env.VITE_URL}/${contractor.billCopy}`
+            : `${import.meta.env.VITE_URL}/${contractor.billCopy}`,
         );
       } else {
         setImagePreview(null);
@@ -209,7 +212,7 @@ const AddContractorDialog = ({
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/contractor/addContractor`,
         formData,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return res.data;
     },
@@ -234,7 +237,7 @@ const AddContractorDialog = ({
           contractor?._id
         }`,
         formData,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return res.data;
     },
@@ -268,6 +271,16 @@ const AddContractorDialog = ({
   };
 
   const onSubmit = (data: FormValues) => {
+    if (mode === "add" && !data.userId) {
+      toast.error("Please select contractor");
+      return;
+    }
+
+    if (!data.projectsAssigned?.length) {
+      toast.error("Please select at least one project");
+      return;
+    }
+
     const formData = new FormData();
 
     if (mode === "add") {
@@ -293,11 +306,11 @@ const AddContractorDialog = ({
     formData.append("workDetails", data.workDetails ?? "");
     formData.append(
       "billApprovedBySiteIncharge",
-      String(data.billApprovedBySiteIncharge)
+      String(data.billApprovedBySiteIncharge),
     );
     formData.append(
       "billProcessedByAccountant",
-      String(data.billProcessedByAccountant)
+      String(data.billProcessedByAccountant),
     );
     formData.append("isActive", String(data.isActive));
     formData.append("bankName", data.bankName ?? "");
@@ -312,12 +325,12 @@ const AddContractorDialog = ({
     data.paymentDetails.forEach((rec, index) => {
       formData.append(
         `paymentDetails[${index}][modeOfPayment]`,
-        rec.modeOfPayment ?? ""
+        rec.modeOfPayment ?? "",
       );
       formData.append(`paymentDetails[${index}][paymentDate]`, rec.paymentDate);
       formData.append(
         `paymentDetails[${index}][lastPaymentDate]`,
-        rec.lastPaymentDate ?? ""
+        rec.lastPaymentDate ?? "",
       );
     });
 
@@ -386,7 +399,7 @@ const AddContractorDialog = ({
 
               <div className="col-span-full space-y-2">
                 <Label>Add Project</Label>
-                <Select value="" onValueChange={handleAddProject}>
+                <Select onValueChange={handleAddProject}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a project" />
                   </SelectTrigger>
@@ -437,6 +450,11 @@ const AddContractorDialog = ({
                   )}
                 </div>
               </div>
+              {errors.projectsAssigned && (
+                <p className="text-sm font-medium text-destructive">
+                  {errors.projectsAssigned.message}
+                </p>
+              )}
 
               <div className="space-y-2">
                 <Label>Company Name</Label>
@@ -484,7 +502,10 @@ const AddContractorDialog = ({
                   name="contractorType"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Contractor Type" />
                       </SelectTrigger>
@@ -507,7 +528,28 @@ const AddContractorDialog = ({
 
               <div className="space-y-2">
                 <Label>Accounts Incharge ID</Label>
-                <Input className="w-full" {...register("accountsIncharge")} />
+                <Controller
+                  name="accountsIncharge"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || undefined}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Accounts Incharge" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {contractorDropDown?.data?.map((user: any) => (
+                          <SelectItem key={user._id} value={user._id}>
+                            {user.name} ({user.employeeId})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div className="space-y-2">
@@ -606,61 +648,74 @@ const AddContractorDialog = ({
                 <Input className="w-full" {...register("branchName")} />
               </div>
 
-              <div className="col-span-full space-y-4">
-                <Label>Payment Records</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    append({
-                      modeOfPayment: "",
-                      paymentDate: "",
-                      lastPaymentDate: "",
-                    })
-                  }
-                  className="mb-4"
-                >
-                  <Plus className="h-4 w-4 mr-2" /> Add Payment Record
-                </Button>
+              <div className="col-span-full space-y-6">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">
+                    Payment Records
+                  </Label>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      append({
+                        modeOfPayment: "",
+                        paymentDate: "",
+                        lastPaymentDate: "",
+                      })
+                    }
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Payment Record
+                  </Button>
+                </div>
+
                 {errors.paymentDetails?.message && (
                   <p className="text-sm font-medium text-destructive">
                     {errors.paymentDetails.message}
                   </p>
                 )}
+
                 <div className="space-y-6">
                   {fields.map((field, index) => (
                     <div
                       key={field.id}
-                      className="border p-6 rounded-lg space-y-4"
+                      className="rounded-xl border bg-background p-6 shadow-sm space-y-5"
                     >
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold">
                           Payment Record {index + 1}
                         </h4>
+
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => remove(index)}
-                          className="text-destructive"
+                          className="text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
+                      {/* Fields */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Mode of Payment */}
                         <div className="space-y-2">
                           <Label>Mode of Payment</Label>
+
                           <Controller
                             name={`paymentDetails.${index}.modeOfPayment`}
                             control={control}
                             render={({ field: f }) => (
                               <Select
-                                value={f.value ?? ""}
+                                value={f.value || undefined}
                                 onValueChange={f.onChange}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select Mode" />
+                                  <SelectValue placeholder="Select mode" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Cash">Cash</SelectItem>
@@ -672,6 +727,7 @@ const AddContractorDialog = ({
                               </Select>
                             )}
                           />
+
                           {errors.paymentDetails?.[index]?.modeOfPayment && (
                             <p className="text-sm font-medium text-destructive">
                               {
@@ -682,13 +738,15 @@ const AddContractorDialog = ({
                           )}
                         </div>
 
+                        {/* Payment Date */}
                         <div className="space-y-2">
                           <Label>Payment Date</Label>
+
                           <Input
-                            className="w-full"
                             type="date"
                             {...register(`paymentDetails.${index}.paymentDate`)}
                           />
+
                           {errors.paymentDetails?.[index]?.paymentDate && (
                             <p className="text-sm font-medium text-destructive">
                               {
@@ -699,13 +757,14 @@ const AddContractorDialog = ({
                           )}
                         </div>
 
+                        {/* Last Payment Date */}
                         <div className="space-y-2">
                           <Label>Last Payment Date</Label>
+
                           <Input
-                            className="w-full"
                             type="date"
                             {...register(
-                              `paymentDetails.${index}.lastPaymentDate`
+                              `paymentDetails.${index}.lastPaymentDate`,
                             )}
                           />
                         </div>
@@ -834,8 +893,8 @@ const AddContractorDialog = ({
                   {isPending
                     ? "Saving..."
                     : mode === "edit"
-                    ? "Update Contractor"
-                    : "Add Contractor"}
+                      ? "Update Contractor"
+                      : "Add Contractor"}
                 </Button>
               </div>
             </div>
