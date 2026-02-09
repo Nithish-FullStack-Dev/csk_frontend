@@ -35,7 +35,8 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
   error,
 }) => {
   const [editProject, setEditProject] = useState<Project | null>(null);
-  const [selectedTab, setSelectedTab] = useState("all");
+  // const [selectedTab, setSelectedTab] = useState("all");
+  const [selectedTabs, setSelectedTabs] = useState<Record<string, string>>({});
 
   if (isLoading) {
     return (
@@ -70,21 +71,21 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
           const allTasks = Object.values(unitsMap).flat();
 
           const pendingTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "pending"
+            (t: any) => t.statusForContractor?.toLowerCase() === "pending",
           );
           const inProgressTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "in progress"
+            (t: any) => t.statusForContractor?.toLowerCase() === "in progress",
           );
           const completedTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "completed"
+            (t: any) => t.statusForContractor?.toLowerCase() === "completed",
           );
           const approvedTasks = allTasks.filter(
-            (t: any) => t.isApprovedBySiteManager === true
+            (t: any) => t.isApprovedBySiteManager === true,
           );
           const rejectedTasks = allTasks.filter(
             (t: any) =>
               t.statusForSiteIncharge?.toLowerCase() === "rejected" ||
-              t.verificationDecision?.toLowerCase() === "rejected"
+              t.verificationDecision?.toLowerCase() === "rejected",
           );
 
           const progress =
@@ -185,13 +186,25 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
 
               {/* Tabs */}
               <Tabs
-                value={selectedTab}
-                onValueChange={setSelectedTab}
-                className="mt-6"
+                value={selectedTabs[project._id] || "all"}
+                onValueChange={(value) =>
+                  setSelectedTabs((prev) => ({
+                    ...prev,
+                    [project._id]: value,
+                  }))
+                }
               >
                 {/* Mobile: Select */}
                 <div className="md:hidden">
-                  <Select value={selectedTab} onValueChange={setSelectedTab}>
+                  <Select
+                    value={selectedTabs[project._id] || "all"}
+                    onValueChange={(value) =>
+                      setSelectedTabs((prev) => ({
+                        ...prev,
+                        [project._id]: value,
+                      }))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Tab" />
                     </SelectTrigger>
