@@ -160,7 +160,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
 
               <div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Client: {project.clientName || "N/A"}
+                  Client: {project?.clientName || "N/A"}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Estimated Budget: ₹

@@ -98,7 +98,7 @@ const ContractorMaterials = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [viewMaterialDialogOpen, setViewMaterialDialogOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(
-    null
+    null,
   );
   // const [projects, setProjects] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("all");
@@ -153,13 +153,24 @@ const ContractorMaterials = () => {
     "Units",
   ];
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (values: MaterialFormValues) => {
     try {
+      const payload = {
+        ...values,
+        quantity: Number(values.quantity),
+        rate: Number(values.rate),
+        totalCost: Number(values.quantity) * Number(values.rate),
+        deliveryDate: new Date(values.deliveryDate),
+        project: values.project, // ObjectId string OK
+        status: "Ordered",
+      };
+
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/materials`,
-        data,
-        { withCredentials: true }
+        payload,
+        { withCredentials: true },
       );
+
       toast.success("Material added successfully");
       setAddDialogOpen(false);
       fetchMaterials();
@@ -225,15 +236,15 @@ const ContractorMaterials = () => {
       // Filter by active tab
       if (activeTab === "delivered") {
         tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Delivered"
+          (material) => material.status === "Delivered",
         );
       } else if (activeTab === "pending") {
         tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Pending"
+          (material) => material.status === "Pending",
         );
       } else if (activeTab === "ordered") {
         tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Ordered"
+          (material) => material.status === "Ordered",
         );
       }
 
@@ -258,7 +269,7 @@ const ContractorMaterials = () => {
         }/status`,
         {
           status: "Delivered",
-        }
+        },
       );
 
       toast.success("Material marked as delivered");
@@ -273,16 +284,16 @@ const ContractorMaterials = () => {
   // Calculate statistics
   const totalMaterialCost = materials.reduce(
     (total, material) => total + material.totalCost,
-    0
+    0,
   );
   const pendingMaterialsCost = materials
     .filter(
       (material) =>
-        material.status === "Pending" || material.status === "Ordered"
+        material.status === "Pending" || material.status === "Ordered",
     )
     .reduce((total, material) => total + material.totalCost, 0);
   const deliveredMaterialsCount = materials.filter(
-    (material) => material.status === "Delivered"
+    (material) => material.status === "Delivered",
   ).length;
 
   return (
@@ -478,8 +489,8 @@ const ContractorMaterials = () => {
                           material.status === "Delivered"
                             ? "bg-green-100 text-green-800"
                             : material.status === "Pending"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-blue-100 text-blue-800"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-blue-100 text-blue-800"
                         }`}
                       >
                         {material.status}
@@ -548,8 +559,8 @@ const ContractorMaterials = () => {
                       material.status === "Delivered"
                         ? "bg-green-100 text-green-800"
                         : material.status === "Pending"
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-blue-100 text-blue-800"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-blue-100 text-blue-800"
                     }`}
                   >
                     {material.status}
@@ -634,7 +645,12 @@ const ContractorMaterials = () => {
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="100"
+                          min={0}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -883,8 +899,8 @@ const ContractorMaterials = () => {
                     selectedMaterial.status === "Delivered"
                       ? "bg-green-100 text-green-800"
                       : selectedMaterial.status === "Pending"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-blue-100 text-blue-800"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-blue-100 text-blue-800"
                   }`}
                 >
                   {selectedMaterial.status}
@@ -939,7 +955,7 @@ const ContractorMaterials = () => {
                   <p>
                     {new Date(selectedMaterial.deliveryDate).toLocaleDateString(
                       "en-IN",
-                      { day: "numeric", month: "short", year: "numeric" }
+                      { day: "numeric", month: "short", year: "numeric" },
                     )}
                   </p>
                 </div>

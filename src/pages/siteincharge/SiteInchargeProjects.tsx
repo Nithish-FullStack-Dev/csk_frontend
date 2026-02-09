@@ -111,7 +111,7 @@ const SiteInchargeProjects = () => {
         `${import.meta.env.VITE_URL}/api/project/projects`,
         {
           withCredentials: true,
-        }
+        },
       );
       setProjects(res.data);
     } catch (err) {

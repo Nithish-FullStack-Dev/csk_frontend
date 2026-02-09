@@ -89,32 +89,66 @@ const OperationsWorkflow = () => {
       try {
         const response = await axios.get(
           `${import.meta.env.VITE_URL}/api/project/projects`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
         const fetchedProjects = response.data;
 
-        // Extract tasks from projects
+        // Extract tasks from projects and fetch contractor names
         const extractedTasks = [];
-        fetchedProjects.forEach((project) => {
+
+        for (const project of fetchedProjects) {
           const projectName = project.projectTitle || "Unnamed Project";
           const units = project.units || {};
-          Object.entries(units).forEach(([unitName, unitTasks]) => {
-            unitTasks.forEach((task) => {
-              extractedTasks.push({
-                _id: task._id,
-                taskTitle: task.title || "Untitled Task",
-                projectName,
-                unit: unitName,
-                constructionPhase: task.constructionPhase || "",
-                status: task.statusForContractor || "In progress",
-                deadline: task.deadline,
-                progress: task.progressPercentage || 0,
-                contractorId: task.contractor,
-                contractorName: task.contractorName || "Unknown Contractor", // Note: contractorName may need population
-              });
-            });
-          });
-        });
+
+          for (const [unitName, unitTasks] of Object.entries(units)) {
+            if (Array.isArray(unitTasks)) {
+              for (const task of unitTasks) {
+                let contractorName = "Unknown Contractor";
+                let contractorId = task.contractor;
+
+                // If contractor is an ObjectId string, fetch the contractor details
+                if (contractorId && typeof contractorId === "string") {
+                  try {
+                    const contractorResponse = await axios.get(
+                      `${import.meta.env.VITE_URL}/api/contractor/${contractorId}`,
+                      { withCredentials: true },
+                    );
+                    if (contractorResponse.data) {
+                      contractorName =
+                        contractorResponse.data.name ||
+                        contractorResponse.data.contractorName ||
+                        contractorResponse.data.firstName +
+                          " " +
+                          contractorResponse.data.lastName ||
+                        "Unknown Contractor";
+                    }
+                  } catch (error) {
+                    console.error("Error fetching contractor details:", error);
+                  }
+                } else if (task.contractorName) {
+                  contractorName = task.contractorName;
+                } else if (task.contractor?.name) {
+                  contractorName = task.contractor.name;
+                } else if (task.contractor?.contractorName) {
+                  contractorName = task.contractor.contractorName;
+                }
+
+                extractedTasks.push({
+                  _id: task._id,
+                  taskTitle: task.title || "Untitled Task",
+                  projectName,
+                  unit: unitName,
+                  constructionPhase: task.constructionPhase || "",
+                  status: task.statusForContractor || "In progress",
+                  deadline: task.deadline,
+                  progress: task.progressPercentage || 0,
+                  contractorId,
+                  contractorName,
+                });
+              }
+            }
+          }
+        }
 
         setProjects(fetchedProjects);
         setTasks(extractedTasks);
@@ -263,7 +297,7 @@ const OperationsWorkflow = () => {
                             <span className="text-sm">
                               {project.startDate
                                 ? new Date(
-                                    project.startDate
+                                    project.startDate,
                                   ).toLocaleDateString()
                                 : "N/A"}{" "}
                               -{" "}

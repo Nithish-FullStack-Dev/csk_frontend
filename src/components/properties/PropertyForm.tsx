@@ -1,3 +1,4 @@
+// src\components\properties\PropertyForm.tsx
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,14 +125,14 @@ interface PropertyFormProps {
 
 export const fetchContractors = async () => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/contractor`
+    `${import.meta.env.VITE_URL}/api/user/contractor`,
   );
   return data?.data || [];
 };
 
 export const fetchSiteIncharges = async () => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/site-incharges`
+    `${import.meta.env.VITE_URL}/api/user/site-incharges`,
   );
   return data || [];
 };
@@ -147,7 +148,7 @@ export function PropertyForm({
   const [imageUrls, setImageUrls] = useState<string[]>(property?.images || []);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    property?.thumbnailUrl || ""
+    property?.thumbnailUrl || "",
   );
   const {
     data: contractors,
@@ -246,7 +247,7 @@ export function PropertyForm({
 
   // Handle thumbnail upload
   const handleThumbnailUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -265,7 +266,7 @@ export function PropertyForm({
     const currentImages = form.getValues("images") || [];
     form.setValue(
       "images",
-      currentImages.filter((_, index) => index !== indexToRemove)
+      currentImages.filter((_, index) => index !== indexToRemove),
     );
   };
 
@@ -310,7 +311,7 @@ export function PropertyForm({
           thumbForm,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         thumbnailUrl = thumbRes.data.url;
       }
@@ -327,7 +328,7 @@ export function PropertyForm({
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
-            }
+            },
           );
           if (res.data.url) uploadedImageUrls.push(res.data.url);
         }
@@ -389,12 +390,12 @@ export function PropertyForm({
               property.id
             }`,
             transformedPayload,
-            config
+            config,
           )
         : await axios.post(
             `${import.meta.env.VITE_URL}/api/properties/addProperty`,
             transformedPayload,
-            config
+            config,
           );
       onSubmit({
         ...data,
@@ -405,7 +406,7 @@ export function PropertyForm({
       toast.success(
         isEditing
           ? "Property updated successfully"
-          : "Property added successfully"
+          : "Property added successfully",
       );
     } catch (error) {
       console.error("Error submitting property form:", error);
@@ -892,7 +893,7 @@ export function PropertyForm({
                           variant="outline"
                           className={cn(
                             "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            !field.value && "text-muted-foreground",
                           )}
                         >
                           {field.value ? (
@@ -969,7 +970,7 @@ export function PropertyForm({
                           const value = e.target.value;
                           const sanitizedValue = Math.max(
                             0,
-                            parseFloat(value) || 0
+                            parseFloat(value) || 0,
                           );
                           field.onChange(sanitizedValue);
                           recalculateBalance();
@@ -1001,7 +1002,7 @@ export function PropertyForm({
                           const value = e.target.value;
                           const sanitizedValue = Math.max(
                             0,
-                            parseFloat(value) || 0
+                            parseFloat(value) || 0,
                           );
                           field.onChange(sanitizedValue);
                           recalculateBalance();
@@ -1270,8 +1271,8 @@ export function PropertyForm({
             {loading
               ? "Saving..."
               : isEditing
-              ? "Update Property"
-              : "Add Property"}
+                ? "Update Property"
+                : "Add Property"}
           </Button>
         </div>
       </form>

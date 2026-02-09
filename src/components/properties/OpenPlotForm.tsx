@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import axios from "axios";
@@ -66,14 +66,14 @@ export const openPlotFormSchema = z.object({
       "South-East",
       "South-West",
     ],
-    { message: "Plot facing direction is required" }
+    { message: "Plot facing direction is required" },
   ),
   extentSqYards: z.coerce
     .number()
     .min(1, "Extent in Sq. Yards is required and must be positive"),
   plotType: z.enum(
     ["Residential", "Commercial", "Agricultural", "Industrial"],
-    { message: "Plot type is required" }
+    { message: "Plot type is required" },
   ),
   googleMapsLink: z
     .string()
@@ -82,13 +82,13 @@ export const openPlotFormSchema = z.object({
     .or(z.literal("")),
   approval: z.enum(
     ["DTCP", "HMDA", "Panchayat", "Municipality", "Unapproved", "Other"],
-    { message: "Approval status is required" }
+    { message: "Approval status is required" },
   ),
   isCornerPlot: z.boolean(),
   isGatedCommunity: z.boolean(),
   availabilityStatus: z.enum(
     ["Available", "Sold", "Reserved", "Blocked", "Under Dispute"],
-    { message: "Availability status is required" }
+    { message: "Availability status is required" },
   ),
   customerId: z.string().nullable().optional(),
   customerContact: z.string().optional().or(z.literal("")),
@@ -104,20 +104,15 @@ export const openPlotFormSchema = z.object({
       "Delayed",
       "Cancelled",
     ],
-    { message: "Registration status is required" }
+    { message: "Registration status is required" },
   ),
   emiScheme: z.boolean(),
   remarks: z.string().optional().or(z.literal("")),
   thumbnailUrl: z.string().optional().or(z.literal("")),
   images: z.array(z.string()).optional(),
-  listedDate: z.date({
-    required_error: "Listed date is required",
-    invalid_type_error: "Listed date must be a valid date",
-  }),
-  availableFrom: z.date({
-    required_error: "Available from date is required",
-    invalid_type_error: "Available from date must be a valid date",
-  }),
+  listedDate: z.coerce.date().optional(),
+  availableFrom: z.coerce.date().optional(),
+
   // **Added** brochureUrl so the form values can carry the brochure URL
   brochureUrl: z.string().optional().or(z.literal("")),
 });
@@ -143,13 +138,13 @@ export function OpenPlotForm({
   const [imageUrls, setImageUrls] = useState<string[]>(openPlot?.images || []);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    openPlot?.thumbnailUrl || ""
+    openPlot?.thumbnailUrl || "",
   );
 
   // brochure file + preview (BuildingDialog style)
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [brochurePreview, setBrochurePreview] = useState<string | null>(
-    openPlot?.brochureUrl || null
+    openPlot?.brochureUrl || null,
   );
   // track whether user explicitly removed an existing brochure (so server gets cleared)
   const [brochureRemoved, setBrochureRemoved] = useState(false);
@@ -224,7 +219,7 @@ export function OpenPlotForm({
   });
 
   const handleThumbnailUpload = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -267,7 +262,7 @@ export function OpenPlotForm({
         URL.revokeObjectURL(thumbnailPreview);
       } catch (e) {
         setCreatedBlobUrls((prev) =>
-          prev.filter((b) => b !== thumbnailPreview)
+          prev.filter((b) => b !== thumbnailPreview),
         );
       }
     }
@@ -355,7 +350,7 @@ export function OpenPlotForm({
               "X-CSRF-Token": csrfToken,
             },
             withCredentials: true,
-          }
+          },
         );
         finalThumbnailUrl = thumbRes.data.url;
       }
@@ -375,7 +370,7 @@ export function OpenPlotForm({
                 "X-CSRF-Token": csrfToken,
               },
               withCredentials: true,
-            }
+            },
           );
           if (res.data.url) finalImageUrls.push(res.data.url);
         }
@@ -395,7 +390,7 @@ export function OpenPlotForm({
               "X-CSRF-Token": csrfToken,
             },
             withCredentials: true,
-          }
+          },
         );
         finalBrochureUrl = brochureRes.data.url;
       } else if (brochureRemoved) {
@@ -430,12 +425,12 @@ export function OpenPlotForm({
               openPlot?._id
             }`,
             payload,
-            config
+            config,
           )
         : await axios.post(
             `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`,
             payload,
-            config
+            config,
           );
 
       // Prefer common shapes: response.data.data (strapi style) or response.data
@@ -444,7 +439,7 @@ export function OpenPlotForm({
       toast.success(
         isEditing
           ? "Open Plot updated successfully!"
-          : "New Open Plot added successfully!"
+          : "New Open Plot added successfully!",
       );
 
       // IMPORTANT: pass the saved object back to parent — it contains actual brochureUrl
@@ -454,12 +449,12 @@ export function OpenPlotForm({
     } catch (error) {
       console.error(
         "Error submitting Open Plot form:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       toast.error(
         `Failed to save Open Plot: ${
           error.response?.data?.message || error.message
-        }`
+        }`,
       );
     } finally {
       setLoading(false);
@@ -601,7 +596,7 @@ export function OpenPlotForm({
                         const value = e.target.value;
                         const sanitizedValue = Math.max(
                           0,
-                          parseFloat(value) || 0
+                          parseFloat(value) || 0,
                         );
                         field.onChange(sanitizedValue);
                       }}
@@ -785,80 +780,88 @@ export function OpenPlotForm({
             />
 
             {/* Listed Date */}
-            <FormField
+            <Controller
               control={form.control}
               name="listedDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Listed Date</FormLabel>
-                  <Popover>
+
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        {field.value
+                          ? format(field.value, "PPP")
+                          : "Pick a date"}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+
+                    <PopoverContent
+                      align="start"
+                      className="w-auto p-0 z-50 pointer-events-auto"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date)}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+
                   <FormMessage />
                 </FormItem>
               )}
             />
 
             {/* Available From */}
-            <FormField
+            <Controller
               control={form.control}
               name="availableFrom"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Available From</FormLabel>
-                  <Popover>
+
+                  <Popover modal={false}>
                     <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        {field.value
+                          ? format(field.value, "PPP")
+                          : "Pick a date"}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+
+                    <PopoverContent
+                      align="start"
+                      className="w-auto p-0 z-50 pointer-events-auto"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date)}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -1112,8 +1115,8 @@ export function OpenPlotForm({
                       {brochureFile
                         ? brochureFile.name
                         : openPlot?.brochureUrl
-                        ? openPlot.brochureUrl.split("/").pop()
-                        : ""}
+                          ? openPlot.brochureUrl.split("/").pop()
+                          : ""}
                     </div>
                   </div>
                   <div>

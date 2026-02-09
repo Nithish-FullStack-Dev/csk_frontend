@@ -215,7 +215,11 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           <div className="border rounded-md p-2">
             <DatePicker
               date={deadline}
-              onSelect={(date) => setDeadline(date)}
+              onSelect={(date) => {
+                if (date) {
+                  setDeadline(date);
+                }
+              }}
               fromDate={new Date()}
               showMonthYearDropdowns
             />
