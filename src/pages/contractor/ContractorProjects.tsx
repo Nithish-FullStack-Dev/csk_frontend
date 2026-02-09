@@ -230,8 +230,6 @@ const ContractorProjects = () => {
     e.preventDefault();
     const errors = validateForm(formData);
     setFormErrors(errors);
-    console.log("form", formData);
-    
 
     if (Object.keys(errors).length === 0) {
       const newProject: Project = {
@@ -244,10 +242,10 @@ const ContractorProjects = () => {
         teamSize: formData.teamSize,
         floorUnit: formData.floorUnit,
         unit: formData.unit,
-        siteIncharge: user.role === "site_incharge" ? user._id : formData.siteIncharge,
+        siteIncharge:
+          user.role === "site_incharge" ? user._id : formData.siteIncharge,
         status: formData.status,
       };
-console.log("see", newProject);
 
       createProject.mutate(newProject);
     }
@@ -655,36 +653,34 @@ console.log("see", newProject);
                 <p className="text-sm text-red-500">{formErrors.description}</p>
               )}
             </div>
-
             <DialogFooter className="flex flex-col gap-2 pt-3">
-          <DialogFooter className="flex flex-col gap-2 pt-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setDialogOpen(false);
-                setFormData({
-                  project: "",
-                  clientName: "",
-                  floorUnit: "",
-                  unit: "",
-                  startDate: "",
-                  estimatedEndDate: "",
-                  estimatedBudget: 0,
-                  description: "",
-                  teamSize: 1,
-                  siteIncharge: "",
-                  status: "",
-                });
-                setFormErrors({});
-              }}
-            >
-              Cancel
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  setFormData({
+                    project: "",
+                    clientName: "",
+                    floorUnit: "",
+                    unit: "",
+                    startDate: "",
+                    estimatedEndDate: "",
+                    estimatedBudget: 0,
+                    description: "",
+                    teamSize: 1,
+                    siteIncharge: "",
+                    status: "",
+                  });
+                  setFormErrors({});
+                }}
+              >
+                Cancel
+              </Button>
 
-            <Button onClick={handleSubmit} type="submit">
-              Add Project
-            </Button>
+              <Button onClick={handleSubmit} type="submit">
+                Add Project
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
