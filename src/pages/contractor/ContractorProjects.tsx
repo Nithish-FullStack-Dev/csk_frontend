@@ -678,9 +678,7 @@ const ContractorProjects = () => {
                 Cancel
               </Button>
 
-              <Button onClick={handleSubmit} type="submit">
-                Add Project
-              </Button>
+              <Button type="submit">Add Project</Button>
             </DialogFooter>
           </form>
         </DialogContent>
