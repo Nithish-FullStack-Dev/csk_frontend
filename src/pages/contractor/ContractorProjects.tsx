@@ -336,111 +336,6 @@ console.log("see", newProject);
             />
           </CardContent>
         </Card>
-
-        {/* <h2 className="text-2xl font-semibold">Project List</h2>
-        <div className="space-y-4">
-          {projects.map((project) => {
-            return (
-              <Card key={project._id} className="overflow-hidden">
-                <div className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-xl font-semibold">
-                          {typeof project.projectId === "object" &&
-                            project?.projectId?.projectName +
-                              " " +
-                              (typeof project.floorUnit === "object" &&
-                                " - \nFloor " +
-                                  project?.floorUnit?.floorNumber +
-                                  ", " +
-                                  project?.floorUnit?.unitType) +
-                              (typeof project.unit === "object" &&
-                                " - Plot " + project?.unit?.plotNo)}
-                        </h3>
-                        <Badge
-                          variant={
-                            project.status === "In Progress"
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {project?.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground mb-1">
-                        <Building className="mr-1 h-4 w-4" />
-                        <span>
-                          {typeof project.projectId === "object" &&
-                            project?.projectId?.location}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-1 h-4 w-4" />
-                        <span>
-                          {new Date(project?.startDate)?.toLocaleDateString(
-                            "en-IN",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
-                        <ArrowRight className="mx-1 h-3 w-3" />
-                        <span>
-                          {new Date(project?.endDate)?.toLocaleDateString(
-                            "en-IN",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end">
-                        <BadgeIndianRupee className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">
-                          {project?.estimatedBudget?.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-end text-sm text-muted-foreground mt-1">
-                        <Clock className="mr-1 h-4 w-4" />
-                        <span>
-                          {typeof project.floorUnit === "object" &&
-                            project?.floorUnit?.floorNumber}
-                          % completed
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator className="my-4" />
-
-                  <div className="text-sm text-muted-foreground">
-                    {project.description}
-                  </div>
-
-                  <div className="flex justify-end mt-4 space-x-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`/contractor/timeline/${project._id}`}>
-                        View Timeline
-                      </a>
-                    </Button>
-                    <Button size="sm" asChild>
-                      <a href={`/contractor/tasks/${project._id}`}>
-                        Manage Tasks
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div> */}
       </div>
 
       {/* Add Project Dialog */}
@@ -760,7 +655,8 @@ console.log("see", newProject);
                 <p className="text-sm text-red-500">{formErrors.description}</p>
               )}
             </div>
-          </form>
+
+            <DialogFooter className="flex flex-col gap-2 pt-3">
           <DialogFooter className="flex flex-col gap-2 pt-3">
             <Button
               type="button"
@@ -789,6 +685,8 @@ console.log("see", newProject);
             <Button onClick={handleSubmit} type="submit">
               Add Project
             </Button>
+            </DialogFooter>
+          </form>
           </DialogFooter>
         </DialogContent>
       </Dialog>

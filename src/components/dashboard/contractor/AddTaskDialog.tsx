@@ -65,7 +65,7 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
           priority,
           deadline,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -140,7 +140,6 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Describe the task details"
             rows={3}
-            required
           />
         </div>
 
@@ -212,10 +211,12 @@ const AddTaskDialog = ({ onOpenChange, fetchTasks }: AddTaskDialogProps) => {
         {/* Deadline */}
         <div className="space-y-2">
           <Label>Deadline</Label>
+
           <div className="border rounded-md p-2">
             <DatePicker
               date={deadline}
-              setDate={setDeadline}
+              onSelect={(date) => setDeadline(date)}
+              fromDate={new Date()}
               showMonthYearDropdowns
             />
           </div>
