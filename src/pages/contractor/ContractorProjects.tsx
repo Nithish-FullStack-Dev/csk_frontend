@@ -687,7 +687,6 @@ console.log("see", newProject);
             </Button>
             </DialogFooter>
           </form>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </MainLayout>
