@@ -93,7 +93,6 @@ const ContractorsList = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openConDialog, setOpenConDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState("");
   const [editingContractor, setEditingContractor] = useState(null);
   const [deletecontractorId, setDeletecontractorId] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
@@ -118,7 +117,7 @@ const ContractorsList = () => {
         `${
           import.meta.env.VITE_URL
         }/api/contractor/deleteContractor/${contractorId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return res.data;
     },
@@ -131,7 +130,7 @@ const ContractorsList = () => {
     onError: (error) => {
       if (axios.isAxiosError(error)) {
         toast.error(
-          error?.response.data.message || "Failed to delete contractor"
+          error?.response.data.message || "Failed to delete contractor",
         );
       } else {
         toast.error(error?.message || "Failed to delete contractor");
@@ -260,7 +259,7 @@ const ContractorsList = () => {
   if (isErrorProjects) {
     console.error(
       "Error fetching projects for dropdown:",
-      projectsDropdownError
+      projectsDropdownError,
     );
     toast.error("Error fetching projects for dropdown");
   }
@@ -271,20 +270,20 @@ const ContractorsList = () => {
   if (isErrorContractorProjects) {
     console.error(
       "Error fetching contractor projects:",
-      contractorProjectsDropdownError
+      contractorProjectsDropdownError,
     );
     toast.error("Error fetching contractor projects");
   }
   if (isErrorContractorList) {
     console.error("Error fetching contractor List:", contractorListError);
     toast.error(
-      contractorListError?.message ?? "Error fetching contractor projects"
+      contractorListError?.message ?? "Error fetching contractor projects",
     );
   }
   if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
   const specializations = Array.from(
-    new Set(contractors.map((c) => c.specialization))
+    new Set(contractors.map((c) => c.specialization)),
   );
 
   const handleEdit = (contractor) => {
@@ -360,7 +359,7 @@ const ContractorsList = () => {
                 {contractors.reduce(
                   (sum, contractor) =>
                     sum + (contractor.totalTasks - contractor.completedTasks),
-                  0
+                  0,
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -434,7 +433,7 @@ const ContractorsList = () => {
                             <SelectItem key={i} value={spec}>
                               {spec}
                             </SelectItem>
-                          ) : null
+                          ) : null,
                         )}
                       </SelectContent>
                     </Select>
@@ -532,7 +531,7 @@ const ContractorsList = () => {
                                           {project.floorNumber}/U
                                           {project.unitType}
                                         </Badge>
-                                      )
+                                      ),
                                     )}
                                   </div>
                                 </TableCell>
@@ -601,7 +600,7 @@ const ContractorsList = () => {
                                               }/api/project/site-incharge/${
                                                 contractor._id
                                               }/contractor/tasks`,
-                                              { withCredentials: true }
+                                              { withCredentials: true },
                                             );
                                             setContractorTasks(res.data.tasks);
                                           } catch (err) {
@@ -687,7 +686,7 @@ const ContractorsList = () => {
                                       }/api/project/site-incharge/${
                                         contractor._id
                                       }/contractor/tasks`,
-                                      { withCredentials: true }
+                                      { withCredentials: true },
                                     );
                                     setContractorTasks(res.data.tasks);
                                   } catch (err) {
@@ -875,7 +874,7 @@ const ContractorsList = () => {
                                   <TableCell>
                                     {contractor.billedDate
                                       ? new Date(
-                                          contractor.billedDate
+                                          contractor.billedDate,
                                         ).toLocaleDateString()
                                       : "—"}
                                   </TableCell>
@@ -911,7 +910,7 @@ const ContractorsList = () => {
                                         <DropdownMenuItem
                                           onClick={() => {
                                             setDeletecontractorId(
-                                              contractor._id
+                                              contractor._id,
                                             );
                                             setDeleteDialogOpen(true);
                                           }}
@@ -1033,7 +1032,7 @@ const ContractorsList = () => {
                                   <span>
                                     {contractor.billedDate
                                       ? new Date(
-                                          contractor.billedDate
+                                          contractor.billedDate,
                                         ).toLocaleDateString()
                                       : "—"}
                                   </span>
@@ -1100,24 +1099,44 @@ const ContractorsList = () => {
                   className="space-y-4"
                   onSubmit={async (e) => {
                     e.preventDefault();
+
+                    if (!formData.project) {
+                      toast.error("Please select project");
+                      return;
+                    }
+
+                    if (!formData.contractor) {
+                      toast.error("Please select contractor");
+                      return;
+                    }
+
+                    if (!formData.taskTitle) {
+                      toast.error("Enter task title");
+                      return;
+                    }
+
+                    if (!formData.deadline) {
+                      toast.error("Select deadline");
+                      return;
+                    }
+
                     try {
                       setIsContractorAdding(true);
-                      console.log("first", formData);
-                      console.log("projects", allProjects);
+
+                      const payload = {
+                        ...formData,
+                        deadline: new Date(formData.deadline),
+                      };
+
                       const res = await axios.post(
-                        `${
-                          import.meta.env.VITE_URL
-                        }/api/project/site-incharge/ass-contractor`,
-                        formData,
-                        { withCredentials: true }
+                        `${import.meta.env.VITE_URL}/api/project/site-incharge/ass-contractor`,
+                        payload,
+                        { withCredentials: true },
                       );
-                      if (res) {
-                        toast.success("Contractor assigned successfully");
-                        setOpenDialog(false);
-                        refetchContractors();
-                      } else {
-                        toast.error("Failed to assign contractor");
-                      }
+
+                      toast.success("Contractor assigned successfully");
+                      setOpenDialog(false);
+                      refetchContractors();
                     } catch (err) {
                       console.error(err);
                       toast.error("Something went wrong");
@@ -1152,20 +1171,21 @@ const ContractorsList = () => {
                             (contractor: ContractorList, idx) => (
                               <SelectItem
                                 key={
-                                  (typeof contractor?.userId === "object" &&
-                                    contractor?.userId?._id) ||
-                                  idx
+                                  typeof contractor.userId === "string"
+                                    ? contractor.userId
+                                    : contractor.userId?._id
                                 }
                                 value={
-                                  (typeof contractor?.userId === "object" &&
-                                    contractor?.userId?._id) ||
-                                  idx
+                                  typeof contractor.userId === "string"
+                                    ? contractor.userId
+                                    : contractor.userId?._id
                                 }
                               >
-                                {typeof contractor?.userId === "object" &&
-                                  contractor?.userId?.name}
+                                {typeof contractor.userId === "string"
+                                  ? "Unknown contractor"
+                                  : contractor.userId?.name}
                               </SelectItem>
-                            )
+                            ),
                           )
                         )}
                       </SelectContent>
@@ -1175,8 +1195,10 @@ const ContractorsList = () => {
                   <div className="space-y-2">
                     <Label htmlFor="project">Project</Label>
                     <Select
-                      value={selectedProject}
-                      onValueChange={setSelectedProject}
+                      value={formData.project}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, project: value }))
+                      }
                       required
                       disabled={isLoadingProjects}
                     >
@@ -1299,7 +1321,7 @@ const ContractorsList = () => {
                               selectedContractor._id
                             }/status`,
                             { status: newStatus },
-                            { withCredentials: true }
+                            { withCredentials: true },
                           );
                           setStatusDialogOpen(false);
                           refetchContractors();
@@ -1333,7 +1355,7 @@ const ContractorsList = () => {
                         src={
                           selectedContractor.avatar ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            selectedContractor.name
+                            selectedContractor.name,
                           )}`
                         }
                         alt="Contractor Avatar"
