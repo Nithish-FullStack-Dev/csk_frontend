@@ -32,8 +32,8 @@ const TeamLeadDashboard = () => {
   // Fetch team
   const fetchMyTeam = async (): Promise<TeamMember[]> => {
     const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/team/getAllTeam/${user._id}`,
-      { withCredentials: true }
+      `${import.meta.env.VITE_URL}/api/team/getAllTeam`,
+      { withCredentials: true },
     );
     return data || [];
   };
@@ -44,7 +44,7 @@ const TeamLeadDashboard = () => {
     isError: teamErr,
     error: teamError,
   } = useQuery<TeamMember[]>({
-    queryKey: ["teams", user?._id],
+    queryKey: ["teams"],
     queryFn: fetchMyTeam,
     enabled: !!user?._id,
   });
@@ -52,13 +52,12 @@ const TeamLeadDashboard = () => {
   // Fetch site visits by agents
   const fetchPendingSiteVisits = async () => {
     const res = await axios.get(
-      `${import.meta.env.VITE_URL}/api/siteVisit/getAllSiteVis`,
-      {
-        withCredentials: true,
-      }
+      `${import.meta.env.VITE_URL}/api/siteVisit/getMyTeamSiteVisits`,
+      { withCredentials: true },
     );
-    return res.data.filter((v) => v.status === "pending");
-  };
+
+    return res.data.filter((v: any) => v.status === "pending");
+  };  
 
   const {
     data: pendingVisits,
