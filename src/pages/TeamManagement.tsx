@@ -22,6 +22,7 @@ import {
   Settings,
   BarChart3,
   Award,
+  IndianRupeeIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -46,11 +47,8 @@ import TeamManagementTable from "@/components/helpers/TeamManagementTable";
 import {
   AgentDropdownItem,
   TeamMember,
-  useUnAssignedAgents,
   useUnAssignedAgentsDropDown,
 } from "@/utils/leads/LeadConfig";
-import { AgentList } from "@/utils/agent/AgentConfig";
-import { Populated } from "@/types/contractor";
 
 const TeamManagement = () => {
   const { user } = useAuth();
@@ -61,7 +59,7 @@ const TeamManagement = () => {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
-    "active"
+    "active",
   );
   const [agentId, setAgentId] = useState("");
   const [performance, setPerformance] = useState({
@@ -114,8 +112,8 @@ const TeamManagement = () => {
 
   const fetchMyTeam = async (): Promise<TeamMember[]> => {
     const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/team/getAllTeam/${user._id}`,
-      { withCredentials: true }
+      `${import.meta.env.VITE_URL}/api/team/getAllTeam`,
+      { withCredentials: true },
     );
     return data || [];
   };
@@ -155,7 +153,6 @@ const TeamManagement = () => {
       agentId,
       status,
       performance,
-      teamLeadId,
     }: {
       agentId: string;
       status: "active" | "training" | "on-leave";
@@ -167,35 +164,13 @@ const TeamManagement = () => {
         conversionRate: number;
         lastActivity: string;
       };
-      teamLeadId: string;
     }) => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/team/addTeamMember`,
-        { agentId, status, performance, teamLeadId },
-        { withCredentials: true }
+        { agentId, status, performance },
+        { withCredentials: true },
       );
       return data;
-    },
-    onSuccess: () => {
-      toast.success("Team member added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
-      queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
-      setDialogOpen(false);
-      setAgentId("");
-      setStatus("active");
-      setPerformance({
-        sales: 0,
-        target: 0,
-        deals: 0,
-        leads: 0,
-        conversionRate: 0,
-        lastActivity: new Date().toISOString().slice(0, 16),
-      });
-    },
-    onError: (err: any) => {
-      const errorMessage =
-        err.response?.data?.message || "Failed to add team member.";
-      toast.error(errorMessage);
     },
   });
 
@@ -219,7 +194,7 @@ const TeamManagement = () => {
       const { data } = await axios.patch(
         `${import.meta.env.VITE_URL}/api/team/updateTeam/${memberId}`,
         { status, performance },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -241,7 +216,7 @@ const TeamManagement = () => {
     mutationFn: async (memberId: string) => {
       const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/team/deleteTeam/${memberId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -277,15 +252,15 @@ const TeamManagement = () => {
   }
 
   const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "My Team" && per.actions.write
+    (per) => per.submodule === "My Team" && per.actions.write,
   );
 
   const userCanEditUser = rolePermissions?.permissions?.some(
-    (per) => per.submodule === "My Team" && per?.actions?.edit
+    (per) => per.submodule === "My Team" && per?.actions?.edit,
   );
 
   const userCanDeleteUser = rolePermissions?.permissions?.some(
-    (per) => per.submodule === "My Team" && per?.actions?.delete
+    (per) => per.submodule === "My Team" && per?.actions?.delete,
   );
 
   const getStatusColor = (status: string) => {
@@ -313,7 +288,9 @@ const TeamManagement = () => {
     teamMembers?.reduce((sum, member) => sum + member.performance.target, 0) ||
     0;
   const teamPerformance =
-    totalTeamTarget > 0 ? (totalTeamSales / totalTeamTarget) * 100 : 0;
+    totalTeamTarget > 0
+      ? Number(((totalTeamSales / totalTeamTarget) * 100).toFixed(1))
+      : 0;
 
   const handleAddOrEditMemberSubmit = () => {
     if (isEditing) {
@@ -334,7 +311,6 @@ const TeamManagement = () => {
           agentId,
           status,
           performance,
-          teamLeadId: user._id,
         });
       } else {
         toast.error("User not authenticated.");
@@ -358,7 +334,8 @@ const TeamManagement = () => {
     setDialogOpen(true);
   };
 
-  const sortedAndFilteredTeamMembers = teamMembers
+  const sortedAndFilteredTeamMembers = (teamMembers || [])
+
     ?.filter((member) => {
       if (filterStatus === "all") return true;
       return member.status === filterStatus;
@@ -468,9 +445,9 @@ const TeamManagement = () => {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold">
-                        ₹{(totalTeamSales / 1000000).toFixed(1)}M
+                        ₹{totalTeamSales.toLocaleString("en-IN")}
                       </span>
-                      <DollarSign className="h-6 w-6 text-estate-gold" />
+                      <IndianRupeeIcon className="h-6 w-6 text-estate-gold" />
                     </div>
                   </CardContent>
                 </Card>
@@ -508,10 +485,13 @@ const TeamManagement = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {sortedAndFilteredTeamMembers?.map((member) => {
                     const performancePercentage =
-                      (member.performance.sales / member.performance.target) *
-                      100;
+                      member.performance.target > 0
+                        ? (member.performance.sales /
+                            member.performance.target) *
+                          100
+                        : 0;
                     const performanceLevel = getPerformanceLevel(
-                      performancePercentage
+                      performancePercentage,
                     );
 
                     return (
@@ -566,7 +546,7 @@ const TeamManagement = () => {
                                   "en-IN",
                                   {
                                     maximumFractionDigits: 0,
-                                  }
+                                  },
                                 )}
                               </p>
                             </div>
@@ -578,7 +558,7 @@ const TeamManagement = () => {
                                   "en-IN",
                                   {
                                     maximumFractionDigits: 0,
-                                  }
+                                  },
                                 )}
                               </p>
                             </div>
@@ -618,16 +598,16 @@ const TeamManagement = () => {
                             <span>
                               Last activity:{" "}
                               {new Date(
-                                member.performance.lastActivity
+                                member.performance.lastActivity,
                               ).toLocaleDateString()}{" "}
                               {new Date(
-                                member.performance.lastActivity
+                                member.performance.lastActivity,
                               ).toLocaleTimeString()}
                             </span>
                           </div>
 
                           <div className="flex space-x-2">
-                            <a href={`tel:${user.phone}`}>
+                            <a href={`tel:${member.agentId.phone || ""}`}>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -639,7 +619,7 @@ const TeamManagement = () => {
                             </a>
                             <a
                               href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                user.email
+                                member.agentId.email,
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -661,89 +641,6 @@ const TeamManagement = () => {
                   })}
                 </div>
               )}
-
-              {/* <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
-                    Team Performance Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Top Performers</h4>
-                      <div className="space-y-1">
-                        {teamMembers
-                          ?.sort(
-                            (a, b) =>
-                              b.performance.sales / b.performance.target -
-                              a.performance.sales / a.performance.target
-                          )
-                          .slice(0, 3)
-                          .map((member, index) => (
-                            <div
-                              key={member._id}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span>
-                                {index + 1}. {member.agentId?.name}
-                              </span>
-                              <span className="font-medium">
-                                {(
-                                  (member.performance.sales /
-                                    member.performance.target) *
-                                  100
-                                ).toFixed(1)}
-                                %
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Recent Activities</h4>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>• Emily closed 2 deals yesterday</p>
-                        <p>• Robert scheduled 5 site visits</p>
-                        <p>• David added 8 new leads</p>
-                        <p>• Lisa completed sales training</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Quick Actions</h4>
-                      <div className="space-y-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <Calendar className="mr-2 h-3 w-3" />
-                          Schedule Team Meeting
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <BarChart3 className="mr-2 h-3 w-3" />
-                          Generate Team Report
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full justify-start"
-                        >
-                          <Target className="mr-2 h-3 w-3" />
-                          Set Team Goals
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card> */}
             </div>
           </TabsContent>
         </Tabs>
@@ -788,7 +685,7 @@ const TeamManagement = () => {
                               {user.name} ({user.email})
                             </SelectItem>
                           );
-                        }
+                        },
                       )
                     )}
                   </SelectContent>
@@ -836,7 +733,7 @@ const TeamManagement = () => {
                     onChange={(e) =>
                       handlePerformanceChange(
                         key,
-                        Math.max(0, Number(e.target.value))
+                        Math.max(0, Number(e.target.value)),
                       )
                     }
                     className="col-span-3"
@@ -901,8 +798,8 @@ const TeamManagement = () => {
                     ? "Updating..."
                     : "Update Member"
                   : addTeamMemberMutation.isPending
-                  ? "Adding..."
-                  : "Add Member"}
+                    ? "Adding..."
+                    : "Add Member"}
               </Button>
             </DialogFooter>
           </DialogContent>
