@@ -68,7 +68,7 @@ interface User {
 const fetchUnassignedMem = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/teamLead/unassigned`,
-    { withCredentials: false }
+    { withCredentials: false },
   );
   return data.data || [];
 };
@@ -79,7 +79,7 @@ const TeamLeadManagement = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
-    "active"
+    "active",
   );
   const [selectedTeam, setSelectedTeam] = useState<TeamMember | null>(null);
   const [selectedTeamLeadId, setSelectedAgentId] = useState("");
@@ -111,8 +111,8 @@ const TeamLeadManagement = () => {
 
   const fetchMyTeam = async (): Promise<TeamMember[]> => {
     const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/teamLead/getAllSalesTeam/${user._id}`,
-      { withCredentials: true }
+      `${import.meta.env.VITE_URL}/api/teamLead/getAllSalesTeam`,
+      { withCredentials: true },
     );
     return data || [];
   };
@@ -154,7 +154,7 @@ const TeamLeadManagement = () => {
     isError,
     error,
   } = useQuery<TeamMember[]>({
-    queryKey: ["teams", user?._id],
+    queryKey: ["teams"],
     queryFn: fetchMyTeam,
     staleTime: 0,
     enabled: !!user?._id,
@@ -193,13 +193,13 @@ const TeamLeadManagement = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/teamLead/addTeamLead`,
         { salesId, teamLeadId, performance, status },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
     onSuccess: () => {
       toast.success("Team member added successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
       setSelectedAgentId("");
@@ -243,13 +243,13 @@ const TeamLeadManagement = () => {
           status,
           performance,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
     onSuccess: () => {
       toast.success("Team member updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
       setSelectedTeam(null);
@@ -265,13 +265,13 @@ const TeamLeadManagement = () => {
     mutationFn: async (id: string) => {
       const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/teamLead/deleteTeamLead/${id}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
     onSuccess: () => {
       toast.success("Team member removed successfully!");
-      queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
       setSelectedTeam(null);
@@ -610,10 +610,10 @@ const TeamLeadManagement = () => {
                     <span>
                       Last activity:{" "}
                       {new Date(
-                        member.performance.lastActivity
+                        member.performance.lastActivity,
                       ).toLocaleDateString()}{" "}
                       {new Date(
-                        member.performance.lastActivity
+                        member.performance.lastActivity,
                       ).toLocaleTimeString()}
                     </span>
                   </div>
@@ -661,7 +661,7 @@ const TeamLeadManagement = () => {
                     ?.sort(
                       (a, b) =>
                         b.performance.sales / b.performance.target -
-                        a.performance.sales / a.performance.target
+                        a.performance.sales / a.performance.target,
                     )
                     .slice(0, 3)
                     .map((member, index) => (
@@ -670,7 +670,7 @@ const TeamLeadManagement = () => {
                         className="flex items-center justify-between text-sm"
                       >
                         <span>
-                          {index + 1}. {member.salesId?.name}
+                          {index + 1}. {member.teamLeadId?.name}
                         </span>
                         <span className="font-medium">
                           {(
@@ -723,7 +723,7 @@ const TeamLeadManagement = () => {
                   <SelectTrigger className="col-span-3">
                     <SelectValue>
                       {availableAgents?.find(
-                        (agent) => agent._id === selectedTeamLeadId
+                        (agent) => agent._id === selectedTeamLeadId,
                       )?.name || "Select a team lead"}
                     </SelectValue>
                   </SelectTrigger>
@@ -790,7 +790,7 @@ const TeamLeadManagement = () => {
 
                           handlePerformanceChange(
                             "conversionRate",
-                            parseFloat(newRate.toFixed(2))
+                            parseFloat(newRate.toFixed(2)),
                           );
                         }
                       }
@@ -861,8 +861,8 @@ const TeamLeadManagement = () => {
                     ? "Updating..."
                     : "Update Member"
                   : addTeamMemberMutation.isPending
-                  ? "Adding..."
-                  : "Add Member"}
+                    ? "Adding..."
+                    : "Add Member"}
               </Button>
             </DialogFooter>
           </DialogContent>

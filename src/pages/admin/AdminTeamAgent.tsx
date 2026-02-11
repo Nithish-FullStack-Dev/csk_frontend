@@ -61,7 +61,7 @@ interface User {
 const fetchUnassignedMem = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/team/unassigned`,
-    { withCredentials: false }
+    { withCredentials: true },
   );
   return data.data || [];
 };
@@ -75,7 +75,7 @@ const AdminTeamAgent = () => {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
-    "active"
+    "active",
   );
   const [agentId, setAgentId] = useState("");
   const [performance, setPerformance] = useState({
@@ -120,7 +120,7 @@ const AdminTeamAgent = () => {
   const fetchAllAgents = async (): Promise<TeamMember[]> => {
     const { data } = await axios.get(
       `${import.meta.env.VITE_URL}/api/team/getAllTeamMembers`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data || [];
   };
@@ -180,7 +180,7 @@ const AdminTeamAgent = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/team/addTeamMember`,
         { agentId, status, performance, teamLeadId },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -227,7 +227,7 @@ const AdminTeamAgent = () => {
       const { data } = await axios.patch(
         `${import.meta.env.VITE_URL}/api/team/updateTeam/${memberId}`,
         { status, performance },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -249,7 +249,7 @@ const AdminTeamAgent = () => {
     mutationFn: async (memberId: string) => {
       const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/team/deleteTeam/${memberId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -285,15 +285,15 @@ const AdminTeamAgent = () => {
   }
 
   const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "My Team" && per.actions.write
+    (per) => per.submodule === "My Team" && per.actions.write,
   );
 
   const userCanEditUser = rolePermissions?.permissions?.some(
-    (per) => per.submodule === "My Team" && per?.actions?.edit
+    (per) => per.submodule === "My Team" && per?.actions?.edit,
   );
 
   const userCanDeleteUser = rolePermissions?.permissions?.some(
-    (per) => per.submodule === "My Team" && per?.actions?.delete
+    (per) => per.submodule === "My Team" && per?.actions?.delete,
   );
 
   const getStatusColor = (status: string) => {
@@ -328,7 +328,7 @@ const AdminTeamAgent = () => {
         ? null
         : Math.max(
             0,
-            Math.min(100, Number.isFinite(rawPercent) ? rawPercent : 0)
+            Math.min(100, Number.isFinite(rawPercent) ? rawPercent : 0),
           );
     return { member, sales, target, rawPercent, cappedPercent };
   });
@@ -336,11 +336,11 @@ const AdminTeamAgent = () => {
   // 2) Totals (sales/target)
   const totalTeamSales = normalizedMembers.reduce(
     (sum, nm) => sum + nm.sales,
-    0
+    0,
   );
   const totalTeamTarget = normalizedMembers.reduce(
     (sum, nm) => sum + nm.target,
-    0
+    0,
   );
 
   // 3) Compute teamPerformance
@@ -646,10 +646,10 @@ const AdminTeamAgent = () => {
                     <span>
                       Last activity:{" "}
                       {new Date(
-                        member.performance.lastActivity
+                        member.performance.lastActivity,
                       ).toLocaleDateString()}{" "}
                       {new Date(
-                        member.performance.lastActivity
+                        member.performance.lastActivity,
                       ).toLocaleTimeString()}
                     </span>
                   </div>
@@ -664,7 +664,7 @@ const AdminTeamAgent = () => {
 
                     <a
                       href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                        member.agentId.email
+                        member.agentId.email,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -697,7 +697,7 @@ const AdminTeamAgent = () => {
                     ?.sort(
                       (a, b) =>
                         b.performance.sales / b.performance.target -
-                        a.performance.sales / a.performance.target
+                        a.performance.sales / a.performance.target,
                     )
                     .slice(0, 3)
                     .map((member, index) => (
