@@ -80,7 +80,7 @@ const fetchAllVehicles = async (): Promise<Vehicle[]> => {
     `${import.meta.env.VITE_URL}/api/cars/getAllCars`,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -89,18 +89,18 @@ const updateVehicle = async (vehicle: Vehicle): Promise<Vehicle> => {
   const { data } = await axios.put(
     `${import.meta.env.VITE_URL}/api/cars/updateCarById/${vehicle._id}`,
     vehicle,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };
 
 const addVehicle = async (
-  newVehicleData: Omit<Vehicle, "_id" | "createdAt" | "updatedAt">
+  newVehicleData: Omit<Vehicle, "_id" | "createdAt" | "updatedAt">,
 ): Promise<Vehicle> => {
   const { data } = await axios.post(
     `${import.meta.env.VITE_URL}/api/cars/saveCar`,
     newVehicleData,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };
@@ -144,13 +144,13 @@ const CarAllocation = () => {
     updatedAt: new Date(),
   });
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
-    []
+    [],
   );
 
   const fetchMyTeam = async () => {
     const { data } = await axios.get(
-      `${import.meta.env.VITE_URL}/api/team/getAllTeam/${user._id}`,
-      { withCredentials: true }
+      `${import.meta.env.VITE_URL}/api/team/getAllTeam`,
+      { withCredentials: true },
     );
     return data;
   };
@@ -167,7 +167,7 @@ const CarAllocation = () => {
       setLastService(
         selectedVehicle.lastService
           ? new Date(selectedVehicle.lastService)
-          : undefined
+          : undefined,
       );
       setLocation(selectedVehicle.location || "");
       // Reset assignedTo and assignedUntil when editing a different vehicle
@@ -196,7 +196,7 @@ const CarAllocation = () => {
   const unassignedTeamMembers = teamMembers?.filter((member) => {
     return !vehicles?.some(
       (vehicle) =>
-        vehicle.assignedTo && vehicle.assignedTo.agent._id === member._id
+        vehicle.assignedTo && vehicle.assignedTo.agent._id === member._id,
     );
   });
 
@@ -335,13 +335,13 @@ const CarAllocation = () => {
   };
 
   const availableVehicles = (vehicles || []).filter(
-    (v) => v.status === "available"
+    (v) => v.status === "available",
   ).length;
   const assignedVehicles = (vehicles || []).filter(
-    (v) => v.status === "assigned"
+    (v) => v.status === "assigned",
   ).length;
   const maintenanceVehicles = (vehicles || []).filter(
-    (v) => v.status === "maintenance"
+    (v) => v.status === "maintenance",
   ).length;
 
   const handleAddVehicle = () => {
@@ -414,7 +414,7 @@ const CarAllocation = () => {
 
     // Find the full team member object for assignedTo.agent
     const selectedTeamMember = unassignedTeamMembers?.find(
-      (member) => member._id === assignedTo
+      (member) => member._id === assignedTo,
     );
 
     if (!selectedTeamMember) {
@@ -834,7 +834,7 @@ const CarAllocation = () => {
             {vehicles
               ?.filter(
                 (vehicle) =>
-                  filterStatus === "all" || vehicle.status === filterStatus
+                  filterStatus === "all" || vehicle.status === filterStatus,
               )
               .map((vehicle) => (
                 <Card key={vehicle._id}>
@@ -890,7 +890,7 @@ const CarAllocation = () => {
                             Until:{" "}
                             {vehicle?.assignedTo?.assignedUntil
                               ? new Date(
-                                  vehicle.assignedTo.assignedUntil
+                                  vehicle.assignedTo.assignedUntil,
                                 ).toLocaleDateString("en-IN", {
                                   year: "numeric",
                                   month: "short",
@@ -907,7 +907,7 @@ const CarAllocation = () => {
                         <p className="text-muted-foreground">Fuel Level</p>
                         <p
                           className={`font-semibold ${getFuelColor(
-                            vehicle.fuelLevel
+                            vehicle.fuelLevel,
                           )}`}
                         >
                           {vehicle.fuelLevel}%
@@ -929,7 +929,7 @@ const CarAllocation = () => {
                                   year: "numeric",
                                   month: "short",
                                   day: "numeric",
-                                }
+                                },
                               )
                             : "N/A"}
                         </p>
