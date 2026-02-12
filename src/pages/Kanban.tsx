@@ -34,6 +34,20 @@ import RichTextEditor from "@/components/common/editor/Editor";
 import RenderRichText from "@/components/common/editor/Render";
 import { htmlToText } from "@/components/common/editor/htmlToText";
 import { Project, usefetchProjects } from "@/utils/project/ProjectConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 interface Comment {
   _id: string;
@@ -99,6 +113,13 @@ export const NewTaskModal: React.FC<{
   handleRemoveTag: (tag: string) => void;
   projectsLoading: boolean;
   projects: { id: string; name: string }[];
+  selectedUsers: { _id: string; name: string; role: string }[];
+  handleRemoveUserFromGroup: (user: any) => void;
+  setSelectedUsers: React.Dispatch<
+    React.SetStateAction<{ _id: string; name: string; role: string }[]>
+    
+  >;
+  allEmployees: any[];
 }> = ({
   isOpen,
   onClose,
@@ -112,6 +133,10 @@ export const NewTaskModal: React.FC<{
   handleRemoveTag,
   projectsLoading,
   projects,
+  selectedUsers,
+  setSelectedUsers,
+  allEmployees,
+  handleRemoveUserFromGroup,
 }) => {
   if (!isOpen) return null;
 
@@ -283,6 +308,102 @@ export const NewTaskModal: React.FC<{
               ))}
             </select>
           </div> */}
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Assign To *
+            </label>
+
+            <Select
+              value=""
+              onValueChange={(value) => {
+                const selectedEmp = allEmployees.find(
+                  (e) => e.userId === value,
+                );
+                if (!selectedEmp) return;
+
+                setSelectedUsers((prev) =>
+                  prev.some((u) => u._id === value)
+                    ? prev
+                    : [
+                        ...prev,
+                        {
+                          _id: selectedEmp.userId,
+                          name: selectedEmp.name,
+                          role: selectedEmp.role,
+                          department: selectedEmp.department,
+                          label: selectedEmp.label,
+                        },
+                      ],
+                );
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {allEmployees.map((emp) => (
+                  <SelectItem
+                    key={emp.userId}
+                    value={emp.userId}
+                    className="py-2"
+                  >
+                    <div className="flex flex-col leading-tight">
+                      <span className="font-medium text-sm">
+                        {emp.name} — {emp.role}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {emp.department} / {emp.label}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Selected Users */}
+            <div className="flex flex-wrap gap-3 mt-3">
+              {selectedUsers.map((emp) => (
+                <div
+                  key={emp._id}
+                  className="px-3 py-2 rounded-lg bg-secondary border text-xs flex flex-col leading-tight relative"
+                >
+                  {/* Name + Role */}
+                  <span className="font-medium text-sm">
+                    {emp.name} — {emp.role}
+                  </span>
+
+                  {/* Department / Label */}
+                  <span className="text-xs text-muted-foreground">
+                    {emp.department} / {emp.label}
+                  </span>
+
+                  {/* Remove Button */}
+                  <button
+                    type="button"
+                    className="absolute top-1 right-2 text-muted-foreground hover:text-destructive text-xs"
+                    // onClick={() =>
+                    //   setSelectedUsers((prev) =>
+                    //     prev.filter((u) => u._id !== emp._id),
+                    //   )
+                    // }
+                    onClick={() => {
+                      if (mode === "edit" && emp.taskId) {
+                        handleRemoveUserFromGroup(emp);
+                      } else {
+                        setSelectedUsers((prev) =>
+                          prev.filter((u) => u._id !== emp._id),
+                        );
+                      }
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
@@ -1081,7 +1202,8 @@ const KanbanBoard: React.FC = () => {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("__ME__");
+  // const [selectedEmployee, setSelectedEmployee] = useState<string>("__ME__");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [taskemployee, settaskemployee] = useState<any>(null);
   const [taskMode, setTaskMode] = useState<"create" | "edit">("create");
@@ -1089,6 +1211,10 @@ const KanbanBoard: React.FC = () => {
   const [reportsLoading, setReportsLoading] = useState(false);
   // const [projects, setProjects] = useState<any[]>([]);
   // const [projectsLoading, setProjectsLoading] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
+  const [selectedLabel, setSelectedLabel] = useState<string>("");
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [transition, setTransition] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [roles, setRoles] = useState<string[]>([]);
@@ -1121,6 +1247,16 @@ const KanbanBoard: React.FC = () => {
       color: "yellow-600", // dark yellow
     },
   ];
+  const [selectedUsers, setSelectedUsers] = useState<
+    {
+      _id: string;
+      name: string;
+      role: string;
+      department: string;
+      label: string;
+    }[]
+  >([]);
+  const [activeGroup, setActiveGroup] = useState<any>(null);
 
   const columnColorClasses: Record<string, string> = {
     "yellow-300": "bg-yellow-300/20 text-yellow-700",
@@ -1267,55 +1403,162 @@ const KanbanBoard: React.FC = () => {
     setDraggedTask(task);
   };
 
+  // const handleUpdateTask = async () => {
+  //   if (!taskToEdit) return;
+
+  //   try {
+  //     setTransition(true);
+  //     const formData = new FormData();
+  //     formData.append("id", taskToEdit._id);
+  //     formData.append("title", newTask.title.trim());
+  //     formData.append("description", newTask.description.trim());
+  //     formData.append("assignee", assigne);
+  //     formData.append("priority", newTask.priority);
+  //     formData.append("dueDate", newTask.dueDate);
+  //     formData.append("status", newTask.status);
+  //     formData.append("tags", newTask.tags.join(","));
+
+  //     if (newTask.attachments?.length) {
+  //       newTask.attachments.forEach((file) => {
+  //         formData.append("attachment", file);
+  //       });
+  //     }
+
+  //     const res = await fetch(`${import.meta.env.VITE_URL}/api/kanban/tasks`, {
+  //       method: "PUT",
+  //       body: formData,
+  //       credentials: "include",
+  //     });
+
+  //     const data = await res.json();
+  //     if (!res.ok) {
+  //       toast.error("Update failed");
+  //       return;
+  //     }
+
+  //     setTasks((prev) =>
+  //       prev.map((t) => (t._id === data.task._id ? data.task : t)),
+  //     );
+
+  //     setSelectedTask(data.task);
+  //     setShowNewTaskModal(false);
+  //     setTaskMode("create");
+  //     setTaskToEdit(null);
+  //     toast.success("Task updated");
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Something went wrong");
+  //   } finally {
+  //     setTransition(false);
+  //   }
+  // };
+
   const handleUpdateTask = async () => {
-    if (!taskToEdit) return;
+  if (!taskToEdit) return;
 
-    try {
-      setTransition(true);
-      const formData = new FormData();
-      formData.append("id", taskToEdit._id);
-      formData.append("title", newTask.title.trim());
-      formData.append("description", newTask.description.trim());
-      formData.append("assignee", assigne);
-      formData.append("priority", newTask.priority);
-      formData.append("dueDate", newTask.dueDate);
-      formData.append("status", newTask.status);
-      formData.append("tags", newTask.tags.join(","));
+  try {
+    setTransition(true);
 
-      if (newTask.attachments?.length) {
-        newTask.attachments.forEach((file) => {
-          formData.append("attachment", file);
-        });
-      }
+    // 1️⃣ Update main task
+    const formData = new FormData();
+    formData.append("id", taskToEdit._id);
+    formData.append("title", newTask.title.trim());
+    formData.append("description", newTask.description.trim());
+    formData.append("assignee", assigne);
+    formData.append("priority", newTask.priority);
+    formData.append("dueDate", newTask.dueDate);
+    formData.append("status", newTask.status);
+    formData.append("tags", newTask.tags.join(","));
 
-      const res = await fetch(`${import.meta.env.VITE_URL}/api/kanban/tasks`, {
+    if (newTask.attachments?.length) {
+      newTask.attachments.forEach((file) => {
+        formData.append("attachment", file);
+      });
+    }
+
+    const res = await fetch(
+      `${import.meta.env.VITE_URL}/api/kanban/tasks`,
+      {
         method: "PUT",
         body: formData,
         credentials: "include",
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error("Update failed");
-        return;
       }
+    );
 
-      setTasks((prev) =>
-        prev.map((t) => (t._id === data.task._id ? data.task : t)),
+    const data = await res.json();
+    if (!res.ok) throw new Error("Update failed");
+
+    // 2️⃣ Detect newly added users
+    const newUsers = selectedUsers.filter((u: any) => !u.taskId);
+
+    const createdTasks: any[] = [];
+
+    for (const user of newUsers) {
+      const newForm = new FormData();
+
+      newForm.append("title", newTask.title.trim());
+      newForm.append("description", newTask.description.trim());
+      newForm.append("assignee", user.name);
+      newForm.append("userId", user._id);
+      newForm.append("priority", newTask.priority);
+      newForm.append("dueDate", newTask.dueDate);
+      newForm.append("status", newTask.status);
+      newForm.append("tags", newTask.tags.join(","));
+
+      const createRes = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
+        {
+          method: "POST",
+          body: newForm,
+          credentials: "include",
+        }
       );
 
-      setSelectedTask(data.task);
-      setShowNewTaskModal(false);
-      setTaskMode("create");
-      setTaskToEdit(null);
-      toast.success("Task updated");
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong");
-    } finally {
-      setTransition(false);
+      const created = await createRes.json();
+      if (!createRes.ok) throw new Error("Failed to create task");
+
+      createdTasks.push(created.task);
+
+      // Add new user into group document
+      await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/multi-task-group/add-user`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            groupId: activeGroup?._id,
+            user: {
+              taskId: created.task._id,
+              userId: user._id,
+              name: user.name,
+              role: user.role,
+              department: user.department,
+              label: user.label,
+            },
+          }),
+        }
+      );
     }
-  };
+
+    // 3️⃣ Update board state
+    setTasks((prev) => [
+      ...prev.map((t) => (t._id === data.task._id ? data.task : t)),
+      ...createdTasks,
+    ]);
+
+    toast.success("Task updated successfully");
+
+    setShowNewTaskModal(false);
+    setTaskMode("create");
+    setTaskToEdit(null);
+  } catch (err) {
+    console.error(err);
+    toast.error("Update failed");
+  } finally {
+    setTransition(false);
+  }
+};
 
   const handleSubmitTask = async () => {
     if (taskMode === "edit") {
@@ -1325,23 +1568,151 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setTaskMode("edit");
-    setTaskToEdit(task);
+  // const handleEditTask = (task: Task) => {
+  //   setTaskMode("edit");
+  //   setTaskToEdit(task);
 
-    setNewTask({
-      title: task.title,
-      description: task.description,
-      priority: task.priority,
-      dueDate: task.dueDate.split("T")[0],
-      tags: task.tags,
-      status: task.status,
-      attachments: null,
-      projectId: task?.Project?.id || "",
-    });
+  //   setNewTask({
+  //     title: task.title,
+  //     description: task.description,
+  //     priority: task.priority,
+  //     dueDate: task.dueDate.split("T")[0],
+  //     tags: task.tags,
+  //     status: task.status,
+  //     attachments: null,
+  //     projectId: task?.Project?.id || "",
+  //   });
 
-    setShowNewTaskModal(true);
-  };
+  //   setShowNewTaskModal(true);
+  // };
+
+  // const handleEditTask = async (task: Task) => {
+  //   setTaskMode("edit");
+  //   setTaskToEdit(task);
+
+  //   setNewTask({
+  //     title: task.title,
+  //     description: task.description,
+  //     priority: task.priority,
+  //     dueDate: task.dueDate.split("T")[0],
+  //     tags: task.tags,
+  //     status: task.status,
+  //     attachments: null,
+  //     projectId: task?.Project?.id || "",
+  //   });
+
+  //   // 🔥 STEP 1 — Check if task belongs to multi-task group
+  //   const group = await fetchMultiTaskGroup(task._id);
+
+  //   if (group && group.users?.length > 0) {
+  //     // 🔥 Multi-user case
+  //     const mappedUsers = group.users.map((u: any) => ({
+  //       _id: u.userId,
+  //       name: u.name,
+  //       role: u.role,
+  //       department: u.department,
+  //       label: u.label,
+  //     }));
+
+  //     setSelectedUsers(mappedUsers);
+  //   } else {
+  //     // 🔥 Single-user fallback (your old logic)
+  //     const matchedEmployee = allEmployees.find(
+  //       (emp) => emp.userId === task.userId,
+  //     );
+
+  //     if (matchedEmployee) {
+  //       setSelectedUsers([
+  //         {
+  //           _id: matchedEmployee.userId,
+  //           name: matchedEmployee.name,
+  //           role: matchedEmployee.role,
+  //           department: matchedEmployee.department,
+  //           label: matchedEmployee.label,
+  //         },
+  //       ]);
+  //     } else {
+  //       setSelectedUsers([
+  //         {
+  //           _id: task.userId,
+  //           name: task.assignee,
+  //           role: "",
+  //           department: "",
+  //           label: "",
+  //         },
+  //       ]);
+  //     }
+  //   }
+
+  //   setShowNewTaskModal(true);
+  // };
+
+  const handleEditTask = async (task: Task) => {
+  setTaskMode("edit");
+  setTaskToEdit(task);
+
+  setNewTask({
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    dueDate: task.dueDate.split("T")[0],
+    tags: task.tags,
+    status: task.status,
+    attachments: null,
+    projectId: task?.Project?.id || "",
+  });
+
+  // 🔥 Fetch group
+  const group = await fetchMultiTaskGroup(task._id);
+
+  if (group && group.users?.length > 0) {
+    // ✅ STORE ACTIVE GROUP
+    setActiveGroup(group);
+
+    const mappedUsers = group.users.map((u: any) => ({
+      _id: u.userId,
+      name: u.name,
+      role: u.role,
+      department: u.department,
+      label: u.label,
+      taskId: u.taskId, // 🔥 REQUIRED for deletion
+    }));
+
+    setSelectedUsers(mappedUsers);
+  } else {
+    // ✅ Clear group state
+    setActiveGroup(null);
+
+    // Single-user fallback
+    const matchedEmployee = allEmployees.find(
+      (emp) => emp.userId === task.userId
+    );
+
+    if (matchedEmployee) {
+      setSelectedUsers([
+        {
+          _id: matchedEmployee.userId,
+          name: matchedEmployee.name,
+          role: matchedEmployee.role,
+          department: matchedEmployee.department,
+          label: matchedEmployee.label,
+        },
+      ]);
+    } else {
+      setSelectedUsers([
+        {
+          _id: task.userId,
+          name: task.assignee,
+          role: "",
+          department: "",
+          label: "",
+        },
+      ]);
+    }
+  }
+
+  setShowNewTaskModal(true);
+};
 
   const handleDeleteTask = async (taskId: string) => {
     try {
@@ -1408,7 +1779,6 @@ const KanbanBoard: React.FC = () => {
   };
 
   const handleAddComment = async () => {
-
     if (!commentText.trim() || !selectedTask) return;
 
     try {
@@ -1557,60 +1927,165 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async () => {
+  // const handleCreateTask = async () => {
+  //   if (!newTask.title.trim()) return;
 
+  //   try {
+  //     setTransition(true);
+  //     const formData = new FormData();
+  //     const assigneeName = assigne || "Unassigned";
+  //     const userId = taskemployee || currentUser._id || "";
+
+  //     formData.append("title", newTask.title.trim());
+  //     formData.append("description", newTask.description.trim());
+  //     formData.append("assignee", assigneeName);
+  //     formData.append("userId", userId);
+  //     formData.append(
+  //       "assigneeAvatar",
+  //       assigneeName !== "Unassigned"
+  //         ? assigneeName
+  //             .split(" ")
+  //             .map((n) => n[0])
+  //             .join("")
+  //             .toUpperCase()
+  //         : "",
+  //     );
+  //     formData.append("priority", newTask.priority);
+  //     formData.append("dueDate", newTask.dueDate);
+  //     formData.append("status", newTask.status);
+  //     formData.append("tags", newTask.tags.join(","));
+
+  //     if (newTask.attachments?.length) {
+  //       newTask.attachments.forEach((file) => {
+  //         formData.append("attachment", file);
+  //       });
+  //     }
+
+  //     const res = await fetch(
+  //       `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //         credentials: "include",
+  //       },
+  //     );
+
+  //     const data = await res.json();
+
+  //     if (!res.ok) {
+  //       console.error("Create Task Error:", data);
+  //       return;
+  //     }
+
+  //     setTasks((prev) => [...prev, data.task]);
+
+  //     setShowNewTaskModal(false);
+  //     setNewTask({
+  //       title: "",
+  //       description: "",
+  //       priority: "medium",
+  //       dueDate: "",
+  //       tags: [],
+  //       status: "assigned",
+  //       attachments: null,
+  //       projectId: "",
+  //     });
+  //   } catch (error) {
+  //     console.error("Create Task Exception:", error);
+  //   } finally {
+  //     setTransition(false);
+  //   }
+  // };
+
+  const handleCreateTask = async () => {
     if (!newTask.title.trim()) return;
 
     try {
       setTransition(true);
-      const formData = new FormData();
-      const assigneeName = assigne || "Unassigned";
-      const userId = taskemployee || currentUser._id || "";
 
-      formData.append("title", newTask.title.trim());
-      formData.append("description", newTask.description.trim());
-      formData.append("assignee", assigneeName);
-      formData.append("userId", userId);
-      formData.append(
-        "assigneeAvatar",
-        assigneeName !== "Unassigned"
-          ? assigneeName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-          : "",
-      );
-      formData.append("priority", newTask.priority);
-      formData.append("dueDate", newTask.dueDate);
-      formData.append("status", newTask.status);
-      formData.append("tags", newTask.tags.join(","));
+      const usersToAssign =
+        selectedUsers.length > 0
+          ? selectedUsers
+          : [
+              {
+                _id: taskemployee || currentUser._id,
+                name: assigne,
+              },
+            ];
 
-      if (newTask.attachments?.length) {
-        newTask.attachments.forEach((file) => {
-          formData.append("attachment", file);
+      const createdTasks: Task[] = [];
+      const groupUsersPayload: any[] = [];
+
+      for (const user of usersToAssign) {
+        const formData = new FormData();
+
+        formData.append("title", newTask.title.trim());
+        formData.append("description", newTask.description.trim());
+        formData.append("assignee", user.name);
+        formData.append("userId", user._id);
+        formData.append(
+          "assigneeAvatar",
+          user.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase(),
+        );
+        formData.append("priority", newTask.priority);
+        formData.append("dueDate", newTask.dueDate);
+        formData.append("status", newTask.status);
+        formData.append("tags", newTask.tags.join(","));
+
+        if (newTask.attachments?.length) {
+          newTask.attachments.forEach((file) => {
+            formData.append("attachment", file);
+          });
+        }
+
+        const res = await fetch(
+          `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
+          {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          },
+        );
+
+        const data = await res.json();
+        console.log(data.task, "created task data");
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to create task");
+        }
+
+        createdTasks.push(data.task);
+
+        groupUsersPayload.push({
+          taskId: data.task._id,
+          userId: user._id,
+          name: user.name,
+          role: user.role,
+          department: user.department,
+          label: user.label,
         });
       }
 
-      const res = await fetch(
-        `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
-        {
+      // 🔥 Create group only if multiple users
+      if (selectedUsers.length > 0) {
+        await fetch(`${import.meta.env.VITE_URL}/api/kanban/multi-task-group`, {
           method: "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
-        },
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Create Task Error:", data);
-        return;
+          body: JSON.stringify({
+            createdBy: currentUser._id,
+            users: groupUsersPayload,
+          }),
+        });
       }
 
-      setTasks((prev) => [...prev, data.task]);
+      setTasks((prev) => [...prev, ...createdTasks]);
 
       setShowNewTaskModal(false);
+      setSelectedUsers([]); // reset
       setNewTask({
         title: "",
         description: "",
@@ -1621,10 +2096,69 @@ const KanbanBoard: React.FC = () => {
         attachments: null,
         projectId: "",
       });
+
+      toast.success("Task created successfully");
     } catch (error) {
-      console.error("Create Task Exception:", error);
+      console.error(error);
+      toast.error("Failed to create task");
     } finally {
       setTransition(false);
+    }
+  };
+
+  const fetchMultiTaskGroup = async (taskId: string) => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/multi-task-group/${taskId}`,
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return null;
+      }
+
+      return data.group || null;
+    } catch (error) {
+      console.error("Fetch MultiTaskGroup Error:", error);
+      return null;
+    }
+  };
+
+  const handleRemoveUserFromGroup = async (user: any) => {
+    if (!activeGroup) return;
+
+    try {
+      // 1️⃣ Delete that user's task
+      if (user.taskId) {
+        await handleDeleteTask(user.taskId);
+      }
+
+      // 2️⃣ Remove user from group document
+      await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/multi-task-group/remove-user`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            groupId: activeGroup._id,
+            userId: user._id,
+          }),
+        },
+      );
+
+      // 3️⃣ Update UI
+      setSelectedUsers((prev) => prev.filter((u) => u._id !== user._id));
+
+      toast.success("User removed from group");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove user");
     }
   };
 
@@ -1684,6 +2218,29 @@ const KanbanBoard: React.FC = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+
+      const res = await fetch(`${import.meta.env.VITE_URL}/api/departments`, {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch departments");
+      }
+
+      setDepartments(data.departments || []);
+    } catch (err) {
+      console.error("Department fetch error:", err);
+      setDepartments([]);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
+
   const filteredTasks = tasks.filter(
     (task) =>
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1720,6 +2277,37 @@ const KanbanBoard: React.FC = () => {
     ? projectPeople
     : filteredEmployees;
 
+  const selectedDepartment = departments.find(
+    (d) => d._id === selectedDepartmentId,
+  );
+
+  const availableLabels = selectedDepartment?.labels || [];
+
+  const selectedLabelObj = availableLabels.find(
+    (l) => l.name === selectedLabel,
+  );
+
+  const availableEmployees = selectedLabelObj?.types || [];
+
+  const allEmployees = Array.from(
+    new Map(
+      departments.flatMap((dept) =>
+        (dept.labels || []).flatMap((label) =>
+          (label.types || []).map((emp) => [
+            emp.userId,
+            {
+              userId: emp.userId,
+              name: emp.name,
+              role: emp.role,
+              department: dept.name,
+              label: label.name,
+            },
+          ]),
+        ),
+      ),
+    ).values(),
+  );
+
   // useEffect(() => {
   //   if (!selectedRole || selectedRole === userRole) return;
 
@@ -1751,21 +2339,20 @@ const KanbanBoard: React.FC = () => {
   // }, [selectedEmployee]);
 
   const getContractorWorks = (contractorId: string) => {
-  if (!selectedProject?.units) return [];
+    if (!selectedProject?.units) return [];
 
-  const workSet = new Set<string>();
+    const workSet = new Set<string>();
 
-  Object.values(selectedProject.units).forEach((unit: any[]) => {
-    unit.forEach((work) => {
-      if (work.contractor === contractorId && work.title) {
-        workSet.add(work.title.trim());
-      }
+    Object.values(selectedProject.units).forEach((unit: any[]) => {
+      unit.forEach((work) => {
+        if (work.contractor === contractorId && work.title) {
+          workSet.add(work.title.trim());
+        }
+      });
     });
-  });
 
-  return Array.from(workSet);
-};
-
+    return Array.from(workSet);
+  };
 
   useEffect(() => {
     if (!selectedTask) return;
@@ -1785,6 +2372,8 @@ const KanbanBoard: React.FC = () => {
     fetchAdmin();
     fetchUserRole();
     // fetchTasks();
+    fetchDepartments();
+    fetchMultiTaskGroup("698d64c89e0635144f5a29b4");
   }, []);
 
   useEffect(() => {
@@ -1927,69 +2516,57 @@ const KanbanBoard: React.FC = () => {
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Task Manager
+                Project Manager
               </h1>
 
               <div className="flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:w-auto">
                 {userRole === "ADMIN" && (
                   <div className="flex flex-col gap-3 w-full sm:flex-row sm:w-auto">
-                    {/* PROJECT SELECT */}
+                    {/* DEPARTMENT SELECT */}
                     <select
-                      value={selectedProjectId}
-                      onChange={(e) => setSelectedProjectId(e.target.value)}
+                      value={selectedDepartmentId}
+                      onChange={(e) => {
+                        setSelectedDepartmentId(e.target.value);
+                        setSelectedLabel("");
+                        setSelectedEmployee("");
+                        setTasks([]);
+                      }}
                       className="w-full sm:w-auto px-4 py-2 rounded-lg border
-             bg-white
-             border-gray-300
-             text-gray-900
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
+        bg-white
+        border-gray-300
+        text-gray-900
+        focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="" className="text-gray-900 bg-white">
-                        All Projects
-                      </option>
+                      <option value="">All Departments</option>
 
-                      {(Projects || []).map((project: any) => (
-                        <option
-                          key={project._id}
-                          value={project._id}
-                          className="text-gray-900 bg-white"
-                        >
-                          {project.projectId.projectName}
+                      {departments.map((dept) => (
+                        <option key={dept._id} value={dept._id}>
+                          {dept.name}
                         </option>
                       ))}
                     </select>
 
-                    {/* ROLE SELECT */}
+                    {/* LABEL SELECT */}
                     <select
-                      value={selectedRole}
+                      value={selectedLabel}
                       onChange={(e) => {
-                        const role = e.target.value;
-                        setSelectedRole(role);
-
-                        // Normal mode → auto-select My Tasks
-                        if (!selectedProjectId && role === userRole) {
-                          setSelectedEmployee("__ME__");
-                        } else {
-                          // Project mode or different role
-                          setSelectedEmployee("");
-                        }
+                        setSelectedLabel(e.target.value);
+                        setSelectedEmployee("");
+                        setTasks([]);
                       }}
-                      disabled={
-                        !!selectedProjectId && effectiveRoles.length === 0
-                      }
+                      disabled={!selectedDepartmentId}
                       className="w-full sm:w-auto px-4 py-2 rounded-lg border
-                 bg-white dark:bg-gray-800
-                 border-gray-300 dark:border-gray-700
-                 text-gray-900 dark:text-white
-                 focus:outline-none focus:ring-2 focus:ring-blue-500
-                 disabled:opacity-50 disabled:cursor-not-allowed"
+        bg-white dark:bg-gray-800
+        border-gray-300 dark:border-gray-700
+        text-gray-900 dark:text-white
+        focus:outline-none focus:ring-2 focus:ring-blue-500
+        disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="" disabled>
-                        Select role
-                      </option>
+                      <option value="">Select Label</option>
 
-                      {effectiveRoles.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
+                      {availableLabels.map((label) => (
+                        <option key={label.name} value={label.name}>
+                          {label.name}
                         </option>
                       ))}
                     </select>
@@ -1998,36 +2575,21 @@ const KanbanBoard: React.FC = () => {
                     <select
                       value={selectedEmployee}
                       onChange={(e) => setSelectedEmployee(e.target.value)}
-                      disabled={!selectedRole}
+                      disabled={!selectedLabel}
                       className="w-full sm:w-auto px-4 py-2 rounded-lg border
-                 bg-white dark:bg-gray-800
-                 border-gray-300 dark:border-gray-700
-                 text-gray-900 dark:text-white
-                 focus:outline-none focus:ring-2 focus:ring-blue-500
-                 disabled:opacity-50 disabled:cursor-not-allowed"
+        bg-white dark:bg-gray-800
+        border-gray-300 dark:border-gray-700
+        text-gray-900 dark:text-white
+        focus:outline-none focus:ring-2 focus:ring-blue-500
+        disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="" disabled>
-                        Choose…
-                      </option>
+                      <option value="">Choose…</option>
 
-                      {/* My Tasks only when NO project selected */}
-                      {!selectedProjectId && selectedRole === userRole && (
-                        <option value="__ME__">My Tasks</option>
-                      )}
-
-                      {effectiveEmployees.map((emp: any) => {
-                        const works =
-                          selectedRole === "CONTRACTOR"
-                            ? getContractorWorks(emp._id)
-                            : [];
-
-                        return (
-                          <option key={emp._id} value={emp._id}>
-                            {emp.name}
-                            {works.length > 0 && ` — ${works.join(", ")}`}
-                          </option>
-                        );
-                      })}
+                      {availableEmployees.map((emp: any) => (
+                        <option key={emp.userId} value={emp.userId}>
+                          {emp.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -2201,6 +2763,7 @@ const KanbanBoard: React.FC = () => {
             setShowNewTaskModal(false);
             setTaskMode("create");
             setTaskToEdit(null);
+            setSelectedUsers([]);
           }}
           mode={taskMode}
           newTask={newTask}
@@ -2211,6 +2774,10 @@ const KanbanBoard: React.FC = () => {
           projectsLoading={projectLoad}
           projects={Projects || []}
           isLoading={transition}
+          selectedUsers={selectedUsers}
+          setSelectedUsers={setSelectedUsers}
+          allEmployees={allEmployees}
+          handleRemoveUserFromGroup={handleRemoveUserFromGroup}
         />
       </div>
     </MainLayout>

@@ -132,74 +132,21 @@ const Department = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
     useState<DepartmentType | null>(null);
-
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [departments, setDepartments] = useState<DepartmentType[]>([
-  {
-    id: "dept-1",
-    name: "Construction Department",
-    labels: [
-      {
-        name: "Site Management",
-        types: [
-          {
-            _id: "emp-1",
-            name: "Sriram",
-            role: "Site Manager",
-          },
-          {
-            _id: "emp-2",
-            name: "Prabhas",
-            role: "Team Lead",
-          },
-        ],
-      },
-      {
-        name: "Planning",
-        types: [
-          {
-            _id: "emp-3",
-            name: "Rahul",
-            role: "Planner",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "dept-2",
-    name: "Finance Department",
-    labels: [
-      {
-        name: "Accounts",
-        types: [
-          {
-            _id: "emp-4",
-            name: "Anjali",
-            role: "Accountant",
-          },
-        ],
-      },
-      {
-        name: "Auditing",
-        types: [],
-      },
-    ],
-  },
-]);
+  const [departments, setDepartments] = useState<DepartmentType[]>([]);
 
-  const fetchProjects = async () => {
+  const fetchDepartments = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/project/projects`,
-        {
-          withCredentials: true,
-        },
+        `${import.meta.env.VITE_URL}/api/departments`,
+        { withCredentials: true },
       );
-      setProjects(res.data);
+
+      // ✅ extract departments array correctly
+      setDepartments(res.data.departments);
     } catch (err) {
-      console.error("Error fetching project data:", err);
+      console.error("Error fetching departments:", err);
     } finally {
       setLoading(false);
     }
@@ -238,26 +185,99 @@ const Department = () => {
   //     }
   //   };
 
+  // const onSubmit = async (data: ProjectFormValues) => {
+  //   console.log("called");
+
+  //   const payload = {
+  //     ...data,
+  //     labels,
+  //   };
+
+  //   console.log("Submitting payload:", payload);
+  // };
+
+  // const onSubmit = async (data: ProjectFormValues) => {
+  //   try {
+  //     const payload = {
+  //       name: data.name,
+  //       labels,
+  //     };
+
+  //     const res = await axios.post(
+  //       `${import.meta.env.VITE_URL}/api/departments/create`,
+  //       payload,
+  //       { withCredentials: true },
+  //     );
+
+  //     console.log(res.data);
+  //     setDepartments((prev) => [...prev, res.data.department]);
+  //     toast.success("Department created successfully");
+  //     fetchDepartments();
+  //     setDialogOpen(false);
+  //     form.reset();
+  //     setLabels([]);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to create department");
+  //   }
+  // };
+
   const onSubmit = async (data: ProjectFormValues) => {
-    console.log("called");
+    try {
+      const payload = {
+        name: data.name,
+        labels,
+      };
 
-    const payload = {
-      ...data,
-      labels,
-    };
+      if (selectedDepartment) {
+        // 🔥 UPDATE MODE
+        await axios.put(
+          `${import.meta.env.VITE_URL}/api/departments/update`,
+          {
+            id: selectedDepartment._id,
+            ...payload,
+          },
+          { withCredentials: true },
+        );
 
-    console.log("Submitting payload:", payload);
+        toast.success("Department updated successfully");
+      } else {
+        // 🔥 CREATE MODE
+        await axios.post(
+          `${import.meta.env.VITE_URL}/api/departments/create`,
+          payload,
+          { withCredentials: true },
+        );
+
+        toast.success("Department created successfully");
+      }
+
+      await fetchDepartments(); // ✅ Always sync from backend
+
+      setDialogOpen(false);
+      setSelectedDepartment(null);
+      setLabels([]);
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      toast.error("Operation failed");
+    }
   };
 
   useEffect(() => {
-    fetchProjects();
+    fetchDepartments();
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    console.log(departments, "hete");
+  }, [departments]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues,
   });
+
   return (
     <MainLayout>
       <div>
@@ -275,46 +295,39 @@ const Department = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Departments */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">
-                total Departments
+                Total Departments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{departments.length}</div>
+              {/* <p className="text-xs text-muted-foreground">
+        Active departments in system
+      </p> */}
+            </CardContent>
+          </Card>
+
+          {/* Total Labels */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">
+                Total Labels
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Array.isArray(projects) ? projects.length : 0}
+                {departments.reduce((acc, dept) => acc + dept.labels.length, 0)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {Array.isArray(projects)
-                  ? projects.filter((p) => p.status === "In Progress").length
-                  : 0}{" "}
-                in progress,{" "}
-                {Array.isArray(projects)
-                  ? projects.filter((p) => p.status === "New").length
-                  : 0}{" "}
-                new
-              </p>
+              {/* <p className="text-xs text-muted-foreground">
+        Across all departments
+      </p> */}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Label</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-2xl font-bold">
-                <BadgeIndianRupee className="mr-1 h-4 w-4 text-muted-foreground" />
-                {Array.isArray(projects)
-                  ? projects
-                      .reduce((acc, curr) => acc + curr.estimatedBudget, 0)
-                      .toLocaleString()
-                  : 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Across {projects ? projects.length : "0"} projects
-              </p>
-            </CardContent>
-          </Card>
+
+          {/* Total Members */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium">
@@ -324,34 +337,44 @@ const Department = () => {
             <CardContent>
               <div className="flex items-center text-2xl font-bold">
                 <Users className="mr-1 h-4 w-4 text-muted-foreground" />
-                {Array.isArray(projects)
-                  ? projects
-                      .reduce((acc, curr) => acc + (curr.teamSize || 0), 0)
-                      .toLocaleString()
-                  : 0}
+                {
+                  [
+                    ...new Set(
+                      departments.flatMap((dept) =>
+                        dept.labels.flatMap((label) =>
+                          label.types.map((emp) => emp.userId),
+                        ),
+                      ),
+                    ),
+                  ].length
+                }
               </div>
-
-              <p className="text-xs text-muted-foreground">
-                Working across all projects
-              </p>
+              {/* <p className="text-xs text-muted-foreground">
+        Unique employees assigned
+      </p> */}
             </CardContent>
           </Card>
         </div>
 
         {/* --------- main card --------- */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {labels.length > 0 && (
-            <Card className="bg-muted/30 border">
+          {departments.map((department) => (
+            <Card key={department._id} className="bg-muted/30 border">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl font-bold">
-                    {form.watch("name") || "Department Name"}
+                    {department.name}
                   </CardTitle>
 
                   <button
                     type="button"
                     className="p-2 rounded-md hover:bg-muted transition"
-                    onClick={() => setDialogOpen(true)}
+                    onClick={() => {
+                      setSelectedDepartment(department);
+                      form.setValue("name", department.name);
+                      setLabels(department.labels);
+                      setDialogOpen(true);
+                    }}
                   >
                     <Pen className="h-4 w-4 text-muted-foreground hover:text-foreground transition" />
                   </button>
@@ -359,13 +382,12 @@ const Department = () => {
               </CardHeader>
 
               <CardContent className="space-y-3">
-                {labels.map((label, labelIndex) => {
-                  const key = `${label.name}-${labelIndex}`;
+                {department.labels.map((label, labelIndex) => {
+                  const key = `${department._id}-${label.name}-${labelIndex}`;
                   const isOpen = openLabel === key;
 
                   return (
                     <div key={key} className="border rounded-md bg-background">
-                      {/* Label Header */}
                       <button
                         type="button"
                         onClick={() => setOpenLabel(isOpen ? null : key)}
@@ -375,7 +397,6 @@ const Department = () => {
                         <span className="text-xl">{isOpen ? "×" : "+"}</span>
                       </button>
 
-                      {/* Employees Dropdown */}
                       {isOpen && (
                         <div className="px-4 pb-4 border-t">
                           {label.types.length === 0 ? (
@@ -385,7 +406,7 @@ const Department = () => {
                           ) : (
                             <p className="text-sm text-muted-foreground leading-relaxed">
                               {label.types.map((emp, index) => (
-                                <span key={emp._id}>
+                                <span key={emp.userId}>
                                   <span className="font-medium text-foreground">
                                     {emp.name}
                                   </span>{" "}
@@ -402,14 +423,18 @@ const Department = () => {
                 })}
               </CardContent>
             </Card>
-          )}
+          ))}
         </div>
 
         {/* Add Project Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Add New Department</DialogTitle>
+              <DialogTitle>
+                {selectedDepartment
+                  ? "Update Department"
+                  : "Add New Department"}
+              </DialogTitle>
             </DialogHeader>
 
             <Form {...form}>
@@ -614,7 +639,11 @@ const Department = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Add Department</Button>
+                  <Button type="submit">
+                    {selectedDepartment
+                      ? "Update Department"
+                      : "Add Department"}
+                  </Button>
                 </div>
               </form>
             </Form>

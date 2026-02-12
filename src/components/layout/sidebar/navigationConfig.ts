@@ -184,7 +184,7 @@ export const moduleToNavItem: Record<string, any> = {
   "kanban": {
     to: "/kanban",
     icon: LayoutDashboard,
-    label: "Task Manager",
+    label: "Project Manager",
   },
   "department": {
     to: "/department",
