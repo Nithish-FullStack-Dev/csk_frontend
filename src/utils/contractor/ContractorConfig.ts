@@ -51,7 +51,7 @@ export const mapPriority = (priority: string): Task["priority"] => {
   }
 };
 
-export const statusOptions = ["pending review", "In progress", "completed"];
+export const statusOptions = ["pending_review", "In progress", "completed"];
 
 export interface Task {
   id: string;
@@ -117,7 +117,7 @@ export const priorityColors: Record<string, string> = {
 export const fetchTasks = async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/tasks`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   const mapped = response.data.map((task: any, index: number) => ({
     id: index.toString(), // Replace with real id if available
@@ -324,14 +324,14 @@ export const useTasksForPhotoEvidenceList = () => {
 
 export const fetchContractors = async () => {
   const res = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/contractors`
+    `${import.meta.env.VITE_URL}/api/user/contractors`,
   );
   return res.data.data;
 };
 
 export const fetchContractorsForDropDown = async (): Promise<User[]> => {
   const res = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getControctorsForDropDown`
+    `${import.meta.env.VITE_URL}/api/user/getControctorsForDropDown`,
   );
   return res.data;
 };
@@ -340,13 +340,13 @@ export const assignContractor = async ({ projectId, unit, contractorId }) => {
   return axios.post(
     `${import.meta.env.VITE_URL}/api/project/assign-contractor`,
     { projectId, unit, contractorId },
-    { withCredentials: true }
+    { withCredentials: true },
   );
 };
 
 export const fetchSiteInchargesForDropDown = async (): Promise<User[]> => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/site-incharges`
+    `${import.meta.env.VITE_URL}/api/user/site-incharges`,
   );
   return data;
 };
@@ -481,7 +481,7 @@ export const contractorSchema = z.object({
             message: "Invalid date format (YYYY-MM-DD)",
           })
           .optional(),
-      })
+      }),
     )
     .min(1, {
       message: "At least one complete payment record is required",

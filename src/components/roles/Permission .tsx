@@ -63,7 +63,7 @@ const moduleConfig: Record<string, string[]> = {
     "Contractors",
     "Materials",
     "Labor Management",
-    "Photo Evidence",
+    // "Photo Evidence",
   ],
   "Finance Modules": [
     "Invoices",
@@ -100,7 +100,7 @@ export default function Permission() {
       try {
         const { data } = await axios.get(
           `${import.meta.env.VITE_URL}/api/role/getRole/${selectedRole}`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         if (data && data.permissions) {
@@ -110,7 +110,7 @@ export default function Permission() {
               ([action, value]: [string, boolean]) => {
                 const key = `${selectedRole}-${p.module}-${p.submodule}-${action}`;
                 newMatrix[key] = value;
-              }
+              },
             );
           });
           setAccessMatrix(newMatrix);
@@ -137,7 +137,7 @@ export default function Permission() {
   const togglePermission = (
     module: string,
     submodule: string,
-    permission: string
+    permission: string,
   ) => {
     const key = `${selectedRole}-${module}-${submodule}-${permission}`;
     setAccessMatrix((prev) => {
@@ -189,7 +189,7 @@ export default function Permission() {
             actions[perm] = !!accessMatrix[key];
           });
           return { module, submodule: sub, actions };
-        })
+        }),
     );
 
     const payload = { name: selectedRole, permissions: permissionsPayload };
@@ -198,7 +198,7 @@ export default function Permission() {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/role/addRole`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("Role saved successfully", {
         description: `${selectedRole.replace(/_/g, " ")} permissions updated.`,
@@ -278,8 +278,10 @@ export default function Permission() {
                   checked={submodules.every((sub) =>
                     permissions.some(
                       (perm) =>
-                        accessMatrix[`${selectedRole}-${module}-${sub}-${perm}`]
-                    )
+                        accessMatrix[
+                          `${selectedRole}-${module}-${sub}-${perm}`
+                        ],
+                    ),
                   )}
                   onCheckedChange={(val) => toggleModule(module, val)}
                 />

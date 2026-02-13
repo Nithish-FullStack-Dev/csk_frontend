@@ -628,14 +628,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="/evidence"
                   element={
                     <ProtectedRoute roleSubmodule={"Photo Evidence"}>
                       <ContractorPhotoEvidence />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
 
                 {/* Site Incharge Routes */}
                 <Route
