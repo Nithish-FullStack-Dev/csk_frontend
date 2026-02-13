@@ -76,10 +76,10 @@ export interface ClientSelectionItemProps {
 
 export interface SiteVisitPayload {
   clientId: string;
-  vehicleId: string;
-  bookedBy: string;
+  vehicleId?: string;
   priority: string;
   date: string;
   time: string;
   notes?: string;
 }
+

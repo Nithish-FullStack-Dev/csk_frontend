@@ -62,7 +62,8 @@ const AgentDashboard = () => {
   });
 
   const { data: leads = [] } = useQuery<Lead[]>({
-    queryKey: ["leads"],
+   queryKey: ["dashboard-leads", user?._id, user?.role],
+
     queryFn: fetchLeads,
   });
 

@@ -158,8 +158,19 @@ const LeadManagement = () => {
     isError,
     error,
   } = useQuery<Lead[]>({
-    queryKey: [isSalesManager ? "allLeads" : "leads"],
-    queryFn: isSalesManager ? fetchAllLeads : fetchLeads,
+    queryKey: [
+      "lead-management",
+      user?._id,
+      user?.role,
+      isSalesManager ? "all" : "self",
+    ],
+    queryFn: () => {
+      if (user?.role === "admin" || user?.role === "sales_manager") {
+        return fetchAllLeads();
+      }
+      return fetchLeads(); // agent + team lead RBAC
+    },
+    enabled: !!user?._id,
     staleTime: 0,
   });
 
@@ -197,27 +208,27 @@ const LeadManagement = () => {
       setProperty(
         typeof leadToEdit.property === "object"
           ? leadToEdit.property._id
-          : leadToEdit.property
+          : leadToEdit.property,
       );
       setUnit(
         typeof leadToEdit.unit === "object"
           ? leadToEdit.unit._id
-          : leadToEdit.unit
+          : leadToEdit.unit,
       );
       setFloorUnit(
         typeof leadToEdit.floorUnit === "object"
           ? leadToEdit.floorUnit._id
-          : leadToEdit.floorUnit
+          : leadToEdit.floorUnit,
       );
       setOpenLand(
         typeof leadToEdit.openLand === "object"
           ? leadToEdit.openLand._id
-          : leadToEdit.openLand
+          : leadToEdit.openLand,
       );
       setOpenPlot(
         typeof leadToEdit.openPlot === "object"
           ? leadToEdit.openPlot._id
-          : leadToEdit.openPlot
+          : leadToEdit.openPlot,
       );
       setStatus(leadToEdit.status);
       setPropertyStatus(leadToEdit.propertyStatus);
@@ -283,13 +294,13 @@ const LeadManagement = () => {
   }
 
   const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.write
+    (per) => per.submodule === "Lead Management" && per.actions.write,
   );
   const userCanEditUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.edit
+    (per) => per.submodule === "Lead Management" && per.actions.edit,
   );
   const userCanDeleteUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Lead Management" && per.actions.delete
+    (per) => per.submodule === "Lead Management" && per.actions.delete,
   );
 
   const filteredLeads = (leadData || []).filter((lead: Lead) => {
@@ -340,7 +351,7 @@ const LeadManagement = () => {
       onSuccess: () => {
         toast.success("Lead saved successfully!");
         queryClient.invalidateQueries({
-          queryKey: isSalesManager ? ["allLeads"] : ["leads"],
+          queryKey: ["lead-management", user?._id],
           refetchType: "active",
         });
         setIsAddLeadDialogOpen(false);
@@ -401,7 +412,7 @@ const LeadManagement = () => {
       onSuccess: () => {
         toast.success("Lead updated successfully!");
         queryClient.invalidateQueries({
-          queryKey: isSalesManager ? ["allLeads"] : ["leads"],
+          queryKey: ["lead-management", user?._id],
           refetchType: "active",
         });
         setIsEditLeadDialogOpen(false);
@@ -425,7 +436,7 @@ const LeadManagement = () => {
       onSuccess: () => {
         toast.success("Lead deleted successfully!");
         queryClient.invalidateQueries({
-          queryKey: isSalesManager ? ["allLeads"] : ["leads"],
+          queryKey: ["lead-management", user?._id],
           refetchType: "active",
         });
         setDeleteDialogOpen(false);
@@ -589,8 +600,8 @@ const LeadManagement = () => {
                             floorUnitsLoading
                               ? "Loading Floor Units..."
                               : !floorUnits || floorUnits.length === 0
-                              ? "No floor units available"
-                              : "Select Floor Unit"
+                                ? "No floor units available"
+                                : "Select Floor Unit"
                           }
                         />
                       </SelectTrigger>
@@ -634,8 +645,8 @@ const LeadManagement = () => {
                             unitsByFloorLoading
                               ? "Loading Units..."
                               : !unitsByFloor || unitsByFloor.length === 0
-                              ? "No units available"
-                              : "Select Unit"
+                                ? "No units available"
+                                : "Select Unit"
                           }
                         />
                       </SelectTrigger>
@@ -674,8 +685,8 @@ const LeadManagement = () => {
                             openPlotsLoading
                               ? "Loading Open Plots..."
                               : !openPlots || openPlots.length === 0
-                              ? "No open plots available"
-                              : "Select Open Plot"
+                                ? "No open plots available"
+                                : "Select Open Plot"
                           }
                         />
                       </SelectTrigger>
@@ -719,8 +730,8 @@ const LeadManagement = () => {
                             openLandLoading
                               ? "Loading Open Lands..."
                               : !openLandData || openLandData.length === 0
-                              ? "No open lands available"
-                              : "Select Open Land"
+                                ? "No open lands available"
+                                : "Select Open Land"
                           }
                         />
                       </SelectTrigger>
@@ -887,7 +898,7 @@ const LeadManagement = () => {
                               <AvatarImage
                                 src={`https://ui-avatars.com/api/?name=${lead.name.replace(
                                   " ",
-                                  "+"
+                                  "+",
                                 )}&background=1A365D&color=fff`}
                               />
                               <AvatarFallback>{lead.name[0]}</AvatarFallback>
@@ -955,7 +966,7 @@ const LeadManagement = () => {
                                 </a>
                                 <a
                                   href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                    lead.email
+                                    lead.email,
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -1042,7 +1053,7 @@ const LeadManagement = () => {
                           <AvatarImage
                             src={`https://ui-avatars.com/api/?name=${lead.name.replace(
                               " ",
-                              "+"
+                              "+",
                             )}&background=1A365D&color=fff`}
                           />
                           <AvatarFallback>{lead.name[0]}</AvatarFallback>
@@ -1120,7 +1131,7 @@ const LeadManagement = () => {
                             </a>
                             <a
                               href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                lead.email
+                                lead.email,
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -1187,7 +1198,7 @@ const LeadManagement = () => {
                     <AvatarImage
                       src={`https://ui-avatars.com/api/?name=${selectedLead.name.replace(
                         " ",
-                        "+"
+                        "+",
                       )}&background=1A365D&color=fff&size=60`}
                     />
                     <AvatarFallback>{selectedLead.name[0]}</AvatarFallback>
@@ -1270,7 +1281,7 @@ const LeadManagement = () => {
                           day: "2-digit",
                           year: "numeric",
                           month: "short",
-                        }
+                        },
                       )}
                     </p>
                   </div>
@@ -1409,8 +1420,8 @@ const LeadManagement = () => {
                           floorUnitsLoading
                             ? "Loading Floor Units..."
                             : !floorUnits || floorUnits.length === 0
-                            ? "No floor units available"
-                            : "Select Floor Unit"
+                              ? "No floor units available"
+                              : "Select Floor Unit"
                         }
                       />
                     </SelectTrigger>
@@ -1451,8 +1462,8 @@ const LeadManagement = () => {
                           unitsByFloorLoading
                             ? "Loading Units..."
                             : !unitsByFloor || unitsByFloor.length === 0
-                            ? "No units available"
-                            : "Select Unit"
+                              ? "No units available"
+                              : "Select Unit"
                         }
                       />
                     </SelectTrigger>
@@ -1491,8 +1502,8 @@ const LeadManagement = () => {
                           openPlotsLoading
                             ? "Loading Open Plots..."
                             : !openPlots || openPlots.length === 0
-                            ? "No open plots available"
-                            : "Select Open Plot"
+                              ? "No open plots available"
+                              : "Select Open Plot"
                         }
                       />
                     </SelectTrigger>
@@ -1534,8 +1545,8 @@ const LeadManagement = () => {
                           openLandLoading
                             ? "Loading Open Lands..."
                             : !openLandData || openLandData.length === 0
-                            ? "No open lands available"
-                            : "Select Open Land"
+                              ? "No open lands available"
+                              : "Select Open Land"
                         }
                       />
                     </SelectTrigger>

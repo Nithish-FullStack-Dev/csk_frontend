@@ -69,8 +69,9 @@ const AdminLeadManagement = () => {
     isError,
     error,
   } = useQuery<Lead[]>({
-    queryKey: ["allLeads"],
+    queryKey: ["admin-leads", user?._id, user?.role],
     queryFn: fetchAllLeads,
+    enabled: !!user?._id,
     staleTime: 0,
   });
 
@@ -80,7 +81,7 @@ const AdminLeadManagement = () => {
     error: rolePermissionsError,
     isError: isRolePermissionsError,
   } = useQuery<Permission>({
-    queryKey: ["rolePermissions", user?.role],
+    queryKey: ["rolePermissions", user?._id, user?.role],
     queryFn: () => fetchRolePermissions(user?.role as string),
     enabled: !!user?.role,
   });
@@ -215,7 +216,7 @@ const AdminLeadManagement = () => {
                               <AvatarImage
                                 src={`https://ui-avatars.com/api/?name=${lead.name.replace(
                                   " ",
-                                  "+"
+                                  "+",
                                 )}&background=1A365D&color=fff`}
                               />
                               <AvatarFallback>{lead.name[0]}</AvatarFallback>
@@ -286,7 +287,7 @@ const AdminLeadManagement = () => {
                                 </a>
                                 <a
                                   href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                    lead.email
+                                    lead.email,
                                   )}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -351,7 +352,7 @@ const AdminLeadManagement = () => {
                           <AvatarImage
                             src={`https://ui-avatars.com/api/?name=${lead.name.replace(
                               " ",
-                              "+"
+                              "+",
                             )}&background=1A365D&color=fff`}
                           />
                           <AvatarFallback>{lead.name[0]}</AvatarFallback>
@@ -429,7 +430,7 @@ const AdminLeadManagement = () => {
                             </a>
                             <a
                               href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                lead.email
+                                lead.email,
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -474,7 +475,7 @@ const AdminLeadManagement = () => {
                     <AvatarImage
                       src={`https://ui-avatars.com/api/?name=${selectedLead.name.replace(
                         " ",
-                        "+"
+                        "+",
                       )}&background=1A365D&color=fff&size=60`}
                     />
                     <AvatarFallback>{selectedLead.name[0]}</AvatarFallback>
@@ -533,7 +534,7 @@ const AdminLeadManagement = () => {
                           day: "2-digit",
                           year: "numeric",
                           month: "short",
-                        }
+                        },
                       )}
                     </p>
                   </div>

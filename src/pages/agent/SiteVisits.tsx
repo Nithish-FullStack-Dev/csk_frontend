@@ -67,13 +67,13 @@ const SiteVisits = () => {
   const isAgent = user && user.role === "agent";
 
   const [selectedVisit, setSelectedVisit] = useState<SiteVisitData | null>(
-    null
+    null,
   ); // State for viewing visit details
 
   const fetchSiteVisitsOfAgent = async () => {
     const { data } = await axios.get(
       `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitById/${user?._id}`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   };
@@ -95,9 +95,14 @@ const SiteVisits = () => {
     isError: clientHasError,
     error: clientError,
   } = useQuery<Lead[]>({
-    queryKey: ["leads"],
-    queryFn: user.role === "agent" ? fetchLeads : fetchAllLeads,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    queryKey: ["sitevisit-leads", user?._id, user?.role],
+    queryFn: () => {
+      if (user?.role === "agent") return fetchLeads();
+      if (user?.role === "team_lead") return fetchLeads();
+      return fetchAllLeads();
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
   });
 
   const {
@@ -164,7 +169,7 @@ const SiteVisits = () => {
 
   const upcomingVisits =
     visitsToUse?.filter(
-      (visit) => visit.status === "pending" || visit.status === "confirmed"
+      (visit) => visit.status === "pending" || visit.status === "confirmed",
     ) || [];
   const completedVisits =
     visitsToUse?.filter((visit) => visit.status === "completed") || [];
@@ -196,7 +201,6 @@ const SiteVisits = () => {
   const handleBookingComplete = async () => {
     if (
       !selectedClient ||
-      !selectedVehicle ||
       !visitDate ||
       !visitTime ||
       !visitPeriod ||
@@ -208,12 +212,11 @@ const SiteVisits = () => {
 
     const bookingPayload: SiteVisitPayload = {
       clientId: selectedClient._id,
-      vehicleId: selectedVehicle._id,
-      bookedBy: user?._id || "", // Ensure user ID is available
       priority,
       date: visitDate,
       time: visitPeriod,
       notes: additionalNotes,
+      ...(selectedVehicle && { vehicleId: selectedVehicle._id }),
     };
 
     try {
@@ -329,8 +332,8 @@ const SiteVisits = () => {
                       selectedVehicle.status === "available"
                         ? "bg-green-100 text-green-800"
                         : selectedVehicle.status === "booked"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
                     }
                   >
                     {selectedVehicle.status}
@@ -363,7 +366,7 @@ const SiteVisits = () => {
                           day: "2-digit",
                           year: "2-digit",
                           month: "short",
-                        }
+                        },
                       )}
                     </p>
                   </div>
@@ -516,21 +519,27 @@ const SiteVisits = () => {
               </div>
             )}
 
-            {bookingStep === 2 && selectedVehicle && (
+            {bookingStep === 2 && (
               <div className="space-y-4">
-                <div className="bg-muted/50 p-3 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-5 w-5 text-estate-navy" />
-                    <p className="font-medium">{selectedVehicle.model}</p>
-                    <Badge className="bg-green-100 text-green-800">
-                      {selectedVehicle?.status}
-                    </Badge>
+                {selectedVehicle ? (
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-5 w-5 text-estate-navy" />
+                      <p className="font-medium">{selectedVehicle.model}</p>
+                      <Badge className="bg-green-100 text-green-800">
+                        {selectedVehicle.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {selectedVehicle.type} • {selectedVehicle.capacity} •{" "}
+                      {selectedVehicle.licensePlate}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {selectedVehicle.type} • {selectedVehicle.capacity} •{" "}
-                    {selectedVehicle.licensePlate}
-                  </p>
-                </div>
+                ) : (
+                  <div className="bg-muted/50 p-3 rounded-md text-sm text-muted-foreground">
+                    No vehicle selected for this visit
+                  </div>
+                )}
 
                 <div className="mb-4">
                   <Label
@@ -600,12 +609,23 @@ const SiteVisits = () => {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    onClick={() => handleVehicleSelect(selectedVehicle!)} // Use handleVehicleSelect to transition to step 2
-                    disabled={!selectedClient || !selectedVehicle}
-                  >
-                    Next: Schedule Visit
-                  </Button>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setBookingStep(2)}
+                      disabled={!selectedClient}
+                    >
+                      Skip vehicle
+                    </Button>
+
+                    <Button
+                      onClick={() => setBookingStep(2)}
+                      disabled={!selectedClient}
+                    >
+                      Next: Schedule Visit
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex justify-between w-full">
@@ -617,7 +637,8 @@ const SiteVisits = () => {
                     disabled={
                       bookSiteVisitMutation.isPending ||
                       !visitDate ||
-                      !visitTime
+                      !visitTime ||
+                      !priority
                     }
                   >
                     {bookSiteVisitMutation.isPending
@@ -695,7 +716,7 @@ const SiteVisits = () => {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
-                          }
+                          },
                         )}
                       </p>
                     </div>
@@ -731,40 +752,47 @@ const SiteVisits = () => {
                     <Car className="h-5 w-5 text-muted-foreground" /> Assigned
                     Vehicle
                   </h3>
-                  <div className="space-y-1">
-                    <p className="font-medium">
-                      {selectedVisit.vehicleId.model}
-                    </p>
+
+                  {selectedVisit.vehicleId ? (
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {selectedVisit.vehicleId.model}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Type: {selectedVisit.vehicleId.type} • Capacity:{" "}
+                        {selectedVisit.vehicleId.capacity}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        License Plate: {selectedVisit.vehicleId.licensePlate}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Fuel Level: {selectedVisit.vehicleId.fuelLevel} • Last
+                        Service:{" "}
+                        {new Date(
+                          selectedVisit.vehicleId.lastService,
+                        ).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          year: "2-digit",
+                          month: "short",
+                        })}
+                      </p>
+                      <Badge
+                        className={
+                          selectedVisit.vehicleId.status === "available"
+                            ? "bg-green-100 text-green-800"
+                            : selectedVisit.vehicleId.status === "booked"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                        }
+                      >
+                        {selectedVisit.vehicleId.status}
+                      </Badge>
+                    </div>
+                  ) : (
                     <p className="text-sm text-muted-foreground">
-                      Type: {selectedVisit.vehicleId.type} • Capacity:{" "}
-                      {selectedVisit.vehicleId.capacity}
+                      No vehicle assigned for this visit
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      License Plate: {selectedVisit.vehicleId.licensePlate}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Fuel Level: {selectedVisit.vehicleId.fuelLevel} • Last
-                      Service:{" "}
-                      {new Date(
-                        selectedVisit.vehicleId.lastService
-                      ).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        year: "2-digit",
-                        month: "short",
-                      })}
-                    </p>
-                    <Badge
-                      className={
-                        selectedVisit.vehicleId.status === "available"
-                          ? "bg-green-100 text-green-800"
-                          : selectedVisit.vehicleId.status === "booked"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }
-                    >
-                      {selectedVisit.vehicleId.status}
-                    </Badge>
-                  </div>
+                  )}
                 </div>
 
                 {/* Additional Notes */}
@@ -855,7 +883,9 @@ const VisitCard = ({
           </div>
           <div className="flex items-center gap-2">
             <Car className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{visit.vehicleId.model}</span>
+            <span className="text-sm">
+              {visit.vehicleId ? visit.vehicleId.model : "No vehicle"}
+            </span>
           </div>
         </div>
 
