@@ -169,6 +169,7 @@ import {
   Gauge,
   ListTodo,
   LayoutDashboard,
+  Building2,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -183,7 +184,12 @@ export const moduleToNavItem: Record<string, any> = {
   "kanban": {
     to: "/kanban",
     icon: LayoutDashboard,
-    label: "Task Manager",
+    label: "Project Manager",
+  },
+  "department": {
+    to: "/department",
+    icon: Building2,
+    label: "Department",
   },
 
   Communications: {
@@ -312,6 +318,7 @@ export const buildNavigationForRole = (
   const bottomDefaults = [
     moduleToNavItem["System Settings"],
     moduleToNavItem["kanban"],
+    moduleToNavItem["department"],
     moduleToNavItem["Profile"],
   ];
   let middle: any[] = [];
