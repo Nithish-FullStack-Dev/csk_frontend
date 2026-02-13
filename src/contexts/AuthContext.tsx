@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
@@ -56,7 +57,7 @@ export const getCsrfToken = async () => {
     `${import.meta.env.VITE_URL}/api/csrf-token`,
     {
       withCredentials: true,
-    }
+    },
   );
   return response.data.csrfToken;
 };
@@ -80,13 +81,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const queryClient = useQueryClient();
 
   // gets the logged in user
   const fetchLoggedInUser = async () => {
     try {
       const { data } = await axios.get(
         `${import.meta.env.VITE_URL}/api/user/getLoggedInUser`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setUser(data);
     } catch (error) {
@@ -114,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/login`,
         { email, password },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}`);
@@ -130,14 +132,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async () => {
-    // Make async
     try {
       await axios.post(
         `${import.meta.env.VITE_URL}/api/user/logout`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
+
+      queryClient.clear(); // 🔥 clears all React Query cached data
       setUser(null);
+
       toast.info("You have been logged out");
     } catch (error) {
       console.error("Logout error:", error);

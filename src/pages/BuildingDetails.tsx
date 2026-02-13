@@ -38,6 +38,8 @@ import {
   getFloorsByBuildingId,
   updateFloor,
 } from "@/utils/public/Config";
+import BulkFloorGenerator from "./Properties/BulkFloorGenerator";
+import BulkCsvUploader from "./Properties/BulkCsvUploader";
 
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
@@ -45,7 +47,8 @@ const BuildingDetails = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   // Fetch floors
   const {
     data: floors,
@@ -60,7 +63,7 @@ const BuildingDetails = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) return toast.error("No brochure available to download.");
@@ -68,7 +71,7 @@ const BuildingDetails = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
 
       window.open(proxyUrl, "_blank");
@@ -148,7 +151,7 @@ const BuildingDetails = () => {
         `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
         {
           withCredentials: true,
-        }
+        },
       ),
     onSuccess: async () => {
       toast.success("Building deleted successfully");
@@ -247,7 +250,7 @@ const BuildingDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
-  return (
+  return (  
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -364,7 +367,7 @@ const BuildingDetails = () => {
                       handleDownload(
                         e,
                         building.brochureUrl,
-                        building.projectName
+                        building.projectName,
                       )
                     }
                     // target="_blank"
@@ -410,9 +413,16 @@ const BuildingDetails = () => {
                 <Layers className="mr-2 h-5 w-5" /> Floors & Units
               </CardTitle>
               {canEdit && (
-                <Button onClick={handleAddFloor}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddFloor}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
+                  </Button>
+
+                  <Button onClick={() => setBulkDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Bulk Generator
+                  </Button>
+                  <Button onClick={() => setCsvOpen(true)}>Upload CSV</Button>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -477,7 +487,7 @@ const BuildingDetails = () => {
                       <Button
                         onClick={() =>
                           navigate(
-                            `/properties/building/${buildingId}/floor/${floor._id}`
+                            `/properties/building/${buildingId}/floor/${floor._id}`,
                           )
                         }
                       >
@@ -607,6 +617,11 @@ const BuildingDetails = () => {
         mode="edit"
         onSuccessfulSave={handleSuccessfulSave}
       />
+      <BulkFloorGenerator
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        buildingId={buildingId!}
+      />
 
       <FloorDialog
         open={floorDialogOpen}
@@ -618,6 +633,11 @@ const BuildingDetails = () => {
         isSaving={
           createFloorMutation.isPending || updateFloorMutation.isPending
         }
+      />
+      <BulkCsvUploader
+        open={csvOpen}
+        onOpenChange={setCsvOpen}
+        buildingId={buildingId!}
       />
 
       <DeleteConfirmDialog

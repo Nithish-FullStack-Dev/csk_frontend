@@ -74,6 +74,7 @@
     "leaflet": "1.9",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "papaparse": "^5.5.3",
     "pdf-lib": "^1.17.1",
     "pdfmake": "^0.2.20",
     "react": "^18.3.1",
