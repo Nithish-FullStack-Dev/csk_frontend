@@ -14,9 +14,6 @@ const ContractorTasks = () => {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Task Management</CardTitle>
-          </CardHeader>
           <CardContent>
             <ContractorTaskList />
           </CardContent>

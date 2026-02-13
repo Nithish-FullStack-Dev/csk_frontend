@@ -101,7 +101,7 @@ export interface VerificationTask {
 }
 
 export const statusColors: Record<string, string> = {
-  pending: "bg-gray-100 text-gray-800",
+  pending_review: "bg-gray-100 text-gray-800",
   in_progress: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-800",
   approved: "bg-emerald-100 text-emerald-800",
