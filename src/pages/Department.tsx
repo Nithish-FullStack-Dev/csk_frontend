@@ -1,6 +1,6 @@
 "use client";
 import MainLayout from "@/components/layout/MainLayout";
-import { BadgeIndianRupee, Pen, Plus, Users } from "lucide-react";
+import { BadgeIndianRupee, Pen, Plus, Trash2, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -222,6 +222,31 @@ const Department = () => {
   //   }
   // };
 
+  const handleDeleteDepartment = async (departmentId: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this department?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_URL}/api/departments`, {
+        data: { id: departmentId }, // 🔥 important for DELETE body
+        withCredentials: true,
+      });
+
+      toast.success("Department deleted successfully");
+
+      // Remove from state instantly
+      setDepartments((prev) =>
+        prev.filter((dept) => dept._id !== departmentId),
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete department");
+    }
+  };
+
   const onSubmit = async (data: ProjectFormValues) => {
     try {
       const payload = {
@@ -366,18 +391,29 @@ const Department = () => {
                     {department.name}
                   </CardTitle>
 
-                  <button
-                    type="button"
-                    className="p-2 rounded-md hover:bg-muted transition"
-                    onClick={() => {
-                      setSelectedDepartment(department);
-                      form.setValue("name", department.name);
-                      setLabels(department.labels);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <Pen className="h-4 w-4 text-muted-foreground hover:text-foreground transition" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="p-2 rounded-md hover:bg-muted transition"
+                      onClick={() => {
+                        setSelectedDepartment(department);
+                        form.setValue("name", department.name);
+                        setLabels(department.labels);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pen className="h-4 w-4 text-muted-foreground hover:text-foreground transition" />
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      className="p-2 rounded-md hover:bg-muted transition"
+                      onClick={() => handleDeleteDepartment(department._id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition" />
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
 
