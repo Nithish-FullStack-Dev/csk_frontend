@@ -45,9 +45,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useSpeechRecognition } from "@/components/speech/useSpeechRecognition";
+import { SpeechButton } from "@/components/speech/SpeechButton";
 
 interface Comment {
   _id: string;
@@ -107,7 +106,7 @@ export const NewTaskModal: React.FC<{
   mode: "create" | "edit";
   newTask: NewTaskShape;
   assignee: string;
-  setNewTask: (t: NewTaskShape) => void;
+  setNewTask: React.Dispatch<React.SetStateAction<NewTaskShape>>;
   handleSubmit: () => void;
   handleAddTag: (tag: string) => void;
   handleRemoveTag: (tag: string) => void;
@@ -115,9 +114,10 @@ export const NewTaskModal: React.FC<{
   projects: { id: string; name: string }[];
   selectedUsers: { _id: string; name: string; role: string }[];
   handleRemoveUserFromGroup: (user: any) => void;
+
   setSelectedUsers: React.Dispatch<
     React.SetStateAction<{ _id: string; name: string; role: string }[]>
-    
+
   >;
   allEmployees: any[];
 }> = ({
@@ -138,50 +138,296 @@ export const NewTaskModal: React.FC<{
   allEmployees,
   handleRemoveUserFromGroup,
 }) => {
-  if (!isOpen) return null;
+    // const {
+    //   start: startSpeech,
+    //   stop: stopSpeech,
+    //   isListening,
+    // } = useSpeechRecognition();
 
-  const removeAttachment = (index: number) => {
-    setNewTask((prev) => {
-      if (!prev.attachments) return prev;
+    if (!isOpen) return null;
 
-      const updated = prev.attachments.filter((_, i) => i !== index);
+    const removeAttachment = (index: number) => {
+      setNewTask((prev) => {
+        if (!prev.attachments) return prev;
 
-      return {
-        ...prev,
-        attachments: updated.length ? updated : null,
-      };
-    });
-  };
+        const updated = prev.attachments.filter((_, i) => i !== index);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      {/* <Toaster position="top-right" /> */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+        return {
+          ...prev,
+          attachments: updated.length ? updated : null,
+        };
+      });
+    };
+    const [isListening, setIsListening] = useState(false);
+    const [activeField, setActiveField] = useState<"title" | "description" | null>(null);
+    const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+    const chunksRef = React.useRef<Blob[]>([]);
+    const activeFieldRef = React.useRef<"title" | "description">("title");
+    const audioContextRef = React.useRef<AudioContext | null>(null);
 
-      <div className="relative w-full max-w-2xl h-[90vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-[#0a0a0a] flex flex-col pr-2 py-2">
-        <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
-          <div className="flex items-center justify-between ">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {mode === "edit" ? "Edit Task" : "Create New Task"}
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
-            >
-              <X className="w-5 h-5" />
-            </button>
+    const startRecording = async (field: "title" | "description") => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        chunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunksRef.current.push(e.data);
+          }
+        };
+
+        // mediaRecorder.onstop = async () => {
+        //   const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+
+        //   const formData = new FormData();
+        //   formData.append("audio", blob);
+
+        //   const res = await fetch(`${import.meta.env.VITE_URL}/api/speech/stt`, {
+        //     method: "POST",
+        //     body: formData,
+        //     credentials: "include",
+        //   });
+
+        //   const data = await res.json();
+
+        //   if (data.text) {
+        //     setNewTask((prev) => ({
+        //       ...prev,
+        //       [field]: prev[field] + " " + data.text,
+        //     }));
+        //   }
+
+        //   setIsListening(false);
+
+        //   stream.getTracks().forEach((track) => track.stop());
+        // };
+
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+
+          const formData = new FormData();
+          formData.append("audio", blob);
+
+          const res = await fetch(`${import.meta.env.VITE_URL}/api/speech/stt`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+
+          const data = await res.json();
+          console.log("Field:", field);
+          console.log("Text:", data.text);
+
+          if (data.text) {
+
+            if (field === "description") {
+              setNewTask(prev => ({
+                ...prev,
+                description: prev.description
+                  ? prev.description + "<p>" + data.text + "</p>"
+                  : "<p>" + data.text + "</p>"
+              }));
+            } else {
+              setNewTask(prev => ({
+                ...prev,
+                title: prev.title + " " + data.text
+              }));
+            }
+
+          }
+
+          setIsListening(false);
+          setActiveField(null);
+
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        mediaRecorder.start(3000);
+        setActiveField(field);
+
+
+      } catch (err) {
+        console.error("Recording error:", err);
+      }
+    };
+
+    // const startRecording = async (field: "title" | "description") => {
+    //   try {
+    //     activeFieldRef.current = field;
+
+    //     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    //     const mediaRecorder = new MediaRecorder(stream);
+    //     mediaRecorderRef.current = mediaRecorder;
+    //     chunksRef.current = [];
+
+    //     // 🎙 Create audio analyzer for silence detection
+    //     const audioContext = new AudioContext();
+    //     audioContextRef.current = audioContext;
+
+    //     const source = audioContext.createMediaStreamSource(stream);
+    //     const analyser = audioContext.createAnalyser();
+
+    //     source.connect(analyser);
+    //     analyser.fftSize = 2048;
+
+    //     const dataArray = new Uint8Array(analyser.fftSize);
+
+    //     let silenceStart: number | null = null;
+    //     const silenceThreshold = 5;
+    //     const silenceDuration = 3000;
+
+    //     const detectSilence = () => {
+    //       analyser.getByteTimeDomainData(dataArray);
+
+    //       let sum = 0;
+    //       for (let i = 0; i < dataArray.length; i++) {
+    //         const value = (dataArray[i] - 128) / 128;
+    //         sum += value * value;
+    //       }
+
+    //       const volume = Math.sqrt(sum / dataArray.length) * 100;
+
+    //       if (volume < silenceThreshold) {
+    //         if (!silenceStart) {
+    //           silenceStart = Date.now();
+    //         } else if (Date.now() - silenceStart > silenceDuration) {
+    //           if (mediaRecorder.state === "recording") {
+    //             mediaRecorder.stop();
+    //           }
+    //           return;
+    //         }
+    //       } else {
+    //         silenceStart = null;
+    //       }
+
+    //       requestAnimationFrame(detectSilence);
+    //     };
+
+    //     mediaRecorder.ondataavailable = (e) => {
+    //       if (e.data.size > 0) {
+    //         chunksRef.current.push(e.data);
+    //       }
+    //     };
+
+    //     // mediaRecorder.onstop = async () => {
+    //     //   const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+
+    //     //   const formData = new FormData();
+    //     //   formData.append("audio", blob);
+
+    //     //   const res = await fetch(`${import.meta.env.VITE_URL}/api/speech/stt`, {
+    //     //     method: "POST",
+    //     //     body: formData,
+    //     //     credentials: "include",
+    //     //   });
+
+    //     //   const data = await res.json();
+
+    //     //   if (data.text) {
+    //     //     setNewTask((prev) => ({
+    //     //       ...prev,
+    //     //       [activeFieldRef.current]:
+    //     //         prev[activeFieldRef.current] + " " + data.text,
+    //     //     }));
+    //     //   }
+
+    //     //   // 🔥 Restart automatically
+    //     //   // startRecording(activeFieldRef.current);
+    //     // };
+
+
+    //     mediaRecorder.onstop = async () => {
+    //   const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+
+    //   const formData = new FormData();
+    //   formData.append("audio", blob);
+
+    //   const res = await fetch(`${import.meta.env.VITE_URL}/api/speech/stt`, {
+    //     method: "POST",
+    //     body: formData,
+    //     credentials: "include",
+    //   });
+
+    //   const data = await res.json();
+
+    //   if (data.text) {
+    //     setNewTask((prev) => ({
+    //       ...prev,
+    //       [activeFieldRef.current]:
+    //         prev[activeFieldRef.current] + " " + data.text,
+    //     }));
+    //   }
+
+    //   setIsListening(false);
+    //   setActiveField(null);
+    // };
+
+
+    //     mediaRecorder.start();
+    //     setIsListening(true);
+
+    //     detectSilence();
+
+    //   } catch (err) {
+    //     console.error("Recording error:", err);
+    //   }
+    // };
+
+    const stopRecording = () => {
+      mediaRecorderRef.current?.stop();
+      setActiveField(null);
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        {/* <Toaster position="top-right" /> */}
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        <div className="relative w-full max-w-2xl h-[90vh] rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-[#0a0a0a] flex flex-col pr-2 py-2">
+          <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
+            <div className="flex items-center justify-between ">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {mode === "edit" ? "Edit Task" : "Create New Task"}
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-              Task Title *
-            </label>
-            <input
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                Task Title *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTask.title}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, title: e.target.value })
+                  }
+                  placeholder="Enter task title..."
+                  className="flex-1 px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                <SpeechButton
+                  isListening={activeField === "title"}
+                  onStart={() => startRecording("title")}
+                  onStop={stopRecording}
+                />
+              </div>
+              {/* <input
               type="text"
               value={newTask.title}
               onChange={(e) =>
@@ -189,99 +435,115 @@ export const NewTaskModal: React.FC<{
               }
               placeholder="Enter task title..."
               className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-              Describe Your Task
-            </label>
-
-            <RichTextEditor
-              content={newTask.description}
-              onChange={(e) => setNewTask({ ...newTask, description: e })}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                Assignee
-              </label>
-              <div className="flex items-center gap-2 pl-1">
-                <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <p className="text-gray-900 dark:text-white font-medium">
-                  {assignee || "Loading..."}
-                </p>
-              </div>
+            /> */}
             </div>
 
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                Due Date
+                Describe Your Task
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="date"
-                  value={newTask.dueDate}
-                  min={new Date().toISOString().split("T")[0]}
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-end">
+                  <SpeechButton
+                    isListening={activeField === "description"}
+                    onStart={() => startRecording("description")}
+                    onStop={stopRecording}
+                  />
+                </div>
+
+                <RichTextEditor
+                  content={newTask.description}
                   onChange={(e) =>
-                    setNewTask({ ...newTask, dueDate: e.target.value })
+                    setNewTask({ ...newTask, description: e })
                   }
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              {/* <RichTextEditor
+              content={newTask.description}
+              onChange={(e) => setNewTask({ ...newTask, description: e })}
+            /> */}
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700 ">
-                Priority
-              </label>
-              <div className="flex gap-2">
-                {(["low", "medium", "high"] as const).map((priority) => (
-                  <button
-                    type="button"
-                    key={priority}
-                    onClick={() => setNewTask({ ...newTask, priority })}
-                    className={`flex-1 px-4 py-3 rounded-lg border font-medium capitalize transition-all ${
-                      newTask.priority === priority
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                  Assignee
+                </label>
+                <div className="flex items-center gap-2 pl-1">
+                  <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    {assignee || "Loading..."}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                  Due Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="date"
+                    value={newTask.dueDate}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, dueDate: e.target.value })
+                    }
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700 ">
+                  Priority
+                </label>
+                <div className="flex gap-2">
+                  {(["low", "medium", "high"] as const).map((priority) => (
+                    <button
+                      type="button"
+                      key={priority}
+                      onClick={() => setNewTask({ ...newTask, priority })}
+                      className={`flex-1 px-4 py-3 rounded-lg border font-medium capitalize transition-all ${newTask.priority === priority
                         ? priority === "low"
                           ? "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/50"
                           : priority === "medium"
                             ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-500/20 dark:text-yellow-300 dark:border-yellow-500/50"
                             : "bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/50"
                         : "bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-700"
-                    }`}
-                  >
-                    {priority}
-                  </button>
-                ))}
+                        }`}
+                    >
+                      {priority}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                  Status
+                </label>
+                <select
+                  value={newTask.status}
+                  onChange={(e) =>
+                    setNewTask({
+                      ...newTask,
+                      status: e.target.value as Task["status"],
+                    })
+                  }
+                  className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="assigned">Assigned</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="on-hold">On Hold</option>
+                </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                Status
-              </label>
-              <select
-                value={newTask.status}
-                onChange={(e) =>
-                  setNewTask({
-                    ...newTask,
-                    status: e.target.value as Task["status"],
-                  })
-                }
-                className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="assigned">Assigned</option>
-                <option value="in-progress">In Progress</option>
-                <option value="on-hold">On Hold</option>
-              </select>
-            </div>
-          </div>
-
-          {/* <div>
+            {/* <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
               Project *
             </label>
@@ -309,23 +571,23 @@ export const NewTaskModal: React.FC<{
             </select>
           </div> */}
 
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              Assign To *
-            </label>
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Assign To *
+              </label>
 
-            <Select
-              value=""
-              onValueChange={(value) => {
-                const selectedEmp = allEmployees.find(
-                  (e) => e.userId === value,
-                );
-                if (!selectedEmp) return;
+              <Select
+                value=""
+                onValueChange={(value) => {
+                  const selectedEmp = allEmployees.find(
+                    (e) => e.userId === value,
+                  );
+                  if (!selectedEmp) return;
 
-                setSelectedUsers((prev) =>
-                  prev.some((u) => u._id === value)
-                    ? prev
-                    : [
+                  setSelectedUsers((prev) =>
+                    prev.some((u) => u._id === value)
+                      ? prev
+                      : [
                         ...prev,
                         {
                           _id: selectedEmp.userId,
@@ -335,147 +597,118 @@ export const NewTaskModal: React.FC<{
                           label: selectedEmp.label,
                         },
                       ],
-                );
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
+                  );
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
 
-              <SelectContent>
-                {allEmployees.map((emp) => (
-                  <SelectItem
-                    key={emp.userId}
-                    value={emp.userId}
-                    className="py-2"
+                <SelectContent>
+                  {allEmployees.map((emp) => (
+                    <SelectItem
+                      key={emp.userId}
+                      value={emp.userId}
+                      className="py-2"
+                    >
+                      <div className="flex flex-col leading-tight">
+                        <span className="font-medium text-sm">
+                          {emp.name} — {emp.role}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {emp.department} / {emp.label}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Selected Users */}
+              <div className="flex flex-wrap gap-3 mt-3">
+                {selectedUsers.map((emp) => (
+                  <div
+                    key={emp._id}
+                    className="px-3 py-2 rounded-lg bg-secondary border text-xs flex flex-col leading-tight relative"
                   >
-                    <div className="flex flex-col leading-tight">
-                      <span className="font-medium text-sm">
-                        {emp.name} — {emp.role}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {emp.department} / {emp.label}
-                      </span>
-                    </div>
-                  </SelectItem>
+                    {/* Name + Role */}
+                    <span className="font-medium text-sm">
+                      {emp.name} — {emp.role}
+                    </span>
+
+                    {/* Department / Label */}
+                    <span className="text-xs text-muted-foreground">
+                      {emp.department} / {emp.label}
+                    </span>
+
+                    {/* Remove Button */}
+                    <button
+                      type="button"
+                      className="absolute top-1 right-2 text-muted-foreground hover:text-destructive text-xs"
+                      // onClick={() =>
+                      //   setSelectedUsers((prev) =>
+                      //     prev.filter((u) => u._id !== emp._id),
+                      //   )
+                      // }
+                      onClick={() => {
+                        if (mode === "edit" && emp.taskId) {
+                          handleRemoveUserFromGroup(emp);
+                        } else {
+                          setSelectedUsers((prev) =>
+                            prev.filter((u) => u._id !== emp._id),
+                          );
+                        }
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-
-            {/* Selected Users */}
-            <div className="flex flex-wrap gap-3 mt-3">
-              {selectedUsers.map((emp) => (
-                <div
-                  key={emp._id}
-                  className="px-3 py-2 rounded-lg bg-secondary border text-xs flex flex-col leading-tight relative"
-                >
-                  {/* Name + Role */}
-                  <span className="font-medium text-sm">
-                    {emp.name} — {emp.role}
-                  </span>
-
-                  {/* Department / Label */}
-                  <span className="text-xs text-muted-foreground">
-                    {emp.department} / {emp.label}
-                  </span>
-
-                  {/* Remove Button */}
-                  <button
-                    type="button"
-                    className="absolute top-1 right-2 text-muted-foreground hover:text-destructive text-xs"
-                    // onClick={() =>
-                    //   setSelectedUsers((prev) =>
-                    //     prev.filter((u) => u._id !== emp._id),
-                    //   )
-                    // }
-                    onClick={() => {
-                      if (mode === "edit" && emp.taskId) {
-                        handleRemoveUserFromGroup(emp);
-                      } else {
-                        setSelectedUsers((prev) =>
-                          prev.filter((u) => u._id !== emp._id),
-                        );
-                      }
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {newTask.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2 bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:opacity-70"
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                Tags
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {newTask.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2 bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
                   >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+                    {tag}
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:opacity-70"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                placeholder="Add tags (press Enter)..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddTag(e.currentTarget.value);
+                    e.currentTarget.value = "";
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Add tags (press Enter)..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddTag(e.currentTarget.value);
-                  e.currentTarget.value = "";
-                }
-              }}
-              className="w-full px-4 py-3 rounded-lg border bg-white dark:bg-[#111] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
 
-          <div
-            className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
+            <div
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
              border-gray-300 bg-gray-50
              dark:border-gray-800 dark:bg-[#111]"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const files = Array.from(e.dataTransfer.files || []);
-              if (!files.length) return;
-
-              setNewTask((prev) => {
-                const existing = prev.attachments ?? [];
-
-                return {
-                  ...prev,
-                  attachments: [...existing, ...files],
-                };
-              });
-            }}
-            onClick={() => document.getElementById("task-file-input")?.click()}
-          >
-            <Paperclip className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
-
-            <p className="text-sm mb-1 text-gray-600 dark:text-gray-400">
-              Click to upload or drag and drop
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-600">
-              PDF, DOC, Images up to 10MB each
-            </p>
-
-            <input
-              id="task-file-input"
-              type="file"
-              multiple
-              className="hidden"
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files || []);
                 if (!files.length) return;
 
                 setNewTask((prev) => {
@@ -486,61 +719,90 @@ export const NewTaskModal: React.FC<{
                     attachments: [...existing, ...files],
                   };
                 });
-
-                e.target.value = "";
               }}
-            />
-          </div>
+              onClick={() => document.getElementById("task-file-input")?.click()}
+            >
+              <Paperclip className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
 
-          {newTask.attachments?.length > 0 && (
-            <div className="mt-3 space-y-2">
-              {newTask.attachments.map((file, index) => (
-                <div
-                  key={`${file.name}-${index}`}
-                  className="flex items-center justify-between text-sm px-4 pr-3 py-3.5 rounded-lg bg-white dark:bg-[#111] border border-gray-300 dark:border-gray-800 dark:text-white text-gray-900"
-                >
-                  <span className="truncate max-w-[80%]">{file.name}</span>
+              <p className="text-sm mb-1 text-gray-600 dark:text-gray-400">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-600">
+                PDF, DOC, Images up to 10MB each
+              </p>
 
-                  <button type="button" onClick={() => removeAttachment(index)}>
-                    <LucideXCircle size={18} className="text-red-400" />
-                  </button>
-                </div>
-              ))}
+              <input
+                id="task-file-input"
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (!files.length) return;
+
+                  setNewTask((prev) => {
+                    const existing = prev.attachments ?? [];
+
+                    return {
+                      ...prev,
+                      attachments: [...existing, ...files],
+                    };
+                  });
+
+                  e.target.value = "";
+                }}
+              />
             </div>
-          )}
 
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 rounded-lg font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
+            {newTask.attachments?.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {newTask.attachments.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between text-sm px-4 pr-3 py-3.5 rounded-lg bg-white dark:bg-[#111] border border-gray-300 dark:border-gray-800 dark:text-white text-gray-900"
+                  >
+                    <span className="truncate max-w-[80%]">{file.name}</span>
 
-            <button
-              onClick={isLoading ? () => {} : handleSubmit}
-              disabled={
-                isLoading ||
-                !newTask.title.trim() ||
-                !newTask.description.trim() ||
-                !newTask.dueDate
-              }
-              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50 text-white rounded-lg font-medium transition-colors grid place-items-center"
-            >
-              {isLoading ? (
-                <LucideLoader className="animate-spin text-white" size={24} />
-              ) : mode === "edit" ? (
-                "Update Task"
-              ) : (
-                "Create Task"
-              )}
-            </button>
+                    <button type="button" onClick={() => removeAttachment(index)}>
+                      <LucideXCircle size={18} className="text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={onClose}
+                className="flex-1 px-6 py-3 rounded-lg font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={isLoading ? () => { } : handleSubmit}
+                disabled={
+                  isLoading ||
+                  !newTask.title.trim() ||
+                  !newTask.description.trim() ||
+                  !newTask.dueDate
+                }
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50 text-white rounded-lg font-medium transition-colors grid place-items-center"
+              >
+                {isLoading ? (
+                  <LucideLoader className="animate-spin text-white" size={24} />
+                ) : mode === "edit" ? (
+                  "Update Task"
+                ) : (
+                  "Create Task"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export const SidePanel: React.FC<{
   selectedTask: Task | null;
@@ -583,205 +845,204 @@ export const SidePanel: React.FC<{
   handleEditComment,
   handleDeleteComment,
 }) => {
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [editContent, setEditContent] = useState("");
-  const [deleteComment, setDeleteComment] = useState<{
-    id: string;
-    author: string;
-  } | null>(null);
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [editContent, setEditContent] = useState("");
+    const [deleteComment, setDeleteComment] = useState<{
+      id: string;
+      author: string;
+    } | null>(null);
 
-  if (!selectedTask) return null;
+    if (!selectedTask) return null;
 
-  // const handleAttachmentDelete = async (id: string) => {
-  //   const res = await fetch("/api/kanban/task")
-  // }
+    // const handleAttachmentDelete = async (id: string) => {
+    //   const res = await fetch("/api/kanban/task")
+    // }
 
-  const startEdit = (comment: Comment) => {
-    setEditingCommentId(comment._id);
-    setEditContent(comment.content);
-  };
+    const startEdit = (comment: Comment) => {
+      setEditingCommentId(comment._id);
+      setEditContent(comment.content);
+    };
 
-  const cancelEdit = () => {
-    setEditingCommentId(null);
-    setEditContent("");
-  };
-
-  const saveEdit = (commentId: string) => {
-    if (editContent.trim()) {
-      handleEditComment(commentId, editContent.trim());
+    const cancelEdit = () => {
       setEditingCommentId(null);
       setEditContent("");
-    }
-  };
+    };
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case "pdf":
-        return "📄";
-      case "image":
-        return "🖼️";
-      case "figma":
-        return "🎨";
-      case "zip":
-        return "📦";
-      case "json":
-        return "📋";
-      default:
-        return "📎";
-    }
-  };
+    const saveEdit = (commentId: string) => {
+      if (editContent.trim()) {
+        handleEditComment(commentId, editContent.trim());
+        setEditingCommentId(null);
+        setEditContent("");
+      }
+    };
 
-  return (
-    <div className="fixed inset-0 z-9999 flex justify-end">
-      <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    const getFileIcon = (type: string) => {
+      switch (type) {
+        case "pdf":
+          return "📄";
+        case "image":
+          return "🖼️";
+        case "figma":
+          return "🎨";
+        case "zip":
+          return "📦";
+        case "json":
+          return "📋";
+        default:
+          return "📎";
+      }
+    };
 
-      <div className="w-[600px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Task Details
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
-            >
-              <X className="w-5 h-5" />
-            </button>
+    return (
+      <div className="fixed inset-0 z-9999 flex justify-end">
+        <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+        <div className="w-[600px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl overflow-y-auto">
+          <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Task Details
+              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="p-6 space-y-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex gap-3">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {selectedTask.title}
-                </h1>
-                <span
-                  className={`px-2 py-1 rounded-lg text-sm font-medium border ${
-                    priorityClasses[selectedTask.priority]
-                  }`}
-                >
-                  <Flag className="w-3 h-3 inline mr-1" />
-                  {selectedTask.priority}
-                </span>
-              </div>
-              <div className="flex  items-center ">
-                <div>
-                  <button
-                    className=" px-3 py-1.5 rounded-md"
-                    onClick={() => {
-                      if (!selectedTask) return;
-                      onEditTask(selectedTask);
-                    }}
+          <div className="p-6 space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex gap-3">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {selectedTask.title}
+                  </h1>
+                  <span
+                    className={`px-2 py-1 rounded-lg text-sm font-medium border ${priorityClasses[selectedTask.priority]
+                      }`}
                   >
-                    <SquarePen
-                      size={19}
-                      className="text-gray-400 hover:text-blue-600"
-                    />
-                  </button>
+                    <Flag className="w-3 h-3 inline mr-1" />
+                    {selectedTask.priority}
+                  </span>
                 </div>
-                <div>
-                  <button
-                    className="  px-3 py-1.5 rounded-md"
-                    onClick={() => setConfirmDelete(selectedTask)}
-                  >
-                    <Trash2
-                      size={19}
-                      className="text-gray-400 hover:text-red-700"
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Task ID: #{selectedTask.id}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-200">
-              Explaination
-            </h3>
-            <RenderRichText html={selectedTask.description} />
-            {/* <p className="text-gray-400 dark:text-gray-200">{selectedTask.description}</p> */}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-[#111]">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Assignee
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 dark:from-yellow-500 dark:via-yellow-600 dark:to-yellow-700">
-                  {selectedTask.assignee.charAt(0)}
-                </div>
-
-                <span className="font-medium text-gray-900 dark:text-white">
-                  {selectedTask.assignee}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Due Date
-                </span>
-              </div>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {new Date(selectedTask.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Tags
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {selectedTask.tags.length > 0 ? (
-                  selectedTask.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300"
+                <div className="flex  items-center ">
+                  <div>
+                    <button
+                      className=" px-3 py-1.5 rounded-md"
+                      onClick={() => {
+                        if (!selectedTask) return;
+                        onEditTask(selectedTask);
+                      }}
                     >
-                      {tag}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 ml-4 ">
-                    No Tags Provided
-                  </p>
-                )}
+                      <SquarePen
+                        size={19}
+                        className="text-gray-400 hover:text-blue-600"
+                      />
+                    </button>
+                  </div>
+                  <div>
+                    <button
+                      className="  px-3 py-1.5 rounded-md"
+                      onClick={() => setConfirmDelete(selectedTask)}
+                    >
+                      <Trash2
+                        size={19}
+                        className="text-gray-400 hover:text-red-700"
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Task ID: #{selectedTask.id}
+              </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Paperclip className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Attachments
+              <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-200">
+                Explaination
+              </h3>
+              <RenderRichText html={selectedTask.description} />
+              {/* <p className="text-gray-400 dark:text-gray-200">{selectedTask.description}</p> */}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 dark:bg-[#111]">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Assignee
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 dark:from-yellow-500 dark:via-yellow-600 dark:to-yellow-700">
+                    {selectedTask.assignee.charAt(0)}
+                  </div>
+
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {selectedTask.assignee}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Due Date
+                  </span>
+                </div>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {new Date(selectedTask.dueDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </span>
               </div>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {selectedTask.attachments.length} files
-              </span>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Tags
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedTask.tags.length > 0 ? (
+                    selectedTask.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300"
+                      >
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 ml-4 ">
+                      No Tags Provided
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Paperclip className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Attachments
+                  </span>
+                </div>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {selectedTask.attachments.length} files
+                </span>
+              </div>
             </div>
-          </div>
-          {/* {selectedTask?.Project && (
+            {/* {selectedTask?.Project && (
             <div className="w-full h-16 rounded-lg dark:bg-[#111] bg-gray-50 flex justify-start px-4 items-center">
               <p className="text-base">
                 Project:{" "}
@@ -792,347 +1053,346 @@ export const SidePanel: React.FC<{
             </div>
           )} */}
 
-          <div className="p-4 rounded-xl border bg-red-50 border-red-200 dark:bg-red-500/5 dark:border-red-500/20">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
-              <div className="flex-1">
-                <h3 className="font-semibold mb-1 text-red-700 dark:text-red-400">
-                  {reportMessages.length === 0
-                    ? "Report an Issue"
-                    : `${reportMessages.length} issue${
-                        reportMessages.length > 1 ? "s" : ""
+            <div className="p-4 rounded-xl border bg-red-50 border-red-200 dark:bg-red-500/5 dark:border-red-500/20">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1 text-red-700 dark:text-red-400">
+                    {reportMessages.length === 0
+                      ? "Report an Issue"
+                      : `${reportMessages.length} issue${reportMessages.length > 1 ? "s" : ""
                       } reported`}
-                </h3>
-                <p className="text-sm mb-3 text-red-600/70 dark:text-red-300/70">
-                  {reportCount === 0
-                    ? "Found a problem? Let us know and we'll help resolve it."
-                    : "Issue reported. Team will review soon."}
-                </p>
-                {/* Reports Section */}
-                {reportsLoading ? (
-                  <div className="text-sm text-red-700 dark:text-red-300 mb-3">
-                    Loading reports...
+                  </h3>
+                  <p className="text-sm mb-3 text-red-600/70 dark:text-red-300/70">
+                    {reportCount === 0
+                      ? "Found a problem? Let us know and we'll help resolve it."
+                      : "Issue reported. Team will review soon."}
+                  </p>
+                  {/* Reports Section */}
+                  {reportsLoading ? (
+                    <div className="text-sm text-red-700 dark:text-red-300 mb-3">
+                      Loading reports...
+                    </div>
+                  ) : reportMessages.length > 0 ? (
+                    <div className="space-y-2 mb-3">
+                      {reportMessages.map((msg, index) => (
+                        <div
+                          key={index}
+                          className="text-sm p-2 rounded-md  text-red-700 dark:text-red-300 border"
+                        >
+                          {msg.message}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                      No issues reported for this task.
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300"
+                  >
+                    Report Issue
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {open && (
+              <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div className="bg-white dark:bg-[#111] w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-semibold">Report an Issue</h2>
+                    <button
+                      onClick={() => setOpen(false)}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                ) : reportMessages.length > 0 ? (
-                  <div className="space-y-2 mb-3">
-                    {reportMessages.map((msg, index) => (
-                      <div
-                        key={index}
-                        className="text-sm p-2 rounded-md  text-red-700 dark:text-red-300 border"
-                      >
-                        {msg.message}
+                  <textarea
+                    className="w-full h-32 p-3 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-black outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Describe the issue here..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button
+                      onClick={() => setOpen(false)}
+                      className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleReport}
+                      disabled={loading}
+                      className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {loading ? "Submitting..." : "Submit"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTask.attachments.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+                    <Paperclip className="w-5 h-5" />
+                    Attachments ({selectedTask.attachments.length})
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {selectedTask.attachments?.map((file, id) => (
+                    <div
+                      key={file.id ?? id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 border-gray-200 hover:border-gray-300 dark:bg-[#111] dark:border-gray-800 dark:hover:border-gray-700 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-2xl">{getFileIcon(file.type)}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-gray-900 dark:text-white">
+                            {file.originalName}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-500">
+                            {file.size}
+                          </p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    No issues reported for this task.
-                  </div>
-                )}
+                      <a
+                        href={file.url}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-sm px-3 py-1 rounded-md"
+                      >
+                        <Eye className="hover:text-blue-400" size={20} />
+                      </a>
+                      <button
+                        onClick={async () => {
+                          const res = await fetch(file.url);
+                          const blob = await res.blob();
 
-                <button
-                  onClick={() => setOpen(true)}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-300"
-                >
-                  Report Issue
-                </button>
-              </div>
-            </div>
-          </div>
+                          const a = document.createElement("a");
+                          a.href = URL.createObjectURL(blob);
+                          a.title = file.name;
+                          a.download = file.name;
+                          a.click();
 
-          {open && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white dark:bg-[#111] w-full max-w-md p-6 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Report an Issue</h2>
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-800"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <textarea
-                  className="w-full h-32 p-3 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-black outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Describe the issue here..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleReport}
-                    disabled={loading}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {loading ? "Submitting..." : "Submit"}
-                  </button>
+                          URL.revokeObjectURL(a.href);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-sm py-1 rounded-md"
+                      >
+                        <Download className="hover:text-green-300" size={20} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {selectedTask.attachments.length > 0 && (
+            {/* ENHANCED COMMENTS SECTION */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-                  <Paperclip className="w-5 h-5" />
-                  Attachments ({selectedTask.attachments.length})
-                </h3>
-              </div>
-              <div className="space-y-2">
-                {selectedTask.attachments?.map((file, id) => (
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+                <MessageSquare className="w-5 h-5" />
+                Comments ({selectedTask?.comments?.length})
+              </h3>
+
+              <div className="space-y-4 mb-4">
+                {selectedTask.comments?.map((comment) => (
                   <div
-                    key={file.id ?? id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 border-gray-200 hover:border-gray-300 dark:bg-[#111] dark:border-gray-800 dark:hover:border-gray-700 transition-colors group"
+                    key={comment._id}
+                    className="p-4 pt-3 rounded-xl bg-gray-50 dark:bg-[#111] group"
                   >
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-2xl">{getFileIcon(file.type)}</span>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br from-green-400 to-teal-400 text-white dark:from-green-500 dark:to-teal-500 mt-2">
+                        {comment.user?.image ? (
+                          <div className="w-full h-full overflow-hidden rounded-full border border-blue-600">
+                            {comment.user?.image ? (
+                              <img src={comment.user.image} />
+                            ) : (
+                              <p>{comment.user.name.charAt(0)}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p>{comment.username?.charAt(0) ?? "?"}</p>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate text-gray-900 dark:text-white">
-                          {file.originalName}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-500">
-                          {file.size}
-                        </p>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="w-full flex justify-start items-start flex-col">
+                            <span className="text-xs text-gray-500 dark:text-gray-500">
+                              {new Date(comment.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              {comment.username ||
+                                comment.user?.name ||
+                                "Unknown User"}
+                            </span>
+                          </div>
+
+                          {/* EDIT/DELETE BUTTONS - Only show if current user is the author */}
+                          {comment.userId === currentUserId && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {editingCommentId === comment._id ? (
+                                <>
+                                  <button
+                                    onClick={() => saveEdit(comment._id)}
+                                    className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400"
+                                    title="Save"
+                                  >
+                                    <Save className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={cancelEdit}
+                                    className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => startEdit(comment)}
+                                    className="p-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                                    title="Edit"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setDeleteComment({
+                                        id: comment._id,
+                                        author:
+                                          comment.username ??
+                                          comment.user?.name ??
+                                          "Unknown",
+                                      })
+                                    }
+                                    className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* COMMENT CONTENT OR EDIT TEXTAREA */}
+                        {editingCommentId === comment._id ? (
+                          <textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#0a0a0a] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white"
+                            rows={3}
+                            autoFocus
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {comment.content}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <a
-                      href={file.url}
-                      download
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-sm px-3 py-1 rounded-md"
-                    >
-                      <Eye className="hover:text-blue-400" size={20} />
-                    </a>
-                    <button
-                      onClick={async () => {
-                        const res = await fetch(file.url);
-                        const blob = await res.blob();
-
-                        const a = document.createElement("a");
-                        a.href = URL.createObjectURL(blob);
-                        a.title = file.name;
-                        a.download = file.name;
-                        a.click();
-
-                        URL.revokeObjectURL(a.href);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-sm py-1 rounded-md"
-                    >
-                      <Download className="hover:text-green-300" size={20} />
-                    </button>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
 
-          {/* ENHANCED COMMENTS SECTION */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-              <MessageSquare className="w-5 h-5" />
-              Comments ({selectedTask?.comments?.length})
-            </h3>
-
-            <div className="space-y-4 mb-4">
-              {selectedTask.comments?.map((comment) => (
-                <div
-                  key={comment._id}
-                  className="p-4 pt-3 rounded-xl bg-gray-50 dark:bg-[#111] group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold bg-gradient-to-br from-green-400 to-teal-400 text-white dark:from-green-500 dark:to-teal-500 mt-2">
-                      {comment.user?.image ? (
-                        <div className="w-full h-full overflow-hidden rounded-full border border-blue-600">
-                          {comment.user?.image ? (
-                            <img src={comment.user.image} />
-                          ) : (
-                            <p>{comment.user.name.charAt(0)}</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p>{comment.username?.charAt(0) ?? "?"}</p>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="w-full flex justify-start items-start flex-col">
-                          <span className="text-xs text-gray-500 dark:text-gray-500">
-                            {new Date(comment.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {comment.username ||
-                              comment.user?.name ||
-                              "Unknown User"}
-                          </span>
-                        </div>
-
-                        {/* EDIT/DELETE BUTTONS - Only show if current user is the author */}
-                        {comment.userId === currentUserId && (
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {editingCommentId === comment._id ? (
-                              <>
-                                <button
-                                  onClick={() => saveEdit(comment._id)}
-                                  className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400"
-                                  title="Save"
-                                >
-                                  <Save className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={cancelEdit}
-                                  className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-                                  title="Cancel"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => startEdit(comment)}
-                                  className="p-1.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400"
-                                  title="Edit"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setDeleteComment({
-                                      id: comment._id,
-                                      author:
-                                        comment.username ??
-                                        comment.user?.name ??
-                                        "Unknown",
-                                    })
-                                  }
-                                  className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* COMMENT CONTENT OR EDIT TEXTAREA */}
-                      {editingCommentId === comment._id ? (
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#0a0a0a] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white"
-                          rows={3}
-                          autoFocus
-                        />
-                      ) : (
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {comment.content}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 rounded-xl border bg-gray-50 border-gray-200 dark:bg-[#111] dark:border-gray-800">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
-                className="w-full px-3 py-2 rounded-lg border resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#0a0a0a] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600"
-                rows={3}
-              />
-              <div className="flex justify-end mt-3">
-                <button
-                  onClick={handleAddComment}
-                  disabled={!commentText.trim()}
-                  className="px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-white
+              <div className="p-4 rounded-xl border bg-gray-50 border-gray-200 dark:bg-[#111] dark:border-gray-800">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="w-full px-3 py-2 rounded-lg border resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#0a0a0a] border-gray-300 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600"
+                  rows={3}
+                />
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={handleAddComment}
+                    disabled={!commentText.trim()}
+                    className="px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-white
              bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600
              hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-700
              disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed
              transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                  Comment
-                </button>
+                  >
+                    <Send className="w-4 h-4" />
+                    Comment
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* DELETE TASK MODAL */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-[#111] rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold text-red-600 mb-2">Delete Task</h3>
+        {/* DELETE TASK MODAL */}
+        {confirmDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white dark:bg-[#111] rounded-xl p-6 w-full max-w-sm shadow-xl">
+              <h3 className="text-lg font-bold text-red-600 mb-2">Delete Task</h3>
 
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-5">
-              Are you sure you want to delete
-              <span className="font-semibold"> “{confirmDelete.title}”</span>?
-              <br />
-              This action cannot be undone.
-            </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-5">
+                Are you sure you want to delete
+                <span className="font-semibold"> “{confirmDelete.title}”</span>?
+                <br />
+                This action cannot be undone.
+              </p>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-              >
-                Cancel
-              </button>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  Cancel
+                </button>
 
-              <button
-                disabled={deleting}
-                onClick={() => {
-                  if (!selectedTask) return;
-                  onDeleteTask(selectedTask._id);
-                  setConfirmDelete(null);
-                }}
-                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
+                <button
+                  disabled={deleting}
+                  onClick={() => {
+                    if (!selectedTask) return;
+                    onDeleteTask(selectedTask._id);
+                    setConfirmDelete(null);
+                  }}
+                  className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Comment Delete Modal */}
-      {deleteComment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm shadow-xl">
-            <h2 className="text-lg font-bold text-red-600">Delete Comment</h2>
+        {/* Comment Delete Modal */}
+        {deleteComment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm shadow-xl">
+              <h2 className="text-lg font-bold text-red-600">Delete Comment</h2>
 
-            <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">
-              Are you sure you want to delete this comment by{" "}
-              <strong>{deleteComment.author}</strong>? This action cannot be
-              undone.
-            </p>
+              <p className="text-sm mt-2 text-gray-700 dark:text-gray-300">
+                Are you sure you want to delete this comment by{" "}
+                <strong>{deleteComment.author}</strong>? This action cannot be
+                undone.
+              </p>
 
-            <div className="flex justify-end gap-3 mt-5">
-              {/* Cancel */}
-              <button
-                onClick={() => setDeleteComment(null)}
-                className="
+              <div className="flex justify-end gap-3 mt-5">
+                {/* Cancel */}
+                <button
+                  onClick={() => setDeleteComment(null)}
+                  className="
             px-4 py-2 rounded-md border
             text-gray-700 dark:text-gray-300
             bg-white dark:bg-gray-800
@@ -1142,17 +1402,17 @@ export const SidePanel: React.FC<{
             active:scale-95
             focus:outline-none focus:ring-2 focus:ring-gray-400/50
           "
-              >
-                Cancel
-              </button>
+                >
+                  Cancel
+                </button>
 
-              {/* Delete */}
-              <button
-                onClick={async () => {
-                  await handleDeleteComment(deleteComment.id);
-                  setDeleteComment(null);
-                }}
-                className="
+                {/* Delete */}
+                <button
+                  onClick={async () => {
+                    await handleDeleteComment(deleteComment.id);
+                    setDeleteComment(null);
+                  }}
+                  className="
             px-4 py-2 rounded-md
             bg-red-600 text-white
             hover:bg-red-700
@@ -1160,16 +1420,16 @@ export const SidePanel: React.FC<{
             active:scale-95
             focus:outline-none focus:ring-2 focus:ring-red-500/60
           "
-              >
-                Delete
-              </button>
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 const KanbanBoard: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -1454,111 +1714,111 @@ const KanbanBoard: React.FC = () => {
   // };
 
   const handleUpdateTask = async () => {
-  if (!taskToEdit) return;
+    if (!taskToEdit) return;
 
-  try {
-    setTransition(true);
+    try {
+      setTransition(true);
 
-    // 1️⃣ Update main task
-    const formData = new FormData();
-    formData.append("id", taskToEdit._id);
-    formData.append("title", newTask.title.trim());
-    formData.append("description", newTask.description.trim());
-    formData.append("assignee", assigne);
-    formData.append("priority", newTask.priority);
-    formData.append("dueDate", newTask.dueDate);
-    formData.append("status", newTask.status);
-    formData.append("tags", newTask.tags.join(","));
+      // 1️⃣ Update main task
+      const formData = new FormData();
+      formData.append("id", taskToEdit._id);
+      formData.append("title", newTask.title.trim());
+      formData.append("description", newTask.description.trim());
+      formData.append("assignee", assigne);
+      formData.append("priority", newTask.priority);
+      formData.append("dueDate", newTask.dueDate);
+      formData.append("status", newTask.status);
+      formData.append("tags", newTask.tags.join(","));
 
-    if (newTask.attachments?.length) {
-      newTask.attachments.forEach((file) => {
-        formData.append("attachment", file);
-      });
-    }
-
-    const res = await fetch(
-      `${import.meta.env.VITE_URL}/api/kanban/tasks`,
-      {
-        method: "PUT",
-        body: formData,
-        credentials: "include",
+      if (newTask.attachments?.length) {
+        newTask.attachments.forEach((file) => {
+          formData.append("attachment", file);
+        });
       }
-    );
 
-    const data = await res.json();
-    if (!res.ok) throw new Error("Update failed");
-
-    // 2️⃣ Detect newly added users
-    const newUsers = selectedUsers.filter((u: any) => !u.taskId);
-
-    const createdTasks: any[] = [];
-
-    for (const user of newUsers) {
-      const newForm = new FormData();
-
-      newForm.append("title", newTask.title.trim());
-      newForm.append("description", newTask.description.trim());
-      newForm.append("assignee", user.name);
-      newForm.append("userId", user._id);
-      newForm.append("priority", newTask.priority);
-      newForm.append("dueDate", newTask.dueDate);
-      newForm.append("status", newTask.status);
-      newForm.append("tags", newTask.tags.join(","));
-
-      const createRes = await fetch(
-        `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
-        {
-          method: "POST",
-          body: newForm,
-          credentials: "include",
-        }
-      );
-
-      const created = await createRes.json();
-      if (!createRes.ok) throw new Error("Failed to create task");
-
-      createdTasks.push(created.task);
-
-      // Add new user into group document
-      await fetch(
-        `${import.meta.env.VITE_URL}/api/kanban/multi-task-group/add-user`,
+      const res = await fetch(
+        `${import.meta.env.VITE_URL}/api/kanban/tasks`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          body: formData,
           credentials: "include",
-          body: JSON.stringify({
-            groupId: activeGroup?._id,
-            user: {
-              taskId: created.task._id,
-              userId: user._id,
-              name: user.name,
-              role: user.role,
-              department: user.department,
-              label: user.label,
-            },
-          }),
         }
       );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error("Update failed");
+
+      // 2️⃣ Detect newly added users
+      const newUsers = selectedUsers.filter((u: any) => !u.taskId);
+
+      const createdTasks: any[] = [];
+
+      for (const user of newUsers) {
+        const newForm = new FormData();
+
+        newForm.append("title", newTask.title.trim());
+        newForm.append("description", newTask.description.trim());
+        newForm.append("assignee", user.name);
+        newForm.append("userId", user._id);
+        newForm.append("priority", newTask.priority);
+        newForm.append("dueDate", newTask.dueDate);
+        newForm.append("status", newTask.status);
+        newForm.append("tags", newTask.tags.join(","));
+
+        const createRes = await fetch(
+          `${import.meta.env.VITE_URL}/api/kanban/tasks/create`,
+          {
+            method: "POST",
+            body: newForm,
+            credentials: "include",
+          }
+        );
+
+        const created = await createRes.json();
+        if (!createRes.ok) throw new Error("Failed to create task");
+
+        createdTasks.push(created.task);
+
+        // Add new user into group document
+        await fetch(
+          `${import.meta.env.VITE_URL}/api/kanban/multi-task-group/add-user`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              groupId: activeGroup?._id,
+              user: {
+                taskId: created.task._id,
+                userId: user._id,
+                name: user.name,
+                role: user.role,
+                department: user.department,
+                label: user.label,
+              },
+            }),
+          }
+        );
+      }
+
+      // 3️⃣ Update board state
+      setTasks((prev) => [
+        ...prev.map((t) => (t._id === data.task._id ? data.task : t)),
+        ...createdTasks,
+      ]);
+
+      toast.success("Task updated successfully");
+
+      setShowNewTaskModal(false);
+      setTaskMode("create");
+      setTaskToEdit(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Update failed");
+    } finally {
+      setTransition(false);
     }
-
-    // 3️⃣ Update board state
-    setTasks((prev) => [
-      ...prev.map((t) => (t._id === data.task._id ? data.task : t)),
-      ...createdTasks,
-    ]);
-
-    toast.success("Task updated successfully");
-
-    setShowNewTaskModal(false);
-    setTaskMode("create");
-    setTaskToEdit(null);
-  } catch (err) {
-    console.error(err);
-    toast.error("Update failed");
-  } finally {
-    setTransition(false);
-  }
-};
+  };
 
   const handleSubmitTask = async () => {
     if (taskMode === "edit") {
@@ -1648,71 +1908,71 @@ const KanbanBoard: React.FC = () => {
   // };
 
   const handleEditTask = async (task: Task) => {
-  setTaskMode("edit");
-  setTaskToEdit(task);
+    setTaskMode("edit");
+    setTaskToEdit(task);
 
-  setNewTask({
-    title: task.title,
-    description: task.description,
-    priority: task.priority,
-    dueDate: task.dueDate.split("T")[0],
-    tags: task.tags,
-    status: task.status,
-    attachments: null,
-    projectId: task?.Project?.id || "",
-  });
+    setNewTask({
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      dueDate: task.dueDate.split("T")[0],
+      tags: task.tags,
+      status: task.status,
+      attachments: null,
+      projectId: task?.Project?.id || "",
+    });
 
-  // 🔥 Fetch group
-  const group = await fetchMultiTaskGroup(task._id);
+    // 🔥 Fetch group
+    const group = await fetchMultiTaskGroup(task._id);
 
-  if (group && group.users?.length > 0) {
-    // ✅ STORE ACTIVE GROUP
-    setActiveGroup(group);
+    if (group && group.users?.length > 0) {
+      // ✅ STORE ACTIVE GROUP
+      setActiveGroup(group);
 
-    const mappedUsers = group.users.map((u: any) => ({
-      _id: u.userId,
-      name: u.name,
-      role: u.role,
-      department: u.department,
-      label: u.label,
-      taskId: u.taskId, // 🔥 REQUIRED for deletion
-    }));
+      const mappedUsers = group.users.map((u: any) => ({
+        _id: u.userId,
+        name: u.name,
+        role: u.role,
+        department: u.department,
+        label: u.label,
+        taskId: u.taskId, // 🔥 REQUIRED for deletion
+      }));
 
-    setSelectedUsers(mappedUsers);
-  } else {
-    // ✅ Clear group state
-    setActiveGroup(null);
-
-    // Single-user fallback
-    const matchedEmployee = allEmployees.find(
-      (emp) => emp.userId === task.userId
-    );
-
-    if (matchedEmployee) {
-      setSelectedUsers([
-        {
-          _id: matchedEmployee.userId,
-          name: matchedEmployee.name,
-          role: matchedEmployee.role,
-          department: matchedEmployee.department,
-          label: matchedEmployee.label,
-        },
-      ]);
+      setSelectedUsers(mappedUsers);
     } else {
-      setSelectedUsers([
-        {
-          _id: task.userId,
-          name: task.assignee,
-          role: "",
-          department: "",
-          label: "",
-        },
-      ]);
-    }
-  }
+      // ✅ Clear group state
+      setActiveGroup(null);
 
-  setShowNewTaskModal(true);
-};
+      // Single-user fallback
+      const matchedEmployee = allEmployees.find(
+        (emp) => emp.userId === task.userId
+      );
+
+      if (matchedEmployee) {
+        setSelectedUsers([
+          {
+            _id: matchedEmployee.userId,
+            name: matchedEmployee.name,
+            role: matchedEmployee.role,
+            department: matchedEmployee.department,
+            label: matchedEmployee.label,
+          },
+        ]);
+      } else {
+        setSelectedUsers([
+          {
+            _id: task.userId,
+            name: task.assignee,
+            role: "",
+            department: "",
+            label: "",
+          },
+        ]);
+      }
+    }
+
+    setShowNewTaskModal(true);
+  };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
@@ -2007,11 +2267,11 @@ const KanbanBoard: React.FC = () => {
         selectedUsers.length > 0
           ? selectedUsers
           : [
-              {
-                _id: taskemployee || currentUser._id,
-                name: assigne,
-              },
-            ];
+            {
+              _id: taskemployee || currentUser._id,
+              name: assigne,
+            },
+          ];
 
       const createdTasks: Task[] = [];
       const groupUsersPayload: any[] = [];
@@ -2655,9 +2915,8 @@ const KanbanBoard: React.FC = () => {
                     <div className="flex items-center justify-between mb-4 pb-3 border-b">
                       <div className="flex items-center gap-2">
                         <div
-                          className={`p-2 rounded-lg ${
-                            columnColorClasses[column.color]
-                          }`}
+                          className={`p-2 rounded-lg ${columnColorClasses[column.color]
+                            }`}
                         >
                           <Icon className="w-5 h-5" />
                         </div>
