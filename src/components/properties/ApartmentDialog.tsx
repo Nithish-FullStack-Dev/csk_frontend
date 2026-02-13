@@ -52,7 +52,7 @@ export const ApartmentDialog = ({
   isUpdating,
 }: ApartmentDialogProps) => {
   const [formData, setFormData] = useState<Partial<Property>>({
-    memNo: "",
+    // memNo: "",
     plotNo: "",
     villaFacing: "North",
     extent: 0,
@@ -100,7 +100,7 @@ export const ApartmentDialog = ({
     if (mode === "edit" && fetchedUnit && open) {
       setFormData({
         ...fetchedUnit,
-        memNo: fetchedUnit.memNo || "",
+        // memNo: fetchedUnit.memNo || "",
         plotNo: fetchedUnit.plotNo || "",
         villaFacing: fetchedUnit.villaFacing || "North",
         extent: fetchedUnit.extent || 0,
@@ -148,7 +148,7 @@ export const ApartmentDialog = ({
 
   const resetForm = () => {
     setFormData({
-      memNo: "",
+      // memNo: "",
       plotNo: "",
       villaFacing: "North",
       extent: 0,
@@ -196,10 +196,10 @@ export const ApartmentDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.memNo || !formData.plotNo) {
-      toast.error("Membership and Plot number are required");
-      return;
-    }
+    // if (!formData.memNo || !formData.plotNo) {
+    //   toast.error("Membership and Plot number are required");
+    //   return;
+    // }
     if (
       mode === "add" &&
       (!thumbnailFile || imageFiles.length + imagePreviews.length === 0)
@@ -278,7 +278,7 @@ export const ApartmentDialog = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <Label>Membership Number *</Label>
               <Input
                 value={formData.memNo || ""}
@@ -287,7 +287,7 @@ export const ApartmentDialog = ({
                 }
                 required
               />
-            </div>
+            </div> */}
             <div>
               <Label>Plot/Unit Number *</Label>
               <Input

@@ -43,12 +43,12 @@ export interface Lead {
   openLand: string | OpenLand;
   openPlot: string | OpenPlot;
   propertyStatus:
-    | "New"
-    | "Assigned"
-    | "Follow up"
-    | "In Progress"
-    | "Closed"
-    | "Rejected";
+  | "New"
+  | "Assigned"
+  | "Follow up"
+  | "In Progress"
+  | "Closed"
+  | "Rejected";
   addedBy: User;
   lastContact: string;
   notes: string;
@@ -85,16 +85,18 @@ export const fetchLeads = async () => {
     `${import.meta.env.VITE_URL}/api/leads/getLeadsById`,
     { withCredentials: true }
   );
-  return data || [];
+  return data;
 };
+
 
 export const fetchAllLeads = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
     { withCredentials: true }
   );
-  return data.leads || [];
+  return data.leads;
 };
+
 
 export const fetchAllAgents = async () => {
   const { data } = await axios.get(
@@ -123,8 +125,7 @@ export const fetchCompletedTaskVerfication = async (
   unit: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/project/units/${projectId}/${unit}/completed-tasks`,
     { withCredentials: true }
   );
@@ -137,8 +138,7 @@ export const fetchUnitProgress = async (
   unit: string
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
+    `${import.meta.env.VITE_URL
     }/api/project/getProject/${projectId}/${floorUnitId}/${unit}/unit-progress`,
     { withCredentials: true }
   );
