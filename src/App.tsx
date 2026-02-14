@@ -160,6 +160,7 @@ import Loader from "./components/Loader";
 import OpenLandDetails from "./pages/public/OpenLandDetails";
 import Kanban from "./pages/Kanban";
 import Department from "./pages/Department";
+import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -401,6 +402,14 @@ const App = () => {
                   element={
                     <ProtectedRoute roleSubmodule={"Properties"}>
                       <UnitDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/inner-detail/:openPlotId"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <InnerPlotDetails />
                     </ProtectedRoute>
                   }
                 />
