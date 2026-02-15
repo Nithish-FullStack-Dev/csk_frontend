@@ -21,6 +21,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { InnerPlotFormValues, innerPlotSchema } from "@/types/InnerPlot";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   openPlotId: string;
@@ -30,7 +31,7 @@ interface Props {
 export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
   const [thumb, setThumb] = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string>("");
-
+  const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
@@ -63,7 +64,13 @@ export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
   const mutation = useMutation({
     mutationFn: (data: InnerPlotFormValues) =>
       createInnerPlot(data, thumb ?? undefined, images),
-    onSuccess,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["innerPlots", openPlotId],
+      });
+
+      onSuccess();
+    },
   });
 
   /* ---------- UI ---------- */

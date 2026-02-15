@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InnerPlotForm } from "./InnerPlotForm";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface InnerPlotDialogProps {
   open: boolean;
@@ -17,6 +18,7 @@ export function InnerPlotDialog({
   onOpenChange,
   openPlotId,
 }: InnerPlotDialogProps) {
+  const queryClient = useQueryClient();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-auto">
@@ -26,7 +28,12 @@ export function InnerPlotDialog({
 
         <InnerPlotForm
           openPlotId={openPlotId}
-          onSuccess={() => onOpenChange(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({
+              queryKey: ["innerPlots", openPlotId],
+            });
+            onOpenChange(false);
+          }}
         />
       </DialogContent>
     </Dialog>
