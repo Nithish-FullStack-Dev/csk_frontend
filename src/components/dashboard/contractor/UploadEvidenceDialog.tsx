@@ -33,6 +33,7 @@ import { CONSTRUCTION_PHASES } from "@/types/construction";
 type StatusType = "in_progress" | "completed" | "pending_review";
 import { XCircle, Upload, Camera, FileImage } from "lucide-react";
 import PropertySelect from "@/hooks/PropertySelect";
+import axios from "axios";
 
 interface UploadEvidenceDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -91,7 +92,7 @@ const UploadEvidenceDialog = ({
 
   // Find task based on the composite key
   const selectedTaskObj = availableTasks.find(
-    (t) => generateKey(t) === selectedTask
+    (t) => generateKey(t) === selectedTask,
   );
 
   // Update selected phase when selectedTask changes
@@ -116,7 +117,7 @@ const UploadEvidenceDialog = ({
   useEffect(() => {
     if (selectedProject && selectedUnit) {
       const filteredTasks = tasks.filter(
-        (t) => t.project === selectedProject && t.unit === selectedUnit
+        (t) => t.project === selectedProject && t.unit === selectedUnit,
       );
       setAvailableTasks(filteredTasks);
 
@@ -139,77 +140,55 @@ const UploadEvidenceDialog = ({
     }
   }, [selectedProject, selectedUnit, tasks]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  console.log("Project ID:", selectedProject);
+  console.log("Task ID:", selectedTask);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
-    if (!selectedProject) {
-      toast.error("Please select a project");
+    if (!selectedProject || !selectedTask || !title || photos.length === 0) {
+      toast.error(
+        !selectedTask
+          ? "Please select a task before uploading evidence"
+          : "Please fill all required fields",
+      );
       return;
     }
 
-    if (!selectedUnit) {
-      toast.error("Please select a unit/block");
-      return;
+    try {
+      const formData = new FormData();
+
+      formData.append("evidenceTitleByContractor", title);
+      formData.append("constructionPhase", selectedPhase || "");
+      formData.append("status", status);
+      formData.append("progressPercentage", progressPercent);
+      formData.append("noteBySiteIncharge", notes || "");
+
+      photos.forEach((photo) => {
+        formData.append("photos", photo);
+      });
+
+      // IMPORTANT: selectedTask must be taskId
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/project/contractor/${selectedProject}/${selectedTask}/evidence`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      toast.success("Evidence uploaded successfully");
+
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to upload evidence",
+      );
     }
-
-    if (!title) {
-      toast.error("Please enter a title for the evidence");
-      return;
-    }
-
-    if (photos.length === 0) {
-      toast.error("Please upload at least one photo");
-      return;
-    }
-
-    // In a real app, we would upload the photos to storage
-    // For now, create local URLs for the photos
-    const photoUrls = photos.map((photo, index) => ({
-      url: URL.createObjectURL(photo),
-      caption: photoCaptions[index] || `Photo ${index + 1}`,
-    }));
-
-    // Create new evidence object
-    const newEvidence: PhotoEvidence = {
-      id: `pe${Date.now()}`,
-      title,
-      project: selectedProject,
-      floorUnit,
-      unit: selectedUnit,
-      task: selectedTask
-        ? tasks.find((t) => t.id === selectedTask)?.title || ""
-        : "",
-      date: new Date().toISOString().split("T")[0],
-      category: selectedPhase || "other",
-      status,
-      images: photoUrls,
-    };
-
-    // Call the onSubmit handler with the new evidence
-    onSubmit(newEvidence);
-
-    // Show success message
-    toast.success("Evidence uploaded successfully", {
-      description:
-        status === "completed"
-          ? "Task has been marked as completed and sent for verification"
-          : "Task progress has been updated",
-    });
-
-    // Reset form
-    setTitle("");
-    setSelectedProject("");
-    setSelectedUnit("");
-    setSelectedTask("");
-    setNotes("");
-    setProgressPercent("50");
-    setStatus("in_progress");
-    setPhotos([]);
-    setPhotoCaptions([]);
-
-    // Close the dialog
-    onOpenChange(false);
   };
 
   return (
@@ -233,7 +212,6 @@ const UploadEvidenceDialog = ({
           selectedUnit={selectedUnit}
           setSelectedUnit={setSelectedUnit}
         /> */}
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PropertySelect
             selectedFloorUnit={floorUnit}
@@ -245,7 +223,6 @@ const UploadEvidenceDialog = ({
             useAvailable={false}
           />
         </div>
-
         <div className="space-y-2">
           <Label htmlFor="title">Evidence Title</Label>
           <Input
@@ -256,16 +233,46 @@ const UploadEvidenceDialog = ({
             required
           />
         </div>
-
-        {/* <TaskPhaseSelection
-          availableTasks={availableTasks}
-          selectedTask={selectedTask}
-          setSelectedTask={setSelectedTask}
-          selectedPhase={selectedPhase}
-          setSelectedPhase={setSelectedPhase}
-          disabled={!selectedUnit}
-        /> */}
-
+        // Inside the form, after PropertySelect
+        <div className="space-y-2">
+          <Label>Task</Label>
+          <Select
+            value={selectedTask}
+            onValueChange={setSelectedTask}
+            disabled={
+              !selectedProject || !selectedUnit || availableTasks.length === 0
+            }
+            required
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  availableTasks.length === 0
+                    ? "No tasks available for this unit"
+                    : "Select task"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTasks.map((task) => (
+                <SelectItem key={task.id} value={task.id}>
+                  {task.title}
+                  {task.phase &&
+                    ` (${CONSTRUCTION_PHASES[task.phase]?.title || task.phase})`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        // Optional: Show selected phase automatically (read-only)
+        {selectedTaskObj && (
+          <div className="text-sm text-muted-foreground">
+            Phase:{" "}
+            {CONSTRUCTION_PHASES[
+              selectedTaskObj.phase as keyof typeof CONSTRUCTION_PHASES
+            ]?.title || selectedTaskObj.phase}
+          </div>
+        )}
         {selectedTaskObj ? (
           <div className="bg-muted p-3 rounded-md">
             <p className="font-medium">{selectedTaskObj.title}</p>
@@ -298,14 +305,12 @@ const UploadEvidenceDialog = ({
             </Select>
           </div>
         )}
-
         {/* <StatusSelector
           status={status}
           setStatus={setStatus}
           progressPercent={progressPercent}
           setProgressPercent={setProgressPercent}
         /> */}
-
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
           <Select
@@ -323,7 +328,6 @@ const UploadEvidenceDialog = ({
             </SelectContent>
           </Select>
         </div>
-
         {status === "in_progress" && (
           <div className="space-y-2">
             <Label htmlFor="progress">Progress Percentage</Label>
@@ -342,14 +346,12 @@ const UploadEvidenceDialog = ({
             </div>
           </div>
         )}
-
         {/* <PhotoUploader
           photos={photos}
           setPhotos={setPhotos}
           photoCaptions={photoCaptions}
           setPhotoCaptions={setPhotoCaptions}
         /> */}
-
         <div className="space-y-2">
           <div className="flex justify-between">
             <Label htmlFor="photos">Upload Photos</Label>
@@ -440,7 +442,6 @@ const UploadEvidenceDialog = ({
             location will be automatically added.
           </p>
         </div>
-
         <div className="space-y-2">
           <Label htmlFor="notes">Notes</Label>
           <Textarea
@@ -451,7 +452,6 @@ const UploadEvidenceDialog = ({
             rows={3}
           />
         </div>
-
         <DialogFooter className="pt-4">
           <Button
             type="button"
@@ -460,7 +460,14 @@ const UploadEvidenceDialog = ({
           >
             Cancel
           </Button>
-          <Button type="submit">Submit Evidence</Button>
+          <Button
+            disabled={
+              !selectedProject || !selectedTask || !title || photos.length === 0
+            }
+            type="submit"
+          >
+            Submit Evidence
+          </Button>
         </DialogFooter>
       </form>
     </DialogContent>

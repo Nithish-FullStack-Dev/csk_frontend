@@ -196,7 +196,7 @@ const ContractorDashboard = () => {
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_URL}/api/project/tasks`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       const mapped = response.data.map((task: any, index: number) => ({
         _id: task._id,
@@ -223,7 +223,7 @@ const ContractorDashboard = () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setCompletedTasks(
         res.data.tasks.map((task: any) => ({
@@ -231,7 +231,7 @@ const ContractorDashboard = () => {
           title: task.taskTitle,
           projectName: task.projectName,
           unit: task.unit,
-        }))
+        })),
       );
     } catch (err) {
       console.error("Error fetching completed tasks:", err);
@@ -288,7 +288,7 @@ const ContractorDashboard = () => {
 
       const subtotal = invoiceItems.reduce(
         (sum, item) => sum + item.quantity * item.rate,
-        0
+        0,
       );
       const sgstAmount = (data.sgst / 100) * subtotal;
       const cgstAmount = (data.cgst / 100) * subtotal;
@@ -311,11 +311,11 @@ const ContractorDashboard = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast.success(
-        `Invoice ${response.data.invoiceNumber || "created"} successfully`
+        `Invoice ${response.data.invoiceNumber || "created"} successfully`,
       );
 
       refetch();
@@ -335,7 +335,7 @@ const ContractorDashboard = () => {
     } catch (error: any) {
       console.error("Invoice creation error:", error);
       toast.error(
-        error?.response?.data?.error || "Failed to create invoice. Try again."
+        error?.response?.data?.error || "Failed to create invoice. Try again.",
       );
     }
   };
@@ -345,7 +345,7 @@ const ContractorDashboard = () => {
     toast.error(
       projectsError
         ? projectsFetchError?.message || "Failed to load projects"
-        : fetchError?.message || "Failed to load invoices"
+        : fetchError?.message || "Failed to load invoices",
     );
     return (
       <MainLayout>
@@ -838,7 +838,7 @@ const ContractorDashboard = () => {
                                   addInvoiceItem(itemForm.getValues());
                                 } else {
                                   toast.error(
-                                    "Please correct the errors in the item form"
+                                    "Please correct the errors in the item form",
                                   );
                                 }
                               }}
@@ -868,7 +868,7 @@ const ContractorDashboard = () => {
                         {(
                           invoiceItems.reduce(
                             (sum, item) => sum + item.amount,
-                            0
+                            0,
                           ) *
                           (form.watch("sgst") / 100)
                         ).toLocaleString()}
@@ -881,7 +881,7 @@ const ContractorDashboard = () => {
                         {(
                           invoiceItems.reduce(
                             (sum, item) => sum + item.amount,
-                            0
+                            0,
                           ) *
                           (form.watch("cgst") / 100)
                         ).toLocaleString()}
@@ -894,7 +894,7 @@ const ContractorDashboard = () => {
                         {(
                           invoiceItems.reduce(
                             (sum, item) => sum + item.amount,
-                            0
+                            0,
                           ) *
                           (1 + (form.watch("sgst") + form.watch("cgst")) / 100)
                         ).toLocaleString()}
@@ -941,7 +941,7 @@ const ContractorDashboard = () => {
             </DialogContent>
           </Dialog>
 
-          <Dialog
+          {/* <Dialog
             open={uploadEvidenceOpen}
             onOpenChange={setUploadEvidenceOpen}
           >
@@ -952,7 +952,7 @@ const ContractorDashboard = () => {
               </Button>
             </DialogTrigger>
             <UploadEvidenceDialog onOpenChange={setUploadEvidenceOpen} />
-          </Dialog>
+          </Dialog> */}
         </div>
 
         {tasks && projects && (
@@ -973,7 +973,7 @@ const ContractorDashboard = () => {
               <TabsTrigger value="materials">Materials</TabsTrigger>
               <TabsTrigger value="labor">Labor</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
-              <TabsTrigger value="evidence">Photo Evidence</TabsTrigger>
+              {/* <TabsTrigger value="evidence">Photo Evidence</TabsTrigger> */}
             </TabsList>
           </div>
 
@@ -990,7 +990,7 @@ const ContractorDashboard = () => {
                 <SelectItem value="materials">Materials</SelectItem>
                 <SelectItem value="labor">Labor</SelectItem>
                 <SelectItem value="invoices">Invoices</SelectItem>
-                <SelectItem value="evidence">Photo Evidence</SelectItem>
+                {/* <SelectItem value="evidence">Photo Evidence</SelectItem> */}
               </SelectContent>
             </Select>
           </div>
@@ -1092,7 +1092,7 @@ const ContractorDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="evidence" className="space-y-4">
+          {/* <TabsContent value="evidence" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Photo Evidence</CardTitle>
@@ -1101,7 +1101,7 @@ const ContractorDashboard = () => {
                 <ContractorPhotoEvidence />
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
       </div>
     </MainLayout>
