@@ -165,7 +165,7 @@ const QualityControl = () => {
           import.meta.env.VITE_URL
         }/api/project/site-incharge/assign-task-to-contractor`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (res.status === 200) {
@@ -213,7 +213,7 @@ const QualityControl = () => {
             {
               headers: { "Content-Type": "multipart/form-data" },
               withCredentials: true,
-            }
+            },
           );
           if (res.data.url) uploadedImageUrls.push(res.data.url);
         } catch (err) {
@@ -230,10 +230,10 @@ const QualityControl = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/quality-issue/create-quality-issue`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
-      if (res.status === 200) {
+      if (res.status === 201) {
         toast.success("Issue reported successfully");
         setIsDialogOpen(false);
         setPhotos([]);
@@ -247,8 +247,6 @@ const QualityControl = () => {
         });
         setProjectId("");
         queryClient.invalidateQueries({ queryKey: ["qualityIssues"] });
-      } else {
-        toast.error("Failed to report issue");
       }
     } catch (err) {
       toast.error("Something went wrong");
@@ -336,7 +334,7 @@ const QualityControl = () => {
               <div className="text-2xl font-bold">
                 {Array.isArray(qualityIssues) &&
                   qualityIssues.filter(
-                    (issue) => issue.status === "under_review"
+                    (issue) => issue.status === "under_review",
                   ).length}
               </div>
               <p className="text-xs text-muted-foreground">In progress</p>
@@ -699,7 +697,7 @@ const QualityControl = () => {
                           <TableCell>
                             {issue.reported_date
                               ? new Date(
-                                  issue.reported_date
+                                  issue.reported_date,
                                 ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
@@ -908,7 +906,7 @@ const QualityControl = () => {
                       <div>
                         <strong>Reported Date:</strong>{" "}
                         {new Date(
-                          selectedIssue.reported_date
+                          selectedIssue.reported_date,
                         ).toLocaleDateString()}
                       </div>
                       <div>
@@ -972,7 +970,7 @@ const QualityControl = () => {
                               {
                                 status: newStatus,
                               },
-                              { withCredentials: true }
+                              { withCredentials: true },
                             );
                             setStatusDialogOpen(false);
                             queryClient.invalidateQueries({
@@ -1124,7 +1122,7 @@ const QualityControl = () => {
                                 <SelectItem key={key} value={key}>
                                   {value.title}
                                 </SelectItem>
-                              )
+                              ),
                             )}
                           </SelectContent>
                         </Select>

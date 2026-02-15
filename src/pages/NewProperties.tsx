@@ -61,7 +61,7 @@ const NewProperties = () => {
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null
+    null,
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
@@ -73,19 +73,19 @@ const NewProperties = () => {
   const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
   const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
-    undefined
+    undefined,
   );
   const [selectedOpenPlot, setSelectedOpenPlot] = useState<OpenPlot | null>(
-    null
+    null,
   );
 
   const [openLandDialog, setopenLandDialog] = useState(false);
   const [openLandSubmitting, setOpenLandSubmitting] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
-    undefined
+    undefined,
   );
   const [selectedOpenLand, setSelectedOpenLand] = useState<OpenLand | null>(
-    null
+    null,
   );
 
   const {
@@ -127,7 +127,7 @@ const NewProperties = () => {
         `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
         {
           withCredentials: true,
-        }
+        },
       );
     },
     onSuccess: () => {
@@ -144,7 +144,7 @@ const NewProperties = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -159,11 +159,11 @@ const NewProperties = () => {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 409) {
           toast.error(
-            err.response?.data?.message || "Conflict while creating open plot"
+            err.response?.data?.message || "Conflict while creating open plot",
           );
         } else {
           toast.error(
-            err.response?.data?.message || "Failed to create open plot"
+            err.response?.data?.message || "Failed to create open plot",
           );
         }
       } else {
@@ -182,7 +182,7 @@ const NewProperties = () => {
       const { data } = await axios.put(
         `${import.meta.env.VITE_URL}/api/openPlot/updateOpenPlot/${id}`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -204,7 +204,7 @@ const NewProperties = () => {
       console.error("updateOpenPlot error:", err?.response || err);
       if (axios.isAxiosError(err)) {
         toast.error(
-          err.response?.data?.message || "Failed to update open plot"
+          err.response?.data?.message || "Failed to update open plot",
         );
       } else {
         toast.error("Failed to update open plot");
@@ -220,7 +220,7 @@ const NewProperties = () => {
         }`,
         {
           withCredentials: true,
-        }
+        },
       );
     },
     onSuccess: () => {
@@ -240,7 +240,7 @@ const NewProperties = () => {
         `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${
           currentOpenLand._id
         }`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
     },
     onSuccess: () => {
@@ -262,7 +262,7 @@ const NewProperties = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/openLand/saveOpenLand`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -295,7 +295,7 @@ const NewProperties = () => {
       const { data } = await axios.put(
         `${import.meta.env.VITE_URL}/api/openLand/updateOpenLand/${id}`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -326,7 +326,7 @@ const NewProperties = () => {
       results = results.filter(
         (b) =>
           (b.projectName || "").toLowerCase().includes(lower) ||
-          (b.location || "").toLowerCase().includes(lower)
+          (b.location || "").toLowerCase().includes(lower),
       );
     }
     if (typeFilter !== "all")
@@ -466,7 +466,7 @@ const NewProperties = () => {
   const openDeleteDialog = (
     type: "building" | "plot" | "land",
     id: string,
-    e?: React.MouseEvent
+    e?: React.MouseEvent,
   ) => {
     e?.stopPropagation();
     setDeleteType(type);
@@ -499,7 +499,7 @@ const NewProperties = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) return toast.error("No brochure available to download.");
@@ -507,7 +507,7 @@ const NewProperties = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
 
       // Open in new tab so browser handles download; the server streams the file
@@ -778,7 +778,7 @@ const NewProperties = () => {
                                   handleDownload(
                                     e,
                                     b.brochureUrl!,
-                                    b.projectName
+                                    b.projectName,
                                   )
                                 }
                                 title="Download Brochure"
@@ -806,6 +806,7 @@ const NewProperties = () => {
             </Card>
 
             {/* ---------- Open Plots Section ---------- */}
+
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-semibold">Open Plots</h2>
@@ -831,6 +832,7 @@ const NewProperties = () => {
                           onClick={() => setSelectedOpenPlot(plot)}
                           className="overflow-hidden hover:shadow-lg transition cursor-pointer"
                         >
+                          {/* ---------- THUMBNAIL ---------- */}
                           <div className="relative">
                             {plot.thumbnailUrl ? (
                               <img
@@ -846,10 +848,12 @@ const NewProperties = () => {
                           </div>
 
                           <CardContent className="p-4">
+                            {/* ---------- HEADER ---------- */}
                             <div className="flex justify-between items-start mb-1">
                               <h3 className="font-semibold text-lg">
-                                {plot.projectName} — {plot.plotNo}
+                                {plot.projectName} — {plot.openPlotNo}
                               </h3>
+
                               {canEdit && (
                                 <div
                                   className="flex gap-1"
@@ -866,7 +870,7 @@ const NewProperties = () => {
                                     size="icon"
                                     variant="ghost"
                                     onClick={(e) =>
-                                      openDeleteDialog("plot", plot._id!, e)
+                                      openDeleteDialog("plot", plot._id, e)
                                     }
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -875,44 +879,55 @@ const NewProperties = () => {
                               )}
                             </div>
 
+                            {/* ---------- LOCATION ---------- */}
                             <div className="flex items-center text-sm text-muted-foreground mb-3">
-                              <MapPin className="h-4 w-4 mr-1" />{" "}
-                              {plot.googleMapsLink ? (
-                                <a
-                                  className="underline"
-                                  href={plot.googleMapsLink}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  View on map
-                                </a>
-                              ) : (
-                                plot.projectName
-                              )}
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {plot.location || "Location not specified"}
                             </div>
 
+                            {/* ---------- LAND DETAILS ---------- */}
                             <div className="space-y-2 mb-4 text-sm">
                               <div className="flex justify-between">
-                                <span>Extent (SqYards)</span>
-                                <span>{plot.extentSqYards}</span>
+                                <span>Total Area</span>
+                                <span>
+                                  {plot.totalArea} {plot.areaUnit}
+                                </span>
                               </div>
+
                               <div className="flex justify-between">
-                                <span>Plot Type</span>
-                                <span>{plot.plotType}</span>
+                                <span>Facing</span>
+                                <span>{plot.facing || "—"}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Road Width</span>
+                                <span>
+                                  {plot.roadWidthFt
+                                    ? `${plot.roadWidthFt} ft`
+                                    : "—"}
+                                </span>
                               </div>
                             </div>
 
+                            {/* ---------- LEGAL / STATUS ---------- */}
                             <div className="border-t pt-3 text-sm space-y-2">
                               <div className="flex justify-between">
-                                <span>Availability</span>
-                                <span>{plot.availabilityStatus}</span>
+                                <span>Status</span>
+                                <span>{plot.status}</span>
                               </div>
+
+                              <div className="flex justify-between">
+                                <span>Title</span>
+                                <span>{plot.titleStatus}</span>
+                              </div>
+
                               <div className="flex justify-between">
                                 <span>Approval</span>
-                                <span>{plot.approval}</span>
+                                <span>{plot.approvalAuthority || "—"}</span>
                               </div>
                             </div>
 
+                            {/* ---------- ACTION ---------- */}
                             <div className="flex gap-2 mt-4">
                               <Button
                                 size="sm"
@@ -922,40 +937,8 @@ const NewProperties = () => {
                                   setSelectedOpenPlot(plot);
                                 }}
                               >
-                                View Plot Details
+                                View Details
                               </Button>
-                              {plot.brochureUrl && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) =>
-                                      handleDownload(
-                                        e,
-                                        plot.brochureUrl!,
-                                        plot.projectName
-                                      )
-                                    }
-                                    title="Download Brochure"
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                  {/* <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) =>
-                                      handleShare(
-                                        e,
-                                        plot.brochureUrl!,
-                                        plot.projectName
-                                      )
-                                    }
-                                    title="Copy Share Link"
-                                  >
-                                    <Share2 className="h-4 w-4" />
-                                  </Button> */}
-                                </div>
-                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -965,6 +948,7 @@ const NewProperties = () => {
                 </CardContent>
               </Card>
             </section>
+
             {/* ---------- Open Lands Section ---------- */}
             <section>
               <div className="flex items-center justify-between mb-4">
@@ -1074,7 +1058,7 @@ const NewProperties = () => {
                                 <span>
                                   {land?.availableDate
                                     ? new Date(
-                                        land?.availableDate
+                                        land?.availableDate,
                                       ).toLocaleDateString("en-IN", {
                                         day: "2-digit",
                                         month: "short",
@@ -1105,7 +1089,7 @@ const NewProperties = () => {
                                       handleDownload(
                                         e,
                                         land?.brochureUrl!,
-                                        land?.projectName
+                                        land?.projectName,
                                       )
                                     }
                                     title="Download Brochure"
@@ -1158,15 +1142,15 @@ const NewProperties = () => {
           deleteType === "building"
             ? "Delete Building"
             : deleteType === "plot"
-            ? "Delete Open Plot"
-            : "Delete Open Land"
+              ? "Delete Open Plot"
+              : "Delete Open Land"
         }
         description={
           deleteType === "building"
             ? "Are you sure you want to delete this building?"
             : deleteType === "plot"
-            ? "Are you sure you want to delete this open plot?"
-            : "Are you sure you want to delete this open land?"
+              ? "Are you sure you want to delete this open plot?"
+              : "Are you sure you want to delete this open land?"
         }
       />
 
@@ -1178,7 +1162,6 @@ const NewProperties = () => {
           if (!val) setCurrentOpenPlot(undefined);
         }}
         openPlot={currentOpenPlot}
-        onSubmit={handleOpenPlotSubmit}
       />
       {/* OpenLand dialog (calls your existing component) */}
       <OpenLandDialog

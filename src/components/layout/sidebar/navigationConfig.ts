@@ -181,12 +181,12 @@ export const moduleToNavItem: Record<string, any> = {
     icon: Settings,
     label: "System Settings",
   },
-  "kanban": {
+  kanban: {
     to: "/kanban",
     icon: LayoutDashboard,
     label: "Project Manager",
   },
-  "department": {
+  department: {
     to: "/department",
     icon: Building2,
     label: "Department",
@@ -302,17 +302,17 @@ export const moduleToNavItem: Record<string, any> = {
     icon: BarChart3,
     label: "Customer Management",
   },
-  "Photo Evidence": {
-    to: "/evidence",
-    icon: Camera,
-    label: "Photo Evidence",
-  },
+  // "Photo Evidence": {
+  //   to: "/evidence",
+  //   icon: Camera,
+  //   label: "Photo Evidence",
+  // },
 };
 
 // Build dynamic navigation based on role + permissions
 export const buildNavigationForRole = (
   rolePermissions: any[],
-  roleName: string
+  roleName: string,
 ): any[] => {
   // const topDefaults = [moduleToNavItem["Dashboard"]];
   const bottomDefaults = [
