@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+// src\components\properties\OpenPlotDetails.tsx
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,6 +30,8 @@ import { InnerPlotDialog } from "./InnerPlotDialog";
 import { useNavigate } from "react-router-dom";
 import { getAllInnerPlot } from "@/api/innerPlot.api";
 import { useQuery } from "@tanstack/react-query";
+import BulkInnerPlotGenerator from "./BulkInnerPlotGenerator";
+import CsvInnerPlotUploader from "./CsvInnerPlotUploader";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -60,12 +63,20 @@ export function OpenPlotDetails({
   onDelete,
   onBack,
 }: OpenPlotDetailsProps) {
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "instant",
+    });
+  }, []);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
   const [innerPlotDialogOpen, setInnerPlotDialogOpen] = useState(false);
+  const [bulkManualOpen, setBulkManualOpen] = useState(false);
+  const [csvUploadOpen, setCsvUploadOpen] = useState(false);
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
 
@@ -188,12 +199,22 @@ export function OpenPlotDetails({
             Inner Plots
           </CardTitle>
 
-          <Button
-            variant="default"
-            onClick={() => setInnerPlotDialogOpen(true)}
-          >
-            Add Plot
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkManualOpen(true)}>
+              Bulk Generate
+            </Button>
+
+            <Button variant="outline" onClick={() => setCsvUploadOpen(true)}>
+              Upload CSV
+            </Button>
+
+            <Button
+              variant="default"
+              onClick={() => setInnerPlotDialogOpen(true)}
+            >
+              Add Plot
+            </Button>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -447,6 +468,17 @@ export function OpenPlotDetails({
       <InnerPlotDialog
         open={innerPlotDialogOpen}
         onOpenChange={setInnerPlotDialogOpen}
+        openPlotId={plot._id}
+      />
+      <BulkInnerPlotGenerator
+        open={bulkManualOpen}
+        onOpenChange={setBulkManualOpen}
+        openPlotId={plot._id}
+      />
+
+      <CsvInnerPlotUploader
+        open={csvUploadOpen}
+        onOpenChange={setCsvUploadOpen}
         openPlotId={plot._id}
       />
     </div>
