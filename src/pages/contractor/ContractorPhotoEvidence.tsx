@@ -76,12 +76,12 @@ const ContractorPhotoEvidencePage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [photoDetailsOpen, setPhotoDetailsOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoEvidence | null>(
-    null
+    null,
   );
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<PhotoEvidence | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-
+  console.log("editingPhoto:", editingPhoto);
   useEffect(() => {
     const filtered = photoList.filter((photo) => {
       const matchesSearch =
@@ -129,7 +129,7 @@ const ContractorPhotoEvidencePage = () => {
 
   const downloadAllImages = async (photo: PhotoEvidence) => {
     const loadingToast = toast.loading(
-      `Preparing download for "${photo.title}"...`
+      `Preparing download for "${photo.title}"...`,
     );
     try {
       const zip = new JSZip();
@@ -189,7 +189,7 @@ const ContractorPhotoEvidencePage = () => {
             import.meta.env.VITE_URL
           }/api/project/contractor/${projectId}/${taskId}/task`,
           payload,
-          { withCredentials: true }
+          { withCredentials: true },
         );
         toast.success("Details updated successfully");
       } else {
@@ -280,10 +280,10 @@ const ContractorPhotoEvidencePage = () => {
                           const today = new Date();
                           const photoDate = new Date(p.date);
                           const diffTime = Math.abs(
-                            today.getTime() - photoDate.getTime()
+                            today.getTime() - photoDate.getTime(),
                           );
                           const diffDays = Math.ceil(
-                            diffTime / (1000 * 60 * 60 * 24)
+                            diffTime / (1000 * 60 * 60 * 24),
                           );
                           return diffDays <= 1;
                         }).length
@@ -378,7 +378,7 @@ const ContractorPhotoEvidencePage = () => {
                               <SelectItem key={key} value={key}>
                                 {phase.title}
                               </SelectItem>
-                            )
+                            ),
                           )}
                         </SelectContent>
                       </Select>
@@ -471,7 +471,8 @@ const ContractorPhotoEvidencePage = () => {
                                       .split("_")
                                       .map(
                                         (w) =>
-                                          w.charAt(0).toUpperCase() + w.slice(1)
+                                          w.charAt(0).toUpperCase() +
+                                          w.slice(1),
                                       )
                                       .join(" ")}
                                   </Badge>
@@ -600,7 +601,7 @@ const ContractorPhotoEvidencePage = () => {
                                     .map(
                                       (word: string) =>
                                         word.charAt(0).toUpperCase() +
-                                        word.slice(1)
+                                        word.slice(1),
                                     )
                                     .join(" ")}
                                 </Badge>

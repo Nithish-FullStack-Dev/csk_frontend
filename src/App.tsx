@@ -47,64 +47,64 @@ const AgentSchedule = lazy(() => import("./pages/agent/AgentSchedule"));
 
 // Contractor specific pages
 const ContractorProjects = lazy(
-  () => import("./pages/contractor/ContractorProjects")
+  () => import("./pages/contractor/ContractorProjects"),
 );
 const ContractorTasks = lazy(
-  () => import("./pages/contractor/ContractorTasks")
+  () => import("./pages/contractor/ContractorTasks"),
 );
 const ContractorTimeline = lazy(
-  () => import("./pages/contractor/ContractorTimeline")
+  () => import("./pages/contractor/ContractorTimeline"),
 );
 const ContractorMaterials = lazy(
-  () => import("./pages/contractor/ContractorMaterials")
+  () => import("./pages/contractor/ContractorMaterials"),
 );
 const ContractorLabor = lazy(
-  () => import("./pages/contractor/ContractorLabor")
+  () => import("./pages/contractor/ContractorLabor"),
 );
 const ContractorInvoices = lazy(
-  () => import("./pages/contractor/ContractorInvoices")
+  () => import("./pages/contractor/ContractorInvoices"),
 );
 const ContractorPhotoEvidence = lazy(
-  () => import("./pages/contractor/ContractorPhotoEvidence")
+  () => import("./pages/contractor/ContractorPhotoEvidence"),
 );
 
 // Site Incharge specific pages
 const TaskVerifications = lazy(
-  () => import("./pages/siteincharge/TaskVerifications")
+  () => import("./pages/siteincharge/TaskVerifications"),
 );
 const QualityControl = lazy(
-  () => import("./pages/siteincharge/QualityControl")
+  () => import("./pages/siteincharge/QualityControl"),
 );
 const SiteInspections = lazy(
-  () => import("./pages/siteincharge/SiteInspections")
+  () => import("./pages/siteincharge/SiteInspections"),
 );
 const ContractorsList = lazy(
-  () => import("./pages/siteincharge/ContractorsList")
+  () => import("./pages/siteincharge/ContractorsList"),
 );
 const ConstructionProgress = lazy(
-  () => import("./pages/siteincharge/ConstructionProgress")
+  () => import("./pages/siteincharge/ConstructionProgress"),
 );
 
 // Public pages
 const HomePage = lazy(() => import("./pages/public/HomePage"));
 const PublicAboutPage = lazy(() => import("./pages/public/AboutPage"));
 const PublicPropertiesPage = lazy(
-  () => import("./pages/public/PropertiesPage")
+  () => import("./pages/public/PropertiesPage"),
 );
 const CompletedProjectsPage = lazy(
-  () => import("./pages/public/CompletedProjectsPage")
+  () => import("./pages/public/CompletedProjectsPage"),
 );
 const OngoingProjectsPage = lazy(
-  () => import("./pages/public/OngoingProjectsPage")
+  () => import("./pages/public/OngoingProjectsPage"),
 );
 const UpcomingProjectsPage = lazy(
-  () => import("./pages/public/UpcomingProjectsPage")
+  () => import("./pages/public/UpcomingProjectsPage"),
 );
 const OpenPlotsPage = lazy(() => import("./pages/public/OpenPlotsPage"));
 
 const ContactPage = lazy(() => import("./pages/public/ContactPage"));
 const ProjectDetailsPage = lazy(
-  () => import("./pages/public/ProjectDetailsPage")
+  () => import("./pages/public/ProjectDetailsPage"),
 );
 const OpenPlotsDetails = lazy(() => import("./pages/public/OpenPlotsDetails"));
 
@@ -128,26 +128,26 @@ const NewProperties = lazy(() => import("./pages/NewProperties"));
 // Reports module
 const ReportsHome = lazy(() => import("./modules/reports/ReportsHome"));
 const PropertiesReport = lazy(
-  () => import("./modules/reports/pages/PropertiesReport")
+  () => import("./modules/reports/pages/PropertiesReport"),
 );
 const AgentsReport = lazy(() => import("./modules/reports/pages/AgentsReport"));
 const TeamLeadsReport = lazy(
-  () => import("./modules/reports/pages/TeamLeadsReport")
+  () => import("./modules/reports/pages/TeamLeadsReport"),
 );
 const AccountingReport = lazy(
-  () => import("./modules/reports/pages/AccountingReport")
+  () => import("./modules/reports/pages/AccountingReport"),
 );
 const ContractorsReport = lazy(
-  () => import("./modules/reports/pages/ContractorsReport")
+  () => import("./modules/reports/pages/ContractorsReport"),
 );
 const SiteInchargeReport = lazy(
-  () => import("./modules/reports/pages/SiteInchargeReport")
+  () => import("./modules/reports/pages/SiteInchargeReport"),
 );
 const UsersAccessReport = lazy(
-  () => import("./modules/reports/pages/UsersAccessReport")
+  () => import("./modules/reports/pages/UsersAccessReport"),
 );
 const SalesManagersReport = lazy(
-  () => import("./modules/reports/pages/SalesManagersReport")
+  () => import("./modules/reports/pages/SalesManagersReport"),
 );
 import AdminTeamAgent from "./pages/admin/AdminTeamAgent";
 import AdminTeamLead from "./pages/admin/AdminTeamLead";
@@ -159,6 +159,8 @@ import PublicSkeleton from "./pages/public/PublicSkeleton";
 import Loader from "./components/Loader";
 import OpenLandDetails from "./pages/public/OpenLandDetails";
 import Kanban from "./pages/Kanban";
+import Department from "./pages/Department";
+import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -247,6 +249,7 @@ const App = () => {
                 {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                 <Route path="/public/contact" element={<ContactPage />} />
                 <Route path="/kanban" element={<Kanban />} />
+                <Route path="/department" element={<Department />} />
               </Route>
 
               {/* Admin Routes */}
@@ -402,6 +405,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/inner-detail/:_id"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <InnerPlotDetails />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* CMS Route */}
                 <Route
@@ -472,6 +483,7 @@ const App = () => {
                 />
 
                 <Route path="/kanban" element={<Kanban />} />
+                <Route path="/department" element={<Department />} />
 
                 <Route
                   path="/profile"
@@ -625,14 +637,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="/evidence"
                   element={
                     <ProtectedRoute roleSubmodule={"Photo Evidence"}>
                       <ContractorPhotoEvidence />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
 
                 {/* Site Incharge Routes */}
                 <Route

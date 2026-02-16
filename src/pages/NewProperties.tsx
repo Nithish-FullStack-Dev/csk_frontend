@@ -802,6 +802,7 @@ const NewProperties = () => {
             </Card>
 
             {/* ---------- Open Plots Section ---------- */}
+
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-semibold">Open Plots</h2>
@@ -827,6 +828,7 @@ const NewProperties = () => {
                           onClick={() => setSelectedOpenPlot(plot)}
                           className="overflow-hidden hover:shadow-lg transition cursor-pointer"
                         >
+                          {/* ---------- THUMBNAIL ---------- */}
                           <div className="relative">
                             {plot.thumbnailUrl ? (
                               <img
@@ -842,10 +844,12 @@ const NewProperties = () => {
                           </div>
 
                           <CardContent className="p-4">
+                            {/* ---------- HEADER ---------- */}
                             <div className="flex justify-between items-start mb-1">
                               <h3 className="font-semibold text-lg">
-                                {plot.projectName} — {plot.plotNo}
+                                {plot.projectName} — {plot.openPlotNo}
                               </h3>
+
                               {canEdit && (
                                 <div
                                   className="flex gap-1"
@@ -862,7 +866,7 @@ const NewProperties = () => {
                                     size="icon"
                                     variant="ghost"
                                     onClick={(e) =>
-                                      openDeleteDialog("plot", plot._id!, e)
+                                      openDeleteDialog("plot", plot._id, e)
                                     }
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -871,44 +875,55 @@ const NewProperties = () => {
                               )}
                             </div>
 
+                            {/* ---------- LOCATION ---------- */}
                             <div className="flex items-center text-sm text-muted-foreground mb-3">
-                              <MapPin className="h-4 w-4 mr-1" />{" "}
-                              {plot.googleMapsLink ? (
-                                <a
-                                  className="underline"
-                                  href={plot.googleMapsLink}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  View on map
-                                </a>
-                              ) : (
-                                plot.projectName
-                              )}
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {plot.location || "Location not specified"}
                             </div>
 
+                            {/* ---------- LAND DETAILS ---------- */}
                             <div className="space-y-2 mb-4 text-sm">
                               <div className="flex justify-between">
-                                <span>Extent (SqYards)</span>
-                                <span>{plot.extentSqYards}</span>
+                                <span>Total Area</span>
+                                <span>
+                                  {plot.totalArea} {plot.areaUnit}
+                                </span>
                               </div>
+
                               <div className="flex justify-between">
-                                <span>Plot Type</span>
-                                <span>{plot.plotType}</span>
+                                <span>Facing</span>
+                                <span>{plot.facing || "—"}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Road Width</span>
+                                <span>
+                                  {plot.roadWidthFt
+                                    ? `${plot.roadWidthFt} ft`
+                                    : "—"}
+                                </span>
                               </div>
                             </div>
 
+                            {/* ---------- LEGAL / STATUS ---------- */}
                             <div className="border-t pt-3 text-sm space-y-2">
                               <div className="flex justify-between">
-                                <span>Availability</span>
-                                <span>{plot.availabilityStatus}</span>
+                                <span>Status</span>
+                                <span>{plot.status}</span>
                               </div>
+
+                              <div className="flex justify-between">
+                                <span>Title</span>
+                                <span>{plot.titleStatus}</span>
+                              </div>
+
                               <div className="flex justify-between">
                                 <span>Approval</span>
-                                <span>{plot.approval}</span>
+                                <span>{plot.approvalAuthority || "—"}</span>
                               </div>
                             </div>
 
+                            {/* ---------- ACTION ---------- */}
                             <div className="flex gap-2 mt-4">
                               <Button
                                 size="sm"
@@ -918,7 +933,7 @@ const NewProperties = () => {
                                   setSelectedOpenPlot(plot);
                                 }}
                               >
-                                View Plot Details
+                                View Details
                               </Button>
                               {plot.brochureUrl && (
                                 <div className="flex gap-2">
@@ -961,6 +976,7 @@ const NewProperties = () => {
                 </CardContent>
               </Card>
             </section>
+
             {/* ---------- Open Lands Section ---------- */}
             <section>
               <div className="flex items-center justify-between mb-4">
@@ -1174,7 +1190,6 @@ const NewProperties = () => {
           if (!val) setCurrentOpenPlot(undefined);
         }}
         openPlot={currentOpenPlot}
-        onSubmit={handleOpenPlotSubmit}
       />
       {/* OpenLand dialog (calls your existing component) */}
       <OpenLandDialog

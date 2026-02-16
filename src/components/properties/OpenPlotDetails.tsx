@@ -15,31 +15,29 @@ import {
   Trash,
   Map,
   Building,
-  User,
   FileText,
   MessageSquare,
-  Check,
-  X,
   Image as ImageIcon,
   MapPin,
 } from "lucide-react";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
+import { Lead } from "@/utils/leads/LeadConfig";
+import axios from "axios";
+import { InnerPlotDialog } from "./InnerPlotDialog";
+import { useNavigate } from "react-router-dom";
+import { getAllInnerPlot } from "@/api/innerPlot.api";
+import { useQuery } from "@tanstack/react-query";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
     Available: "bg-green-500",
     Sold: "bg-blue-500",
-    Reserved: "bg-purple-500",
     Blocked: "bg-red-500",
-    "Under Dispute": "bg-yellow-500",
-    Completed: "bg-green-500",
-    "In Progress": "bg-yellow-500",
-    Pending: "bg-orange-500",
-    "Not Started": "bg-gray-500",
+    Clear: "bg-green-500",
+    Disputed: "bg-yellow-500",
+    NA: "bg-gray-500",
   };
 
   return (
@@ -63,23 +61,34 @@ export function OpenPlotDetails({
   onBack,
 }: OpenPlotDetailsProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
+  const [innerPlotDialogOpen, setInnerPlotDialogOpen] = useState(false);
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
+
+  // const {
+  //   data: leads = [],
+  //   isLoading: leadsLoading,
+  //   isError: leadsError,
+  //   error: leadErr,
+  // } = useLeadbyOpenPlotId(plot._id);
+
   const {
-    data: leads,
-    isLoading: leadsLoading,
-    isError: leadsError,
-    error: leadErr,
-  } = useLeadbyOpenPlotId(plot._id);
+    data: innerPlots = [],
+    isLoading: innerPlotsLoading,
+    isError: innerPlotsError,
+  } = useQuery({
+    queryKey: ["inner-plots", plot._id],
+    queryFn: () => getAllInnerPlot(plot._id),
+    enabled: !!plot._id,
+  });
 
   const galleryImages = useMemo(() => {
     const allImages = new Set<string>(plot.images || []);
-    if (plot.thumbnailUrl) {
-      allImages.add(plot.thumbnailUrl);
-    }
+    if (plot.thumbnailUrl) allImages.add(plot.thumbnailUrl);
     return Array.from(allImages);
   }, [plot.images, plot.thumbnailUrl]);
 
@@ -87,45 +96,11 @@ export function OpenPlotDetails({
     setCurrentImage(imageSrc);
     setLightboxOpen(true);
   };
-  const handleDownload = async (
-    e: React.MouseEvent,
-    url?: string | null,
-    projectName?: string | null
-  ) => {
-    e.stopPropagation();
-    if (!url) return toast.error("No brochure available to download.");
 
-    try {
-      const API_BASE = import.meta.env.VITE_URL;
-      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
-      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
-
-      window.open(proxyUrl, "_blank");
-      toast.success("Download starting...");
-    } catch (error) {
-      console.error("Download error:", error);
-      toast.error("Failed to download brochure.");
-    }
-  };
-
-  const getEmbeddableGoogleMapSrc = (url?: string): string => {
-    if (!url) return "";
-
-    if (url.includes("/embed?pb=")) return url;
-
-    if (url.includes("/maps/place/")) {
-      return url.replace("/maps/place/", "/maps/embed/place/");
-    }
-
-    if (url.includes("goo.gl") || url.includes("?q=")) {
-      const queryMatch = url.match(/q=([^&]+)/);
-      const query = queryMatch ? decodeURIComponent(queryMatch[1]) : "";
-      return `https://www.google.com/maps?q=${query}&output=embed`;
-    }
-
+  const getEmbeddableGoogleMapSrc = (location?: string): string => {
+    if (!location) return "";
     return `https://www.google.com/maps?q=${encodeURIComponent(
-      url
+      location,
     )}&output=embed`;
   };
 
@@ -137,20 +112,22 @@ export function OpenPlotDetails({
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to All Open Plots
         </Button>
-        {canEdit && (
-          <div className="flex md:flex-row flex-col gap-3">
-            <Button size="sm" onClick={onEdit}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setDeleteDialogOpen(true)}
-            >
-              <Trash className="mr-2 h-4 w-4" /> Delete
-            </Button>
-          </div>
-        )}
+        <div className="flex md:flex-row flex-col gap-3">
+          {canEdit && (
+            <>
+              <Button size="sm" onClick={onEdit}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash className="mr-2 h-4 w-4" /> Delete
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Basic Info */}
@@ -169,9 +146,9 @@ export function OpenPlotDetails({
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-bold mb-1">{plot.projectName}</h2>
-                {getStatusBadge(plot.availabilityStatus)}
+                {getStatusBadge(plot.status)}
                 <p className="text-muted-foreground mt-1">
-                  Plot No. {plot.plotNo} • Mem. No. {plot.memNo}
+                  Open Plot No: {plot.openPlotNo}
                 </p>
               </div>
             </div>
@@ -179,92 +156,155 @@ export function OpenPlotDetails({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               <div className="flex items-center">
                 <Map className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Facing: {plot.facing}</span>
-              </div>
-              <div className="flex items-center">
-                <Building className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Extent: {plot.extentSqYards} sq. yards</span>
+                <span>Location: {plot.location}</span>
               </div>
 
               <div className="flex items-center">
                 <Building className="h-5 w-5 mr-2 text-muted-foreground" />
-                <span>Plot Type: {plot.plotType}</span>
+                <span>
+                  Total Area: {plot.totalArea} {plot.areaUnit}
+                </span>
+              </div>
+
+              <div className="flex items-center">
+                <Building className="h-5 w-5 mr-2 text-muted-foreground" />
+                <span>Facing: {plot.facing || "N/A"}</span>
+              </div>
+
+              <div className="flex items-center">
+                <Building className="h-5 w-5 mr-2 text-muted-foreground" />
+                <span>Road Width: {plot.roadWidthFt ?? "N/A"} ft</span>
               </div>
             </div>
-
-            {plot?.brochureUrl && (
-              <Button variant="outline" asChild className="mt-4">
-                <a
-                  onClick={(e) =>
-                    handleDownload(e, plot?.brochureUrl, plot?.projectName)
-                  }
-                  rel="noopener noreferrer"
-                >
-                  <FileText className="mr-2 h-4 w-4" /> Download Project
-                  Brochure
-                </a>
-              </Button>
-            )}
           </div>
         </div>
       </Card>
 
-      {/* Customer + Financial Info */}
+      {/* Inner plot */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            Inner Plots
+          </CardTitle>
+
+          <Button
+            variant="default"
+            onClick={() => setInnerPlotDialogOpen(true)}
+          >
+            Add Plot
+          </Button>
+        </CardHeader>
+
+        <CardContent>
+          {innerPlotsLoading && <p>Loading inner plots...</p>}
+
+          {innerPlotsError && (
+            <p className="text-red-500">Failed to load inner plots</p>
+          )}
+
+          {!innerPlotsLoading && innerPlots.length === 0 && (
+            <p className="text-muted-foreground italic">
+              No inner plots added yet.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {innerPlots.map((inner, idx) => {
+              console.log("inner plots ", inner);
+              return (
+                <Card
+                  key={inner._id || idx}
+                  className="overflow-hidden hover:shadow-lg transition"
+                >
+                  {/* Thumbnail */}
+                  {inner.thumbnailUrl ? (
+                    <img
+                      src={inner.thumbnailUrl}
+                      alt={inner.plotNo}
+                      className="h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-40 bg-muted flex items-center justify-center">
+                      <ImageIcon className="h-10 w-10 opacity-30" />
+                    </div>
+                  )}
+
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold text-lg">
+                        Plot No: {inner.plotNo}
+                      </h3>
+                      <Badge
+                        className={
+                          inner.status === "Available"
+                            ? "bg-green-500 text-white"
+                            : inner.status === "Sold"
+                              ? "bg-blue-500 text-white"
+                              : "bg-red-500 text-white"
+                        }
+                      >
+                        {inner.status}
+                      </Badge>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div className="flex justify-between">
+                        <span>Area</span>
+                        <span>{inner.area}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Facing</span>
+                        <span>{inner.facing || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Type</span>
+                        <span>{inner.plotType}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="w-full mt-3"
+                      onClick={() => navigate(`/inner-detail/${inner._id}`)}
+                    >
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Legal Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <User className="mr-2 h-5 w-5" /> Customer Info
+              <FileText className="mr-2 h-5 w-5" /> Legal Details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <p>
-              <strong>Name:</strong> {plot.customerId?.user?.name || "N/A"}
+              <strong>Survey No:</strong> {plot.surveyNo || "N/A"}
             </p>
             <p>
-              <strong>Contact:</strong> {plot.customerContact || "N/A"}
+              <strong>Approval Authority:</strong>{" "}
+              {plot.approvalAuthority || "N/A"}
             </p>
             <p>
-              <strong>Agent:</strong> {plot.agentId?.name || "N/A"}
-            </p>
-          </CardContent>
-        </Card>
-        {/* Legal Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center">
-              <FileText className="mr-2 h-5 w-5" /> Legal & Other Info
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p>
-              <strong>Approval:</strong> {plot.approval}
+              <strong>RERA No:</strong> {plot.reraNo || "N/A"}
             </p>
             <p>
-              <strong>Corner Plot:</strong> {plot.isCornerPlot ? "Yes" : "No"}
+              <strong>Document No:</strong> {plot.documentNo || "N/A"}
             </p>
             <p>
-              <strong>Gated Community:</strong>{" "}
-              {plot.isGatedCommunity ? "Yes" : "No"}
-            </p>
-            <p>
-              <strong>Registration:</strong>{" "}
-              {getStatusBadge(plot.registrationStatus)}
-            </p>
-            <p className="flex items-center">
-              <strong>EMI Scheme:</strong>{" "}
-              {plot.emiScheme ? (
-                <>
-                  <Check className="ml-2 h-4 w-4 text-green-500" /> Available
-                </>
-              ) : (
-                <>
-                  <X className="ml-2 h-4 w-4 text-red-500" /> Not Available
-                </>
-              )}
+              <strong>Title Status:</strong> {getStatusBadge(plot.titleStatus)}
             </p>
             <p className="flex items-start">
-              <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+              <MessageSquare className="mr-2 h-4 w-4 text-muted-foreground" />
               {plot.remarks || "No remarks"}
             </p>
           </CardContent>
@@ -273,31 +313,47 @@ export function OpenPlotDetails({
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
-              <User className="mr-2 h-5 w-5" /> Interested Clients
+              <Building className="mr-2 h-5 w-5" /> Boundaries
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
-            {leadsLoading && <p>Loading leads...</p>}
-            {leadsError && <p className="text-red-500">{leadErr?.message}</p>}
-            {!leadsLoading && !leadsError && leads.length === 0 && (
-              <p className="text-gray-500 italic">
-                No interested clients found.
-              </p>
-            )}
-            {!leadsLoading && !leadsError && leads.length > 0 && (
-              <ul className="list-disc list-inside">
-                {leads.map((lead: Lead, idx: number) => (
-                  <li key={lead?._id || idx}>
-                    {lead?.name} - {lead?.phone} - {lead?.email}
-                  </li>
-                ))}
-              </ul>
-            )}
+          <CardContent>
+            {plot.boundaries || "No boundary information available."}
           </CardContent>
         </Card>
       </div>
 
-      {/* 🖼️ Gallery - Bento Grid */}
+      {/* Interested Leads */}
+      {/* <Card>
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center">
+            <FileText className="mr-2 h-5 w-5" /> Interested Leads
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+          {leadsLoading && <p>Loading leads...</p>}
+          {leadsError && (
+            <p className="text-red-500">
+              {axios.isAxiosError(leadErr)
+                ? leadErr.response.data.message
+                : leadErr?.message}
+            </p>
+          )}
+          {!leadsLoading && !leadsError && leads.length === 0 && (
+            <p className="text-gray-500 italic">No interested leads found.</p>
+          )}
+          {!leadsLoading && !leadsError && leads.length > 0 && (
+            <ul className="list-disc list-inside">
+              {leads.map((lead: Lead, idx: number) => (
+                <li key={lead?._id || idx}>
+                  {lead?.name} - {lead?.phone}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card> */}
+
+      {/* Gallery */}
       {galleryImages.length > 0 && (
         <Card>
           <CardHeader>
@@ -327,8 +383,8 @@ export function OpenPlotDetails({
         </Card>
       )}
 
-      {/* 🗺️ Google Map Embed (free) */}
-      {plot.googleMapsLink ? (
+      {/* Map */}
+      {plot.location ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
@@ -338,17 +394,14 @@ export function OpenPlotDetails({
           <CardContent>
             <iframe
               title="Plot Location"
-              src={getEmbeddableGoogleMapSrc(plot.googleMapsLink)}
+              src={getEmbeddableGoogleMapSrc(plot.location)}
               className="w-full h-96 rounded-lg border"
-              style={{ border: 0 }}
-              allowFullScreen
               loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            ></iframe>
+            />
           </CardContent>
         </Card>
       ) : (
-        <p className="text-gray-500 italic">No map available for this plot.</p>
+        <p className="text-gray-500 italic">No map available.</p>
       )}
 
       {/* Delete Dialog */}
@@ -357,8 +410,7 @@ export function OpenPlotDetails({
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this open plot? This action cannot
-              be undone.
+              Are you sure you want to delete this open plot?
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2 mt-4">
@@ -391,6 +443,12 @@ export function OpenPlotDetails({
           />
         </DialogContent>
       </Dialog>
+
+      <InnerPlotDialog
+        open={innerPlotDialogOpen}
+        onOpenChange={setInnerPlotDialogOpen}
+        openPlotId={plot._id}
+      />
     </div>
   );
 }

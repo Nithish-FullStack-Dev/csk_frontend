@@ -30,7 +30,7 @@ export interface Task {
   _id?: string;
   contractor: User | string;
   title: string;
-  statusForContractor: "In progress" | "completed" | "pending review";
+  statusForContractor: "In progress" | "completed" | "pending_review";
   statusForSiteIncharge:
     | "pending verification"
     | "approved"
@@ -136,7 +136,7 @@ export interface QualityIssue {
 export const fetchProjects = async () => {
   const projectsRes = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/projects`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return projectsRes.data;
 };
@@ -144,7 +144,7 @@ export const fetchProjects = async () => {
 export const fetchProjectsForDropdown = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/projectsDropdown`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data;
 };
@@ -154,7 +154,7 @@ export const fetchContractors = async () => {
     `${import.meta.env.VITE_URL}/api/project/site-incharge/myContractors`,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -164,7 +164,7 @@ export const fetchContractorProjects = async () => {
     `${import.meta.env.VITE_URL}/api/project/contractorDropdown`,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -174,7 +174,7 @@ export const fetchContractorListProjects = async () => {
     `${import.meta.env.VITE_URL}/api/contractor/getContractorsForDropDown`,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -182,7 +182,7 @@ export const fetchContractorListProjects = async () => {
 export const fetchFormattedTasks = async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/tasks`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
 
   const today = new Date();
@@ -191,7 +191,7 @@ export const fetchFormattedTasks = async () => {
     .map((task: any, index: number) => {
       const deadline = new Date(task.deadline);
       const daysRemaining = Math.ceil(
-        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       return {
@@ -212,7 +212,7 @@ export const fetchFormattedTasks = async () => {
 export const fetchTasks = async () => {
   const response = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/tasks`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return response.data;
 };
@@ -231,7 +231,7 @@ export const fetchQualityIssues = async (): Promise<QualityIssue[]> => {
     `${import.meta.env.VITE_URL}/api/quality-issue/issues`,
     {
       withCredentials: true,
-    }
+    },
   );
   return res.data.issues;
 };
@@ -241,7 +241,7 @@ export const fetchContractorList = async () => {
     `${import.meta.env.VITE_URL}/api/contractor/getAllContractorList`,
     {
       withCredentials: true,
-    }
+    },
   );
 
   return res.data;
