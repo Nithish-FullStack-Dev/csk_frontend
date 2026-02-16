@@ -266,19 +266,25 @@ const NewProperties = () => {
       );
       return data;
     },
+
     onSuccess: (data) => {
       toast.success("Open land created");
 
       const created = data?.land || data;
 
-      // INSTANT UI UPDATE
+      // 🔥 immediately update React Query cache (no refresh needed)
+      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) => [
+        created,
+        ...old,
+      ]);
+
+      // update right panel if open
       setCurrentOpenLand(created);
       setSelectedOpenLand(created);
 
       setopenLandDialog(false);
-
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
     },
+
     onError: (err: any) => {
       console.error("createOpenLand error:", err?.response || err);
       toast.error(err?.response?.data?.message || "Failed to create open land");
@@ -299,23 +305,19 @@ const NewProperties = () => {
       );
       return data;
     },
+
     onSuccess: (updatedData) => {
       toast.success("Open land updated");
 
       const updated = updatedData?.land || updatedData?.data || updatedData;
 
-      // INSTANT UI UPDATE
+      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) =>
+        old.map((l) => (l._id === updated._id ? updated : l)),
+      );
+
       setCurrentOpenLand(updated);
       setSelectedOpenLand(updated);
-
       setopenLandDialog(false);
-
-      // background refresh
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
-    },
-    onError: (err: any) => {
-      console.error("updateOpenLand error:", err?.response || err);
-      toast.error(err?.response?.data?.message || "Failed to update open land");
     },
   });
 
@@ -425,23 +427,17 @@ const NewProperties = () => {
     }
   };
 
-  const handleOpenLandSubmit = async (formData: any) => {
-    try {
-      setOpenLandSubmitting(true);
-      if (currentOpenLand && currentOpenLand._id) {
-        await updateOpenLandMutation.mutateAsync({
-          id: currentOpenLand._id,
-          payload: formData,
-        });
-      } else {
-        await createOpenLandMutation.mutateAsync(formData);
-      }
-      // react-query invalidation in mutation callbacks will refresh openLandData
-    } catch (err) {
-      console.error("handleOpenLandSubmit error:", err);
-    } finally {
-      setOpenLandSubmitting(false);
-    }
+  const handleOpenLandSubmit = (savedLand: OpenLand) => {
+    // just update UI — DO NOT call API again
+
+    queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) => [
+      savedLand,
+      ...old,
+    ]);
+
+    setCurrentOpenLand(savedLand);
+    setSelectedOpenLand(savedLand);
+    setopenLandDialog(false);
   };
 
   const handleAddOpenLand = () => {
@@ -939,6 +935,38 @@ const NewProperties = () => {
                               >
                                 View Details
                               </Button>
+                              {plot.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName,
+                                      )
+                                    }
+                                    title="Download Brochure"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                  {/* <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleShare(
+                                        e,
+                                        plot.brochureUrl!,
+                                        plot.projectName
+                                      )
+                                    }
+                                    title="Copy Share Link"
+                                  >
+                                    <Share2 className="h-4 w-4" />
+                                  </Button> */}
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -958,7 +986,7 @@ const NewProperties = () => {
 
               <Card>
                 <CardContent className="p-6">
-                  {openPlots.length === 0 ? (
+                  {openLandData?.length === 0 ? (
                     <div className="text-center py-12">
                       <h3 className="text-lg font-semibold mb-2">
                         No open Land found
