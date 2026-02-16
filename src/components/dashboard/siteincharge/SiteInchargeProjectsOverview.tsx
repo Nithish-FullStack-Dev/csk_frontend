@@ -76,21 +76,21 @@ const SiteInchargeProjectsOverview = ({
           const allTasks = Object.values(unitsMap).flat();
 
           const pendingTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "pending"
+            (t: any) => t.statusForContractor?.toLowerCase() === "pending",
           );
           const inProgressTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "in progress"
+            (t: any) => t.statusForContractor?.toLowerCase() === "in progress",
           );
           const completedTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "completed"
+            (t: any) => t.statusForContractor?.toLowerCase() === "completed",
           );
           const approvedTasks = allTasks.filter(
-            (t: any) => t.isApprovedBySiteManager === true
+            (t: any) => t.isApprovedBySiteManager === true,
           );
           const rejectedTasks = allTasks.filter(
             (t: any) =>
               t.statusForSiteIncharge?.toLowerCase() === "rejected" ||
-              t.verificationDecision?.toLowerCase() === "rejected"
+              t.verificationDecision?.toLowerCase() === "rejected",
           );
 
           const progress =

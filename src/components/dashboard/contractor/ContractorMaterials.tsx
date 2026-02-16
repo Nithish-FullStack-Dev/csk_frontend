@@ -940,9 +940,10 @@ const ContractorMaterials = () => {
                     {typeof selectedMaterial.project?.projectId === "object" &&
                       selectedMaterial.project?.projectId?.projectName +
                         "/" +
-                        (typeof selectedMaterial.project?.floorUnit ===
+                        ((typeof selectedMaterial?.project?.floorUnit ===
                           "object" &&
-                          selectedMaterial.project?.floorUnit?.floorNumber) +
+                          selectedMaterial.project?.floorUnit?.floorNumber) ||
+                          "N/A") +
                         "/" +
                         (typeof selectedMaterial.project?.unit === "object" &&
                           selectedMaterial.project?.unit?.plotNo)}
