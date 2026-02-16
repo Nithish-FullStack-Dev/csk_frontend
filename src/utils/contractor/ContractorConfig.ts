@@ -31,10 +31,12 @@ export const mapStatus = (status: string): Task["status"] => {
       return "approved";
     case "rejected":
       return "rejected";
-    case "in progress":
-      return "In progress";
+    case "in_progress":
+      return "in_progress";
     case "completed":
       return "completed";
+    default:
+      return "pending_review";
   }
 };
 
@@ -51,7 +53,7 @@ export const mapPriority = (priority: string): Task["priority"] => {
   }
 };
 
-export const statusOptions = ["pending_review", "In progress", "completed"];
+export const statusOptions = ["pending_review", "in_progress", "completed"];
 
 export interface Task {
   id: string;
@@ -65,10 +67,11 @@ export interface Task {
   plotNo: string;
   status:
     | "pending verification"
-    | "In progress"
+    | "in_progress"
     | "completed"
     | "approved"
-    | "rejected";
+    | "rejected"
+    | "pending_review";
   deadline: string;
   priority: "high" | "medium" | "low";
   progress?: number;
@@ -142,8 +145,6 @@ export const useTasks = () => {
   return useQuery({
     queryKey: ["contractorTasks"],
     queryFn: fetchTasks,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    placeholderData: keepPreviousData,
   });
 };
 
