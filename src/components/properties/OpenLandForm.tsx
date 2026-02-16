@@ -179,13 +179,13 @@ export default function OpenLandForm({
   const [createdBlobUrls, setCreatedBlobUrls] = useState<string[]>([]);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    openLand?.thumbnailUrl || ""
+    openLand?.thumbnailUrl || "",
   );
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(openLand?.images || []);
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [brochurePreview, setBrochurePreview] = useState<string | null>(
-    openLand?.brochureUrl || null
+    openLand?.brochureUrl || null,
   );
   const [brochureRemoved, setBrochureRemoved] = useState(false);
 
@@ -198,6 +198,11 @@ export default function OpenLandForm({
       });
     };
   }, [createdBlobUrls]);
+  useEffect(() => {
+    return () => {
+      setSaving(false);
+    };
+  }, []);
 
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -271,6 +276,8 @@ export default function OpenLandForm({
   const [saving, setSaving] = useState(false);
 
   const onSubmitInternal = async (data: OpenLandFormValues) => {
+    if (saving) return;
+
     try {
       if (!user || !["owner", "admin"].includes(user.role)) {
         toast.error("You don't have permission to perform this action.");
@@ -278,6 +285,7 @@ export default function OpenLandForm({
       }
 
       setSaving(true);
+
       const csrfToken = await getCsrfToken();
 
       let finalThumbnailUrl = openLand?.thumbnailUrl || "";
@@ -293,7 +301,7 @@ export default function OpenLandForm({
               "X-CSRF-Token": csrfToken,
             },
             withCredentials: true,
-          }
+          },
         );
         finalThumbnailUrl = res.data.url;
       }
@@ -312,7 +320,7 @@ export default function OpenLandForm({
                 "X-CSRF-Token": csrfToken,
               },
               withCredentials: true,
-            }
+            },
           );
           if (res.data.url) finalImages.push(res.data.url);
         }
@@ -331,7 +339,7 @@ export default function OpenLandForm({
               "X-CSRF-Token": csrfToken,
             },
             withCredentials: true,
-          }
+          },
         );
         finalBrochureUrl = res.data.url;
       } else if (brochureRemoved) {
@@ -360,12 +368,12 @@ export default function OpenLandForm({
               openLand._id
             }`,
             payload,
-            config
+            config,
           )
         : await axios.post(
             `${import.meta.env.VITE_URL}/api/openLand/saveOpenLand`,
             payload,
-            config
+            config,
           );
 
       const saved = res.data?.land ?? res.data;
@@ -373,7 +381,7 @@ export default function OpenLandForm({
       toast.success(
         isEditing
           ? "Open land updated successfully!"
-          : "Open land created successfully!"
+          : "Open land created successfully!",
       );
 
       onSubmit(saved);
@@ -743,8 +751,8 @@ export default function OpenLandForm({
                     {brochureFile
                       ? brochureFile.name
                       : openLand?.brochureUrl
-                      ? String(openLand.brochureUrl).split("/").pop()
-                      : ""}
+                        ? String(openLand.brochureUrl).split("/").pop()
+                        : ""}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={removeBrochure}>
@@ -933,7 +941,13 @@ export default function OpenLandForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button
+            type="submit"
+            disabled={saving}
+            onClick={() => {
+              if (saving) return;
+            }}
+          >
             {saving ? "Saving..." : isEditing ? "Update Land" : "Add Land"}
           </Button>
         </div>
