@@ -61,7 +61,7 @@ const NewProperties = () => {
   const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(
-    null
+    null,
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
@@ -73,19 +73,19 @@ const NewProperties = () => {
   const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
   const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
-    undefined
+    undefined,
   );
   const [selectedOpenPlot, setSelectedOpenPlot] = useState<OpenPlot | null>(
-    null
+    null,
   );
 
   const [openLandDialog, setopenLandDialog] = useState(false);
   const [openLandSubmitting, setOpenLandSubmitting] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
-    undefined
+    undefined,
   );
   const [selectedOpenLand, setSelectedOpenLand] = useState<OpenLand | null>(
-    null
+    null,
   );
 
   const {
@@ -127,7 +127,7 @@ const NewProperties = () => {
         `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
         {
           withCredentials: true,
-        }
+        },
       );
     },
     onSuccess: () => {
@@ -144,7 +144,7 @@ const NewProperties = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -159,11 +159,11 @@ const NewProperties = () => {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 409) {
           toast.error(
-            err.response?.data?.message || "Conflict while creating open plot"
+            err.response?.data?.message || "Conflict while creating open plot",
           );
         } else {
           toast.error(
-            err.response?.data?.message || "Failed to create open plot"
+            err.response?.data?.message || "Failed to create open plot",
           );
         }
       } else {
@@ -182,7 +182,7 @@ const NewProperties = () => {
       const { data } = await axios.put(
         `${import.meta.env.VITE_URL}/api/openPlot/updateOpenPlot/${id}`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -204,7 +204,7 @@ const NewProperties = () => {
       console.error("updateOpenPlot error:", err?.response || err);
       if (axios.isAxiosError(err)) {
         toast.error(
-          err.response?.data?.message || "Failed to update open plot"
+          err.response?.data?.message || "Failed to update open plot",
         );
       } else {
         toast.error("Failed to update open plot");
@@ -220,7 +220,7 @@ const NewProperties = () => {
         }`,
         {
           withCredentials: true,
-        }
+        },
       );
     },
     onSuccess: () => {
@@ -240,7 +240,7 @@ const NewProperties = () => {
         `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${
           currentOpenLand._id
         }`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
     },
     onSuccess: () => {
@@ -262,23 +262,29 @@ const NewProperties = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/openLand/saveOpenLand`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
+
     onSuccess: (data) => {
       toast.success("Open land created");
 
       const created = data?.land || data;
 
-      // INSTANT UI UPDATE
+      // 🔥 immediately update React Query cache (no refresh needed)
+      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) => [
+        created,
+        ...old,
+      ]);
+
+      // update right panel if open
       setCurrentOpenLand(created);
       setSelectedOpenLand(created);
 
       setopenLandDialog(false);
-
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
     },
+
     onError: (err: any) => {
       console.error("createOpenLand error:", err?.response || err);
       toast.error(err?.response?.data?.message || "Failed to create open land");
@@ -295,27 +301,23 @@ const NewProperties = () => {
       const { data } = await axios.put(
         `${import.meta.env.VITE_URL}/api/openLand/updateOpenLand/${id}`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
+
     onSuccess: (updatedData) => {
       toast.success("Open land updated");
 
       const updated = updatedData?.land || updatedData?.data || updatedData;
 
-      // INSTANT UI UPDATE
+      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) =>
+        old.map((l) => (l._id === updated._id ? updated : l)),
+      );
+
       setCurrentOpenLand(updated);
       setSelectedOpenLand(updated);
-
       setopenLandDialog(false);
-
-      // background refresh
-      queryClient.invalidateQueries({ queryKey: ["openLand"] });
-    },
-    onError: (err: any) => {
-      console.error("updateOpenLand error:", err?.response || err);
-      toast.error(err?.response?.data?.message || "Failed to update open land");
     },
   });
 
@@ -326,7 +328,7 @@ const NewProperties = () => {
       results = results.filter(
         (b) =>
           (b.projectName || "").toLowerCase().includes(lower) ||
-          (b.location || "").toLowerCase().includes(lower)
+          (b.location || "").toLowerCase().includes(lower),
       );
     }
     if (typeFilter !== "all")
@@ -425,23 +427,17 @@ const NewProperties = () => {
     }
   };
 
-  const handleOpenLandSubmit = async (formData: any) => {
-    try {
-      setOpenLandSubmitting(true);
-      if (currentOpenLand && currentOpenLand._id) {
-        await updateOpenLandMutation.mutateAsync({
-          id: currentOpenLand._id,
-          payload: formData,
-        });
-      } else {
-        await createOpenLandMutation.mutateAsync(formData);
-      }
-      // react-query invalidation in mutation callbacks will refresh openLandData
-    } catch (err) {
-      console.error("handleOpenLandSubmit error:", err);
-    } finally {
-      setOpenLandSubmitting(false);
-    }
+  const handleOpenLandSubmit = (savedLand: OpenLand) => {
+    // just update UI — DO NOT call API again
+
+    queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) => [
+      savedLand,
+      ...old,
+    ]);
+
+    setCurrentOpenLand(savedLand);
+    setSelectedOpenLand(savedLand);
+    setopenLandDialog(false);
   };
 
   const handleAddOpenLand = () => {
@@ -466,7 +462,7 @@ const NewProperties = () => {
   const openDeleteDialog = (
     type: "building" | "plot" | "land",
     id: string,
-    e?: React.MouseEvent
+    e?: React.MouseEvent,
   ) => {
     e?.stopPropagation();
     setDeleteType(type);
@@ -499,7 +495,7 @@ const NewProperties = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) return toast.error("No brochure available to download.");
@@ -507,7 +503,7 @@ const NewProperties = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
 
       // Open in new tab so browser handles download; the server streams the file
@@ -778,7 +774,7 @@ const NewProperties = () => {
                                   handleDownload(
                                     e,
                                     b.brochureUrl!,
-                                    b.projectName
+                                    b.projectName,
                                   )
                                 }
                                 title="Download Brochure"
@@ -933,7 +929,7 @@ const NewProperties = () => {
                                       handleDownload(
                                         e,
                                         plot.brochureUrl!,
-                                        plot.projectName
+                                        plot.projectName,
                                       )
                                     }
                                     title="Download Brochure"
@@ -974,7 +970,7 @@ const NewProperties = () => {
 
               <Card>
                 <CardContent className="p-6">
-                  {openPlots.length === 0 ? (
+                  {openLandData?.length === 0 ? (
                     <div className="text-center py-12">
                       <h3 className="text-lg font-semibold mb-2">
                         No open Land found
@@ -1074,7 +1070,7 @@ const NewProperties = () => {
                                 <span>
                                   {land?.availableDate
                                     ? new Date(
-                                        land?.availableDate
+                                        land?.availableDate,
                                       ).toLocaleDateString("en-IN", {
                                         day: "2-digit",
                                         month: "short",
@@ -1105,7 +1101,7 @@ const NewProperties = () => {
                                       handleDownload(
                                         e,
                                         land?.brochureUrl!,
-                                        land?.projectName
+                                        land?.projectName,
                                       )
                                     }
                                     title="Download Brochure"
@@ -1158,15 +1154,15 @@ const NewProperties = () => {
           deleteType === "building"
             ? "Delete Building"
             : deleteType === "plot"
-            ? "Delete Open Plot"
-            : "Delete Open Land"
+              ? "Delete Open Plot"
+              : "Delete Open Land"
         }
         description={
           deleteType === "building"
             ? "Are you sure you want to delete this building?"
             : deleteType === "plot"
-            ? "Are you sure you want to delete this open plot?"
-            : "Are you sure you want to delete this open land?"
+              ? "Are you sure you want to delete this open plot?"
+              : "Are you sure you want to delete this open land?"
         }
       />
 
