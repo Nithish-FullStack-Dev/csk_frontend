@@ -19,6 +19,7 @@ import {
   FileText,
   MessageSquare,
   Image as ImageIcon,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { InnerPlot } from "@/types/InnerPlot";
@@ -29,6 +30,7 @@ import MainLayout from "../layout/MainLayout";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { InnerPlotForm } from "./InnerPlotForm";
 import { EditInnerPlotForm } from "./EditInnerPlotForm";
+import Loader from "../Loader";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -46,7 +48,8 @@ export function getInnerPlotStatusBadge(status: string) {
 }
 
 export function InnerPlotDetails() {
-  const { openPlotId } = useParams<{ openPlotId: string }>();
+  const { _id } = useParams<{ _id: string }>();
+  console.log("inner _id", _id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -54,17 +57,14 @@ export function InnerPlotDetails() {
 
   /* ---------- FETCH INNER PLOTS ---------- */
   const {
-    data: plots = [],
+    data: plot,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["innerPlots", openPlotId],
-    queryFn: () => getInnerPlots(openPlotId!),
-    enabled: !!openPlotId,
+    queryKey: ["innerPlots", _id],
+    queryFn: () => getInnerPlots(_id!),
+    enabled: !!_id,
   });
-
-  /* assuming details view shows one inner plot at a time */
-  const plot: InnerPlot | undefined = plots[0];
 
   /* ---------- STATE ---------- */
   const [editOpen, setEditOpen] = useState(false);
@@ -78,7 +78,7 @@ export function InnerPlotDetails() {
     mutationFn: deleteInnerPlot,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["innerPlots", openPlotId],
+        queryKey: ["inner-plots", _id],
       });
       navigate(-1);
     },
@@ -92,7 +92,7 @@ export function InnerPlotDetails() {
     return Array.from(imgs);
   }, [plot]);
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <Loader />;
   if (isError || !plot) return <p>Inner plot not found</p>;
 
   return (
@@ -165,18 +165,75 @@ export function InnerPlotDetails() {
           </div>
         </Card>
 
-        {/* ---------- REMARKS ---------- */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <FileText className="mr-2 h-5 w-5" /> Remarks
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <MessageSquare className="h-4 w-4 mt-1 text-muted-foreground" />
-            {plot.remarks || "No remarks available"}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* ---------- REMARKS ---------- */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2 h-5 w-5" /> Remarks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-2">
+              <MessageSquare className="h-4 w-4 mt-1 text-muted-foreground" />
+              {plot.remarks || "No remarks available"}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                <User className="mr-2 h-5 w-5" /> Customer Information
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div>This is in Development Stage</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center">
+                Interested Clients for This Property{" "}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
+              {/* <div>
+                        {leadsLoading && <p>Loading leads...</p>}
+                        {leadsError && (
+                          <p className="text-red-500">{leadsErr?.message}</p>
+                        )}
+                        {!leadsLoading && !leads?.length && <p>No leads yet</p>}
+        
+                        {leads?.map((lead: Lead) => (
+                          <div key={lead._id} className="border p-4 rounded-lg mb-4">
+                            <h3 className="text-lg font-semibold mb-2">{lead?.name}</h3>
+                            <p className="mb-1">
+                              <strong>Email:</strong> {lead?.email}
+                            </p>
+                            <p className="mb-1">
+                              <strong>Phone:</strong> {lead?.phone}
+                            </p>
+                            <p className="mb-1">
+                              <strong>Status:</strong>{" "}
+                              {lead?.status.charAt(0).toUpperCase() +
+                                lead?.status.slice(1)}
+                            </p>
+                            <p className="mb-1">
+                              <strong>added on:</strong>{" "}
+                              {new Date(lead?.createdAt).toLocaleDateString("en-IN", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        ))}
+                      </div> */}
+              <div>This is in Development Stage</div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* ---------- GALLERY ---------- */}
         {galleryImages.length > 0 && (
@@ -255,7 +312,7 @@ export function InnerPlotDetails() {
               innerPlot={plot}
               onSuccess={() => {
                 queryClient.invalidateQueries({
-                  queryKey: ["innerPlots", openPlotId],
+                  queryKey: ["innerPlots", _id],
                 });
                 setEditOpen(false);
               }}

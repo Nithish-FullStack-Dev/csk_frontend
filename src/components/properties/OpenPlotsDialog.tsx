@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotForm } from "./OpenPlotForm";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface OpenPlotDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ export function OpenPlotDialog({
   onOpenChange,
   openPlot,
 }: OpenPlotDialogProps) {
+  const queryClient = useQueryClient();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] w-[90vw] max-h-[90vh] overflow-auto rounded-xl">
@@ -36,6 +38,7 @@ export function OpenPlotDialog({
         <OpenPlotForm
           openPlot={openPlot}
           onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["openPlots"] });
             onOpenChange(false); // close dialog
           }}
         />

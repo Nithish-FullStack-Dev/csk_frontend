@@ -44,13 +44,14 @@ export const updateInnerPlot = async (
   return res.data.data;
 };
 
-export const getInnerPlots = async (openPlotId: string) => {
-  const res = await api.get(`/api/innerPlot/by-openplot/${openPlotId}`);
+export const getInnerPlots = async (_id: string) => {
+  const res = await api.get(`/api/innerPlot/by-openplot/${_id}`);
+  console.log(res.data.data);
   return res.data.data;
 };
 
-export const deleteInnerPlot = async (id: string) => {
-  await api.delete(`/api/innerPlot/deleteInnerPlot/${id}`);
+export const deleteInnerPlot = async (_id: string) => {
+  await api.delete(`/api/innerPlot/deleteInnerPlot/${_id}`);
 };
 
 export const getAllInnerPlot = async (openPlotId: string) => {
