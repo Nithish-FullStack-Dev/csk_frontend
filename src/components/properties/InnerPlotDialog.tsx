@@ -30,7 +30,7 @@ export function InnerPlotDialog({
           openPlotId={openPlotId}
           onSuccess={() => {
             queryClient.invalidateQueries({
-              queryKey: ["innerPlots", openPlotId],
+              queryKey: ["inner-plots", openPlotId],
             });
             onOpenChange(false);
           }}

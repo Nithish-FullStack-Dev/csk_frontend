@@ -210,67 +210,70 @@ export function OpenPlotDetails({
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {innerPlots.map((inner) => (
-              <Card
-                key={inner._id}
-                className="overflow-hidden hover:shadow-lg transition"
-              >
-                {/* Thumbnail */}
-                {inner.thumbnailUrl ? (
-                  <img
-                    src={inner.thumbnailUrl}
-                    alt={inner.plotNo}
-                    className="h-40 w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-40 bg-muted flex items-center justify-center">
-                    <ImageIcon className="h-10 w-10 opacity-30" />
-                  </div>
-                )}
+            {innerPlots.map((inner, idx) => {
+              console.log("inner plots ", inner);
+              return (
+                <Card
+                  key={inner._id || idx}
+                  className="overflow-hidden hover:shadow-lg transition"
+                >
+                  {/* Thumbnail */}
+                  {inner.thumbnailUrl ? (
+                    <img
+                      src={inner.thumbnailUrl}
+                      alt={inner.plotNo}
+                      className="h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-40 bg-muted flex items-center justify-center">
+                      <ImageIcon className="h-10 w-10 opacity-30" />
+                    </div>
+                  )}
 
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">
-                      Plot No: {inner.plotNo}
-                    </h3>
-                    <Badge
-                      className={
-                        inner.status === "Available"
-                          ? "bg-green-500 text-white"
-                          : inner.status === "Sold"
-                            ? "bg-blue-500 text-white"
-                            : "bg-red-500 text-white"
-                      }
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold text-lg">
+                        Plot No: {inner.plotNo}
+                      </h3>
+                      <Badge
+                        className={
+                          inner.status === "Available"
+                            ? "bg-green-500 text-white"
+                            : inner.status === "Sold"
+                              ? "bg-blue-500 text-white"
+                              : "bg-red-500 text-white"
+                        }
+                      >
+                        {inner.status}
+                      </Badge>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div className="flex justify-between">
+                        <span>Area</span>
+                        <span>{inner.area}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Facing</span>
+                        <span>{inner.facing || "N/A"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Type</span>
+                        <span>{inner.plotType}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="w-full mt-3"
+                      onClick={() => navigate(`/inner-detail/${inner._id}`)}
                     >
-                      {inner.status}
-                    </Badge>
-                  </div>
-
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <div className="flex justify-between">
-                      <span>Area</span>
-                      <span>{inner.area}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Facing</span>
-                      <span>{inner.facing || "N/A"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Type</span>
-                      <span>{inner.plotType}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    className="w-full mt-3"
-                    onClick={() => navigate(`/inner-detail/${plot._id}`)}
-                  >
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

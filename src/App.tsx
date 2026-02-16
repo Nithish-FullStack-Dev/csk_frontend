@@ -406,7 +406,7 @@ const App = () => {
                   }
                 />
                 <Route
-                  path="/inner-detail/:openPlotId"
+                  path="/inner-detail/:_id"
                   element={
                     <ProtectedRoute roleSubmodule={"Properties"}>
                       <InnerPlotDetails />
