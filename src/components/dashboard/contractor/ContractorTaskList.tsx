@@ -94,14 +94,14 @@ const ContractorTaskList = () => {
       setEvidenceTitle(selectedTask.evidenceTitle || "");
       setSelectedPhase(selectedTask.phase || "");
       setProgress(selectedTask.progress || 0);
-      setStatus(selectedTask.status || "");
+      setStatus(selectedTask.status ?? "pending_review");
     }
   }, [selectedTask]);
 
   if (taskError) {
     console.error("Error fetching tasks:", taskErr);
     toast.error(
-      taskErr.message || "Failed to load tasks. Please try again later."
+      taskErr.message || "Failed to load tasks. Please try again later.",
     );
   }
 
@@ -116,7 +116,7 @@ const ContractorTaskList = () => {
       try {
         const position = await new Promise<GeolocationPosition>(
           (resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject)
+            navigator.geolocation.getCurrentPosition(resolve, reject),
         );
         newLocations.push({
           latitude: position.coords.latitude,
@@ -152,7 +152,7 @@ const ContractorTaskList = () => {
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         if (res.data.url) uploadedImageUrls.push(res.data.url);
       } catch (err) {
@@ -177,7 +177,7 @@ const ContractorTaskList = () => {
           selectedTask.projectId
         }/${selectedTask._id}/task`,
         newTask,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("Task Updated successfully!");
       fetchTasks();
@@ -206,7 +206,7 @@ const ContractorTaskList = () => {
           progress: progress,
           status: status,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (res?.data?.success) {
@@ -302,7 +302,7 @@ const ContractorTaskList = () => {
         <div className="hidden lg:block">
           <TabsList>
             <TabsTrigger value="all">All Tasks</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="pending_review">Pending</TabsTrigger>
             <TabsTrigger value="in_progress">In Progress</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
             <TabsTrigger value="approved">Approved</TabsTrigger>
@@ -318,7 +318,7 @@ const ContractorTaskList = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tasks</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="pending_review">Pending</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -362,9 +362,13 @@ const ContractorTaskList = () => {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={statusColors[task.status]}
+                        className={
+                          statusColors[task.status ?? "pending_review"]
+                        }
                       >
-                        {task.status}
+                        {task.status
+                          ?.replace(/_/g, " ")
+                          ?.replace(/\b\w/g, (c) => c.toUpperCase())}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -646,13 +650,15 @@ const ContractorTaskList = () => {
                   step={1}
                   value={progress}
                   onChange={(e) => {
-                    setProgress(Number(e.target.value));
-                    if (e.target.value == "100") {
+                    const value = Number(e.target.value);
+                    setProgress(value);
+
+                    if (value === 100) {
                       setShouldSubmit(true);
                       setStatus("completed");
                     } else {
                       setShouldSubmit(false);
-                      setStatus("");
+                      setStatus(selectedTask?.status ?? "pending_review");
                     }
                   }}
                   className="w-full accent-blue-600"
@@ -778,8 +784,8 @@ const ContractorTaskList = () => {
               {shouldSubmit
                 ? "Submit to Site Incharge"
                 : isUpdating
-                ? "Updating...."
-                : "Update task"}
+                  ? "Updating...."
+                  : "Update task"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -812,9 +818,9 @@ const ContractorTaskList = () => {
                   className={`${
                     selectedTask.status === "completed"
                       ? "bg-green-100 text-green-800"
-                      : selectedTask.status === "In progress"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      : selectedTask.status === "in_progress"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
                   {(selectedTask &&
@@ -852,8 +858,8 @@ const ContractorTaskList = () => {
                       selectedTask.priority === "high"
                         ? "bg-red-100 text-red-800"
                         : selectedTask.priority === "medium"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {selectedTask.priority?.charAt(0).toUpperCase() +
@@ -1029,8 +1035,8 @@ const ContractorTaskList = () => {
               {shouldSubmit
                 ? "Submit to Site Incharge"
                 : isUpdating
-                ? "Updating...."
-                : "Update task"}
+                  ? "Updating...."
+                  : "Update task"}
             </Button>
           </DialogFooter>
         </DialogContent>

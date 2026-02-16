@@ -394,9 +394,9 @@ const QualityControl = () => {
                   </SelectItem>
                   {!projectLoading &&
                     projects?.map((project) => (
-                      <SelectItem key={project._id} value={project._id}>
-                        {(typeof project.projectId === "object" &&
-                          project.projectId.projectName) ||
+                      <SelectItem key={project?._id} value={project?._id}>
+                        {(typeof project?.projectId === "object" &&
+                          project?.projectId?.projectName) ||
                           "Untitled Project"}
                       </SelectItem>
                     ))}
@@ -468,9 +468,9 @@ const QualityControl = () => {
                         </SelectItem>
                         {!projectLoading &&
                           projects.map((project) => (
-                            <SelectItem key={project._id} value={project._id}>
-                              {(typeof project.projectId === "object" &&
-                                project.projectId.projectName) ||
+                            <SelectItem key={project?._id} value={project?._id}>
+                              {(typeof project?.projectId === "object" &&
+                                project?.projectId?.projectName) ||
                                 "Untitled Project"}
                             </SelectItem>
                           ))}

@@ -71,10 +71,11 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
           const allTasks = Object.values(unitsMap).flat();
 
           const pendingTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "pending",
+            (t: any) =>
+              t.statusForContractor?.toLowerCase() === "pending_review",
           );
           const inProgressTasks = allTasks.filter(
-            (t: any) => t.statusForContractor?.toLowerCase() === "in progress",
+            (t: any) => t.statusForContractor?.toLowerCase() === "in_progress",
           );
           const completedTasks = allTasks.filter(
             (t: any) => t.statusForContractor?.toLowerCase() === "completed",
@@ -210,7 +211,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="pending_review">Pending</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>
@@ -221,7 +222,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
 
                 <TabsList className="hidden md:inline-block">
                   <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="pending_review">Pending</TabsTrigger>
                   <TabsTrigger value="in_progress">In Progress</TabsTrigger>
                   <TabsTrigger value="completed">Completed</TabsTrigger>
                   <TabsTrigger value="approved">Approved</TabsTrigger>
