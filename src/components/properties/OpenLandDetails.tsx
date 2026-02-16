@@ -1,3 +1,4 @@
+// src\components\properties\OpenLandDetails.tsx
 "use client";
 
 import React, {

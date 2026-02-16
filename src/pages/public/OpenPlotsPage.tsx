@@ -1,3 +1,4 @@
+// src\pages\public\OpenPlotsPage.tsx
 import PublicLayout from "@/components/layout/PublicLayout";
 import {
   MapPin,
