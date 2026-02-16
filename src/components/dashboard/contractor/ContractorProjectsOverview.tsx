@@ -121,8 +121,8 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               {/* Project Header */}
               <div className="flex items-center justify-between pr-10">
                 <h2 className="text-xl font-semibold">
-                  {typeof project.projectId === "object"
-                    ? project.projectId.projectName
+                  {typeof project.projectId === "object" && project.projectId
+                    ? project?.projectId?.projectName
                     : "Untitled Project"}
                 </h2>
 
