@@ -3,6 +3,7 @@
 import { useEditor, EditorContent } from "@tiptap/react"
 import Toolbar from "./Toolbar";
 import { extensions } from "./extensions";
+import { useEffect } from "react";
 
 type Props = {
   isBigEditor?: boolean;
@@ -48,6 +49,7 @@ const editorClassName = [
 ].join(" ");
 
 export default function RichTextEditor({ isBigEditor = false, content, onChange }: Props) {
+  
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
@@ -61,6 +63,15 @@ export default function RichTextEditor({ isBigEditor = false, content, onChange 
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+  if (!editor) return;
+
+  // Only update if external content changed
+  if (content !== editor.getHTML()) {
+    editor.commands.setContent(content || "", false);
+  }
+}, [content, editor]);
 
   if (!editor) return null;
 
