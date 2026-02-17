@@ -83,7 +83,7 @@ const AgentSchedule = () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_URL}/api/agent-schedule/getSchedules`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       const schedules = res.data.schedules || [];
 
@@ -93,7 +93,7 @@ const AgentSchedule = () => {
           date: new Date(appt.date),
           startTime: new Date(appt.startTime),
           endTime: new Date(appt.endTime),
-        }))
+        })),
       );
     } catch (err) {
       console.error("Error fetching appointments:", err);
@@ -113,7 +113,7 @@ const AgentSchedule = () => {
 
   // 📌 Filter appointments by selected day
   const todaysAppointments = appointments.filter((appointment: any) =>
-    date ? isSameDay(appointment.date, date) : false
+    date ? isSameDay(appointment.date, date) : false,
   );
 
   // 📌 Submit new appointment
@@ -135,7 +135,7 @@ const AgentSchedule = () => {
       await axios.post(
         `${import.meta.env.VITE_URL}/api/agent-schedule/addSchedules`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast.success("Appointment created successfully.");
@@ -149,6 +149,26 @@ const AgentSchedule = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const getLeadDisplayLabel = (lead: any) => {
+    // PROPERTY LEAD
+    if (lead.isPropertyLead && lead.property && lead.floorUnit && lead.unit) {
+      return `${lead.name} – ${lead.property.projectName} | Floor ${lead.floorUnit.floorNumber} | Unit ${lead.unit.plotNo}`;
+    }
+
+    // OPEN PLOT LEAD
+    if (lead.isPlotLead && lead.openPlot && lead.innerPlot) {
+      return `${lead.name} – ${lead.openPlot.projectName} | Plot ${lead.openPlot.openPlotNo} | Inner ${lead.innerPlot.plotNo}`;
+    }
+
+    // OPEN LAND LEAD
+    if (lead.isLandLead && lead.openLand) {
+      return `${lead.name} – ${lead.openLand.projectName} | ${lead.openLand.landType} | ${lead.openLand.location}`;
+    }
+
+    // FALLBACK
+    return lead.name;
   };
 
   return (
@@ -192,11 +212,7 @@ const AgentSchedule = () => {
                       {Array.isArray(leads) &&
                         leads.map((lead) => (
                           <SelectItem key={lead._id} value={lead._id}>
-                            {lead.name}-
-                            {typeof lead?.property === "object" &&
-                            lead?.property?.projectName
-                              ? lead?.property?.projectName
-                              : ""}
+                            {getLeadDisplayLabel(lead)}
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -334,8 +350,8 @@ const AgentSchedule = () => {
                               appointment.status === "confirmed"
                                 ? "bg-green-100 text-green-800"
                                 : appointment.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
                             }
                           >
                             {appointment.status}
