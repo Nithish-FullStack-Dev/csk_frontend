@@ -49,6 +49,7 @@ export default function CsvInnerPlotUploader({
       queryClient.invalidateQueries({
         queryKey: ["inner-plots", openPlotId],
       });
+
       onOpenChange(false);
     },
     onError: () => toast.error("CSV upload failed"),

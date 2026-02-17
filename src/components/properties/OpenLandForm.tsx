@@ -32,7 +32,7 @@ import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
 export const openLandFormSchema = z.object({
   projectName: z.string().min(1, "Project name is required"),
   location: z.string().min(1, "Location is required"),
-  surveyNumber: z.string().optional().or(z.literal("")),
+  surveyNumber: z.string().min(1, "Survey number is required"),
   landType: z.enum([
     "Agriculture",
     "Non-Agriculture",
@@ -288,95 +288,46 @@ export default function OpenLandForm({
 
       const csrfToken = await getCsrfToken();
 
-      let finalThumbnailUrl = openLand?.thumbnailUrl || "";
-      if (thumbnailFile) {
-        const fd = new FormData();
-        fd.append("file", thumbnailFile);
-        const res = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          fd,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              "X-CSRF-Token": csrfToken,
-            },
-            withCredentials: true,
-          },
-        );
-        finalThumbnailUrl = res.data.url;
-      }
+      const formData = new FormData();
 
-      let finalImages = imageUrls.filter((u) => !u.startsWith("blob:"));
-      if (imageFiles.length) {
-        for (const f of imageFiles) {
-          const fd = new FormData();
-          fd.append("file", f);
-          const res = await axios.post(
-            `${import.meta.env.VITE_URL}/api/uploads/upload`,
-            fd,
-            {
-              headers: {
-                "Content-Type": "multipart/form-data",
-                "X-CSRF-Token": csrfToken,
-              },
-              withCredentials: true,
-            },
-          );
-          if (res.data.url) finalImages.push(res.data.url);
+      // text fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, String(value));
         }
-      }
+      });
 
-      let finalBrochureUrl = openLand?.brochureUrl || "";
-      if (brochureFile) {
-        const fd = new FormData();
-        fd.append("file", brochureFile);
-        const res = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          fd,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              "X-CSRF-Token": csrfToken,
-            },
-            withCredentials: true,
-          },
-        );
-        finalBrochureUrl = res.data.url;
-      } else if (brochureRemoved) {
-        finalBrochureUrl = "";
-      }
+      // files
+      if (thumbnailFile) formData.append("thumbnailUrl", thumbnailFile);
+      imageFiles.forEach((file) => formData.append("images", file));
+      if (brochureFile) formData.append("brochureUrl", brochureFile);
 
-      const payload: any = {
-        ...data,
-        thumbnailUrl: finalThumbnailUrl,
-        images: finalImages,
-        brochureUrl: finalBrochureUrl,
-      };
-
+      // auto landSize build
       if (data.landArea && data.areaUnit && !data.landSize) {
-        payload.landSize = `${data.landArea} ${data.areaUnit}`;
+        formData.append("landSize", `${data.landArea} ${data.areaUnit}`);
       }
 
       const config = {
-        headers: { "X-CSRF-Token": csrfToken },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-CSRF-Token": csrfToken,
+        },
         withCredentials: true,
       };
 
       const res = isEditing
         ? await axios.put(
-            `${import.meta.env.VITE_URL}/api/openLand/updateOpenLand/${
-              openLand._id
-            }`,
-            payload,
+            `${import.meta.env.VITE_URL}/api/openLand/updateOpenLand/${openLand._id}`,
+            formData,
             config,
           )
         : await axios.post(
             `${import.meta.env.VITE_URL}/api/openLand/saveOpenLand`,
-            payload,
+            formData,
             config,
           );
 
-      const saved = res.data?.land ?? res.data;
+      const saved = res.data?.data || res.data;
 
       toast.success(
         isEditing

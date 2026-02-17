@@ -1,3 +1,4 @@
+
 import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
 import { OpenPlot } from "@/types/OpenPlots";
@@ -32,7 +33,7 @@ export const getAllOpenLand = async (): Promise<OpenLand[]> => {
     `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
     { withCredentials: true },
   );
-  return data?.lands || [];
+  return data?.data || [];
 };
 
 export const fetchUnits = async () => {
@@ -118,10 +119,8 @@ export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string,
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
-    }/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
-    { withCredentials: true },
+    `${import.meta.env.VITE_URL}/api/floor/getAllFloorsByBuildingIdForDropDown/${buildingId}`,
+    { withCredentials: true }
   );
   return data.data || [];
 };
@@ -141,10 +140,8 @@ export const fetchUnitsForDropDownByBuildingId = async (
   floorId: string,
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
-    }/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
-    { withCredentials: true },
+    `${import.meta.env.VITE_URL}/api/unit/getUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
+    { withCredentials: true }
   );
   return data.data || [];
 };
@@ -164,10 +161,8 @@ export const fetchAvailableUnitsByFloorIdAndBuildingIdForDropDown = async (
   floorId: string,
 ) => {
   const { data } = await axios.get(
-    `${
-      import.meta.env.VITE_URL
-    }/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
-    { withCredentials: true },
+    `${import.meta.env.VITE_URL}/api/unit/getAvailableUnitsByFloorIdAndBuildingIdForDropDown/${buildingId}/${floorId}`,
+    { withCredentials: true }
   );
   return data.data || [];
 };

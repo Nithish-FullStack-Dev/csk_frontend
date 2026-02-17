@@ -200,16 +200,16 @@ export function OpenPlotDetails({
           </CardTitle>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setBulkManualOpen(true)}>
-              Bulk Generate
+            <Button variant="default" onClick={() => setBulkManualOpen(true)}>
+              Plots Generate
             </Button>
 
-            <Button variant="outline" onClick={() => setCsvUploadOpen(true)}>
+            <Button variant="default" onClick={() => setCsvUploadOpen(true)}>
               Upload CSV
             </Button>
 
             <Button
-              variant="default"
+              variant="destructive"
               onClick={() => setInnerPlotDialogOpen(true)}
             >
               Add Plot
