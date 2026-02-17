@@ -31,6 +31,8 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { InnerPlotForm } from "./InnerPlotForm";
 import { EditInnerPlotForm } from "./EditInnerPlotForm";
 import Loader from "../Loader";
+import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
+import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -54,6 +56,12 @@ export function InnerPlotDetails() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  /* ---------- STATE ---------- */
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImage, setCurrentImage] = useState("");
 
   /* ---------- FETCH INNER PLOTS ---------- */
   const {
@@ -66,12 +74,12 @@ export function InnerPlotDetails() {
     enabled: !!_id,
   });
 
-  /* ---------- STATE ---------- */
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [currentImage, setCurrentImage] = useState("");
+  const {
+    data: leads = [],
+    isLoading: leadsLoading,
+    isError: leadsError,
+    error: leadsErr,
+  } = useLeadbyOpenPlotId(plot?._id);
 
   /* ---------- DELETE ---------- */
   const deleteMutation = useMutation({
@@ -194,43 +202,75 @@ export function InnerPlotDetails() {
           <Card>
             <CardHeader>
               <CardTitle className="text-xl flex items-center">
-                Interested Clients for This Property{" "}
+                Interested Clients for This Plot{" "}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 max-h-[420px] overflow-y-auto">
-              {/* <div>
-                        {leadsLoading && <p>Loading leads...</p>}
-                        {leadsError && (
-                          <p className="text-red-500">{leadsErr?.message}</p>
-                        )}
-                        {!leadsLoading && !leads?.length && <p>No leads yet</p>}
-        
-                        {leads?.map((lead: Lead) => (
-                          <div key={lead._id} className="border p-4 rounded-lg mb-4">
-                            <h3 className="text-lg font-semibold mb-2">{lead?.name}</h3>
-                            <p className="mb-1">
-                              <strong>Email:</strong> {lead?.email}
-                            </p>
-                            <p className="mb-1">
-                              <strong>Phone:</strong> {lead?.phone}
-                            </p>
-                            <p className="mb-1">
-                              <strong>Status:</strong>{" "}
-                              {lead?.status.charAt(0).toUpperCase() +
-                                lead?.status.slice(1)}
-                            </p>
-                            <p className="mb-1">
-                              <strong>added on:</strong>{" "}
-                              {new Date(lead?.createdAt).toLocaleDateString("en-IN", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </p>
-                          </div>
-                        ))}
-                      </div> */}
-              <div>This is in Development Stage</div>
+              <div>
+                {leadsLoading && <p>Loading leads...</p>}
+
+                {leadsError && (
+                  <p className="text-red-500">{leadsErr?.message}</p>
+                )}
+
+                {!leadsLoading && !leads?.length && <p>No leads yet</p>}
+
+                {leads?.map((lead: Lead) => {
+                  if (!lead.isPlotLead) return null;
+
+                  const openPlot =
+                    typeof lead.openPlot === "object" ? lead.openPlot : null;
+                  const innerPlot =
+                    typeof lead.innerPlot === "object" ? lead.innerPlot : null;
+
+                  return (
+                    <div
+                      key={lead._id}
+                      className="border p-4 rounded-lg mb-4 space-y-1"
+                    >
+                      <h3 className="text-lg font-semibold">{lead.name}</h3>
+
+                      <p>
+                        <strong>Email:</strong> {lead.email}
+                      </p>
+
+                      <p>
+                        <strong>Phone:</strong> {lead.phone}
+                      </p>
+
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        {lead.status.charAt(0).toUpperCase() +
+                          lead.status.slice(1)}
+                      </p>
+
+                      <p>
+                        <strong>Project:</strong>{" "}
+                        {openPlot?.projectName || "N/A"}
+                      </p>
+
+                      <p>
+                        <strong>Open Plot No:</strong>{" "}
+                        {openPlot?.openPlotNo || "N/A"}
+                      </p>
+
+                      <p>
+                        <strong>Inner Plot No:</strong>{" "}
+                        {innerPlot?.plotNo || "N/A"}
+                      </p>
+
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Added on:</strong>{" "}
+                        {new Date(lead.createdAt).toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
