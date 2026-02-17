@@ -494,24 +494,36 @@ const NewProperties = () => {
   };
   const handleDownload = async (
     e: React.MouseEvent,
-    url?: string | null,
-    projectName?: string | null,
+    url: string,
+    name?: string,
   ) => {
     e.stopPropagation();
-    if (!url) return toast.error("No brochure available to download.");
+
+    if (!url) {
+      toast.error("No brochure available");
+      return;
+    }
 
     try {
-      const API_BASE = import.meta.env.VITE_URL;
-      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url,
-      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Download failed");
 
-      // Open in new tab so browser handles download; the server streams the file
-      window.open(proxyUrl, "_blank");
-      toast.success("Download starting...");
-    } catch (error) {
-      console.error("Download error:", error);
-      toast.error("Failed to download brochure.");
+      const blob = await response.blob();
+
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${name || "brochure"}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download brochure");
     }
   };
 
@@ -760,12 +772,12 @@ const NewProperties = () => {
                             size="sm"
                             className="flex-1"
                             onClick={() =>
-                              navigate(`/properties/building/${b._id}`)
+                              navigate(`/properties/building/${b?._id}`)
                             }
                           >
                             View More
                           </Button>
-                          {b.brochureUrl && (
+                          {b?.brochureUrl && (
                             <div className="flex gap-2">
                               <Button
                                 variant="outline"
@@ -773,8 +785,8 @@ const NewProperties = () => {
                                 onClick={(e) =>
                                   handleDownload(
                                     e,
-                                    b.brochureUrl!,
-                                    b.projectName,
+                                    b?.brochureUrl!,
+                                    b?.projectName,
                                   )
                                 }
                                 title="Download Brochure"
@@ -935,7 +947,7 @@ const NewProperties = () => {
                               >
                                 View Details
                               </Button>
-                              {plot.brochureUrl && (
+                              {plot?.brochureUrl && (
                                 <div className="flex gap-2">
                                   <Button
                                     variant="outline"
@@ -943,8 +955,8 @@ const NewProperties = () => {
                                     onClick={(e) =>
                                       handleDownload(
                                         e,
-                                        plot.brochureUrl!,
-                                        plot.projectName,
+                                        plot?.brochureUrl!,
+                                        plot?.projectName,
                                       )
                                     }
                                     title="Download Brochure"

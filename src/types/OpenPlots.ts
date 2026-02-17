@@ -4,6 +4,7 @@ export interface OpenPlot extends OpenPlotFormValues {
   _id: string;
   thumbnailUrl: string;
   images: string[];
+  brochureUrl?: string; // 🔥 added
 }
 
 export const openPlotSchema = z.object({
