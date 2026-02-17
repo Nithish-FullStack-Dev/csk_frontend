@@ -158,7 +158,7 @@ export const BuildingDialog = ({
   const validateFile = (
     file: File,
     type: "image" | "pdf",
-    maxSizeMB: number
+    maxSizeMB: number,
   ) => {
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (type === "image" && !file.type.startsWith("image/")) {
@@ -184,7 +184,7 @@ export const BuildingDialog = ({
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
       return data;
     },
@@ -209,7 +209,7 @@ export const BuildingDialog = ({
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
       return data;
     },
@@ -256,6 +256,7 @@ export const BuildingDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (
       !formData.projectName ||
       !formData.location ||
@@ -265,48 +266,81 @@ export const BuildingDialog = ({
       toast.error("Please fill all required fields");
       return;
     }
+
     if (formData.availableUnits > formData.totalUnits) {
       toast.error("Available units cannot exceed total units");
       return;
     }
-    if (mode === "add" && (!thumbnailFile || !brochureFile)) {
-      toast.error("Please upload thumbnail and brochure files");
-      return;
+
+    // ADD MODE validation
+    if (mode === "add") {
+      if (!thumbnailFile) {
+        toast.error("Thumbnail is required");
+        return;
+      }
+      if (!brochureFile) {
+        toast.error("Brochure PDF is required");
+        return;
+      }
     }
 
     const payload = new FormData();
+
     payload.append("projectName", formData.projectName);
     payload.append("location", formData.location);
     payload.append("propertyType", formData.propertyType);
-    payload.append("totalUnits", formData.totalUnits.toString());
-    payload.append("availableUnits", formData.availableUnits.toString());
+    payload.append("totalUnits", String(formData.totalUnits));
+    payload.append("availableUnits", String(formData.availableUnits));
     payload.append(
       "soldUnits",
-      (formData.totalUnits - formData.availableUnits).toString()
+      String(formData.totalUnits - formData.availableUnits),
     );
     payload.append("constructionStatus", formData.constructionStatus);
+
     if (formData.completionDate)
       payload.append("completionDate", formData.completionDate);
+
     if (formData.description)
       payload.append("description", formData.description);
-    payload.append(
-      "municipalPermission",
-      formData.municipalPermission.toString()
-    );
-    payload.append("reraApproved", formData.reraApproved.toString());
-    payload.append("reraNumber", formData.reraNumber);
+
+    payload.append("municipalPermission", String(formData.municipalPermission));
+    payload.append("reraApproved", String(formData.reraApproved));
+
+    if (formData.reraNumber) payload.append("reraNumber", formData.reraNumber);
+
     if (formData.googleMapsLocation)
       payload.append("googleMapsLocation", formData.googleMapsLocation);
-    if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
-    if (brochureFile) payload.append("brochureUrl", brochureFile);
-    imageFiles.forEach((file) => payload.append("images", file));
-    selectedAmenities.forEach((amenity) =>
-      payload.append("amenities[]", amenity)
-    ); // Add amenities to payload
 
-    mode === "add"
-      ? createBuilding.mutate(payload)
-      : updateBuilding.mutate(payload);
+    /* ---------------- FILES ---------------- */
+
+    if (thumbnailFile) {
+      payload.append("thumbnailUrl", thumbnailFile);
+    }
+
+    if (brochureFile) {
+      payload.append("brochureUrl", brochureFile);
+    }
+
+    /* 🔥 IMPORTANT: brochure removed */
+    if (mode === "edit" && !brochureFile && !brochurePreview) {
+      payload.append("brochureRemoved", "true");
+    }
+
+    /* gallery */
+    imageFiles.forEach((file) => payload.append("images", file));
+
+    /* amenities */
+    selectedAmenities.forEach((amenity) =>
+      payload.append("amenities[]", amenity),
+    );
+
+    /* ---------------- API ---------------- */
+
+    if (mode === "add") {
+      createBuilding.mutate(payload);
+    } else {
+      updateBuilding.mutate(payload);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -442,7 +476,7 @@ export const BuildingDialog = ({
                       totalUnits,
                       availableUnits: Math.min(
                         formData.availableUnits,
-                        totalUnits
+                        totalUnits,
                       ),
                     });
                   }
@@ -588,14 +622,20 @@ export const BuildingDialog = ({
                       size="icon"
                       className="absolute top-0 right-0 bg-white/80 rounded-full"
                       onClick={() => {
-                        if (
-                          thumbnailPreview &&
-                          thumbnailPreview.startsWith("blob:")
-                        ) {
+                        if (thumbnailPreview?.startsWith("blob:")) {
                           URL.revokeObjectURL(thumbnailPreview);
                         }
+
                         setThumbnailFile(null);
                         setThumbnailPreview("");
+
+                        // 🔥 IMPORTANT — tell backend thumbnail removed during edit
+                        if (mode === "edit") {
+                          setFormData((prev) => ({
+                            ...prev,
+                            thumbnailUrl: "",
+                          }));
+                        }
                       }}
                     >
                       <X className="h-4 w-4" />
@@ -643,7 +683,7 @@ export const BuildingDialog = ({
                   multiple
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []).filter(
-                      (file) => validateFile(file, "image", 5)
+                      (file) => validateFile(file, "image", 5),
                     );
                     const totalImages =
                       formData.images.length + imageFiles.length + files.length;
@@ -655,7 +695,7 @@ export const BuildingDialog = ({
                     if (files.length === 0) return;
 
                     const newPreviews = files.map((file) =>
-                      URL.createObjectURL(file)
+                      URL.createObjectURL(file),
                     );
                     setImageFiles((prev) => [...prev, ...files]);
                     setImagePreviews((prev) => [...prev, ...newPreviews]);
@@ -804,8 +844,8 @@ export const BuildingDialog = ({
               {createBuilding.isPending || updateBuilding.isPending
                 ? "Saving..."
                 : mode === "add"
-                ? "Create"
-                : "Update"}
+                  ? "Create"
+                  : "Update"}
             </Button>
           </DialogFooter>
         </form>

@@ -10,9 +10,9 @@ export const innerPlotSchema = z.object({
   openPlotId: z.string(),
   plotNo: z.string().min(1),
   area: z.number().positive(),
-  wastageArea: z.string().optional(),
+  // wastageArea: z.string().optional(),
   facing: z.enum(["North", "South", "East", "West"]).optional(),
-  roadWidthFt: z.number().optional(),
+  // roadWidthFt: z.number().optional(),
   plotType: z.enum([
     "Residential",
     "Commercial",

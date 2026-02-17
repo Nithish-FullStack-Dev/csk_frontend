@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { updateInnerPlot } from "@/api/innerPlot.api";
@@ -32,6 +32,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     innerPlot.thumbnailUrl || "",
   );
+  const queryClient = useQueryClient();
 
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>(
@@ -43,10 +44,10 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
     defaultValues: {
       openPlotId: innerPlot.openPlotId,
       plotNo: innerPlot.plotNo,
-      wastageArea: innerPlot.wastageArea,
+      // wastageArea: innerPlot.wastageArea,
       area: innerPlot.area,
       facing: innerPlot.facing,
-      roadWidthFt: innerPlot.roadWidthFt,
+      // roadWidthFt: innerPlot.roadWidthFt,
       plotType: innerPlot.plotType,
       status: innerPlot.status,
       remarks: innerPlot.remarks,
@@ -78,10 +79,18 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const mutation = useMutation({
     mutationFn: (data: InnerPlotFormValues) =>
       updateInnerPlot(innerPlot._id, data, thumbnail ?? undefined, images),
+
     onSuccess: () => {
       toast.success("Inner plot updated successfully");
+
+      // 🔥 REFRESH INNER PLOTS LIST
+      queryClient.invalidateQueries({
+        queryKey: ["inner-plots", innerPlot.openPlotId],
+      });
+
       onSuccess();
     },
+
     onError: (err: any) => {
       toast.error(err?.message || "Failed to update inner plot");
     },
@@ -101,13 +110,13 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
           {...form.register("area", { valueAsNumber: true })}
         />
 
-        <Input placeholder="Wastage Area" {...form.register("wastageArea")} />
+        {/* <Input placeholder="Wastage Area" {...form.register("wastageArea")} />
 
         <Input
           type="number"
           placeholder="Road Width (ft)"
           {...form.register("roadWidthFt", { valueAsNumber: true })}
-        />
+        /> */}
 
         <Select
           value={form.watch("facing")}
@@ -121,6 +130,11 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
             <SelectItem value="South">South</SelectItem>
             <SelectItem value="East">East</SelectItem>
             <SelectItem value="West">West</SelectItem>
+            <SelectItem value="North-East">North-East</SelectItem>
+            <SelectItem value="North-West">North-West</SelectItem>
+            <SelectItem value="South-East">South-East</SelectItem>
+            <SelectItem value="South-West">South-West</SelectItem>
+            <SelectItem value="Not Applicable">Not Applicable</SelectItem>
           </SelectContent>
         </Select>
 

@@ -66,21 +66,29 @@ const BuildingDetails = () => {
     projectName?: string | null,
   ) => {
     e.stopPropagation();
-    if (!url) return toast.error("No brochure available to download.");
+    if (!url) return toast.error("No brochure available");
 
     try {
-      const API_BASE = import.meta.env.VITE_URL;
-      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url,
-      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Download failed");
 
-      window.open(proxyUrl, "_blank");
-      toast.success("Download starting...");
-    } catch (error) {
-      console.error("Download error:", error);
-      toast.error("Failed to download brochure.");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${projectName || "brochure"}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download brochure");
     }
   };
+
   const {
     data: building,
     isLoading: buildingLoading,
@@ -250,7 +258,7 @@ const BuildingDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
-  return (  
+  return (
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}

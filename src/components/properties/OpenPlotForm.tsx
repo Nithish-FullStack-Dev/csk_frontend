@@ -40,6 +40,14 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     openPlot?.images || [],
   );
 
+  /* 🔥 NEW — brochure state */
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
+  const [brochureName, setBrochureName] = useState<string>(
+    openPlot?.brochureUrl ? "Existing brochure uploaded" : "",
+  );
+  const [brochurePreview, setBrochurePreview] = useState<string | null>(
+    openPlot?.brochureUrl || null,
+  );
   const form = useForm<OpenPlotFormValues>({
     resolver: zodResolver(openPlotSchema),
     defaultValues: openPlot ?? {
@@ -76,6 +84,13 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     setImageFiles((p) => p.filter((_, i) => i !== index));
   };
 
+  /* 🔥 NEW — brochure handler */
+  const onBrochureChange = (file?: File) => {
+    if (!file) return;
+    setBrochureFile(file);
+    setBrochureName(file.name);
+  };
+
   /* ---------- MUTATION ---------- */
 
   const mutation = useMutation({
@@ -84,14 +99,19 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
         throw new Error("Thumbnail image is required");
       }
 
+      if (!brochureFile && !isEdit) {
+        throw new Error("Brochure file is required");
+      }
+
       return isEdit
         ? updateOpenPlot(
             openPlot._id,
             data,
             thumbnailFile ?? undefined,
             imageFiles,
+            brochureFile ?? undefined,
           )
-        : saveOpenPlot(data, thumbnailFile!, imageFiles);
+        : saveOpenPlot(data, thumbnailFile!, imageFiles, brochureFile!);
     },
     onSuccess: () => {
       toast.success(isEdit ? "Open plot updated" : "Open plot created");
@@ -208,7 +228,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
         <Textarea placeholder="Boundaries" {...form.register("boundaries")} />
         <Textarea placeholder="Remarks" {...form.register("remarks")} />
 
-        {/* ---------- THUMBNAIL ---------- */}
+        {/* THUMBNAIL */}
         <div className="space-y-2">
           <Label>Main Image</Label>
           {thumbnailPreview && (
@@ -224,7 +244,20 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
           />
         </div>
 
-        {/* ---------- GALLERY ---------- */}
+        {/* 🔥 BROCHURE */}
+        <div className="space-y-2">
+          <Label>Brochure (PDF)</Label>
+          {brochureName && (
+            <p className="text-sm text-muted-foreground">{brochureName}</p>
+          )}
+          <Input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => onBrochureChange(e.target.files?.[0])}
+          />
+        </div>
+
+        {/* GALLERY */}
         <div className="space-y-2">
           <Label>Gallery Images</Label>
           <Input

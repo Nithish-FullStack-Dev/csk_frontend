@@ -130,9 +130,9 @@ export default function OpenLandDetails({
   }, [initialLand]);
 
   const galleryImages = useMemo(() => {
-    const setImgs = new Set<string>(land?.images || []);
-    if (land?.thumbnailUrl) setImgs.add(land.thumbnailUrl);
-    return Array.from(setImgs);
+    const imgs = [...(land?.images || [])];
+    if (land?.thumbnailUrl) imgs.unshift(land.thumbnailUrl);
+    return imgs.filter(Boolean);
   }, [land]);
 
   /* -------------------- Fetch Agents -------------------- */
@@ -219,11 +219,11 @@ export default function OpenLandDetails({
                 onClick={() => {
                   const API_BASE = import.meta.env.VITE_URL;
                   const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-                    land.brochureUrl
+                    land.brochureUrl,
                   )}&filename=${encodeURIComponent(
-                    land.projectName || "brochure"
+                    land.projectName || "brochure",
                   )}`;
-                  window.open(proxyUrl, "_blank");
+                  window.open(land.brochureUrl, "_blank");
                 }}
               >
                 <FileText className="mr-2 h-4 w-4" />
@@ -348,7 +348,7 @@ export default function OpenLandDetails({
           <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
             {leadsLoading && <p>Loading leads...</p>}
             {leadsError && <p className="text-red-500">{leadErr?.message}</p>}
-            {!leadsLoading && !leadsError && leads.length === 0 && (
+            {!leadsLoading && !leadsError && (!leads || leads.length === 0) && (
               <p className="text-gray-500 italic">
                 No interested clients found.
               </p>
