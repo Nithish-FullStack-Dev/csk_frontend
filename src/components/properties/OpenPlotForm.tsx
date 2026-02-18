@@ -61,6 +61,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
       areaUnit: "SqFt",
       titleStatus: "Clear",
       status: "Available",
+      googleMapsLocation: "",
     },
   });
 
@@ -68,13 +69,26 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onThumbnailChange = (file?: File) => {
     if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Thumbnail must be under 5MB");
+      return;
+    }
+
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
   };
 
   const onImagesChange = (files: FileList | null) => {
     if (!files) return;
+
     const newFiles = Array.from(files);
+
+    if (imagePreviews.length + newFiles.length > 10) {
+      toast.error("Maximum 10 images allowed");
+      return;
+    }
+
     setImageFiles((p) => [...p, ...newFiles]);
     setImagePreviews((p) => [
       ...p,
@@ -89,6 +103,12 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onBrochureChange = (file?: File) => {
     if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast.error("Brochure must be PDF");
+      return;
+    }
+
     setBrochureFile(file);
     setBrochureName(file.name);
   };
@@ -132,109 +152,109 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
       className="space-y-6"
     >
       <Card className="p-6 space-y-6">
+        {/* BASIC INFO */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Name */}
           <div>
             <Input placeholder="Project Name" {...register("projectName")} />
-            {errors.projectName && (
-              <p className="text-red-500 text-sm">
-                {errors.projectName.message}
-              </p>
-            )}
+            <p className="text-red-500 text-sm">
+              {errors.projectName?.message}
+            </p>
           </div>
 
-          {/* Open Plot No */}
           <div>
             <Input placeholder="Open Plot No" {...register("openPlotNo")} />
-            {errors.openPlotNo && (
-              <p className="text-red-500 text-sm">
-                {errors.openPlotNo.message}
-              </p>
-            )}
+            <p className="text-red-500 text-sm">{errors.openPlotNo?.message}</p>
           </div>
 
-          {/* Location */}
           <div>
             <Input placeholder="Location" {...register("location")} />
-            {errors.location && (
-              <p className="text-red-500 text-sm">{errors.location.message}</p>
+            <p className="text-red-500 text-sm">{errors.location?.message}</p>
+          </div>
+
+          {/* GOOGLE MAP */}
+          {/* GOOGLE MAP LOCATION */}
+          <div className="space-y-2">
+            <Label>Google Maps Location</Label>
+
+            <Input
+              placeholder="Paste Google Maps share link"
+              {...register("googleMapsLocation")}
+            />
+
+            {/* helper text */}
+            <p className="text-xs text-muted-foreground">
+              Example: https://maps.google.com/?q=...
+            </p>
+
+            {/* validation error */}
+            <p className="text-red-500 text-sm">
+              {errors.googleMapsLocation?.message}
+            </p>
+
+            {/* preview like Building */}
+            {watch("googleMapsLocation") && (
+              <a
+                href={watch("googleMapsLocation")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 text-sm underline"
+              >
+                Open in Google Maps
+              </a>
             )}
           </div>
 
-          {/* Total Area */}
           <div>
             <Input
               type="number"
               min={0}
               placeholder="Total Area"
-              {...register("totalArea", { valueAsNumber: true })}
+              {...register("totalArea")}
             />
-            {errors.totalArea && (
-              <p className="text-red-500 text-sm">{errors.totalArea.message}</p>
-            )}
+            <p className="text-red-500 text-sm">{errors.totalArea?.message}</p>
           </div>
 
-          {/* Area Unit */}
-          <div>
-            <Select
-              value={watch("areaUnit")}
-              onValueChange={(v) => setValue("areaUnit", v as any)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Area Unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="SqFt">SqFt</SelectItem>
-                <SelectItem value="SqYd">SqYd</SelectItem>
-                <SelectItem value="Acre">Acre</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.areaUnit && (
-              <p className="text-red-500 text-sm">{errors.areaUnit.message}</p>
-            )}
-          </div>
+          <Select
+            value={watch("areaUnit")}
+            onValueChange={(v) => setValue("areaUnit", v as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Area Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SqFt">SqFt</SelectItem>
+              <SelectItem value="SqYd">SqYd</SelectItem>
+              <SelectItem value="Acre">Acre</SelectItem>
+            </SelectContent>
+          </Select>
 
-          {/* Title Status */}
-          <div>
-            <Select
-              value={watch("titleStatus")}
-              onValueChange={(v) => setValue("titleStatus", v as any)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Title Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Clear">Clear</SelectItem>
-                <SelectItem value="Disputed">Disputed</SelectItem>
-                <SelectItem value="NA">NA</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.titleStatus && (
-              <p className="text-red-500 text-sm">
-                {errors.titleStatus.message}
-              </p>
-            )}
-          </div>
+          <Select
+            value={watch("titleStatus")}
+            onValueChange={(v) => setValue("titleStatus", v as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Title Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Clear">Clear</SelectItem>
+              <SelectItem value="Disputed">Disputed</SelectItem>
+              <SelectItem value="NA">NA</SelectItem>
+            </SelectContent>
+          </Select>
 
-          {/* Status */}
-          <div>
-            <Select
-              value={watch("status")}
-              onValueChange={(v) => setValue("status", v as any)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Available">Available</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
-                <SelectItem value="Blocked">Blocked</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.status && (
-              <p className="text-red-500 text-sm">{errors.status.message}</p>
-            )}
-          </div>
+          <Select
+            value={watch("status")}
+            onValueChange={(v) => setValue("status", v as any)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Available">Available</SelectItem>
+              <SelectItem value="Sold">Sold</SelectItem>
+              <SelectItem value="Blocked">Blocked</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Textarea placeholder="Boundaries" {...register("boundaries")} />
@@ -264,7 +284,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
           )}
           <Input
             type="file"
-            accept=".pdf,.doc,.docx"
+            accept=".pdf"
             onChange={(e) => onBrochureChange(e.target.files?.[0])}
           />
         </div>

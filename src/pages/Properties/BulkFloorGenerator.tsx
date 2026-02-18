@@ -1,3 +1,4 @@
+// src\pages\Properties\BulkFloorGenerator.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -95,11 +96,79 @@ export default function BulkFloorGenerator({
     );
     return data.data;
   };
+  const validateBulkForm = () => {
+    if (!floorCount || floorCount <= 0) {
+      toast.error("Total floors must be greater than 0");
+      return false;
+    }
+
+    if (!globalMix.length) {
+      toast.error("Add at least one unit type");
+      return false;
+    }
+
+    const types = new Set();
+
+    for (const mix of globalMix) {
+      if (!mix.type.trim()) {
+        toast.error("Unit type cannot be empty");
+        return false;
+      }
+
+      if (types.has(mix.type.trim())) {
+        toast.error(`Duplicate unit type: ${mix.type}`);
+        return false;
+      }
+
+      types.add(mix.type.trim());
+
+      if (!mix.count || mix.count <= 0) {
+        toast.error(`Unit count must be > 0 for ${mix.type}`);
+        return false;
+      }
+    }
+
+    // per floor mix validation
+    if (!sameMix) {
+      for (let i = 1; i <= floorCount; i++) {
+        if (!perFloorMix[i] || !perFloorMix[i].length) {
+          toast.error(`Unit mix missing for floor ${i}`);
+          return false;
+        }
+      }
+    }
+
+    // config validation
+    for (const type of types) {
+      const config = unitConfigs[type];
+
+      if (!config) {
+        toast.error(`Configuration missing for ${type}`);
+        return false;
+      }
+
+      if (!config.sqft || isNaN(config.sqft) || config.sqft <= 0) {
+        toast.error(`Sqft must be greater than 0 for ${type}`);
+        return false;
+      }
+
+      if (!config.facing || !config.facing.trim()) {
+        toast.error(`Facing is required for ${type}`);
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const generateMutation = useMutation({
     mutationFn: async () => {
       for (let floor = 1; floor <= floorCount; floor++) {
         const mix = sameMix ? globalMix : perFloorMix[floor];
+
+        if (!mix || !mix.length) {
+          throw new Error(`Unit mix missing for floor ${floor}`);
+        }
 
         // create floor
         const floorRes = await createFloor({
@@ -150,19 +219,30 @@ export default function BulkFloorGenerator({
   const addMixRow = () => setGlobalMix((p) => [...p, { type: "", count: 1 }]);
 
   const updateMix = (i: number, key: keyof UnitMix, val: any) => {
+    if (key === "type") {
+      const exists = globalMix.some(
+        (item, idx) => idx !== i && item.type.trim() === val.trim(),
+      );
+
+      if (exists) {
+        toast.error("Duplicate unit type not allowed");
+        return;
+      }
+    }
+
     const copy = [...globalMix];
-    copy[i][key] = val;
+    copy[i] = { ...copy[i], [key]: val };
     setGlobalMix(copy);
   };
 
-  const configureUnitType = (type: string) => {
-    if (!unitConfigs[type]) {
-      setUnitConfigs({
-        ...unitConfigs,
-        [type]: { type, sqft: 0, facing: "" },
-      });
-    }
-  };
+  // const configureUnitType = (type: string) => {
+  //   if (!unitConfigs[type]) {
+  //     setUnitConfigs({
+  //       ...unitConfigs,
+  //       [type]: { type, sqft: 0, facing: "" },
+  //     });
+  //   }
+  // };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,8 +256,13 @@ export default function BulkFloorGenerator({
             <Label>Total Floors</Label>
             <Input
               type="number"
+              min={1}
               value={floorCount}
-              onChange={(e) => setFloorCount(Number(e.target.value))}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (!value || value < 1) return;
+                setFloorCount(value);
+              }}
             />
           </div>
 
@@ -199,9 +284,10 @@ export default function BulkFloorGenerator({
                   />
                   <Input
                     type="number"
+                    min={1}
                     value={m.count}
                     onChange={(e) =>
-                      updateMix(i, "count", Number(e.target.value))
+                      updateMix(i, "count", Math.max(1, Number(e.target.value)))
                     }
                   />
                   <Button
@@ -226,96 +312,103 @@ export default function BulkFloorGenerator({
             <CardContent className="p-4 space-y-6">
               <h3 className="font-semibold">Unit Configuration</h3>
 
-              {globalMix.map((m, idx) => {
-                const config = unitConfigs[m.type] || {
-                  sqft: 0,
-                  facing: "",
-                };
+              {globalMix
+                .filter((m) => m.type.trim() !== "")
+                .map((m, idx) => {
+                  const config = unitConfigs[m.type] || {
+                    sqft: 0,
+                    facing: "",
+                  };
 
-                return (
-                  <div key={idx} className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-medium">{m.type}</h4>
+                  return (
+                    <div key={idx} className="border rounded-lg p-4 space-y-4">
+                      <h4 className="font-medium">{m.type}</h4>
+                      <Input
+                        placeholder="Plot area in sqft"
+                        type="number"
+                        min={1}
+                        value={config.sqft || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
 
-                    <Input
-                      placeholder="Sqft"
-                      type="number"
-                      value={config.sqft}
-                      onChange={(e) =>
-                        setUnitConfigs({
-                          ...unitConfigs,
-                          [m.type]: {
-                            ...config,
-                            sqft: Number(e.target.value),
-                          },
-                        })
-                      }
-                    />
+                          setUnitConfigs({
+                            ...unitConfigs,
+                            [m.type]: {
+                              ...config,
+                              sqft: val === "" ? 0 : Number(val),
+                            },
+                          });
+                        }}
+                      />
 
-                    <Select
-                      value={config.facing}
-                      onValueChange={(value) =>
-                        setUnitConfigs({
-                          ...unitConfigs,
-                          [m.type]: {
-                            ...config,
-                            facing: value,
-                          },
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Facing" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="North">North</SelectItem>
-                        <SelectItem value="East">East</SelectItem>
-                        <SelectItem value="West">West</SelectItem>
-                        <SelectItem value="South">South</SelectItem>
-                        <SelectItem value="North-East">North-East</SelectItem>
-                        <SelectItem value="North-West">North-West</SelectItem>
-                        <SelectItem value="South-East">South-East</SelectItem>
-                        <SelectItem value="South-West">South-West</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Select
+                        value={config.facing}
+                        onValueChange={(value) =>
+                          setUnitConfigs({
+                            ...unitConfigs,
+                            [m.type]: {
+                              ...config,
+                              facing: value,
+                            },
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Facing" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="North">North</SelectItem>
+                          <SelectItem value="East">East</SelectItem>
+                          <SelectItem value="West">West</SelectItem>
+                          <SelectItem value="South">South</SelectItem>
+                          <SelectItem value="North-East">North-East</SelectItem>
+                          <SelectItem value="North-West">North-West</SelectItem>
+                          <SelectItem value="South-East">South-East</SelectItem>
+                          <SelectItem value="South-West">South-West</SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setUnitConfigs({
-                          ...unitConfigs,
-                          [m.type]: {
-                            ...config,
-                            thumbnail: e.target.files?.[0],
-                          },
-                        })
-                      }
-                    />
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          setUnitConfigs({
+                            ...unitConfigs,
+                            [m.type]: {
+                              ...config,
+                              thumbnail: e.target.files?.[0],
+                            },
+                          })
+                        }
+                      />
 
-                    <Input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setUnitConfigs({
-                          ...unitConfigs,
-                          [m.type]: {
-                            ...config,
-                            images: Array.from(e.target.files || []),
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                );
-              })}
+                      <Input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) =>
+                          setUnitConfigs({
+                            ...unitConfigs,
+                            [m.type]: {
+                              ...config,
+                              images: Array.from(e.target.files || []),
+                            },
+                          })
+                        }
+                      />
+                    </div>
+                  );
+                })}
             </CardContent>
           </Card>
         </div>
 
         <DialogFooter>
           <Button
-            onClick={() => generateMutation.mutate()}
+            onClick={() => {
+              if (!validateBulkForm()) return;
+              generateMutation.mutate();
+            }}
             disabled={generateMutation.isPending}
           >
             {generateMutation.isPending ? "Generating..." : "Generate"}
