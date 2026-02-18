@@ -29,7 +29,7 @@ import axios from "axios";
 import { InnerPlotDialog } from "./InnerPlotDialog";
 import { useNavigate } from "react-router-dom";
 import { getAllInnerPlot } from "@/api/innerPlot.api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import BulkInnerPlotGenerator from "./BulkInnerPlotGenerator";
 import CsvInnerPlotUploader from "./CsvInnerPlotUploader";
 
@@ -79,6 +79,7 @@ export function OpenPlotDetails({
   const [csvUploadOpen, setCsvUploadOpen] = useState(false);
 
   const canEdit = user && ["owner", "admin"].includes(user.role);
+  const queryClient = useQueryClient();
 
   // const {
   //   data: leads = [],
@@ -119,7 +120,11 @@ export function OpenPlotDetails({
     <div className="space-y-6">
       {/* Back + Edit/Delete */}
       <div className="flex justify-between items-center">
-        <Button variant="outline" size="sm" onClick={onBack}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/properties")}
+        >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to All Open Plots
         </Button>
@@ -464,21 +469,57 @@ export function OpenPlotDetails({
           />
         </DialogContent>
       </Dialog>
-
       <InnerPlotDialog
         open={innerPlotDialogOpen}
-        onOpenChange={setInnerPlotDialogOpen}
+        onOpenChange={(val) => {
+          setInnerPlotDialogOpen(val);
+
+          if (!val) {
+            queryClient.invalidateQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+
+            queryClient.refetchQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+          }
+        }}
         openPlotId={plot._id}
       />
+
       <BulkInnerPlotGenerator
         open={bulkManualOpen}
-        onOpenChange={setBulkManualOpen}
+        onOpenChange={(val) => {
+          setBulkManualOpen(val);
+
+          if (!val) {
+            queryClient.invalidateQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+
+            queryClient.refetchQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+          }
+        }}
         openPlotId={plot._id}
       />
 
       <CsvInnerPlotUploader
         open={csvUploadOpen}
-        onOpenChange={setCsvUploadOpen}
+        onOpenChange={(val) => {
+          setCsvUploadOpen(val);
+
+          if (!val) {
+            queryClient.invalidateQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+
+            queryClient.refetchQueries({
+              queryKey: ["inner-plots", plot._id],
+            });
+          }
+        }}
         openPlotId={plot._id}
       />
     </div>

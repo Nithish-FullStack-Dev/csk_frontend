@@ -376,9 +376,26 @@ const App = () => {
                   }
                 />
 
-                <Route
+                {/* <Route
                   path="/properties/openplot/:id"
                   element={<OpenPlotsDetails />}
+                /> */}
+                <Route
+                  path="/properties/openplot/:id"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <OpenPlotsDetails />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/properties/openland/:id"
+                  element={
+                    <ProtectedRoute roleSubmodule={"Properties"}>
+                      <OpenLandDetails />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/properties/building/:buildingId"

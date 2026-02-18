@@ -69,7 +69,7 @@ export function InnerPlotDetails() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["innerPlots", _id],
+    queryKey: ["inner-plot", _id],
     queryFn: () => getInnerPlots(_id!),
     enabled: !!_id,
   });
@@ -86,7 +86,7 @@ export function InnerPlotDetails() {
     mutationFn: deleteInnerPlot,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["inner-plots", _id],
+        queryKey: ["inner-plots", plot?.openPlotId],
       });
       navigate(-1);
     },
@@ -352,8 +352,13 @@ export function InnerPlotDetails() {
               innerPlot={plot}
               onSuccess={() => {
                 queryClient.invalidateQueries({
-                  queryKey: ["innerPlots", _id],
+                  queryKey: ["inner-plot", plot._id],
                 });
+
+                queryClient.invalidateQueries({
+                  queryKey: ["inner-plots", plot.openPlotId],
+                });
+
                 setEditOpen(false);
               }}
             />

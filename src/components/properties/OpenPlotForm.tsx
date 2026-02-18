@@ -40,15 +40,18 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     openPlot?.images || [],
   );
 
-  /* 🔥 NEW — brochure state */
   const [brochureFile, setBrochureFile] = useState<File | null>(null);
   const [brochureName, setBrochureName] = useState<string>(
     openPlot?.brochureUrl ? "Existing brochure uploaded" : "",
   );
-  const [brochurePreview, setBrochurePreview] = useState<string | null>(
-    openPlot?.brochureUrl || null,
-  );
-  const form = useForm<OpenPlotFormValues>({
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<OpenPlotFormValues>({
     resolver: zodResolver(openPlotSchema),
     defaultValues: openPlot ?? {
       projectName: "",
@@ -61,7 +64,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     },
   });
 
-  /* ---------- FILE HANDLERS ---------- */
+  /* FILE HANDLERS */
 
   const onThumbnailChange = (file?: File) => {
     if (!file) return;
@@ -84,23 +87,24 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     setImageFiles((p) => p.filter((_, i) => i !== index));
   };
 
-  /* 🔥 NEW — brochure handler */
   const onBrochureChange = (file?: File) => {
     if (!file) return;
     setBrochureFile(file);
     setBrochureName(file.name);
   };
 
-  /* ---------- MUTATION ---------- */
+  /* MUTATION */
 
   const mutation = useMutation({
     mutationFn: (data: OpenPlotFormValues) => {
       if (!thumbnailFile && !isEdit) {
-        throw new Error("Thumbnail image is required");
+        toast.error("Thumbnail image is required");
+        return Promise.reject();
       }
 
       if (!brochureFile && !isEdit) {
-        throw new Error("Brochure file is required");
+        toast.error("Brochure file is required");
+        return Promise.reject();
       }
 
       return isEdit
@@ -118,119 +122,127 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
       onSuccess();
     },
     onError: (err: any) => {
-      toast.error(err.message || "Something went wrong");
+      toast.error(err?.response?.data?.message || "Something went wrong");
     },
   });
 
-  /* ---------- UI ---------- */
-
   return (
     <form
-      onSubmit={form.handleSubmit((d) => mutation.mutate(d))}
+      onSubmit={handleSubmit((d) => mutation.mutate(d))}
       className="space-y-6"
     >
       <Card className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input placeholder="Project Name" {...form.register("projectName")} />
-          <Input placeholder="Open Plot No" {...form.register("openPlotNo")} />
-          <Input placeholder="Survey No" {...form.register("surveyNo")} />
-          <Input placeholder="Location" {...form.register("location")} />
+          {/* Project Name */}
+          <div>
+            <Input placeholder="Project Name" {...register("projectName")} />
+            {errors.projectName && (
+              <p className="text-red-500 text-sm">
+                {errors.projectName.message}
+              </p>
+            )}
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Total Area"
-            {...form.register("totalArea", { valueAsNumber: true })}
-          />
+          {/* Open Plot No */}
+          <div>
+            <Input placeholder="Open Plot No" {...register("openPlotNo")} />
+            {errors.openPlotNo && (
+              <p className="text-red-500 text-sm">
+                {errors.openPlotNo.message}
+              </p>
+            )}
+          </div>
 
-          <Select
-            value={form.watch("areaUnit")}
-            onValueChange={(v) => form.setValue("areaUnit", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Area Unit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="SqFt">SqFt</SelectItem>
-              <SelectItem value="SqYd">SqYd</SelectItem>
-              <SelectItem value="Acre">Acre</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Location */}
+          <div>
+            <Input placeholder="Location" {...register("location")} />
+            {errors.location && (
+              <p className="text-red-500 text-sm">{errors.location.message}</p>
+            )}
+          </div>
 
-          <Select
-            value={form.watch("approvalAuthority")}
-            onValueChange={(v) => form.setValue("approvalAuthority", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Approval Authority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DTCP">DTCP</SelectItem>
-              <SelectItem value="HMDA">HMDA</SelectItem>
-              <SelectItem value="RERA">RERA</SelectItem>
-              <SelectItem value="PANCHAYAT">Panchayat</SelectItem>
-              <SelectItem value="OTHER">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Total Area */}
+          <div>
+            <Input
+              type="number"
+              min={0}
+              placeholder="Total Area"
+              {...register("totalArea", { valueAsNumber: true })}
+            />
+            {errors.totalArea && (
+              <p className="text-red-500 text-sm">{errors.totalArea.message}</p>
+            )}
+          </div>
 
-          <Select
-            value={form.watch("facing")}
-            onValueChange={(v) => form.setValue("facing", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Facing" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="North">North</SelectItem>
-              <SelectItem value="South">South</SelectItem>
-              <SelectItem value="East">East</SelectItem>
-              <SelectItem value="West">West</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Area Unit */}
+          <div>
+            <Select
+              value={watch("areaUnit")}
+              onValueChange={(v) => setValue("areaUnit", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Area Unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SqFt">SqFt</SelectItem>
+                <SelectItem value="SqYd">SqYd</SelectItem>
+                <SelectItem value="Acre">Acre</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.areaUnit && (
+              <p className="text-red-500 text-sm">{errors.areaUnit.message}</p>
+            )}
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Road Width (ft)"
-            {...form.register("roadWidthFt", { valueAsNumber: true })}
-          />
+          {/* Title Status */}
+          <div>
+            <Select
+              value={watch("titleStatus")}
+              onValueChange={(v) => setValue("titleStatus", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Title Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Clear">Clear</SelectItem>
+                <SelectItem value="Disputed">Disputed</SelectItem>
+                <SelectItem value="NA">NA</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.titleStatus && (
+              <p className="text-red-500 text-sm">
+                {errors.titleStatus.message}
+              </p>
+            )}
+          </div>
 
-          <Select
-            value={form.watch("titleStatus")}
-            onValueChange={(v) => form.setValue("titleStatus", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Title Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Clear">Clear</SelectItem>
-              <SelectItem value="Disputed">Disputed</SelectItem>
-              <SelectItem value="NA">NA</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={form.watch("status")}
-            onValueChange={(v) => form.setValue("status", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Sold">Sold</SelectItem>
-              <SelectItem value="Blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Input placeholder="RERA No" {...form.register("reraNo")} />
-          <Input placeholder="Document No" {...form.register("documentNo")} />
+          {/* Status */}
+          <div>
+            <Select
+              value={watch("status")}
+              onValueChange={(v) => setValue("status", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Available">Available</SelectItem>
+                <SelectItem value="Sold">Sold</SelectItem>
+                <SelectItem value="Blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status && (
+              <p className="text-red-500 text-sm">{errors.status.message}</p>
+            )}
+          </div>
         </div>
 
-        <Textarea placeholder="Boundaries" {...form.register("boundaries")} />
-        <Textarea placeholder="Remarks" {...form.register("remarks")} />
+        <Textarea placeholder="Boundaries" {...register("boundaries")} />
+        <Textarea placeholder="Remarks" {...register("remarks")} />
 
         {/* THUMBNAIL */}
         <div className="space-y-2">
-          <Label>Main Image</Label>
+          <Label>Main Image *</Label>
           {thumbnailPreview && (
             <img
               src={thumbnailPreview}
@@ -244,9 +256,9 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
           />
         </div>
 
-        {/* 🔥 BROCHURE */}
+        {/* BROCHURE */}
         <div className="space-y-2">
-          <Label>Brochure (PDF)</Label>
+          <Label>Brochure (PDF) *</Label>
           {brochureName && (
             <p className="text-sm text-muted-foreground">{brochureName}</p>
           )}

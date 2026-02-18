@@ -57,13 +57,20 @@ export default function BulkInnerPlotGenerator({
         { withCredentials: true },
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Inner plots generated successfully");
-      queryClient.invalidateQueries({
+
+      await queryClient.invalidateQueries({
         queryKey: ["inner-plots", openPlotId],
       });
+
+      await queryClient.refetchQueries({
+        queryKey: ["inner-plots", openPlotId],
+      });
+
       onOpenChange(false);
     },
+
     onError: () => toast.error("Bulk generation failed"),
   });
 
@@ -77,6 +84,7 @@ export default function BulkInnerPlotGenerator({
         <Card className="p-6 space-y-4">
           <Input
             type="number"
+            min={0}
             placeholder="Total plots (ex: 200)"
             value={totalPlots}
             onChange={(e) => setTotalPlots(Number(e.target.value))}
@@ -84,6 +92,7 @@ export default function BulkInnerPlotGenerator({
 
           <Input
             type="number"
+            min={0}
             placeholder="Plot area"
             onChange={(e) => setArea(Number(e.target.value))}
           />

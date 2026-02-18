@@ -44,14 +44,20 @@ export default function CsvInnerPlotUploader({
         { withCredentials: true },
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("CSV uploaded successfully");
-      queryClient.invalidateQueries({
+
+      await queryClient.invalidateQueries({
+        queryKey: ["inner-plots", openPlotId],
+      });
+
+      await queryClient.refetchQueries({
         queryKey: ["inner-plots", openPlotId],
       });
 
       onOpenChange(false);
     },
+
     onError: () => toast.error("CSV upload failed"),
   });
 

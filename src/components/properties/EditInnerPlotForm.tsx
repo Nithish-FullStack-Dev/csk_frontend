@@ -80,13 +80,17 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
     mutationFn: (data: InnerPlotFormValues) =>
       updateInnerPlot(innerPlot._id, data, thumbnail ?? undefined, images),
 
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Inner plot updated successfully");
 
-      // 🔥 REFRESH INNER PLOTS LIST
-      queryClient.invalidateQueries({
-        queryKey: ["inner-plots", innerPlot.openPlotId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots", innerPlot.openPlotId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot", innerPlot._id],
+        }),
+      ]);
 
       onSuccess();
     },
@@ -106,6 +110,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
 
         <Input
           type="number"
+          min={0}
           placeholder="Area"
           {...form.register("area", { valueAsNumber: true })}
         />
