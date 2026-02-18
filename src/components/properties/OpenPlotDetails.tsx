@@ -109,22 +109,29 @@ export function OpenPlotDetails({
     setLightboxOpen(true);
   };
 
-  const getEmbeddableGoogleMapSrc = (location?: string): string => {
-    if (!location) return "";
-    return `https://www.google.com/maps?q=${encodeURIComponent(
-      location,
-    )}&output=embed`;
+  const getEmbeddableGoogleMapSrc = (mapLink?: string): string => {
+    if (!mapLink) return "";
+
+    // If already embed link → use directly
+    if (mapLink.includes("google.com/maps/embed")) {
+      return mapLink;
+    }
+
+    // If share link → convert to embed
+    if (mapLink.includes("google.com/maps")) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(
+        mapLink,
+      )}&output=embed`;
+    }
+
+    return "";
   };
 
   return (
     <div className="space-y-6">
       {/* Back + Edit/Delete */}
       <div className="flex justify-between items-center">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate("/properties")}
-        >
+        <Button variant="outline" size="sm" onClick={onBack}>
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to All Open Plots
         </Button>
@@ -410,7 +417,7 @@ export function OpenPlotDetails({
       )}
 
       {/* Map */}
-      {plot.location ? (
+      {plot.googleMapsLocation ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center">
@@ -420,14 +427,27 @@ export function OpenPlotDetails({
           <CardContent>
             <iframe
               title="Plot Location"
-              src={getEmbeddableGoogleMapSrc(plot.location)}
+              src={(() => {
+                const url = plot.googleMapsLocation || "";
+                if (!url) return "";
+                if (url.includes("/embed?pb=")) return url;
+                if (url.includes("/maps/place/"))
+                  return url.replace("/maps/place/", "/maps/embed/place/");
+                const q = url.match(/q=([^&]+)/);
+                return `https://www.google.com/maps?q=${
+                  q ? decodeURIComponent(q[1]) : encodeURIComponent(url)
+                }&output=embed`;
+              })()}
               className="w-full h-96 rounded-lg border"
+              style={{ border: 0 }}
+              allowFullScreen
               loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
             />
           </CardContent>
         </Card>
       ) : (
-        <p className="text-gray-500 italic">No map available.</p>
+        <p className="text-gray-500 italic">No map available for this plot.</p>
       )}
 
       {/* Delete Dialog */}

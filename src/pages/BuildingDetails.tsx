@@ -119,9 +119,14 @@ const BuildingDetails = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Floor/Unit added successfully");
       queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+      queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
     },
+
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to add floor");
+      const msg =
+        err?.response?.data?.message || err?.message || "Failed to add floor";
+
+      toast.error(msg);
     },
   });
 
@@ -136,9 +141,16 @@ const BuildingDetails = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Floor/Unit updated successfully");
       queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+      queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
     },
+
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to update floor");
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update floor";
+
+      toast.error(msg);
     },
   });
 
@@ -147,7 +159,9 @@ const BuildingDetails = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Floor/Unit deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+      queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
     },
+
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Failed to delete floor");
     },
@@ -164,7 +178,7 @@ const BuildingDetails = () => {
     onSuccess: async () => {
       toast.success("Building deleted successfully");
       await queryClient.invalidateQueries({ queryKey: ["buildings"] });
-      await queryClient.refetchQueries({ queryKey: ["buildings"] });
+      // await queryClient.refetchQueries({ queryKey: ["buildings"] });
       navigate("/properties");
     },
     onError: (err: any) => {
@@ -235,6 +249,15 @@ const BuildingDetails = () => {
     payload.append("unitType", data.unitType);
     payload.append("totalSubUnits", data.totalSubUnits.toString());
     payload.append("availableSubUnits", data.availableSubUnits.toString());
+    if (!data.unitType?.trim()) {
+      toast.error("Unit type is required");
+      return;
+    }
+
+    if (!data.floorNumber || data.floorNumber < 1) {
+      toast.error("Valid floor number required");
+      return;
+    }
 
     if (mode === "add") {
       createFloorMutation.mutate(payload);
