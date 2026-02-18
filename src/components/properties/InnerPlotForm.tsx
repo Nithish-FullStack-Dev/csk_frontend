@@ -2,10 +2,10 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createInnerPlot } from "@/api/innerPlot.api";
 import { useState } from "react";
+import { toast } from "sonner";
 
 /* shadcn */
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+
 import { InnerPlotFormValues, innerPlotSchema } from "@/types/InnerPlot";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   openPlotId: string;
@@ -29,13 +29,20 @@ interface Props {
 }
 
 export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
+  const queryClient = useQueryClient();
+
   const [thumb, setThumb] = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string>("");
-  const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  const form = useForm<InnerPlotFormValues>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<InnerPlotFormValues>({
     resolver: zodResolver(innerPlotSchema),
     defaultValues: {
       openPlotId,
@@ -44,7 +51,7 @@ export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
     },
   });
 
-  /* ---------- FILE HANDLERS ---------- */
+  /* FILE HANDLERS */
 
   const onThumbChange = (file?: File) => {
     if (!file) return;
@@ -59,94 +66,112 @@ export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
     setImagePreviews(list.map((f) => URL.createObjectURL(f)));
   };
 
-  /* ---------- MUTATION ---------- */
+  /* MUTATION */
 
   const mutation = useMutation({
     mutationFn: (data: InnerPlotFormValues) =>
       createInnerPlot(data, thumb ?? undefined, images),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["innerPlots", openPlotId],
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["inner-plots", openPlotId],
       });
 
       onSuccess();
     },
-  });
 
-  /* ---------- UI ---------- */
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to create plot");
+    },
+  });
 
   return (
     <form
-      onSubmit={form.handleSubmit((d) => mutation.mutate(d))}
+      onSubmit={handleSubmit((d) => mutation.mutate(d))}
       className="space-y-6"
     >
       <Card className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input placeholder="Plot No" {...form.register("plotNo")} />
+          {/* Plot No */}
+          <div className="space-y-1">
+            <Input placeholder="Plot No" {...register("plotNo")} />
+            {errors.plotNo && (
+              <p className="text-red-500 text-sm">{errors.plotNo.message}</p>
+            )}
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Area"
-            {...form.register("area", { valueAsNumber: true })}
-          />
+          {/* Area */}
+          <div className="space-y-1">
+            <Input
+              type="number"
+              min={0}
+              placeholder="Area"
+              {...register("area", { valueAsNumber: true })}
+            />
+            {errors.area && (
+              <p className="text-red-500 text-sm">{errors.area.message}</p>
+            )}
+          </div>
 
-          <Input placeholder="Wastage Area" {...form.register("wastageArea")} />
+          {/* Facing */}
+          <div className="space-y-1">
+            <Select onValueChange={(v) => setValue("facing", v as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Facing" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="North">North</SelectItem>
+                <SelectItem value="South">South</SelectItem>
+                <SelectItem value="East">East</SelectItem>
+                <SelectItem value="West">West</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.facing && (
+              <p className="text-red-500 text-sm">{errors.facing.message}</p>
+            )}
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Road Width (ft)"
-            {...form.register("roadWidthFt", { valueAsNumber: true })}
-          />
+          {/* Plot Type */}
+          <div className="space-y-1">
+            <Select onValueChange={(v) => setValue("plotType", v as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Plot Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Residential">Residential</SelectItem>
+                <SelectItem value="Commercial">Commercial</SelectItem>
+                <SelectItem value="Road">Road</SelectItem>
+                <SelectItem value="OpenSpace">Open Space</SelectItem>
+                <SelectItem value="WasteLand">Waste Land</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.plotType && (
+              <p className="text-red-500 text-sm">{errors.plotType.message}</p>
+            )}
+          </div>
 
-          <Select
-            value={form.watch("facing")}
-            onValueChange={(v) => form.setValue("facing", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Facing" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="North">North</SelectItem>
-              <SelectItem value="South">South</SelectItem>
-              <SelectItem value="East">East</SelectItem>
-              <SelectItem value="West">West</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={form.watch("plotType")}
-            onValueChange={(v) => form.setValue("plotType", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Plot Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Residential">Residential</SelectItem>
-              <SelectItem value="Commercial">Commercial</SelectItem>
-              <SelectItem value="Road">Road</SelectItem>
-              <SelectItem value="OpenSpace">Open Space</SelectItem>
-              <SelectItem value="WasteLand">Waste Land</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={form.watch("status")}
-            onValueChange={(v) => form.setValue("status", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Sold">Sold</SelectItem>
-              <SelectItem value="Blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Status */}
+          <div className="space-y-1">
+            <Select onValueChange={(v) => setValue("status", v as any)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Available">Available</SelectItem>
+                <SelectItem value="Sold">Sold</SelectItem>
+                <SelectItem value="Blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status && (
+              <p className="text-red-500 text-sm">{errors.status.message}</p>
+            )}
+          </div>
         </div>
 
-        <Textarea placeholder="Remarks" {...form.register("remarks")} />
+        {/* Remarks */}
+        <Textarea placeholder="Remarks" {...register("remarks")} />
 
-        {/* ---------- THUMBNAIL ---------- */}
+        {/* Thumbnail */}
         <div className="space-y-2">
           <Label>Thumbnail Image</Label>
           {thumbPreview && (
@@ -162,7 +187,7 @@ export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
           />
         </div>
 
-        {/* ---------- GALLERY ---------- */}
+        {/* Gallery */}
         <div className="space-y-2">
           <Label>Gallery Images</Label>
           <Input

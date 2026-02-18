@@ -7,20 +7,15 @@ export interface InnerPlot extends InnerPlotFormValues {
 }
 
 export const innerPlotSchema = z.object({
-  openPlotId: z.string(),
-  plotNo: z.string().min(1),
-  area: z.number().positive(),
-  // wastageArea: z.string().optional(),
-  facing: z.enum(["North", "South", "East", "West"]).optional(),
-  // roadWidthFt: z.number().optional(),
-  plotType: z.enum([
-    "Residential",
-    "Commercial",
-    "Road",
-    "OpenSpace",
-    "WasteLand",
-  ]),
-  status: z.enum(["Available", "Sold", "Blocked"]),
+  openPlotId: z.string().min(1),
+  plotNo: z.string().min(1, "Plot number is required"),
+  area: z.number({
+    required_error: "Area is required",
+    invalid_type_error: "Area must be a number",
+  }),
+  facing: z.string().min(1, "Facing is required"),
+  plotType: z.string().min(1, "Plot type is required"),
+  status: z.string().min(1, "Status is required"),
   remarks: z.string().optional(),
 });
 
