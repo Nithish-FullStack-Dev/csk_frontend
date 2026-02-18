@@ -56,12 +56,20 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     defaultValues: openPlot ?? {
       projectName: "",
       openPlotNo: "",
+      surveyNo: "",
+      approvalAuthority: undefined,
       location: "",
       totalArea: 0,
       areaUnit: "SqFt",
+      facing: undefined,
+      roadWidthFt: undefined,
       titleStatus: "Clear",
       status: "Available",
+      reraNo: "",
+      documentNo: "",
       googleMapsLocation: "",
+      boundaries: "",
+      remarks: "",
     },
   });
 
@@ -69,26 +77,21 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onThumbnailChange = (file?: File) => {
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Thumbnail must be under 5MB");
       return;
     }
-
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
   };
 
   const onImagesChange = (files: FileList | null) => {
     if (!files) return;
-
     const newFiles = Array.from(files);
-
     if (imagePreviews.length + newFiles.length > 10) {
       toast.error("Maximum 10 images allowed");
       return;
     }
-
     setImageFiles((p) => [...p, ...newFiles]);
     setImagePreviews((p) => [
       ...p,
@@ -103,12 +106,10 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onBrochureChange = (file?: File) => {
     if (!file) return;
-
     if (file.type !== "application/pdf") {
       toast.error("Brochure must be PDF");
       return;
     }
-
     setBrochureFile(file);
     setBrochureName(file.name);
   };
@@ -153,112 +154,124 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     >
       <Card className="p-6 space-y-6">
         {/* BASIC INFO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Input placeholder="Project Name" {...register("projectName")} />
+            <Label>Project Name</Label>
+            <Input {...register("projectName")} />
             <p className="text-red-500 text-sm">
               {errors.projectName?.message}
             </p>
           </div>
-
           <div>
-            <Input placeholder="Open Plot No" {...register("openPlotNo")} />
+            <Label>Location</Label>
+            <Input {...register("location")} />
+          </div>
+          <div>
+            <Label>Open Plot No</Label>
+            <Input {...register("openPlotNo")} />
             <p className="text-red-500 text-sm">{errors.openPlotNo?.message}</p>
           </div>
 
           <div>
-            <Input placeholder="Location" {...register("location")} />
-            <p className="text-red-500 text-sm">{errors.location?.message}</p>
-          </div>
-
-          {/* GOOGLE MAP */}
-          {/* GOOGLE MAP LOCATION */}
-          <div className="space-y-2">
-            <Label>Google Maps Location</Label>
-
-            <Input
-              placeholder="Paste Google Maps share link"
-              {...register("googleMapsLocation")}
-            />
-
-            {/* helper text */}
-            <p className="text-xs text-muted-foreground">
-              Example: https://maps.google.com/?q=...
-            </p>
-
-            {/* validation error */}
-            <p className="text-red-500 text-sm">
-              {errors.googleMapsLocation?.message}
-            </p>
-
-            {/* preview like Building */}
-            {watch("googleMapsLocation") && (
-              <a
-                href={watch("googleMapsLocation")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 text-sm underline"
-              >
-                Open in Google Maps
-              </a>
-            )}
+            <Label>Survey No</Label>
+            <Input {...register("surveyNo")} />
           </div>
 
           <div>
+            <Label>Total Area</Label>
             <Input
               type="number"
               min={0}
-              placeholder="Total Area"
-              {...register("totalArea")}
+              {...register("totalArea", { valueAsNumber: true })}
             />
-            <p className="text-red-500 text-sm">{errors.totalArea?.message}</p>
           </div>
 
-          <Select
-            value={watch("areaUnit")}
-            onValueChange={(v) => setValue("areaUnit", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Area Unit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="SqFt">SqFt</SelectItem>
-              <SelectItem value="SqYd">SqYd</SelectItem>
-              <SelectItem value="Acre">Acre</SelectItem>
-            </SelectContent>
-          </Select>
+          <div>
+            <Label>Area Unit</Label>
+            <Select
+              value={watch("areaUnit")}
+              onValueChange={(v) => setValue("areaUnit", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Area Unit" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SqFt">SqFt</SelectItem>
+                <SelectItem value="SqYd">SqYd</SelectItem>
+                <SelectItem value="Acre">Acre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={watch("titleStatus")}
-            onValueChange={(v) => setValue("titleStatus", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Title Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Clear">Clear</SelectItem>
-              <SelectItem value="Disputed">Disputed</SelectItem>
-              <SelectItem value="NA">NA</SelectItem>
-            </SelectContent>
-          </Select>
+          <div>
+            <Label>Facing</Label>
+            <Select
+              value={watch("facing")}
+              onValueChange={(v) => setValue("facing", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Facing" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="North">North</SelectItem>
+                <SelectItem value="South">South</SelectItem>
+                <SelectItem value="East">East</SelectItem>
+                <SelectItem value="West">West</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Road Width (ft)</Label>
+            <Input
+              type="number"
+              min={0}
+              {...register("roadWidthFt", { valueAsNumber: true })}
+            />
+          </div>
 
-          <Select
-            value={watch("status")}
-            onValueChange={(v) => setValue("status", v as any)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Sold">Sold</SelectItem>
-              <SelectItem value="Blocked">Blocked</SelectItem>
-            </SelectContent>
-          </Select>
+          <div>
+            <Label>Approval Authority</Label>
+            <Select
+              value={watch("approvalAuthority")}
+              onValueChange={(v) => setValue("approvalAuthority", v as any)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select authority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DTCP">DTCP</SelectItem>
+                <SelectItem value="HMDA">HMDA</SelectItem>
+                <SelectItem value="RERA">RERA</SelectItem>
+                <SelectItem value="PANCHAYAT">PANCHAYAT</SelectItem>
+                <SelectItem value="OTHER">OTHER</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>RERA No</Label>
+            <Input {...register("reraNo")} />
+          </div>
+
+          <div>
+            <Label>Document No</Label>
+            <Input {...register("documentNo")} />
+          </div>
+
+          <div className="md:col-span-2">
+            <Label>Google Maps Location</Label>
+            <Input {...register("googleMapsLocation")} />
+          </div>
         </div>
 
-        <Textarea placeholder="Boundaries" {...register("boundaries")} />
-        <Textarea placeholder="Remarks" {...register("remarks")} />
+        <div>
+          <Label>Boundaries</Label>
+          <Textarea {...register("boundaries")} />
+        </div>
+
+        <div>
+          <Label>Remarks</Label>
+          <Textarea {...register("remarks")} />
+        </div>
 
         {/* THUMBNAIL */}
         <div className="space-y-2">
@@ -278,7 +291,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
         {/* BROCHURE */}
         <div className="space-y-2">
-          <Label>Brochure (PDF) *</Label>
+          <Label>Brochure (PDF)</Label>
           {brochureName && (
             <p className="text-sm text-muted-foreground">{brochureName}</p>
           )}
@@ -318,11 +331,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={mutation.isPending}
-          className="w-full md:w-fit"
-        >
+        <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending
             ? "Saving..."
             : isEdit
