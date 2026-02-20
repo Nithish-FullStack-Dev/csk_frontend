@@ -143,7 +143,7 @@
 //     { to: "/support", icon: HelpCircle, label: "Support" },
 //   ],
 // };
-
+// src\components\layout\sidebar\navigationConfig.ts
 import {
   Home,
   Building,
