@@ -104,6 +104,7 @@ const ContractorMaterials = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
@@ -154,12 +155,12 @@ const ContractorMaterials = () => {
   ];
 
   const handleSubmit = async (values: MaterialFormValues) => {
+    setIsLoading(true);
     try {
       const payload = {
         ...values,
         quantity: Number(values.quantity),
         rate: Number(values.rate),
-        totalCost: Number(values.quantity) * Number(values.rate),
         deliveryDate: new Date(values.deliveryDate),
         project: values.project, // ObjectId string OK
         status: "Ordered",
@@ -175,8 +176,13 @@ const ContractorMaterials = () => {
       setAddDialogOpen(false);
       fetchMaterials();
     } catch (error: any) {
-      console.error("Failed to add material", error);
-      toast.error(error?.response?.data?.message || "Failed to add material");
+      if (error?.response?.data?.field === "poNumber") {
+        form.setError("poNumber", {
+          message: error.response.data.message,
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -866,7 +872,9 @@ const ContractorMaterials = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Add Material</Button>
+                <Button type="submit" disabled={isLoading}>
+                  Add Material
+                </Button>
               </div>
             </form>
           </Form>

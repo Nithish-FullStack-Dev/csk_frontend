@@ -9,7 +9,7 @@ export const createUnit = async (unitData: FormData) => {
     {
       withCredentials: true,
       headers: { "Content-Type": "multipart/form-data" },
-    }
+    },
   );
   return data.data as Property;
 };
@@ -20,7 +20,7 @@ export const updateUnit = async (unitId: string, unitData: FormData) => {
     {
       withCredentials: true,
       headers: { "Content-Type": "multipart/form-data" },
-    }
+    },
   );
   return data.data as Property;
 };
@@ -28,15 +28,15 @@ export const updateUnit = async (unitId: string, unitData: FormData) => {
 export const deleteUnit = async (unitId: string) => {
   const { data } = await axios.delete(
     `${import.meta.env.VITE_URL}/api/unit/deleteUnit/${unitId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
-  return data.data;
+  return data;
 };
 // Add this to Methods.ts
 export const fetchUnit = async (unitId: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/unit/getUnit/${unitId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data as Property;
 };
@@ -44,7 +44,7 @@ export const fetchUnit = async (unitId: string) => {
 export const fetchCustomerPurchasedUnits = async (customerId: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/unit/getCustomersByUnit/${customerId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data;
 };
@@ -62,7 +62,7 @@ export const useCustomerPurchasedUnits = (customerId: string) => {
 export const fetchRolePermissions = async (roleName: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data || null;
 };

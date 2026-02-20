@@ -47,6 +47,7 @@ import {
   useLeadbyUnitId,
   useUnitProgress,
 } from "@/utils/leads/LeadConfig";
+import axios from "axios";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -98,7 +99,7 @@ export function PropertyDetails({
   >();
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
-    null
+    null,
   );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -137,7 +138,7 @@ export function PropertyDetails({
     onSuccess: (newUnit) => {
       queryClient.setQueryData(
         ["units", buildingId, floorId],
-        (oldData: any[] = []) => [...oldData, newUnit]
+        (oldData: any[] = []) => [...oldData, newUnit],
       );
       queryClient.setQueryData(["unit", newUnit._id], newUnit);
       queryClient.invalidateQueries({ queryKey: ["unit", newUnit._id] });
@@ -163,7 +164,7 @@ export function PropertyDetails({
       queryClient.setQueryData(
         ["units", buildingId, floorId],
         (oldUnits: any[] = []) =>
-          oldUnits.map((u) => (u._id === updatedUnit._id ? updatedUnit : u))
+          oldUnits.map((u) => (u._id === updatedUnit._id ? updatedUnit : u)),
       );
 
       queryClient.setQueryData(["unit", updatedUnit._id], updatedUnit);
@@ -180,7 +181,7 @@ export function PropertyDetails({
   // DELETE UNIT
   const deleteUnitMutation = useMutation({
     mutationFn: deleteUnit,
-    onSuccess: (_, deletedUnitId) => {
+    onSuccess: (res) => {
       // queryClient.removeQueries({
       //   queryKey: ["unit", deletedUnitId],
       //   exact: true,
@@ -195,12 +196,16 @@ export function PropertyDetails({
         exact: true,
       });
 
-      toast.success("Unit deleted successfully");
+      toast.success(res.message || "Unit deleted successfully");
 
       navigate(`/properties/building/${buildingId}/floor/${floorId}`);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete unit");
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : error.message,
+      );
     },
   });
 
@@ -439,7 +444,7 @@ export function PropertyDetails({
                               {contractor?.email || "N/A"}
                             </span>
                           </div>
-                        )
+                        ),
                       )}
                     </p>
                   </div>
@@ -660,7 +665,7 @@ export function PropertyDetails({
                                   year: "numeric",
                                   month: "long",
                                   day: "numeric",
-                                }
+                                },
                               )
                             : "N/A"}
                         </p>
@@ -673,7 +678,7 @@ export function PropertyDetails({
                                   year: "numeric",
                                   month: "long",
                                   day: "numeric",
-                                }
+                                },
                               )
                             : "Not submitted"}
                         </p>
@@ -712,7 +717,7 @@ export function PropertyDetails({
                                   className="h-20 w-full object-cover rounded-md shadow-sm cursor-pointer hover:opacity-80 transition"
                                   onClick={() => setPreviewImage(url)}
                                 />
-                              )
+                              ),
                             )}
                           </div>
                         ) : (

@@ -83,11 +83,15 @@ const ContractorLabor = () => {
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<LaborTeam | null>(null);
   const [attendanceDate, setAttendanceDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [present, setPresent] = useState<number>(0);
   const [absent, setAbsent] = useState<number>(0);
   const queryClient = useQueryClient();
+  const attendanceExists = selectedTeam?.attendanceRecords?.some(
+    (r) =>
+      r.date && new Date(r.date).toISOString().split("T")[0] === attendanceDate,
+  );
 
   const {
     data: projects = [],
@@ -101,22 +105,14 @@ const ContractorLabor = () => {
     isLoading: laborTeamsLoading,
     isError: laborTeamsError,
     error: laborTeamsErr,
-    refetch: fetchTeams,
   } = useLaborTeams();
 
   useEffect(() => {
-    if (selectedTeam) {
-      setPresent(selectedTeam.members);
-      setAbsent(0);
-      setAttendanceDate(new Date().toISOString().split("T")[0]);
-    }
-  }, [selectedTeam]);
+    if (!selectedTeam) return;
 
-  // Auto-calculate absent
-  useEffect(() => {
-    if (selectedTeam && present >= 0 && present <= selectedTeam.members) {
-      setAbsent(selectedTeam.members - present);
-    }
+    const safePresent = Math.min(Math.max(present, 0), selectedTeam.members);
+
+    setAbsent(selectedTeam.members - safePresent);
   }, [present, selectedTeam]);
 
   const form = useForm<LaborTeamFormValues>({
@@ -135,7 +131,7 @@ const ContractorLabor = () => {
       const { data: res } = await axios.post(
         `${import.meta.env.VITE_URL}/api/labor`,
         data,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return res;
     },
@@ -165,24 +161,21 @@ const ContractorLabor = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/labor/${selectedTeam?._id}/attendance`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
     onSuccess: (data) => {
       toast.success(data.message || "Attendance recorded successfully");
-      fetchTeams();
+
+      // 🔥 refetch teams so table updates instantly
+      queryClient.invalidateQueries({ queryKey: ["laborTeams"] });
+
       setAttendanceDialogOpen(false);
-      // Reset attendance inputs
-      if (selectedTeam) {
-        setPresent(selectedTeam.members);
-        setAbsent(0);
-      }
     },
     onError: (error: any) => {
-      console.error("Failed to save attendance", error);
       toast.error(
-        error?.response?.data?.message || "Failed to record attendance"
+        error?.response?.data?.message || "Failed to record attendance",
       );
     },
   });
@@ -225,19 +218,6 @@ const ContractorLabor = () => {
     setAttendanceDialogOpen(true);
   };
 
-  const filteredTeams = teams.filter((team) =>
-    [team.name, team.supervisor, team.project, team.type].some((field) =>
-      field?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
-
-  const totalTeams = teams.length;
-  const activeTeams = teams.filter((t) => t.status === "Active").length;
-  const totalWorkers = teams.reduce((acc, t) => acc + t.members, 0);
-  const averageAttendance =
-    teams.reduce((acc, t) => acc + (t.attendancePercentage || 0), 0) /
-    (teams.length || 1);
-
   const getProjectDisplay = (team: LaborTeam) => {
     if (typeof team.project === "string") return team.project;
     const p = team.project;
@@ -249,6 +229,19 @@ const ContractorLabor = () => {
     const plot = (typeof p?.unit === "object" && p?.unit?.plotNo) || "N/A";
     return `${name} / Floor ${floor} / Plot ${plot}`;
   };
+
+  const filteredTeams = teams.filter((team) =>
+    [team.name, team.supervisor, team.type, getProjectDisplay(team)].some(
+      (field) => field?.toLowerCase().includes(searchQuery.toLowerCase()),
+    ),
+  );
+
+  const totalTeams = teams.length;
+  const activeTeams = teams.filter((t) => t.status === "Active").length;
+  const totalWorkers = teams.reduce((acc, t) => acc + t.members, 0);
+  const averageAttendance =
+    teams.reduce((acc, t) => acc + (t.attendancePercentage || 0), 0) /
+    (teams.length || 1);
 
   return (
     <div className="space-y-6">
@@ -848,10 +841,12 @@ const ContractorLabor = () => {
                   </TableHeader>
                   <TableBody>
                     {(selectedTeam.attendanceRecords || []).map((record) => {
-                      const percentage = Math.round(
-                        (record.present / (record.present + record.absent)) *
-                          100
-                      );
+                      const total = record.present + record.absent;
+                      const percentage =
+                        total === 0
+                          ? 0
+                          : Math.round((record.present / total) * 100);
+
                       const dailyCost = record.present * selectedTeam.wage;
 
                       return (
@@ -866,14 +861,14 @@ const ContractorLabor = () => {
                           <TableCell>{record.present}</TableCell>
                           <TableCell>{record.absent}</TableCell>
                           <TableCell>
-                            <div className="flex items-center">
-                              <div className="w-16 h-2 bg-gray-200 rounded-full mr-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 h-2 bg-gray-200 rounded-full">
                                 <div
                                   className="h-2 bg-green-500 rounded-full"
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
-                              {percentage}%
+                              <span>{percentage}%</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -892,11 +887,13 @@ const ContractorLabor = () => {
               {/* Mobile Cards */}
               <div className="sm:hidden space-y-3">
                 {(selectedTeam.attendanceRecords || []).map((record) => {
-                  const percentage = Math.round(
-                    (record.present / (record.present + record.absent)) * 100
-                  );
-                  const dailyCost = record.present * selectedTeam.wage;
+                  const total = record.present + record.absent;
+                  const percentage =
+                    total === 0
+                      ? 0
+                      : Math.round((record.present / total) * 100);
 
+                  const dailyCost = record.present * selectedTeam.wage;
                   return (
                     <div
                       key={record._id}
@@ -963,7 +960,18 @@ const ContractorLabor = () => {
                       value={present}
                       min="0"
                       max={selectedTeam.members}
-                      onChange={(e) => setPresent(Number(e.target.value))}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+
+                        if (!selectedTeam) return;
+
+                        const clamped = Math.min(
+                          Math.max(value, 0),
+                          selectedTeam.members,
+                        );
+
+                        setPresent(clamped);
+                      }}
                     />
                   </div>
                   <div className="space-y-2">
@@ -981,11 +989,13 @@ const ContractorLabor = () => {
                 <div className="flex justify-end space-x-2 mt-2">
                   <Button
                     onClick={handleSaveAttendance}
-                    disabled={createdAttendance.isPending}
+                    disabled={createdAttendance.isPending || attendanceExists}
                   >
-                    {createdAttendance.isPending
-                      ? "Saving..."
-                      : "Save Attendance"}
+                    {attendanceExists
+                      ? "Attendance Already Recorded"
+                      : createdAttendance.isPending
+                        ? "Saving..."
+                        : "Save Attendance"}
                   </Button>
                 </div>
               </div>

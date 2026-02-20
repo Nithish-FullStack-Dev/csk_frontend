@@ -70,6 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Construction Timeline",
       "Quality Control",
       "Site Inspections",
+      "Trash – Buildings",
     ],
   },
   {

@@ -168,22 +168,28 @@ const BuildingDetails = () => {
   });
 
   const deleteBuildingMutation = useMutation({
-    mutationFn: async (id: string) =>
-      await axios.delete(
+    mutationFn: async (id: string) => {
+      const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/building/deleteBuilding/${id}`,
         {
           withCredentials: true,
         },
-      ),
-    onSuccess: async () => {
-      toast.success("Building deleted successfully");
+      );
+      return data;
+    },
+    onSuccess: async (data) => {
+      toast.success(data?.message || "Building deleted successfully");
       await queryClient.invalidateQueries({ queryKey: ["buildings"] });
       await queryClient.invalidateQueries({ queryKey: ["trash-buildings"] });
       // await queryClient.refetchQueries({ queryKey: ["buildings"] });
       navigate("/properties");
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to delete building");
+    onError: (error: any) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : error.message,
+      );
     },
   });
 

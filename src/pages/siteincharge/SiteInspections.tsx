@@ -146,22 +146,36 @@ const SiteInspections = () => {
 
   const createInspection = useMutation({
     mutationFn: async () => {
+      if (photos.length === 0) {
+        throw new Error("Please upload at least one photo");
+      }
+
+      setIsUploading(true);
       const uploadedImageUrls: string[] = [];
 
       for (const photo of photos) {
         const formData = new FormData();
         formData.append("file", photo);
 
-        try {
-          const res = await axios.post(
-            `${import.meta.env.VITE_URL}/api/uploads/upload`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
-          );
-          if (res.data.url) uploadedImageUrls.push(res.data.url);
-        } catch (err) {
-          console.error("Upload failed", err);
+        const res = await axios.post(
+          `${import.meta.env.VITE_URL}/api/uploads/upload`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+
+        const cloudinaryResponse = res.data?.url;
+        const imageUrl =
+          typeof cloudinaryResponse === "string"
+            ? cloudinaryResponse
+            : cloudinaryResponse?.secure_url;
+
+        if (!imageUrl) {
+          throw new Error("Image upload failed");
         }
+
+        uploadedImageUrls.push(imageUrl);
       }
 
       const inspectionData = {
@@ -184,9 +198,9 @@ const SiteInspections = () => {
       return data;
     },
     onSuccess: (data: any) => {
-      toast.success(data.message);
+      toast.success(data.message || "Inspection created successfully");
       setNewInspectionOpen(false);
-      fetchInspections();
+      // fetchInspections();
       setTitle("");
       setDate("");
       setSelectedProject("");
@@ -196,9 +210,11 @@ const SiteInspections = () => {
       setLocation("");
       setNotes("");
       setPhotos([]);
+      setIsUploading(false);
       queryClient.invalidateQueries({ queryKey: ["inspections"] });
     },
     onError: (error: any) => {
+      setIsUploading(false);
       toast.error(error?.message || "Failed to create inspection");
       console.error("Inspection error:", error);
     },
@@ -720,7 +736,10 @@ const SiteInspections = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createInspection.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={createInspection.isPending || isUploading}
+                  >
                     {createInspection.isPending
                       ? "Creating Inspection..."
                       : "Create Inspection"}
@@ -1040,7 +1059,10 @@ const SiteInspections = () => {
                             { withCredentials: true },
                           );
                           setStatusDialogOpen(false);
-                          fetchInspections();
+                          queryClient.invalidateQueries({
+                            queryKey: ["inspections"],
+                          });
+                          toast.success("Status updated");
                         } catch (err) {
                           console.error("Failed to update status", err);
                         }

@@ -77,7 +77,7 @@ export interface Task {
   progress?: number;
   hasEvidence?: boolean;
   evidenceTitle: string;
-  contractorUploadedPhotos: [string];
+  contractorUploadedPhotos: string[];
   statusForContractor: string;
   noteBySiteIncharge: string;
 }
@@ -123,18 +123,22 @@ export const fetchTasks = async () => {
     { withCredentials: true },
   );
   const mapped = response.data.map((task: any, index: number) => ({
-    id: index.toString(), // Replace with real id if available
+    id: index.toString(),
     title: task.taskTitle,
     project: task.projectName,
     unit: task.unit,
     floorNumber: task.floorNumber,
     plotNo: task.plotNo,
     phase: task.constructionPhase,
-    status: mapStatus(task.status), // normalize status if needed
+    status: mapStatus(task.status),
     deadline: task.deadline,
     progress: task.progress,
     priority: mapPriority(task.priority),
-    hasEvidence: task.contractorUploadedPhotos.length > 0,
+
+    // ✅ ADD THIS
+    contractorUploadedPhotos: task.contractorUploadedPhotos || [],
+
+    hasEvidence: task.contractorUploadedPhotos?.length > 0,
     _id: task._id,
     projectId: task.projectId,
   }));
@@ -220,8 +224,6 @@ export const useLaborTeams = () => {
   return useQuery<LaborTeam[]>({
     queryKey: ["laborTeams"],
     queryFn: fetchTeams,
-    staleTime: 5 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 

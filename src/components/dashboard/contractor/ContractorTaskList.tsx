@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import {
   Table,
@@ -66,7 +66,6 @@ const ContractorTaskList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [uploadEvidenceOpen, setUploadEvidenceOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [evidenceTitle, setEvidenceTitle] = useState("");
   const [selectedPhase, setSelectedPhase] = useState("");
   const [status, setStatus] = useState("");
@@ -77,9 +76,8 @@ const ContractorTaskList = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
-  const [photoLocations, setPhotoLocations] = useState<
-    { latitude: number; longitude: number }[]
-  >([]);
+  const [isSelectingFiles, setIsSelectingFiles] = useState(false);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
 
   const {
     data: tasks,
@@ -98,6 +96,20 @@ const ContractorTaskList = () => {
     }
   }, [selectedTask]);
 
+  useEffect(() => {
+    if (uploadEvidenceOpen && selectedTask?.contractorUploadedPhotos) {
+      setExistingPhotos(selectedTask.contractorUploadedPhotos);
+    }
+  }, [uploadEvidenceOpen, selectedTask]);
+
+  const previewUrls = useMemo(
+    () => photos.map((file) => URL.createObjectURL(file)),
+    [photos],
+  );
+  useEffect(() => {
+    return () => previewUrls.forEach(URL.revokeObjectURL);
+  }, [previewUrls]);
+
   if (taskError) {
     console.error("Error fetching tasks:", taskErr);
     toast.error(
@@ -105,36 +117,27 @@ const ContractorTaskList = () => {
     );
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isSelectingFiles) return;
+
     const files = Array.from(e.target.files || []);
-    const newPhotos: File[] = [];
-    const newLocations: { latitude: number; longitude: number }[] = [];
+    if (!files.length) return;
 
-    for (const file of files) {
-      newPhotos.push(file);
+    const availableSlots = 9 - existingPhotos.length - photos.length;
+    if (availableSlots <= 0) return;
 
-      try {
-        const position = await new Promise<GeolocationPosition>(
-          (resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject),
-        );
-        newLocations.push({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      } catch (err) {
-        console.warn("GPS access denied or unavailable");
-        newLocations.push({ latitude: 0, longitude: 0 }); // fallback or null
-      }
-    }
+    setIsSelectingFiles(true);
 
-    setPhotos((prev) => [...prev, ...newPhotos]);
-    setPhotoLocations((prev) => [...prev, ...newLocations]);
-  };
+    const acceptedFiles = files.slice(0, availableSlots);
 
-  const removePhoto = (indexToRemove: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== indexToRemove));
-    setPhotoLocations((prev) => prev.filter((_, i) => i !== indexToRemove));
+    // 🔥 IMMEDIATE UI UPDATE (NO ASYNC)
+    setPhotos((prev) => [...prev, ...acceptedFiles]);
+
+    // reset input
+    e.target.value = "";
+
+    // allow next selection immediately
+    requestAnimationFrame(() => setIsSelectingFiles(false));
   };
 
   const handleSubmit = async (e) => {
@@ -142,30 +145,41 @@ const ContractorTaskList = () => {
 
     // 1. Upload photos one-by-one
     const uploadedImageUrls: string[] = [];
-    for (const photo of photos) {
-      const formData = new FormData();
-      formData.append("file", photo);
+    try {
+      for (const photo of photos) {
+        const formData = new FormData();
+        formData.append("file", photo);
 
-      try {
         const res = await axios.post(
           `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
+          { headers: { "Content-Type": "multipart/form-data" } },
         );
-        if (res.data.url) uploadedImageUrls.push(res.data.url);
-      } catch (err) {
-        console.error("Upload failed", err);
-      }
-    }
 
+        const cloudinaryResponse = res.data?.url;
+        const imageUrl =
+          typeof cloudinaryResponse === "string"
+            ? cloudinaryResponse
+            : cloudinaryResponse?.secure_url;
+
+        if (!imageUrl) {
+          throw new Error("Image upload failed");
+        }
+
+        uploadedImageUrls.push(imageUrl);
+      }
+    } catch {
+      toast.error("One or more images failed to upload");
+      setIsUpdating(false);
+      return;
+    }
+    const finalPhotos = [...existingPhotos, ...uploadedImageUrls];
     // 2. Create new task object
     const newTask = {
       evidenceTitleByContractor: evidenceTitle,
       status,
       progressPercentage: progress,
-      photos: uploadedImageUrls,
+      photos: finalPhotos,
       constructionPhase: selectedPhase,
       shouldSubmit,
     };
@@ -242,29 +256,13 @@ const ContractorTaskList = () => {
     });
   }
 
-  // const handleStatusChange = (taskId: string, newStatus: Task["status"]) => {
-  //   setTasks((prevTasks) =>
-  //     prevTasks.map((task) =>
-  //       task.id === taskId ? { ...task, status: newStatus } : task
-  //     )
-  //   );
-
-  //   const task = tasks.find((t) => t.id === taskId);
-
-  //   if (newStatus === "completed") {
-  //     toast.success(`Task marked as completed`, {
-  //       description: `${task?.title} has been sent for verification by Site In-charge`,
-  //     });
-  //   } else {
-  //     toast.success(`Task status updated`, {
-  //       description: `${task?.title} is now ${newStatus?.replace("_", " ")}`,
-  //     });
-  //   }
-  // };
-
-  const handleUploadEvidence = (task) => {
+  const handleUploadEvidence = (task: Task) => {
+    console.log("TASK RECEIVED:", task);
+    console.log("PHOTOS FIELD:", task.contractorUploadedPhotos);
     setSelectedTask(task);
-    setSelectedTaskId(task.id);
+    setPhotos([]);
+    setProgress(task.progress || 0);
+    setStatus(task.status ?? "pending_review");
     setUploadEvidenceOpen(true);
   };
 
@@ -571,16 +569,6 @@ const ContractorTaskList = () => {
           ))}
         </div>
       </div>
-
-      {/* <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>
-        <UploadEvidenceDialog
-          onOpenChange={setUploadEvidenceOpen}
-          projects={projectsData}
-          tasks={taskForEvidence}
-          onSubmit={handleEvidenceSubmit}
-        />
-      </Dialog> */}
-
       <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>
         <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] flex flex-col rounded-xl">
           <DialogHeader>
@@ -697,15 +685,31 @@ const ContractorTaskList = () => {
 
             <div className="space-y-2">
               <Label>Upload Photos</Label>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
-                {photos.map((photo, index) => (
+                {/* Existing uploaded photos */}
+                {existingPhotos.map((url, index) => (
                   <div
-                    key={index}
-                    className="relative rounded-md overflow-hidden border border-border h-32 group"
+                    key={`existing-${index}`}
+                    className="relative rounded-md overflow-hidden border h-32"
                   >
                     <img
-                      src={URL.createObjectURL(photo)}
-                      alt={`Inspection ${index + 1}`}
+                      src={url}
+                      alt={`Uploaded ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+
+                {/* Newly selected photos (instant preview) */}
+                {photos.map((file, index) => (
+                  <div
+                    key={`new-${index}`}
+                    className="relative rounded-md overflow-hidden border h-32 group"
+                  >
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`New ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
 
@@ -713,28 +717,23 @@ const ContractorTaskList = () => {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute top-1 right-1 bg-black bg-opacity-60 hover:bg-opacity-80 rounded-full"
-                      onClick={() => {
-                        removePhoto(index);
-                      }}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full"
+                      onClick={() =>
+                        setPhotos((prev) => prev.filter((_, i) => i !== index))
+                      }
                     >
                       <XCircle className="h-4 w-4 text-white" />
                     </Button>
-
-                    {photoLocations[index]?.latitude !== 0 && (
-                      <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-[10px] px-2 py-0.5 rounded">
-                        {photoLocations[index].latitude.toFixed(3)},{" "}
-                        {photoLocations[index].longitude.toFixed(3)}
-                      </div>
-                    )}
                   </div>
                 ))}
 
-                {photos.length < 9 && (
+                {/* Add button */}
+                {existingPhotos.length + photos.length < 9 && (
                   <Button
                     type="button"
                     variant="outline"
                     className="h-32 border-dashed flex flex-col"
+                    disabled={isSelectingFiles}
                     onClick={() =>
                       document
                         .getElementById("inspection-photo-upload")
@@ -746,6 +745,7 @@ const ContractorTaskList = () => {
                   </Button>
                 )}
               </div>
+
               <Input
                 id="inspection-photo-upload"
                 type="file"
@@ -754,6 +754,10 @@ const ContractorTaskList = () => {
                 multiple
                 onChange={handleFileChange}
               />
+
+              <p className="text-xs text-muted-foreground">
+                Upload up to 9 photos. Selected images appear instantly.
+              </p>
             </div>
           </div>
 
