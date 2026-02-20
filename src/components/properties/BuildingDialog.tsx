@@ -72,7 +72,15 @@ export const BuildingDialog = ({
   const [amenityInput, setAmenityInput] = useState<string>("");
 
   useEffect(() => {
-    if (building && open) {
+    if (!open) return;
+
+    const safeDate = (date?: string | Date | null) => {
+      if (!date) return "";
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+    };
+
+    if (building) {
       setFormData({
         projectName: building.projectName || "",
         location: building.location || "",
@@ -81,8 +89,7 @@ export const BuildingDialog = ({
         availableUnits: building.availableUnits || 0,
         soldUnits: building.soldUnits || 0,
         constructionStatus: building.constructionStatus || "Planned",
-        completionDate:
-          new Date(building.completionDate).toISOString().split("T")[0] || "",
+        completionDate: safeDate(building?.completionDate),
         description: building.description || "",
         municipalPermission: building.municipalPermission || false,
         reraApproved: building.reraApproved || false,
@@ -92,33 +99,20 @@ export const BuildingDialog = ({
         googleMapsLocation: building.googleMapsLocation || "",
         images: building.images || [],
         brochureFileId: building.brochureFileId || null,
-        amenities: building.amenities || [], // Initialize amenities
+        amenities: building.amenities || [],
       });
+
       setThumbnailPreview(building.thumbnailUrl || "");
       setBrochurePreview(building.brochureUrl || null);
       setImagePreviews(building.images || []);
-      setSelectedAmenities(building.amenities || []); // Initialize selectedAmenities
+      setSelectedAmenities(building.amenities || []);
       setThumbnailFile(null);
       setBrochureFile(null);
       setImageFiles([]);
-      setAmenityInput(""); // Reset amenity input
-    } else if (!building && open) {
+      setAmenityInput("");
+    } else {
       resetForm();
     }
-
-    return () => {
-      if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(thumbnailPreview);
-      }
-      if (brochurePreview && brochurePreview.startsWith("blob:")) {
-        URL.revokeObjectURL(brochurePreview);
-      }
-      imagePreviews.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
   }, [building, open]);
 
   const resetForm = () => {
@@ -254,40 +248,78 @@ export const BuildingDialog = ({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    if (!formData.projectName.trim()) {
+      toast.error("Project name is required");
+      return false;
+    }
 
-    if (
-      !formData.projectName ||
-      !formData.location ||
-      !formData.propertyType ||
-      formData.totalUnits <= 0
-    ) {
-      toast.error("Please fill all required fields");
-      return;
+    if (!formData.location.trim()) {
+      toast.error("Location is required");
+      return false;
+    }
+
+    if (!formData.propertyType) {
+      toast.error("Property type is required");
+      return false;
+    }
+
+    if (!formData.totalUnits || formData.totalUnits <= 0) {
+      toast.error("Total units must be greater than 0");
+      return false;
+    }
+
+    if (formData.availableUnits < 0) {
+      toast.error("Available units cannot be negative");
+      return false;
     }
 
     if (formData.availableUnits > formData.totalUnits) {
       toast.error("Available units cannot exceed total units");
-      return;
+      return false;
     }
 
-    // ADD MODE validation
-    if (mode === "add") {
-      if (!thumbnailFile) {
-        toast.error("Thumbnail is required");
-        return;
-      }
-      if (!brochureFile) {
-        toast.error("Brochure PDF is required");
-        return;
-      }
+    if (!formData.constructionStatus) {
+      toast.error("Construction status is required");
+      return false;
     }
+
+    if (formData.reraApproved && !formData.reraNumber?.trim()) {
+      toast.error("RERA number is required when RERA approved");
+      return false;
+    }
+
+    if (mode === "add" && !thumbnailFile) {
+      toast.error("Thumbnail image is required");
+      return false;
+    }
+
+    if (mode === "add" && !brochureFile) {
+      toast.error("Project brochure PDF is required");
+      return false;
+    }
+    if (
+      formData.googleMapsLocation &&
+      !/^https?:\/\/(www\.)?google\.[a-z.]+\/maps/.test(
+        formData.googleMapsLocation,
+      )
+    ) {
+      toast.error("Enter a valid Google Maps link");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
 
     const payload = new FormData();
 
-    payload.append("projectName", formData.projectName);
-    payload.append("location", formData.location);
+    payload.append("projectName", formData.projectName.trim());
+    payload.append("location", formData.location.trim());
     payload.append("propertyType", formData.propertyType);
     payload.append("totalUnits", String(formData.totalUnits));
     payload.append("availableUnits", String(formData.availableUnits));
@@ -301,40 +333,28 @@ export const BuildingDialog = ({
       payload.append("completionDate", formData.completionDate);
 
     if (formData.description)
-      payload.append("description", formData.description);
+      payload.append("description", formData.description.trim());
 
     payload.append("municipalPermission", String(formData.municipalPermission));
     payload.append("reraApproved", String(formData.reraApproved));
 
-    if (formData.reraNumber) payload.append("reraNumber", formData.reraNumber);
+    if (formData.reraNumber)
+      payload.append("reraNumber", formData.reraNumber.trim());
 
     if (formData.googleMapsLocation)
-      payload.append("googleMapsLocation", formData.googleMapsLocation);
+      payload.append("googleMapsLocation", formData.googleMapsLocation.trim());
 
-    /* ---------------- FILES ---------------- */
+    if (thumbnailFile) payload.append("thumbnailUrl", thumbnailFile);
+    if (brochureFile) payload.append("brochureUrl", brochureFile);
 
-    if (thumbnailFile) {
-      payload.append("thumbnailUrl", thumbnailFile);
-    }
-
-    if (brochureFile) {
-      payload.append("brochureUrl", brochureFile);
-    }
-
-    /* 🔥 IMPORTANT: brochure removed */
     if (mode === "edit" && !brochureFile && !brochurePreview) {
       payload.append("brochureRemoved", "true");
     }
 
-    /* gallery */
     imageFiles.forEach((file) => payload.append("images", file));
-
-    /* amenities */
     selectedAmenities.forEach((amenity) =>
       payload.append("amenities[]", amenity),
     );
-
-    /* ---------------- API ---------------- */
 
     if (mode === "add") {
       createBuilding.mutate(payload);
@@ -469,40 +489,35 @@ export const BuildingDialog = ({
                 step={1}
                 value={formData.totalUnits}
                 onChange={(e) => {
-                  if (/^\d*$/.test(e.target.value)) {
-                    const totalUnits = Number(e.target.value);
-                    setFormData({
-                      ...formData,
-                      totalUnits,
-                      availableUnits: Math.min(
-                        formData.availableUnits,
-                        totalUnits,
-                      ),
-                    });
-                  }
+                  const value = Number(e.target.value);
+                  if (value < 0) return;
+
+                  setFormData({
+                    ...formData,
+                    totalUnits: value,
+                    availableUnits: Math.min(formData.availableUnits, value),
+                  });
                 }}
-                required
               />
             </div>
             <div>
               <Label>Available Units</Label>
               <Input
                 type="number"
+                min={0}
                 step={1}
-                min={1}
-                max={formData.totalUnits}
                 value={formData.availableUnits}
                 onChange={(e) => {
-                  if (/^\d*$/.test(e.target.value)) {
-                    const availableUnits = Number(e.target.value);
-                    if (availableUnits <= formData.totalUnits) {
-                      setFormData({
-                        ...formData,
-                        availableUnits,
-                      });
-                    } else {
-                      toast.error("Available units cannot exceed total units");
-                    }
+                  const value = Number(e.target.value);
+                  if (value < 0) return;
+
+                  if (value <= formData.totalUnits) {
+                    setFormData({
+                      ...formData,
+                      availableUnits: value,
+                    });
+                  } else {
+                    toast.error("Available units cannot exceed total units");
                   }
                 }}
               />

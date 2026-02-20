@@ -29,68 +29,110 @@ import {
 } from "@/components/ui/select";
 import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
 
-export const openLandFormSchema = z.object({
-  projectName: z.string().min(1, "Project name is required"),
-  location: z.string().min(1, "Location is required"),
-  surveyNumber: z.string().min(1, "Survey number is required"),
-  landType: z.enum([
-    "Agriculture",
-    "Non-Agriculture",
-    "Residential Land",
-    "Commercial Land",
-    "Industrial Land",
-    "Farm Land",
-    "Plotting Land",
-    "Other",
-  ]),
-  landStatus: z.enum(["Available", "Sold", "Reserved", "Blocked"]).optional(),
-  landArea: z
-    .union([z.coerce.number(), z.number().optional()])
-    .optional()
-    .refine((v) => v === undefined || v >= 0, { message: "Must be >= 0" }),
-  areaUnit: z.enum(["Sqft", "Sqyd", "Acre", "Hectare"]).optional(),
-  landSize: z.string().optional(),
-  availableDate: z.string().optional(),
-  description: z.string().optional(),
-  municipalPermission: z.boolean().default(false),
-  reraApproved: z.boolean().default(false),
-  reraNumber: z.string().optional().or(z.literal("")),
-  googleMapsLocation: z.string().optional().or(z.literal("")),
-  facing: z.enum([
-    "North",
-    "East",
-    "West",
-    "South",
-    "North-East",
-    "North-West",
-    "South-East",
-    "South-West",
-    "Not Applicable",
-  ]),
-  roadAccessWidth: z.string().optional().or(z.literal("")),
-  fencingAvailable: z.boolean().default(false),
-  waterFacility: z.boolean().default(false),
-  electricity: z.boolean().default(false),
-  thumbnailUrl: z.string().optional().or(z.literal("")),
-  images: z.array(z.string()).optional(),
-  brochureUrl: z.string().optional().or(z.literal("")),
-  ownerName: z.string().optional().or(z.literal("")),
-  LandApproval: z
-    .enum([
-      "DTCP",
-      "HMDA",
-      "Panchayat",
-      "Municipality",
-      "Unapproved",
-      "NA",
+export const openLandFormSchema = z
+  .object({
+    projectName: z.string().min(1, "Project name is required"),
+    location: z.string().min(1, "Location is required"),
+    surveyNumber: z.string().min(1, "Survey number is required"),
+
+    landType: z.enum([
+      "Agriculture",
+      "Non-Agriculture",
+      "Residential Land",
+      "Commercial Land",
+      "Industrial Land",
+      "Farm Land",
+      "Plotting Land",
       "Other",
-    ])
-    .optional(),
-  pricePerUnit: z
-    .union([z.coerce.number(), z.number().optional()])
-    .optional()
-    .refine((v) => v === undefined || v >= 0, { message: "Must be >= 0" }),
-});
+    ]),
+
+    landStatus: z.enum(["Available", "Sold", "Reserved", "Blocked"]).optional(),
+
+    landArea: z
+      .union([z.coerce.number(), z.number().optional()])
+      .optional()
+      .refine((v) => v === undefined || v >= 0, {
+        message: "Land area must be ≥ 0",
+      }),
+
+    areaUnit: z.enum(["Sqft", "Sqyd", "Acre", "Hectare"]).optional(),
+
+    availableDate: z.string().optional(),
+
+    description: z.string().max(500, "Description too long").optional(),
+
+    municipalPermission: z.boolean().default(false),
+
+    reraApproved: z.boolean().default(false),
+
+    reraNumber: z.string().optional(),
+
+    googleMapsLocation: z
+      .string()
+      .optional()
+      .refine(
+        (v) => !v || v.startsWith("https://") || v.startsWith("http://"),
+        { message: "Enter valid map URL" },
+      ),
+
+    facing: z.enum([
+      "North",
+      "East",
+      "West",
+      "South",
+      "North-East",
+      "North-West",
+      "South-East",
+      "South-West",
+      "Not Applicable",
+    ]),
+
+    roadAccessWidth: z.string().optional(),
+
+    fencingAvailable: z.boolean().default(false),
+    waterFacility: z.boolean().default(false),
+    electricity: z.boolean().default(false),
+
+    ownerName: z.string().optional(),
+
+    LandApproval: z
+      .enum([
+        "DTCP",
+        "HMDA",
+        "Panchayat",
+        "Municipality",
+        "Unapproved",
+        "NA",
+        "Other",
+      ])
+      .optional(),
+
+    pricePerUnit: z
+      .union([z.coerce.number(), z.number().optional()])
+      .optional()
+      .refine((v) => v === undefined || v >= 0, {
+        message: "Price must be ≥ 0",
+      }),
+  })
+  .superRefine((data, ctx) => {
+    // conditional validation
+
+    if (data.reraApproved && !data.reraNumber?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "RERA number required when approved",
+        path: ["reraNumber"],
+      });
+    }
+
+    if (data.landArea && !data.areaUnit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Area unit required when land area provided",
+        path: ["areaUnit"],
+      });
+    }
+  });
 
 export type OpenLandFormValues = z.infer<typeof openLandFormSchema>;
 
@@ -305,6 +347,20 @@ export default function OpenLandForm({
       // auto landSize build
       if (data.landArea && data.areaUnit && !data.landSize) {
         formData.append("landSize", `${data.landArea} ${data.areaUnit}`);
+      }
+      if (!isEditing && !thumbnailFile) {
+        toast.error("Thumbnail image is required");
+        return;
+      }
+
+      if (imageFiles.length === 0 && imageUrls.length === 0) {
+        toast.error("At least one gallery image required");
+        return;
+      }
+
+      if (brochureFile && brochureFile.type !== "application/pdf") {
+        toast.error("Brochure must be PDF");
+        return;
       }
 
       const config = {

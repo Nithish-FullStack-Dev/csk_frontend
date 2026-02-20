@@ -56,11 +56,20 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     defaultValues: openPlot ?? {
       projectName: "",
       openPlotNo: "",
+      surveyNo: "",
+      approvalAuthority: undefined,
       location: "",
       totalArea: 0,
       areaUnit: "SqFt",
+      facing: undefined,
+      roadWidthFt: undefined,
       titleStatus: "Clear",
       status: "Available",
+      reraNo: "",
+      documentNo: "",
+      googleMapsLocation: "",
+      boundaries: "",
+      remarks: "",
     },
   });
 
@@ -68,6 +77,10 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onThumbnailChange = (file?: File) => {
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Thumbnail must be under 5MB");
+      return;
+    }
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
   };
@@ -75,6 +88,10 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
   const onImagesChange = (files: FileList | null) => {
     if (!files) return;
     const newFiles = Array.from(files);
+    if (imagePreviews.length + newFiles.length > 10) {
+      toast.error("Maximum 10 images allowed");
+      return;
+    }
     setImageFiles((p) => [...p, ...newFiles]);
     setImagePreviews((p) => [
       ...p,
@@ -89,6 +106,10 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
   const onBrochureChange = (file?: File) => {
     if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast.error("Brochure must be PDF");
+      return;
+    }
     setBrochureFile(file);
     setBrochureName(file.name);
   };
@@ -132,50 +153,41 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
       className="space-y-6"
     >
       <Card className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Name */}
+        {/* BASIC INFO */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Input placeholder="Project Name" {...register("projectName")} />
-            {errors.projectName && (
-              <p className="text-red-500 text-sm">
-                {errors.projectName.message}
-              </p>
-            )}
+            <Label>Project Name</Label>
+            <Input {...register("projectName")} />
+            <p className="text-red-500 text-sm">
+              {errors.projectName?.message}
+            </p>
+          </div>
+          <div>
+            <Label>Location</Label>
+            <Input {...register("location")} />
+          </div>
+          <div>
+            <Label>Open Plot No</Label>
+            <Input {...register("openPlotNo")} />
+            <p className="text-red-500 text-sm">{errors.openPlotNo?.message}</p>
           </div>
 
-          {/* Open Plot No */}
           <div>
-            <Input placeholder="Open Plot No" {...register("openPlotNo")} />
-            {errors.openPlotNo && (
-              <p className="text-red-500 text-sm">
-                {errors.openPlotNo.message}
-              </p>
-            )}
+            <Label>Survey No</Label>
+            <Input {...register("surveyNo")} />
           </div>
 
-          {/* Location */}
           <div>
-            <Input placeholder="Location" {...register("location")} />
-            {errors.location && (
-              <p className="text-red-500 text-sm">{errors.location.message}</p>
-            )}
-          </div>
-
-          {/* Total Area */}
-          <div>
+            <Label>Total Area</Label>
             <Input
               type="number"
               min={0}
-              placeholder="Total Area"
               {...register("totalArea", { valueAsNumber: true })}
             />
-            {errors.totalArea && (
-              <p className="text-red-500 text-sm">{errors.totalArea.message}</p>
-            )}
           </div>
 
-          {/* Area Unit */}
           <div>
+            <Label>Area Unit</Label>
             <Select
               value={watch("areaUnit")}
               onValueChange={(v) => setValue("areaUnit", v as any)}
@@ -189,56 +201,77 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
                 <SelectItem value="Acre">Acre</SelectItem>
               </SelectContent>
             </Select>
-            {errors.areaUnit && (
-              <p className="text-red-500 text-sm">{errors.areaUnit.message}</p>
-            )}
           </div>
 
-          {/* Title Status */}
           <div>
+            <Label>Facing</Label>
             <Select
-              value={watch("titleStatus")}
-              onValueChange={(v) => setValue("titleStatus", v as any)}
+              value={watch("facing")}
+              onValueChange={(v) => setValue("facing", v as any)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Title Status" />
+                <SelectValue placeholder="Facing" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Clear">Clear</SelectItem>
-                <SelectItem value="Disputed">Disputed</SelectItem>
-                <SelectItem value="NA">NA</SelectItem>
+                <SelectItem value="North">North</SelectItem>
+                <SelectItem value="South">South</SelectItem>
+                <SelectItem value="East">East</SelectItem>
+                <SelectItem value="West">West</SelectItem>
               </SelectContent>
             </Select>
-            {errors.titleStatus && (
-              <p className="text-red-500 text-sm">
-                {errors.titleStatus.message}
-              </p>
-            )}
+          </div>
+          <div>
+            <Label>Road Width (ft)</Label>
+            <Input
+              type="number"
+              min={0}
+              {...register("roadWidthFt", { valueAsNumber: true })}
+            />
           </div>
 
-          {/* Status */}
           <div>
+            <Label>Approval Authority</Label>
             <Select
-              value={watch("status")}
-              onValueChange={(v) => setValue("status", v as any)}
+              value={watch("approvalAuthority")}
+              onValueChange={(v) => setValue("approvalAuthority", v as any)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Select authority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Available">Available</SelectItem>
-                <SelectItem value="Sold">Sold</SelectItem>
-                <SelectItem value="Blocked">Blocked</SelectItem>
+                <SelectItem value="DTCP">DTCP</SelectItem>
+                <SelectItem value="HMDA">HMDA</SelectItem>
+                <SelectItem value="RERA">RERA</SelectItem>
+                <SelectItem value="PANCHAYAT">PANCHAYAT</SelectItem>
+                <SelectItem value="OTHER">OTHER</SelectItem>
               </SelectContent>
             </Select>
-            {errors.status && (
-              <p className="text-red-500 text-sm">{errors.status.message}</p>
-            )}
+          </div>
+          <div>
+            <Label>RERA No</Label>
+            <Input {...register("reraNo")} />
+          </div>
+
+          <div>
+            <Label>Document No</Label>
+            <Input {...register("documentNo")} />
+          </div>
+
+          <div className="md:col-span-2">
+            <Label>Google Maps Location</Label>
+            <Input {...register("googleMapsLocation")} />
           </div>
         </div>
 
-        <Textarea placeholder="Boundaries" {...register("boundaries")} />
-        <Textarea placeholder="Remarks" {...register("remarks")} />
+        <div>
+          <Label>Boundaries</Label>
+          <Textarea {...register("boundaries")} />
+        </div>
+
+        <div>
+          <Label>Remarks</Label>
+          <Textarea {...register("remarks")} />
+        </div>
 
         {/* THUMBNAIL */}
         <div className="space-y-2">
@@ -258,13 +291,13 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
 
         {/* BROCHURE */}
         <div className="space-y-2">
-          <Label>Brochure (PDF) *</Label>
+          <Label>Brochure (PDF)</Label>
           {brochureName && (
             <p className="text-sm text-muted-foreground">{brochureName}</p>
           )}
           <Input
             type="file"
-            accept=".pdf,.doc,.docx"
+            accept=".pdf"
             onChange={(e) => onBrochureChange(e.target.files?.[0])}
           />
         </div>
@@ -298,11 +331,7 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={mutation.isPending}
-          className="w-full md:w-fit"
-        >
+        <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending
             ? "Saving..."
             : isEdit
