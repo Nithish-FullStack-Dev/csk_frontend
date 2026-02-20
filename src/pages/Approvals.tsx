@@ -64,7 +64,8 @@ interface SiteVisitRequest {
 
 const fetchAllAgentSiteVisit = async (): Promise<SiteVisitRequest[]> => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitOfAgents`
+    `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitOfAgents`,
+    { withCredentials: true },
   );
   return data;
 };
@@ -103,7 +104,8 @@ const Approvals = () => {
           _id: id,
           status,
           approvalNotes: approvalNotes || null,
-        }
+        },
+        { withCredentials: true },
       );
       return response.data;
     },
@@ -142,13 +144,13 @@ const Approvals = () => {
 
   // Filter requests based on status for each tab
   const pendingRequests = allSiteVisits.filter(
-    (request) => request.status === "pending"
+    (request) => request.status === "pending",
   );
   const approvedRequests = allSiteVisits.filter(
-    (request) => request.status === "confirmed"
+    (request) => request.status === "confirmed",
   );
   const rejectedRequests = allSiteVisits.filter(
-    (request) => request.status === "cancelled"
+    (request) => request.status === "cancelled",
   );
 
   const getTypeIcon = (type: string) => {
@@ -253,7 +255,7 @@ const Approvals = () => {
                     approvedRequests.filter(
                       (req) =>
                         new Date(req.createdAt).toDateString() ===
-                        new Date().toDateString()
+                        new Date().toDateString(),
                     ).length
                   }
                 </span>
@@ -386,7 +388,7 @@ const Approvals = () => {
                                         />
                                         <AvatarFallback>
                                           {selectedRequest.bookedBy?.name?.charAt(
-                                            0
+                                            0,
                                           ) || "U"}
                                         </AvatarFallback>
                                       </Avatar>
@@ -399,7 +401,7 @@ const Approvals = () => {
                                     <Label>Request Time</Label>
                                     <p className="text-sm mt-1">
                                       {new Date(
-                                        selectedRequest.createdAt
+                                        selectedRequest.createdAt,
                                       ).toLocaleString()}
                                     </p>
                                   </div>
@@ -451,7 +453,7 @@ const Approvals = () => {
                                       onClick={() =>
                                         handleAction(
                                           selectedRequest._id,
-                                          "cancelled"
+                                          "cancelled",
                                         )
                                       }
                                       disabled={updateSiteVisitStatus.isPending}
@@ -466,7 +468,7 @@ const Approvals = () => {
                                       onClick={() =>
                                         handleAction(
                                           selectedRequest._id,
-                                          "confirmed"
+                                          "confirmed",
                                         )
                                       }
                                       disabled={updateSiteVisitStatus.isPending}

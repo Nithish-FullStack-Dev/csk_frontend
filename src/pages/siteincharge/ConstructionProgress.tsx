@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Project, Task, usefetchProjects } from "@/utils/project/ProjectConfig";
 import Loader from "@/components/Loader";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectProgress {
   id: string;
@@ -70,7 +71,7 @@ interface PhaseProgress {
 
 const calculateStatus = (
   progress: number,
-  deadline: string
+  deadline: string,
 ): "on_track" | "at_risk" | "delayed" => {
   const today = new Date();
   const deadlineDate = new Date(deadline);
@@ -84,7 +85,7 @@ const calculateStatus = (
 
 const aggregatePhaseProgress = (
   tasks: Task[],
-  projectName: string
+  projectName: string,
 ): PhaseProgress[] => {
   const phaseMap: Record<
     string,
@@ -123,7 +124,7 @@ const progressColorClass = (progress: number) => {
 
 const ConstructionProgress = () => {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   const {
     data: projects = [],
     isLoading: isProjectsLoading,
@@ -137,7 +138,7 @@ const ConstructionProgress = () => {
         : [];
       const totalProgress = projectTasks.reduce(
         (sum, task) => sum + task.progressPercentage,
-        0
+        0,
       );
       const avgProgress =
         projectTasks.length > 0
@@ -153,15 +154,15 @@ const ConstructionProgress = () => {
         project.contractors?.[0]?.name
           ? project.contractors[0].name
           : typeof projectTasks[0]?.contractor === "object" &&
-            projectTasks[0]?.contractor?.name
-          ? projectTasks[0].contractor.name
-          : "N/A";
+              projectTasks[0]?.contractor?.name
+            ? projectTasks[0].contractor.name
+            : "N/A";
       const mainPhase = projectTasks[0]?.constructionPhase || "N/A";
       const projectName =
         typeof project.projectId === "object"
-          ? project.projectId.projectName
+          ? project?.projectId?.projectName
           : "";
-      const clientName = project.clientName || "N/A";
+      const clientName = project?.clientName || "N/A";
 
       return {
         id: project._id || "",
@@ -173,19 +174,19 @@ const ConstructionProgress = () => {
         contractor: mainContractor,
         clientName,
       };
-    }
+    },
   );
 
   const projectNames: string[] = Array.from(
     new Set(
       projects.map((p: Project) =>
-        typeof p.projectId === "object" ? p.projectId.projectName : ""
-      )
-    )
+        typeof p.projectId === "object" ? p.projectId?.projectName : "",
+      ),
+    ),
   ).filter((name): name is string => name !== "");
 
   React.useEffect(() => {
-    if (projectNames.length > 0 && !selectedProject) {
+    if (projectNames?.length > 0 && !selectedProject) {
       setSelectedProject(projectNames[0]);
     }
   }, [projectNames, selectedProject]);
@@ -194,11 +195,11 @@ const ConstructionProgress = () => {
     if (!selectedProject) return [];
     const selectedProjectData = projects.find(
       (p: Project) =>
-        typeof p.projectId === "object" &&
-        p.projectId.projectName === selectedProject
+        typeof p?.projectId === "object" &&
+        p?.projectId?.projectName === selectedProject,
     );
     const tasks = selectedProjectData?.units
-      ? Object.values(selectedProjectData.units).flat()
+      ? Object.values(selectedProjectData?.units).flat()
       : [];
     return aggregatePhaseProgress(tasks, selectedProject);
   };
@@ -302,7 +303,7 @@ const ConstructionProgress = () => {
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projectNames.map((name) => (
+                  {projectNames?.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
@@ -377,7 +378,7 @@ const ConstructionProgress = () => {
                             <div className="flex items-center">
                               <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                               {new Date(
-                                project.expectedCompletion
+                                project.expectedCompletion,
                               ).toLocaleDateString()}
                             </div>
                           </TableCell>
@@ -389,7 +390,7 @@ const ConstructionProgress = () => {
                               <Progress
                                 value={project.progress}
                                 className={`h-2 ${progressColorClass(
-                                  project.progress
+                                  project.progress,
                                 )}`}
                               />
                             </div>
@@ -402,8 +403,8 @@ const ConstructionProgress = () => {
                               {project.status === "on_track"
                                 ? "On Track"
                                 : project.status === "at_risk"
-                                ? "At Risk"
-                                : "Delayed"}
+                                  ? "At Risk"
+                                  : "Delayed"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -422,7 +423,9 @@ const ConstructionProgress = () => {
                                 <DropdownMenuItem>
                                   Update Progress
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => navigate("/inspections")}
+                                >
                                   Schedule Inspection
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
@@ -494,7 +497,7 @@ const ConstructionProgress = () => {
                               Expected:{" "}
                             </span>
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </p>
                           <div className="mt-2">
@@ -505,7 +508,7 @@ const ConstructionProgress = () => {
                             <Progress
                               value={project.progress}
                               className={`h-2 mt-1 ${progressColorClass(
-                                project.progress
+                                project.progress,
                               )}`}
                             />
                           </div>
@@ -518,8 +521,8 @@ const ConstructionProgress = () => {
                               {project.status === "on_track"
                                 ? "On Track"
                                 : project.status === "at_risk"
-                                ? "At Risk"
-                                : "Delayed"}
+                                  ? "At Risk"
+                                  : "Delayed"}
                             </Badge>
                           </div>
                         </div>
@@ -567,14 +570,14 @@ const ConstructionProgress = () => {
                               <Progress
                                 value={project.progress}
                                 className={`h-2 ${progressColorClass(
-                                  project.progress
+                                  project.progress,
                                 )}`}
                               />
                             </div>
                           </TableCell>
                           <TableCell>
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
@@ -616,14 +619,14 @@ const ConstructionProgress = () => {
                             <Progress
                               value={project.progress}
                               className={`h-2 ${progressColorClass(
-                                project.progress
+                                project.progress,
                               )}`}
                             />
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2" />
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </div>
                           <div className="pt-2">
@@ -680,14 +683,14 @@ const ConstructionProgress = () => {
                               <Progress
                                 value={project.progress}
                                 className={`h-2 ${progressColorClass(
-                                  project.progress
+                                  project.progress,
                                 )}`}
                               />
                             </div>
                           </TableCell>
                           <TableCell>
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
@@ -733,14 +736,14 @@ const ConstructionProgress = () => {
                             <Progress
                               value={project.progress}
                               className={`h-2 ${progressColorClass(
-                                project.progress
+                                project.progress,
                               )}`}
                             />
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2" />
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </div>
                           <div className="pt-2">
@@ -797,14 +800,14 @@ const ConstructionProgress = () => {
                               <Progress
                                 value={project.progress}
                                 className={`h-2 ${progressColorClass(
-                                  project.progress
+                                  project.progress,
                                 )}`}
                               />
                             </div>
                           </TableCell>
                           <TableCell>
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
@@ -854,14 +857,14 @@ const ConstructionProgress = () => {
                             <Progress
                               value={project.progress}
                               className={`h-2 ${progressColorClass(
-                                project.progress
+                                project.progress,
                               )}`}
                             />
                           </div>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2" />
                             {new Date(
-                              project.expectedCompletion
+                              project.expectedCompletion,
                             ).toLocaleDateString()}
                           </div>
                           <div className="flex flex-col sm:flex-row gap-2 pt-2">

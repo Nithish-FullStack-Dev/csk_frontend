@@ -98,7 +98,6 @@ const SiteVisits = () => {
     queryKey: ["sitevisit-leads", user?._id, user?.role],
     queryFn: () => {
       if (user?.role === "agent") return fetchLeads();
-      if (user?.role === "team_lead") return fetchLeads();
       return fetchAllLeads();
     },
     enabled: !!user,
@@ -257,7 +256,7 @@ const SiteVisits = () => {
               Schedule and manage property visits with clients
             </p>
           </div>
-          {userCanAddUser && (
+          {userCanAddUser && isAgent && (
             <Button onClick={() => setIsBookingOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Book New Visit
@@ -423,7 +422,7 @@ const SiteVisits = () => {
                           key={client._id}
                           client={client}
                           onClick={() => setSelectedClient(client)}
-                          isSelected={selectedClient?._id === client._id}
+                          isSelected={selectedClient?._id === client?._id}
                         />
                       ))
                     ) : (
@@ -445,9 +444,9 @@ const SiteVisits = () => {
                         <span className="font-medium text-gray-800">
                           Property:{" "}
                         </span>
-                        {selectedClient.property?.projectName}/{" "}
-                        {selectedClient.floorUnit?.floorNumber}/{" "}
-                        {selectedClient.unit?.propertyType}
+                        {typeof selectedClient?.property === "object"
+                          ? `${selectedClient?.property?.projectName || "Unknown Project"} - ${(typeof selectedClient?.floorUnit === "object" && selectedClient?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof selectedClient?.unit === "object" && selectedClient?.unit?.propertyType) || "Unknown Type"}`
+                          : "Property not assigned"}
                       </div>
                       <div className="text-sm text-gray-600">
                         <span className="font-medium text-gray-800">
@@ -663,43 +662,54 @@ const SiteVisits = () => {
                 Comprehensive information about this site visit.
               </DialogDescription>
             </DialogHeader>
-            {selectedVisit && (
+            {selectedVisit && selectedVisit.clientId ? (
               <div className="space-y-6 py-4">
                 {/* Client Information */}
                 <div>
                   <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" /> Client
-                    & Property
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                    Client & Property
                   </h3>
+
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={undefined} />
                       <AvatarFallback>
-                        {selectedVisit.clientId?.name
-                          ?.split(" ")
-                          .map((word) => word[0])
+                        {(selectedVisit.clientId.name || "NA")
+                          .split(" ")
+                          .map((word) => word?.[0] ?? "")
                           .join("")
-                          .toUpperCase() || "NA"}
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
+
                     <div>
                       <p className="font-medium text-lg">
-                        {selectedVisit.clientId.name}
+                        {selectedVisit?.clientId?.name || "Unknown Client"}
                       </p>
+
                       <p className="text-sm text-muted-foreground">
-                        {selectedVisit.clientId.email}
+                        {selectedVisit?.clientId?.email || "No email provided"}
                       </p>
+
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />{" "}
-                        {selectedVisit.clientId.property?.projectName}
+                        <MapPin className="h-3 w-3" />
+                        {typeof selectedVisit.clientId?.property === "object"
+                          ? `${selectedVisit?.clientId?.property?.projectName || "Unknown Project"} - ${(typeof selectedVisit?.clientId?.floorUnit === "object" && selectedVisit.clientId?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof selectedVisit.clientId.unit === "object" && selectedVisit?.clientId?.unit?.propertyType) || "Unknown Type"}`
+                          : "Property not assigned"}
                       </p>
                     </div>
                   </div>
-                  {selectedVisit.clientId.notes && (
+
+                  {selectedVisit.clientId.notes ? (
                     <div className="mt-2 text-sm text-muted-foreground border-t pt-2">
                       <p className="font-medium">Client Notes:</p>
-                      <p>{selectedVisit.clientId.notes}</p>
+                      <p>{selectedVisit?.clientId?.notes}</p>
                     </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-muted-foreground border-t pt-2">
+                      No client notes available
+                    </p>
                   )}
                 </div>
 
@@ -710,37 +720,48 @@ const SiteVisits = () => {
                     <div>
                       <p className="font-medium">Date:</p>
                       <p>
-                        {new Date(selectedVisit.date).toLocaleDateString(
-                          "en-IN",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          },
-                        )}
+                        {selectedVisit.date
+                          ? new Date(selectedVisit.date).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              },
+                            )
+                          : "Date not available"}
                       </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Time:</p>
-                      <p>{selectedVisit.time}</p>
+                      <p>{selectedVisit.time || "Time not set"}</p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <Tag className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Priority:</p>
-                      <p className="capitalize">{selectedVisit.priority}</p>
+                      <p className="capitalize">
+                        {selectedVisit.priority || "normal"}
+                      </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Status:</p>
-                      <Badge className={getStatusColor(selectedVisit?.status)}>
-                        {selectedVisit.status}
+                      <Badge
+                        className={getStatusColor(
+                          selectedVisit.status || "pending",
+                        )}
+                      >
+                        {selectedVisit.status || "pending"}
                       </Badge>
                     </div>
                   </div>
@@ -749,33 +770,41 @@ const SiteVisits = () => {
                 {/* Vehicle Information */}
                 <div>
                   <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                    <Car className="h-5 w-5 text-muted-foreground" /> Assigned
-                    Vehicle
+                    <Car className="h-5 w-5 text-muted-foreground" />
+                    Assigned Vehicle
                   </h3>
 
                   {selectedVisit.vehicleId ? (
                     <div className="space-y-1">
                       <p className="font-medium">
-                        {selectedVisit.vehicleId.model}
+                        {selectedVisit.vehicleId.model || "Unknown Model"}
                       </p>
+
                       <p className="text-sm text-muted-foreground">
-                        Type: {selectedVisit.vehicleId.type} • Capacity:{" "}
-                        {selectedVisit.vehicleId.capacity}
+                        Type: {selectedVisit.vehicleId.type || "N/A"} •
+                        Capacity: {selectedVisit.vehicleId.capacity ?? "N/A"}
                       </p>
+
                       <p className="text-sm text-muted-foreground">
-                        License Plate: {selectedVisit.vehicleId.licensePlate}
+                        License Plate:{" "}
+                        {selectedVisit.vehicleId.licensePlate ||
+                          "Not available"}
                       </p>
+
                       <p className="text-sm text-muted-foreground">
-                        Fuel Level: {selectedVisit.vehicleId.fuelLevel} • Last
-                        Service:{" "}
-                        {new Date(
-                          selectedVisit.vehicleId.lastService,
-                        ).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          year: "2-digit",
-                          month: "short",
-                        })}
+                        Fuel Level: {selectedVisit.vehicleId.fuelLevel || "N/A"}{" "}
+                        • Last Service:{" "}
+                        {selectedVisit.vehicleId.lastService
+                          ? new Date(
+                              selectedVisit.vehicleId.lastService,
+                            ).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Not serviced yet"}
                       </p>
+
                       <Badge
                         className={
                           selectedVisit.vehicleId.status === "available"
@@ -785,7 +814,7 @@ const SiteVisits = () => {
                               : "bg-red-100 text-red-800"
                         }
                       >
-                        {selectedVisit.vehicleId.status}
+                        {selectedVisit.vehicleId.status || "unknown"}
                       </Badge>
                     </div>
                   ) : (
@@ -796,19 +825,28 @@ const SiteVisits = () => {
                 </div>
 
                 {/* Additional Notes */}
-                {selectedVisit.notes && (
+                {selectedVisit.notes ? (
                   <div>
                     <h3 className="text-lg font-semibold flex items-center gap-2 mb-2">
-                      <StickyNote className="h-5 w-5 text-muted-foreground" />{" "}
+                      <StickyNote className="h-5 w-5 text-muted-foreground" />
                       Additional Notes
                     </h3>
                     <p className="text-muted-foreground">
                       {selectedVisit.notes}
                     </p>
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No additional notes provided
+                  </p>
                 )}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4">
+                Visit or client information is not available
+              </p>
             )}
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setSelectedVisit(null)}>
                 Close
@@ -861,7 +899,9 @@ const VisitCard = ({
               <p className="font-medium">{visit?.clientId?.name}</p>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
-                {visit?.clientId?.property?.projectName}
+                {visit.clientId && typeof visit.clientId?.property === "object"
+                  ? `${visit.clientId?.property?.projectName || "Unknown Project"} - ${(typeof visit.clientId?.floorUnit === "object" && visit.clientId?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof visit.clientId?.unit === "object" && visit.clientId.unit?.propertyType) || "Unknown Type"}`
+                  : "Property not assigned"}
               </div>
             </div>
           </div>

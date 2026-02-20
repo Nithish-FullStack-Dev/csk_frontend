@@ -131,6 +131,7 @@ export interface QualityIssue {
   taskId?: string;
   description: string;
   evidenceImages: string[];
+  unit?: string;
 }
 
 export const fetchProjects = async () => {

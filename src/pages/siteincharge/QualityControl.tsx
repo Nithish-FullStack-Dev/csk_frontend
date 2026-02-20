@@ -145,15 +145,30 @@ const QualityControl = () => {
   const handleAssignContractor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!selectedContractorId || !selectedIssue?._id) {
-        toast.error("Missing contractor or issue");
+      if (!selectedIssue) {
+        toast.error("No issue selected");
         return;
       }
 
+      if (!selectedIssue.unit) {
+        toast.error("Unit is missing for this issue");
+        return;
+      }
+
+      if (!selectedContractorId) {
+        toast.error("Please select a contractor");
+        return;
+      }
+
+      if (!phase) {
+        toast.error("Please select a construction phase");
+        return;
+      }
       const payload = {
         title: selectedIssue.title,
         contractorId: selectedContractorId,
         projectId: selectedIssue.project._id,
+        unit: selectedIssue.unit,
         priority,
         deadline,
         phase,
