@@ -156,7 +156,7 @@ const SiteInspections = () => {
           const res = await axios.post(
             `${import.meta.env.VITE_URL}/api/uploads/upload`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data" } },
           );
           if (res.data.url) uploadedImageUrls.push(res.data.url);
         } catch (err) {
@@ -179,7 +179,7 @@ const SiteInspections = () => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/site-inspection/inspection/create`,
         inspectionData,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -326,7 +326,7 @@ const SiteInspections = () => {
               <div className="text-2xl font-bold">
                 {
                   siteInspections.filter(
-                    (inspection) => inspection.status === "planned"
+                    (inspection) => inspection.status === "planned",
                   ).length
                 }
               </div>
@@ -348,7 +348,7 @@ const SiteInspections = () => {
               <div className="text-2xl font-bold">
                 {
                   siteInspections.filter(
-                    (inspection) => inspection.status === "completed"
+                    (inspection) => inspection.status === "completed",
                   ).length
                 }
               </div>
@@ -368,7 +368,7 @@ const SiteInspections = () => {
               <div className="text-2xl font-bold">
                 {siteInspections.reduce(
                   (sum, inspection) => sum + (inspection.photos?.length || 0),
-                  0
+                  0,
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -419,7 +419,7 @@ const SiteInspections = () => {
                           .split(" ")
                           .map(
                             (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1)
+                              word.charAt(0).toUpperCase() + word.slice(1),
                           )
                           .join(" ")}
                   </span>
@@ -543,8 +543,8 @@ const SiteInspections = () => {
                             floorUnitsLoading
                               ? "Loading Floor Units..."
                               : !floorUnits || floorUnits.length === 0
-                              ? "No floor units available"
-                              : "Select Floor Unit"
+                                ? "No floor units available"
+                                : "Select Floor Unit"
                           }
                         />
                       </SelectTrigger>
@@ -590,8 +590,8 @@ const SiteInspections = () => {
                             unitsByFloorLoading
                               ? "Loading Units..."
                               : !unitsByFloor || unitsByFloor.length === 0
-                              ? "No units available"
-                              : "Select Unit"
+                                ? "No units available"
+                                : "Select Unit"
                           }
                         />
                       </SelectTrigger>
@@ -1037,7 +1037,7 @@ const SiteInspections = () => {
                               selectedInspection._id
                             }/status`,
                             { status: newStatus },
-                            { withCredentials: true }
+                            { withCredentials: true },
                           );
                           setStatusDialogOpen(false);
                           fetchInspections();
@@ -1109,10 +1109,20 @@ const SiteInspections = () => {
                               headers: {
                                 "Content-Type": "multipart/form-data",
                               },
-                            }
+                            },
                           );
-                          if (res.data.url)
-                            uploadedImageUrls.push(res.data.url);
+                          const cloudinaryResponse = res.data?.url;
+                          const imageUrl =
+                            typeof cloudinaryResponse === "string"
+                              ? cloudinaryResponse
+                              : cloudinaryResponse?.secure_url;
+
+                          if (imageUrl) {
+                            uploadedImageUrls.push(imageUrl);
+                          }
+                          queryClient.invalidateQueries({
+                            queryKey: ["inspections"],
+                          });
                         } catch (err) {
                           console.error("Upload failed", err);
                         }
@@ -1125,7 +1135,7 @@ const SiteInspections = () => {
                             selectedInspectionForPhotos._id
                           }`,
                           { photos: uploadedImageUrls },
-                          { withCredentials: true }
+                          { withCredentials: true },
                         );
                         toast.success("Photos added successfully!");
                       } catch (err) {

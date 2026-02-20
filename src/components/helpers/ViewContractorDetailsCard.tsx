@@ -39,7 +39,7 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
               <b>Phone:</b> {contractor.userId?.phone}
             </div>
             <div>
-              <b>Type:</b> {contractor.contractorType}
+              <b>Type:</b> {contractor?.contractorType}
             </div>
           </div>
         </section>
@@ -51,13 +51,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Company Information</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <b>Company Name:</b> {contractor.companyName}
+              <b>Company Name:</b> {contractor?.companyName}
             </div>
             <div>
-              <b>GST Number:</b> {contractor.gstNumber}
+              <b>GST Number:</b> {contractor?.gstNumber}
             </div>
             <div>
-              <b>PAN Number:</b> {contractor.panCardNumber}
+              <b>PAN Number:</b> {contractor?.panCardNumber}
             </div>
           </div>
         </section>
@@ -71,11 +71,11 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
             {contractor.projectsAssigned?.length ? (
               contractor.projectsAssigned.map((p: any) => (
                 <Badge key={p._id} variant="secondary">
-                  {p.projectId.projectName +
+                  {p.projectId?.projectName +
                     " / " +
-                    p.floorUnit.floorNumber +
+                    p.floorUnit?.floorNumber +
                     " / " +
-                    p.unit.plotNo || p._id}
+                    p.unit?.plotNo || p._id}
                 </Badge>
               ))
             ) : (
@@ -93,13 +93,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Financial Summary</h3>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <b>Total Amount:</b> ₹{contractor.amount}
+              <b>Total Amount:</b> ₹{contractor?.amount}
             </div>
             <div>
-              <b>Advance Paid:</b> ₹{contractor.advancePaid}
+              <b>Advance Paid:</b> ₹{contractor?.advancePaid}
             </div>
             <div>
-              <b>Balance:</b> ₹{contractor.balancePaid}
+              <b>Balance:</b> ₹{contractor?.balancePaid}
             </div>
           </div>
         </section>
@@ -116,9 +116,9 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
                   <div>
                     <b>Payment #{index + 1}</b>
                   </div>
-                  <div>Mode: {p.modeOfPayment}</div>
-                  <div>Payment Date: {formatDate(p.paymentDate)}</div>
-                  <div>Last Payment Date: {formatDate(p.lastPaymentDate)}</div>
+                  <div>Mode: {p?.modeOfPayment}</div>
+                  <div>Payment Date: {formatDate(p?.paymentDate)}</div>
+                  <div>Last Payment Date: {formatDate(p?.lastPaymentDate)}</div>
                 </div>
               ))}
             </div>
@@ -136,16 +136,16 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Bank Details</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <b>Bank:</b> {contractor.bankName}
+              <b>Bank:</b> {contractor?.bankName}
             </div>
             <div>
-              <b>Branch:</b> {contractor.branchName}
+              <b>Branch:</b> {contractor?.branchName}
             </div>
             <div>
-              <b>Account No:</b> {contractor.accountNumber}
+              <b>Account No:</b> {contractor?.accountNumber}
             </div>
             <div>
-              <b>IFSC:</b> {contractor.ifscCode}
+              <b>IFSC:</b> {contractor?.ifscCode}
             </div>
           </div>
         </section>
@@ -157,13 +157,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Important Dates</h3>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <b>Contract Start:</b> {formatDate(contractor.contractStartDate)}
+              <b>Contract Start:</b> {formatDate(contractor?.contractStartDate)}
             </div>
             <div>
-              <b>Contract End:</b> {formatDate(contractor.contractEndDate)}
+              <b>Contract End:</b> {formatDate(contractor?.contractEndDate)}
             </div>
             <div>
-              <b>Final Payment:</b> {formatDate(contractor.finalPaymentDate)}
+              <b>Final Payment:</b> {formatDate(contractor?.finalPaymentDate)}
             </div>
           </div>
         </section>
@@ -176,14 +176,14 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <div className="flex gap-3">
             <Badge
               variant={
-                contractor.billApprovedBySiteIncharge ? "default" : "secondary"
+                contractor?.billApprovedBySiteIncharge ? "default" : "secondary"
               }
             >
               Site Incharge Approved
             </Badge>
             <Badge
               variant={
-                contractor.billProcessedByAccountant ? "default" : "secondary"
+                contractor?.billProcessedByAccountant ? "default" : "secondary"
               }
             >
               Accountant Processed
@@ -198,15 +198,15 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Work & Billing</h3>
           <div className="space-y-2 text-sm">
             <div>
-              <b>Invoice No:</b> {contractor.billInvoiceNumber}
+              <b>Invoice No:</b> {contractor?.billInvoiceNumber}
             </div>
             <div>
-              <b>Billed Date:</b> {formatDate(contractor.billedDate)}
+              <b>Billed Date:</b> {formatDate(contractor?.billedDate)}
             </div>
             <div>
-              <b>Work Details:</b> {contractor.workDetails || "N/A"}
+              <b>Work Details:</b> {contractor?.workDetails || "N/A"}
             </div>
-            {contractor.billCopy && (
+            {contractor?.billCopy && (
               <Button variant="outline" size="sm" asChild>
                 <a href={contractor.billCopy} target="_blank">
                   View Bill Copy

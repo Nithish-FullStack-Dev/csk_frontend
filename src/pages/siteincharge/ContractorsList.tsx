@@ -806,7 +806,7 @@ const ContractorsList = () => {
                                 <TableHead>Amount (₹)</TableHead>
                                 <TableHead>Advance (₹)</TableHead>
                                 <TableHead>Balance (₹)</TableHead>
-                                <TableHead>Work Details</TableHead>
+                                {/* <TableHead>Work Details</TableHead> */}
                                 <TableHead>Bill No.</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Billed Date</TableHead>
@@ -852,9 +852,9 @@ const ContractorsList = () => {
                                       contractor.balancePaid ?? 0
                                     ).toLocaleString()}
                                   </TableCell>
-                                  <TableCell className="max-w-md">
+                                  {/* <TableCell className="max-w-md">
                                     {contractor.workDetails || "—"}
-                                  </TableCell>
+                                  </TableCell> */}
                                   <TableCell>
                                     {contractor.billInvoiceNumber || "—"}
                                   </TableCell>

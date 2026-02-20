@@ -615,7 +615,7 @@ const BuildingDetails = () => {
             <CardContent>
               <div className="relative w-full h-64 overflow-hidden rounded-lg">
                 <iframe
-                  src={building?.googleMapsLocation}
+                  src={building?.googleMapsLocation || ""}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
