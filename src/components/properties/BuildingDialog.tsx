@@ -195,6 +195,7 @@ export const BuildingDialog = ({
 
   const updateBuilding = useMutation({
     mutationFn: async (payload: FormData) => {
+      console.log(building?._id);
       const { data } = await axios.patch(
         `${import.meta.env.VITE_URL}/api/building/updateBuilding/${
           building?._id

@@ -178,6 +178,7 @@ const BuildingDetails = () => {
     onSuccess: async () => {
       toast.success("Building deleted successfully");
       await queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      await queryClient.invalidateQueries({ queryKey: ["trash-buildings"] });
       // await queryClient.refetchQueries({ queryKey: ["buildings"] });
       navigate("/properties");
     },
