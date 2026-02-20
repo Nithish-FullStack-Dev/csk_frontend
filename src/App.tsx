@@ -161,6 +161,7 @@ import OpenLandDetails from "./pages/public/OpenLandDetails";
 import Kanban from "./pages/Kanban";
 import Department from "./pages/Department";
 import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
+import TrashBuildingsPage from "./pages/TrashBuildingsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -508,6 +509,15 @@ const App = () => {
                     <ProtectedRoute roleSubmodule={"Profile"}>
                       <Profile />
                     </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/trash-buildings"
+                  element={
+                    // <ProtectedRoute roleSubmodule={"Trash Buildings"}>
+                    <TrashBuildingsPage />
+                    // </ProtectedRoute>
                   }
                 />
 

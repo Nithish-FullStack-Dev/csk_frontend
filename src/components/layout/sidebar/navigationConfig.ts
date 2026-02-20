@@ -170,6 +170,7 @@ import {
   ListTodo,
   LayoutDashboard,
   Building2,
+  Trash,
 } from "lucide-react";
 
 export const moduleToNavItem: Record<string, any> = {
@@ -307,6 +308,7 @@ export const moduleToNavItem: Record<string, any> = {
   //   icon: Camera,
   //   label: "Photo Evidence",
   // },
+  Trash: { to: "/trash-buildings", icon: Trash, label: "Trash – Buildings" },
 };
 
 // Build dynamic navigation based on role + permissions
@@ -320,6 +322,7 @@ export const buildNavigationForRole = (
     moduleToNavItem["kanban"],
     moduleToNavItem["department"],
     moduleToNavItem["Profile"],
+    moduleToNavItem["Trash"],
   ];
   let middle: any[] = [];
 
