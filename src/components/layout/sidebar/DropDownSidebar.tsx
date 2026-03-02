@@ -120,7 +120,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: "website",
     label: "Website",
     icon: Globe,
-    modules: ["CMS", "Content Management"],
+    modules: ["CMS", "Content Management", "Audit Logs"],
   },
   {
     key: "support",

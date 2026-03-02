@@ -165,6 +165,7 @@ import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
 import TrashBuildingsPage from "./pages/TrashBuildingsPage";
 import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 import OpenPlotDetailsPage from "./pages/OpenPlotDetailsPage";
+import AuditLogViewer from "./utils/AuditLogResponse";
 const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -249,8 +250,14 @@ const App = () => {
                     path="/public/upcoming-projects"
                     element={<UpcomingProjectsPage />}
                   />
-                  <Route path="/public/open-plots" element={<OpenPlotsPage />} />
-                  <Route path="/public/open-lands" element={<OpenLandsPage />} />
+                  <Route
+                    path="/public/open-plots"
+                    element={<OpenPlotsPage />}
+                  />
+                  <Route
+                    path="/public/open-lands"
+                    element={<OpenLandsPage />}
+                  />
                   {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
                   {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                   <Route path="/public/contact" element={<ContactPage />} />
@@ -514,9 +521,22 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
-                  <Route path="/department" element={<ProtectedRoute roleSubmodule={"System Config"}>
-                    <Department />
-                  </ProtectedRoute>} />
+                  <Route
+                    path="/audit"
+                    element={
+                      <ProtectedRoute roleSubmodule={"System Config"}>
+                        <AuditLogViewer />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/department"
+                    element={
+                      <ProtectedRoute roleSubmodule={"System Config"}>
+                        <Department />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   <Route
                     path="/profile"

@@ -246,6 +246,7 @@ export const moduleToNavItem: Record<string, any> = {
     icon: FileText,
     label: "Budget Management",
   },
+  "Audit Logs": { to: "/audit", icon: FileText, label: "Audit Logs" },
   "Financial Reports": {
     to: "/reports",
     icon: FileText,
