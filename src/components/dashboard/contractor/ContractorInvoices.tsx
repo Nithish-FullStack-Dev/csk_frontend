@@ -75,14 +75,9 @@ export const invoiceSchema = z.object({
   project: z.string().min(2, "Project is required"),
   issueDate: z.string().min(1, "Issue date is required"),
   dueDate: z.string().min(1, "Due date is required"),
-  sgst: z.coerce
-    .number()
-    .min(0, "SGST rate must be positive")
-    .max(14, "SGST rate cannot exceed 14%"),
-  cgst: z.coerce
-    .number()
-    .min(0, "CGST rate must be positive")
-    .max(14, "CGST rate cannot exceed 14%"),
+  sgst: z.coerce.number().min(0).max(14),
+  cgst: z.coerce.number().min(0).max(14),
+  status: z.enum(["draft", "pending", "approved", "paid", "rejected"]),
   notes: z.string().optional(),
   task: z.string().optional(),
   unit: z.string(),
@@ -120,7 +115,7 @@ const ContractorInvoices = () => {
   // const [completedTasks, setCompletedTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
@@ -169,18 +164,23 @@ const ContractorInvoices = () => {
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
 
-  const form = useForm<InvoiceFormValues>({
-    resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      project: "",
-      issueDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      sgst: 9,
-      cgst: 9,
-    },
-  });
+const form = useForm<InvoiceFormValues>({
+  resolver: zodResolver(invoiceSchema),
+  defaultValues: {
+    project: "",
+    issueDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+    sgst: 9,
+    cgst: 9,
+    status: "pending", 
+    floorUnit: "",
+    unit: "",
+    task: undefined,
+    notes: "",
+  },
+});
 
   const watchProject = form.watch("project"); // watches selected projectId
 
@@ -205,7 +205,7 @@ const ContractorInvoices = () => {
       // Calculate subtotal
       const subtotal = invoiceItems.reduce(
         (sum, item) => sum + item.quantity * item.rate,
-        0
+        0,
       );
 
       const sgstAmount = (data.sgst / 100) * subtotal;
@@ -221,6 +221,7 @@ const ContractorInvoices = () => {
         items: invoiceItems,
         sgst: data.sgst,
         cgst: data.cgst,
+        status: data.status,
         notes: data.notes || "",
         subtotal,
         total: totalAmount,
@@ -231,14 +232,14 @@ const ContractorInvoices = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/invoices`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       return response.data;
     },
     onSuccess: async (createdInvoice) => {
       toast.success(
-        `Invoice ${createdInvoice.invoiceNumber || "created"} successfully`
+        `Invoice ${createdInvoice.invoiceNumber || "created"} successfully`,
       );
       await query.invalidateQueries({ queryKey: ["invoice"] });
       form.reset({
@@ -262,18 +263,80 @@ const ContractorInvoices = () => {
       toast.error(
         error?.response?.data?.error ||
           error?.message ||
-          "Failed to create invoice. Try again."
+          "Failed to create invoice. Try again.",
       );
     },
   });
 
+  const updateInvoiceMutation = useMutation({
+    mutationFn: async (data: InvoiceFormValues) => {
+      if (!selectedInvoice) throw new Error("No invoice selected");
+
+      const subtotal = invoiceItems.reduce(
+        (sum, item) => sum + item.quantity * item.rate,
+        0,
+      );
+
+      const sgstAmount = subtotal * (data.sgst / 100);
+      const cgstAmount = subtotal * (data.cgst / 100);
+      const total = subtotal + sgstAmount + cgstAmount;
+
+      const payload = {
+        ...data,
+        items: invoiceItems,
+        subtotal,
+        total,
+      };
+      const res = await axios.put(
+        `${import.meta.env.VITE_URL}/api/invoices/${selectedInvoice?._id}`,
+        payload,
+        { withCredentials: true },
+      );
+
+      return res.data;
+    },
+
+    onSuccess: async () => {
+      toast.success("Invoice updated successfully");
+      await query.invalidateQueries({ queryKey: ["invoice"] });
+      setCreateDialogOpen(false);
+      setIsEditMode(false);
+    },
+
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || "Update failed");
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/invoices/${id}/status`,
+        { status },
+        { withCredentials: true },
+      );
+      return res.data;
+    },
+    onSuccess: async () => {
+      toast.success("Invoice status updated");
+      await query.invalidateQueries({ queryKey: ["invoice"] });
+    },
+    onError: () => {
+      toast.error("Failed to update invoice status");
+    },
+  });
+
   const handleSubmit = (data: InvoiceFormValues) => {
-    createInvoiceMutation.mutate(data);
+    if (isEditMode) {
+      updateInvoiceMutation.mutate(data);
+    } else {
+      createInvoiceMutation.mutate(data);
+    }
   };
 
   const addInvoiceItem = (
     data: InvoiceItemFormValues,
-    event?: React.FormEvent
+    event?: React.FormEvent,
   ) => {
     event?.preventDefault();
     // Prevent default form submission
@@ -310,55 +373,31 @@ const ContractorInvoices = () => {
   };
 
   // Filter invoices based on search and active tab
-  let filteredInvoices = [];
-  if (Array.isArray(filteredInvoices)) {
-    filteredInvoices = invoices?.filter((invoice: Invoice) => {
-      const matchesSearch =
-        invoice?.invoiceNumber
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase()) ||
-        invoice?.project.projectName
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase()) ||
-        invoice?.floorUnit?.floorNumber
-          .toString()
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase()) ||
-        invoice?.floorUnit?.unitType
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase()) ||
-        invoice?.unit?.plotNo
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase()) ||
-        invoice?.unit?.propertyType
-          ?.toLowerCase()
-          ?.includes(searchQuery?.toLowerCase());
+  const filteredInvoices = invoices.filter((invoice: Invoice) => {
+    const matchesSearch =
+      invoice.invoiceNumber
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      invoice.project?.projectName
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
-      if (activeTab === "all") return matchesSearch;
-      if (activeTab === "paid")
-        return matchesSearch && invoice.status === "paid";
-      if (activeTab === "pending")
-        return matchesSearch && invoice.status === "pending";
-      if (activeTab === "overdue")
-        return matchesSearch && invoice.status === "overdue";
-      if (activeTab === "draft")
-        return matchesSearch && invoice.status === "draft";
-
-      return matchesSearch;
-    });
-  }
+    if (activeTab === "all") return matchesSearch;
+    return matchesSearch && invoice.status === activeTab;
+  });
 
   // Calculate statistics
   const totalInvoiceAmount = invoices.reduce(
     (total, invoice) => total + invoice.total,
-    0
+    0,
   );
   // const paidInvoicesAmount = invoices
   //   .filter((invoice) => invoice.status === "paid")
   //   .reduce((total, invoice) => total + invoice.totalAmount, 0);
   const pendingInvoicesAmount = invoices
     .filter(
-      (invoice) => invoice.status === "pending" || invoice.status === "overdue"
+      (invoice) =>
+        invoice.status === "pending" || invoice.status === "approved",
     )
     .reduce((total, invoice) => total + invoice.total, 0);
 
@@ -447,8 +486,8 @@ const ContractorInvoices = () => {
               <div className="text-2xl font-bold">{invoices.length}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {invoices.filter((i) => i.status === "Paid").length} paid,{" "}
-              {invoices.filter((i) => i.status !== "Paid").length} unpaid
+              {invoices.filter((i) => i.status === "paid").length} paid,{" "}
+              {invoices.filter((i) => i.status !== "paid").length} unpaid
             </p>
           </CardContent>
         </Card>
@@ -579,7 +618,7 @@ const ContractorInvoices = () => {
                             day: "2-digit",
                             month: "2-digit",
                             year: "2-digit",
-                          }
+                          },
                         )}
                       </TableCell>
                       <TableCell>
@@ -598,26 +637,72 @@ const ContractorInvoices = () => {
                       <TableCell>
                         <Badge
                           className={`${
-                            invoice.status === "Paid"
+                            invoice?.status === "paid"
                               ? "bg-green-100 text-green-800"
-                              : invoice.status === "Pending"
-                              ? "bg-blue-100 text-blue-800"
-                              : invoice.status === "Overdue"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
+                              : invoice?.status === "pending"
+                                ? "bg-blue-100 text-blue-800"
+                                : invoice?.status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : invoice?.status === "approved"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                          } text-sm py-1 px-3`}
                         >
-                          {invoice.status}
+                          {invoice?.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => viewInvoice(invoice)}
-                        >
-                          View
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => viewInvoice(invoice)}
+                          >
+                            View
+                          </Button>
+
+                          {invoice.status !== "paid" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsEditMode(true);
+                                setSelectedInvoice(invoice);
+
+                                form.reset({
+                                  project: invoice.project?._id,
+                                  floorUnit: invoice.floorUnit?._id,
+                                  unit: invoice.unit?._id,
+                                  issueDate: invoice.issueDate.split("T")[0],
+                                  dueDate: invoice.dueDate.split("T")[0],
+                                  sgst: invoice.sgst,
+                                  cgst: invoice.cgst,
+                                  notes: invoice.notes || "",
+                                });
+
+                                setInvoiceItems(invoice.items);
+                                setCreateDialogOpen(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          )}
+
+                          {/* {invoice.status !== "paid" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: invoice._id,
+                                  status: "paid",
+                                })
+                              }
+                            >
+                              Mark Paid
+                            </Button>
+                          )} */}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -643,16 +728,18 @@ const ContractorInvoices = () => {
                   <h3 className="font-semibold">#{invoice.invoiceNumber}</h3>
                   <Badge
                     className={`${
-                      invoice.status === "Paid"
+                      invoice?.status === "paid"
                         ? "bg-green-100 text-green-800"
-                        : invoice.status === "Pending"
-                        ? "bg-blue-100 text-blue-800"
-                        : invoice.status === "Overdue"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
+                        : invoice?.status === "pending"
+                          ? "bg-blue-100 text-blue-800"
+                          : invoice?.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : invoice?.status === "approved"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                    } text-sm py-1 px-3`}
                   >
-                    {invoice.status}
+                    {invoice?.status}
                   </Badge>
                 </div>
 
@@ -691,15 +778,64 @@ const ContractorInvoices = () => {
                   {invoice.total.toLocaleString()}
                 </p>
 
-                <div className="pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => viewInvoice(invoice)}
-                  >
-                    View
-                  </Button>
-                </div>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => viewInvoice(invoice)}
+                    >
+                      View
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditMode(true);
+                        setSelectedInvoice(invoice);
+
+                        form.reset({
+                          project: invoice.project?._id,
+                          floorUnit: invoice.floorUnit?._id,
+                          unit: invoice.unit?._id,
+                          issueDate: invoice.issueDate.split("T")[0],
+                          dueDate: invoice.dueDate.split("T")[0],
+                          sgst: invoice.sgst,
+                          cgst: invoice.cgst,
+                          notes: invoice.notes || "",
+                        });
+
+                        setInvoiceItems(invoice.items);
+                        setCreateDialogOpen(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+
+                    <Select
+                      value={invoice.status}
+                      disabled={updateStatusMutation.isPending}
+                      onValueChange={(value) =>
+                        updateStatusMutation.mutate({
+                          id: invoice._id,
+                          status: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableCell>
               </div>
             ))
           )}
@@ -708,7 +844,7 @@ const ContractorInvoices = () => {
 
       {/* Create Invoice Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className=" max-w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl">
+        <DialogContent className="w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-2xl p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>
@@ -795,8 +931,8 @@ const ContractorInvoices = () => {
                                 floorUnitsLoading
                                   ? "Loading Floor Units..."
                                   : !floorUnits || floorUnits.length === 0
-                                  ? "No floor units available"
-                                  : "Select Floor Unit"
+                                    ? "No floor units available"
+                                    : "Select Floor Unit"
                               }
                             />
                           </SelectTrigger>
@@ -852,8 +988,8 @@ const ContractorInvoices = () => {
                                 unitsByFloorLoading
                                   ? "Loading Units..."
                                   : !unitsByFloor || unitsByFloor.length === 0
-                                  ? "No units available"
-                                  : "Select Unit"
+                                    ? "No units available"
+                                    : "Select Unit"
                               }
                             />
                           </SelectTrigger>
@@ -912,7 +1048,6 @@ const ContractorInvoices = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="sgst"
@@ -1128,11 +1263,11 @@ const ContractorInvoices = () => {
                                     onChange={(e) => {
                                       const numericValue = parseInt(
                                         e.target.value,
-                                        10
+                                        10,
                                       );
                                       itemForm.setValue(
                                         "quantity",
-                                        isNaN(numericValue) ? 0 : numericValue
+                                        isNaN(numericValue) ? 0 : numericValue,
                                       );
                                     }}
                                   />
@@ -1256,7 +1391,7 @@ const ContractorInvoices = () => {
               {(() => {
                 const subtotal = invoiceItems.reduce(
                   (sum, item) => sum + item.amount,
-                  0
+                  0,
                 );
                 const sgst = parseFloat(form.watch("sgst")?.toString() || "0");
                 const cgst = parseFloat(form.watch("cgst")?.toString() || "0");
@@ -1290,7 +1425,35 @@ const ContractorInvoices = () => {
                   </div>
                 );
               })()}
-
+              {isEditMode && (
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="notes"
@@ -1326,9 +1489,7 @@ const ContractorInvoices = () => {
                   type="submit"
                   disabled={createInvoiceMutation.isPending}
                 >
-                  {createInvoiceMutation.isPending
-                    ? "Creating Invoice"
-                    : "Create Invoice"}
+                  {isEditMode ? "Update Invoice" : "Create Invoice"}
                 </Button>
               </div>
             </form>
@@ -1360,13 +1521,15 @@ const ContractorInvoices = () => {
                 </div>
                 <Badge
                   className={`${
-                    selectedInvoice.status === "Paid"
+                    selectedInvoice.status === "paid"
                       ? "bg-green-100 text-green-800"
-                      : selectedInvoice.status === "Pending"
-                      ? "bg-blue-100 text-blue-800"
-                      : selectedInvoice.status === "Overdue"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
+                      : selectedInvoice.status === "pending"
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedInvoice.status === "rejected"
+                          ? "bg-red-100 text-red-800"
+                          : selectedInvoice.status === "approved"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-gray-100 text-gray-800"
                   } text-sm py-1 px-3`}
                 >
                   {selectedInvoice.status}
@@ -1385,7 +1548,7 @@ const ContractorInvoices = () => {
                           day: "2-digit",
                           month: "2-digit",
                           year: "2-digit",
-                        }
+                        },
                       )}
                     </p>
                   </div>
@@ -1398,7 +1561,7 @@ const ContractorInvoices = () => {
                           day: "2-digit",
                           month: "2-digit",
                           year: "2-digit",
-                        }
+                        },
                       )}
                     </p>
                   </div>

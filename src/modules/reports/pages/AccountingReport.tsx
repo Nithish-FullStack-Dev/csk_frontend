@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FilterBar } from "../components/FilterBar";
@@ -11,79 +11,109 @@ import { subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// Mock data
-const mockData: AccountingReportRow[] = [
-  {
-    period: "Jan 2025",
-    invoicesReceived: 145,
-    invoicesApproved: 128,
-    invoicesRejected: 17,
-    cashIn: 85000000,
-    cashOut: 42000000,
-    netCashFlow: 43000000,
-    taxUploads: 12,
-    taxClaims: 8,
-    budgetAllocated: 100000000,
-    budgetUsed: 68000000,
-    budgetUtilizedPercent: 68,
-  },
-  {
-    period: "Feb 2025",
-    // revenueTotal: 82000000,
-    invoicesReceived: 158,
-    invoicesApproved: 142,
-    invoicesRejected: 16,
-    cashIn: 88000000,
-    cashOut: 45000000,
-    netCashFlow: 43000000,
-    taxUploads: 10,
-    taxClaims: 7,
-    budgetAllocated: 100000000,
-    budgetUsed: 72000000,
-    budgetUtilizedPercent: 72,
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import Loader from "@/components/Loader";
 
 export default function AccountingReport() {
   const navigate = useNavigate();
+
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: subDays(new Date(), 30),
     dateTo: new Date(),
     groupBy: "month",
   });
 
-  // const totalRevenue = mockData.reduce((sum, row) => sum + row.revenueTotal, 0);
-  const totalCashFlow = mockData.reduce((sum, row) => sum + row.netCashFlow, 0);
-  const totalInvoices = mockData.reduce(
-    (sum, row) => sum + row.invoicesReceived,
-    0
-  );
-  const avgBudgetUtil =
-    mockData.reduce((sum, row) => sum + row.budgetUtilizedPercent, 0) /
-    mockData.length;
+  /* ===============================
+     FETCH DATA
+  =============================== */
 
-  const metrics = [
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["accounting-report", filters],
+    queryFn: async () => {
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/reports/accounting`,
+        {
+          params: {
+            dateFrom: filters.dateFrom,
+            dateTo: filters.dateTo,
+            groupBy: filters.groupBy,
+          },
+          withCredentials: true,
+        },
+      );
 
-    {
-      label: "Net Cash Flow",
-      value: totalCashFlow,
-      format: "currency" as const,
-      trend: { value: 8.5, isPositive: true },
+      return res.data?.data || [];
     },
-    {
-      label: "Invoices Received",
-      value: totalInvoices,
-      format: "number" as const,
-      trend: { value: 15.2, isPositive: true },
-    },
-    {
-      label: "Budget Utilized",
-      value: avgBudgetUtil,
-      format: "percent" as const,
-      trend: { value: 4.2, isPositive: false },
-    },
-  ];
+  });
+
+  const reportData: AccountingReportRow[] = Array.isArray(data) ? data : [];
+
+  /* ===============================
+     METRICS
+  =============================== */
+
+  const metrics = useMemo(() => {
+    if (!reportData.length) return [];
+
+    const totalInvoices = reportData.reduce(
+      (sum, row) => sum + row.invoicesReceived,
+      0,
+    );
+
+    const totalApproved = reportData.reduce(
+      (sum, row) => sum + row.invoicesApproved,
+      0,
+    );
+
+    const totalRejected = reportData.reduce(
+      (sum, row) => sum + row.invoicesRejected,
+      0,
+    );
+
+    const avgBudgetUtil =
+      reportData.reduce((sum, row) => sum + row.budgetUtilizedPercent, 0) /
+      reportData.length;
+
+    return [
+      {
+        label: "Invoices Received",
+        value: totalInvoices,
+        format: "number" as const,
+      },
+      {
+        label: "Invoices Approved",
+        value: totalApproved,
+        format: "number" as const,
+      },
+      {
+        label: "Invoices Rejected",
+        value: totalRejected,
+        format: "number" as const,
+      },
+      {
+        label: "Avg Budget Utilized",
+        value: avgBudgetUtil,
+        format: "percent" as const,
+      },
+    ];
+  }, [reportData]);
+
+  /* ===============================
+     LOADING + ERROR
+  =============================== */
+
+  if (isLoading) return <Loader />;
+
+  if (isError) {
+    return (
+      <MainLayout>
+        <div className="p-6 text-red-500 font-medium">
+          Failed to load Financial Report
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -96,17 +126,19 @@ export default function AccountingReport() {
               onClick={() => navigate("/reports")}
               className="mb-4"
             >
-              <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Reports
             </Button>
+
             <h1 className="text-3xl font-bold">Financial Report</h1>
             <p className="text-muted-foreground">
-              Comprehensive financial analysis including revenue, cash flow, and
-              budget tracking
+              Invoice tracking and budget performance overview
             </p>
           </div>
+
           <ExportButton
             reportTitle="Financial Report"
-            data={mockData}
+            data={reportData}
             columns={reportColumns.accounting}
             filters={filters}
           />
@@ -129,7 +161,7 @@ export default function AccountingReport() {
             <CardTitle>Financial Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <DataTable columns={reportColumns.accounting} data={mockData} />
+            <DataTable columns={reportColumns.accounting} data={reportData} />
           </CardContent>
         </Card>
       </div>

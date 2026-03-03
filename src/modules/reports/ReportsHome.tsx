@@ -1,16 +1,14 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Building2,
-  Users,
   UserCog,
   Users2,
   TrendingUp,
@@ -18,8 +16,9 @@ import {
   ClipboardCheck,
   Calculator,
 } from "lucide-react";
-import { ReportConfig, ReportType } from "./types";
+import { ReportConfig } from "./types";
 import MainLayout from "@/components/layout/MainLayout";
+import { motion } from "framer-motion";
 
 const reportConfigs: ReportConfig[] = [
   {
@@ -29,15 +28,6 @@ const reportConfigs: ReportConfig[] = [
     icon: Building2,
     category: "Business",
     roles: ["admin", "owner", "sales_manager", "accountant"],
-    columns: [],
-  },
-  {
-    id: "users-access",
-    title: "User Access History",
-    description: "System access and login tracking",
-    icon: Users,
-    category: "Security",
-    roles: ["admin", "owner"],
     columns: [],
   },
   {
@@ -100,71 +90,92 @@ export default function ReportsHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Filter reports based on user role
   const availableReports = reportConfigs.filter((report) =>
-    report.roles.includes(user?.role || "")
+    report.roles.includes(user?.role || ""),
   );
 
-  // Group reports by category
-  const reportsByCategory = availableReports.reduce((acc, report) => {
-    if (!acc[report.category]) {
-      acc[report.category] = [];
-    }
-    acc[report.category].push(report);
-    return acc;
-  }, {} as Record<string, ReportConfig[]>);
+  const reportsByCategory = availableReports.reduce(
+    (acc, report) => {
+      if (!acc[report.category]) acc[report.category] = [];
+      acc[report.category].push(report);
+      return acc;
+    },
+    {} as Record<string, ReportConfig[]>,
+  );
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Reports</h1>
-          <p className="text-muted-foreground">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 space-y-10">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Reports
+          </h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Comprehensive reporting and analytics across all business functions
           </p>
         </div>
 
+        {/* Categories */}
         {Object.entries(reportsByCategory).map(([category, reports]) => (
-          <div key={category} className="space-y-4">
-            <h2 className="text-xl font-semibold">{category}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {reports.map((report) => {
+          <div key={category} className="space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold tracking-tight">
+                {category}
+              </h2>
+              <div className="h-px flex-1 bg-border ml-6" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reports.map((report, index) => {
                 const Icon = report.icon;
+
                 return (
-                  <Card
+                  <motion.div
                     key={report.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => navigate(`/reports/${report.id}`)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Icon className="h-6 w-6 text-primary" />
+                    <Card
+                      onClick={() => navigate(`/reports/${report.id}`)}
+                      className="group cursor-pointer rounded-2xl border bg-background/70 backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                    >
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                            <Icon className="w-6 h-6 text-primary" />
+                          </div>
+
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg font-semibold">
+                              {report.title}
+                            </CardTitle>
+                            <CardDescription className="text-sm text-muted-foreground">
+                              {report.description}
+                            </CardDescription>
+                          </div>
                         </div>
-                        <div>
-                          <CardTitle className="text-lg">
-                            {report.title}
-                          </CardTitle>
-                          <CardDescription>
-                            {report.description}
-                          </CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="pt-0">
+                        <div className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          View detailed analytics →
                         </div>
-                      </div>
-                    </CardHeader>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>
           </div>
         ))}
 
+        {/* No Reports */}
         {availableReports.length === 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                No reports available for your role. Contact your administrator
-                for access.
-              </p>
+          <Card className="rounded-2xl shadow-md">
+            <CardContent className="py-10 text-center text-muted-foreground">
+              No reports available for your role.
             </CardContent>
           </Card>
         )}
