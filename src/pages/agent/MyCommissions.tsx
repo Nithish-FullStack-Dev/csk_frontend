@@ -108,7 +108,6 @@ const MyCommissions = () => {
   } = useQuery<CommissionEligibleLead[], Error>({
     queryKey: ["commissionEligibleLeads"],
     queryFn: fetchCommissionEligibleLeads,
-    staleTime: 10 * 60 * 1000,
   });
 
   const {
