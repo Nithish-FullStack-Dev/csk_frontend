@@ -24,7 +24,10 @@ const ProtectedRoute = ({ roleSubmodule, children }) => {
     return children;
   }
 
-  if (user.role === "admin" && roleSubmodule === "Role Management") {
+  if (
+    (user.role === "admin" || user.role === "owner") &&
+    roleSubmodule === "Role Management"
+  ) {
     return children;
   }
 

@@ -18,7 +18,7 @@ export const reportColumns: Record<ReportType, ColumnConfig[]> = {
     { key: "userAgent", header: "User Agent", align: "left" },
   ],
   agents: [
-    { key: "date", header: "date", align: "left" },
+    { key: "period", header: "date", align: "left" },
     { key: "agentName", header: "Agent Name", align: "left" },
     { key: "leadsAdded", header: "Leads Added", format: "number", align: "right" },
     { key: "enquiries", header: "Enquiries", format: "number", align: "right" },
