@@ -17,7 +17,7 @@ const CustomerDashboard = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <WelcomeBackBanner />
+        {/* <WelcomeBackBanner /> */}
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <Tabs
