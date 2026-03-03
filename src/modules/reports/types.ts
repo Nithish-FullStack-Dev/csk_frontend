@@ -115,7 +115,7 @@ export interface ContractorReportRow {
   tasksCreated: number;
   tasksApproved: number;
   tasksRejected: number;
-  invoicesCount: number;
+  invoicesCreated: number;
   photoEvidenceCount: number;
   avgProgressPercent: number;
 }

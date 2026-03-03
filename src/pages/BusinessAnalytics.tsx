@@ -61,16 +61,6 @@ const BusinessAnalytics = () => {
   // Colors for property distribution
   const PROPERTY_COLORS = ["#4338ca", "#2563eb", "#3b82f6", "#60a5fa"];
 
-  // Format currency in INR
-  const formatCurrency = (value: number) => {
-    if (value >= 10000000) {
-      return `₹${(value / 10000000).toFixed(1)}Cr`;
-    } else if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(1)}L`;
-    }
-    return `₹${value.toFixed(2)}`;
-  };
-
   // Fetch all data
   const fetchData = async () => {
     try {
@@ -79,7 +69,7 @@ const BusinessAnalytics = () => {
       // Fetch customers
       const { data: customers } = await axios.get(
         `${import.meta.env.VITE_URL}/api/customer/getAllCustomers`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       // Initialize sales data
@@ -154,7 +144,7 @@ const BusinessAnalytics = () => {
             ? (value / totalSalesForProperties) * 100
             : 0,
           color: PROPERTY_COLORS[index % PROPERTY_COLORS.length],
-        })
+        }),
       );
       setPropertyData(
         properties.length
@@ -164,13 +154,13 @@ const BusinessAnalytics = () => {
               { name: "Commercial", value: 20, color: "#2563eb" },
               { name: "Industrial", value: 10, color: "#3b82f6" },
               { name: "Agricultural", value: 5, color: "#60a5fa" },
-            ]
+            ],
       );
 
       // Fetch leads for lead conversion
       const { data: leadsData } = await axios.get(
         `${import.meta.env.VITE_URL}/api/leads/getAllLeads`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       const monthlyLeadData = Array(12)
         .fill(0)
@@ -206,7 +196,7 @@ const BusinessAnalytics = () => {
               { month: "Oct", leads: 160, conversions: 42 },
               { month: "Nov", leads: 170, conversions: 45 },
               { month: "Dec", leads: 180, conversions: 52 },
-            ]
+            ],
       );
     } catch (error) {
       console.error("Failed to fetch data:", error);

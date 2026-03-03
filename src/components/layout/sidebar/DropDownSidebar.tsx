@@ -97,6 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Task Management",
       "Task Verifications",
       "Labor Management",
+      "Materials",
       "Contractors",
     ],
   },

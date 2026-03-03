@@ -19,12 +19,11 @@ export interface Invoice {
   project: Building;
   issueDate: string;
   dueDate: string;
-  amount: number;
   sgst: number;
   cgst: number;
   total: number;
-  status: string;
   subtotal: number;
+  status: "draft" | "pending" | "approved" | "paid" | "rejected";
   paymentDate: string | null;
   notes?: string;
   task?: string;

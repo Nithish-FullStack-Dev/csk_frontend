@@ -339,7 +339,7 @@ export const buildNavigationForRole = (
       }
     });
     // Admin always sees Role Management (in middle flow)
-    if (roleName === "admin") {
+    if (roleName === "admin" || roleName === "owner") {
       middle.push(moduleToNavItem["Role Management"]);
     }
   }

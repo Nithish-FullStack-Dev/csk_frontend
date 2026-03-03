@@ -56,8 +56,10 @@ export default function ContractorsReport() {
       0,
     );
 
-    const totalInvoices = reportData.length; // if needed later
-
+    const totalInvoices = reportData.reduce(
+      (sum, row) => sum + (row.invoicesCreated || 0),
+      0,
+    );
     const avgProgress =
       reportData.length > 0
         ? reportData.reduce((sum, row) => sum + row.avgProgressPercent, 0) /
