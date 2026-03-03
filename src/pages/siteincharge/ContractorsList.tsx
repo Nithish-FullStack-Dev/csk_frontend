@@ -283,7 +283,7 @@ const ContractorsList = () => {
       contractorListError?.message ?? "Error fetching contractor projects",
     );
   }
-  if (isLoadingProjects || isLoadingContractors) return <CircleLoader />;
+  if (isLoadingProjects || isLoadingContractors) return <Loader />;
 
   const specializations = Array.from(
     new Set(contractors.map((c) => c.specialization)),
