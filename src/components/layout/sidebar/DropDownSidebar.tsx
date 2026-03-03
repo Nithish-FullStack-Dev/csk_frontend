@@ -39,10 +39,6 @@ type NavGroup = {
   modules: string[];
 };
 
-/* -------------------------------------------------------------------------- */
-/*                               GROUP CONFIG                                 */
-/* -------------------------------------------------------------------------- */
-
 const NAV_GROUPS: NavGroup[] = [
   {
     key: "admin",
@@ -121,7 +117,13 @@ const NAV_GROUPS: NavGroup[] = [
     key: "website",
     label: "Website",
     icon: Globe,
-    modules: ["CMS", "Content Management", "Audit Logs"],
+    modules: ["CMS", "Content Management"],
+  },
+  {
+    key: "Audit Logs",
+    label: "Audit Logs",
+    icon: Globe,
+    modules: ["Audit Logs"],
   },
   {
     key: "support",

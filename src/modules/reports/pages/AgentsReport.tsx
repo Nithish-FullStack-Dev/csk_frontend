@@ -24,9 +24,6 @@ export default function AgentsReport() {
     groupBy: "month",
     search: "",
   });
-
-  /* ================= API ================= */
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["agents-report", filters],
     queryFn: async () => {
@@ -41,15 +38,11 @@ export default function AgentsReport() {
           withCredentials: true,
         },
       );
-
-      // 🔥 IMPORTANT
       return res.data?.data || [];
     },
   });
 
   const reportData: AgentReportRow[] = Array.isArray(data) ? data : [];
-
-  /* ================= SEARCH ================= */
 
   const filteredData = useMemo(() => {
     if (!filters.search) return reportData;
@@ -58,9 +51,6 @@ export default function AgentsReport() {
       row.agentName?.toLowerCase().includes(filters.search.toLowerCase()),
     );
   }, [reportData, filters.search]);
-
-  /* ================= METRICS ================= */
-
   const metrics: ReportMetric[] = useMemo(() => {
     const totalLeads = filteredData.reduce(
       (sum, row) => sum + (row.leadsAdded || 0),
@@ -104,7 +94,6 @@ export default function AgentsReport() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* HEADER */}
         <div className="flex justify-between items-start">
           <div>
             <Button
@@ -131,17 +120,14 @@ export default function AgentsReport() {
           />
         </div>
 
-        {/* FILTER */}
         <FilterBar filters={filters} onFiltersChange={setFilters} showSearch />
 
-        {/* METRICS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {metrics.map((metric, index) => (
             <MetricCard key={index} metric={metric} />
           ))}
         </div>
 
-        {/* TABLE */}
         <Card>
           <CardHeader>
             <CardTitle>Agent Performance Details</CardTitle>

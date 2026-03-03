@@ -333,14 +333,19 @@ export const buildNavigationForRole = (
       const hasAnyPermission = Object.values(perm.actions).some((val) => val);
       if (!hasAnyPermission) return;
 
-      const navItem = moduleToNavItem[perm.submodule];
+      const navItem = moduleToNavItem[
+        Object.keys(moduleToNavItem).find(
+          (key) => key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
+        ) as string
+      ];
       if (navItem && !middle.find((n) => n.label === navItem.label)) {
         middle.push(navItem);
       }
     });
     // Admin always sees Role Management (in middle flow)
-    if (roleName === "admin" || roleName === "owner") {
+    if (roleName?.toLowerCase() === "admin" || roleName?.toLowerCase() === "owner") {
       middle.push(moduleToNavItem["Role Management"]);
+      middle.push(moduleToNavItem["Audit Logs"]);
     }
   }
 

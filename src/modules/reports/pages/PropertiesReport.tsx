@@ -43,8 +43,6 @@ export default function PropertiesReport() {
       return res.data.data as PropertiesReportRow[];
     },
   });
-
-  // ✅ Calculate metrics dynamically
   const metrics = useMemo(() => {
     if (!data?.length) return [];
 
