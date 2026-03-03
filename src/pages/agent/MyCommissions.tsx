@@ -142,11 +142,11 @@ const MyCommissions = () => {
       setIsAddEditDialogOpen(false);
     },
     onError: (error: any) => {
-      toast.error(
-        `Failed to add commission: ${
-          error.response?.data?.message || error.message
-        }`,
-      );
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to add commission.";
+      toast.error(message);
     },
   });
 
@@ -442,6 +442,9 @@ const MyCommissions = () => {
 
   const handleSubmitCommission = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (addCommissionMutation.isPending || updateCommissionMutation.isPending) {
+      return;
+    }
 
     if (!commissionFormData.clientId && !isEditing) {
       toast.error("Please select a closed property to add a commission.");
