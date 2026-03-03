@@ -175,6 +175,10 @@ const queryClient = new QueryClient({
       refetchOnMount: false,
       refetchInterval: false,
       refetchOnWindowFocus: false,
+      retry: 1,
+    },
+    mutations: {
+      retry: false,
     },
   },
 });
