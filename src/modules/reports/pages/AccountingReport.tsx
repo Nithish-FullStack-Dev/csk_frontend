@@ -24,10 +24,6 @@ export default function AccountingReport() {
     groupBy: "month",
   });
 
-  /* ===============================
-     FETCH DATA
-  =============================== */
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["accounting-report", filters],
     queryFn: async () => {
@@ -49,9 +45,6 @@ export default function AccountingReport() {
 
   const reportData: AccountingReportRow[] = Array.isArray(data) ? data : [];
 
-  /* ===============================
-     METRICS
-  =============================== */
 
   const metrics = useMemo(() => {
     if (!reportData.length) return [];
@@ -98,10 +91,6 @@ export default function AccountingReport() {
       },
     ];
   }, [reportData]);
-
-  /* ===============================
-     LOADING + ERROR
-  =============================== */
 
   if (isLoading) return <Loader />;
 

@@ -24,9 +24,6 @@ export default function TeamLeadsReport() {
     groupBy: "month",
     search: "",
   });
-
-  /* ================= API ================= */
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ["team-leads-report", filters],
     queryFn: async () => {
@@ -47,9 +44,6 @@ export default function TeamLeadsReport() {
   });
 
   const reportData: TeamLeadReportRow[] = Array.isArray(data) ? data : [];
-
-  /* ================= SEARCH ================= */
-
   const filteredData = useMemo(() => {
     if (!filters.search) return reportData;
 
@@ -57,8 +51,6 @@ export default function TeamLeadsReport() {
       row.teamLeadName?.toLowerCase().includes(filters.search!.toLowerCase()),
     );
   }, [reportData, filters.search]);
-
-  /* ================= METRICS ================= */
 
   const metrics = useMemo(() => {
     const totalClosed = filteredData.reduce(
@@ -70,12 +62,6 @@ export default function TeamLeadsReport() {
       (sum, row) => sum + (row?.totalLeads || 0),
       0,
     );
-
-    // const totalApproved = filteredData.reduce(
-    //   (sum, row) => sum + (row.leadsClosed || 0),
-    //   0,
-    // );
-
     const avgConversion =
       totalLeads > 0
         ? Number(((totalClosed / totalLeads) * 100).toFixed(1))
@@ -115,7 +101,6 @@ export default function TeamLeadsReport() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
           <div>
             <Button
@@ -142,17 +127,14 @@ export default function TeamLeadsReport() {
           />
         </div>
 
-        {/* FILTER */}
         <FilterBar filters={filters} onFiltersChange={setFilters} showSearch />
 
-        {/* METRICS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {metrics.map((metric, index) => (
             <MetricCard key={index} metric={metric} />
           ))}
         </div>
 
-        {/* TABLE */}
         <Card>
           <CardHeader>
             <CardTitle>Team Lead Performance</CardTitle>
