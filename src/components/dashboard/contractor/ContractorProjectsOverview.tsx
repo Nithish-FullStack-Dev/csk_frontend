@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRBAC } from "@/config/RBAC";
 
 interface ContractorProjectsOverviewProps {
   projects?: Project[];
@@ -40,14 +41,9 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
   const [selectedTabs, setSelectedTabs] = useState<Record<string, string>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
-  const handleDelete = async () => {
-    if (!onDeleteProject || !deleteProjectId) return;
-
-    setDeletingId(deleteProjectId);
-    await onDeleteProject(deleteProjectId);
-    setDeletingId(null);
-    setDeleteProjectId(null);
-  };
+  const { userCanEditUser } = useRBAC({
+    roleSubmodule: "Projects Overview",
+  });
 
   if (isLoading) {
     return (
@@ -112,11 +108,13 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               {/* Menu */}
               <div className="absolute top-4 right-4">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  {userCanEditUser && (
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  )}
 
                   <DropdownMenuContent align="end" className="w-44">
                     <DropdownMenuItem onClick={() => setEditProject(project)}>

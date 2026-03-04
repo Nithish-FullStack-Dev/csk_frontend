@@ -38,7 +38,6 @@ import Loader from "@/components/Loader";
 import { OpenPlot } from "@/types/OpenPlots";
 import { OpenPlotDialog } from "@/components/properties/OpenPlotsDialog";
 import { getStatusBadge } from "@/components/properties/OpenPlotDetails";
-import { OpenPlotDetails } from "@/components/properties/OpenPlotDetails";
 import {
   getAllBuildings,
   useOPenLand,
@@ -47,7 +46,6 @@ import {
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
 import { useRBAC } from "@/config/RBAC";
-import OpenLandDetails from "@/components/properties/OpenLandDetails";
 
 const NewProperties = () => {
   const navigate = useNavigate();
@@ -64,20 +62,17 @@ const NewProperties = () => {
     null,
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<
     "building" | "plot" | "land" | null
   >(null);
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
   const [dialogOpenPlot, setDialogOpenPlot] = useState(false);
-  const [openPlotSubmitting, setOpenPlotSubmitting] = useState(false);
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
     undefined,
   );
 
   const [openLandDialog, setopenLandDialog] = useState(false);
-  const [openLandSubmitting, setOpenLandSubmitting] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
     undefined,
   );
@@ -133,78 +128,6 @@ const NewProperties = () => {
     },
   });
 
-  const createOpenPlotMutation = useMutation({
-    mutationFn: async (payload: Partial<OpenPlot>) => {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_URL}/api/openPlot/saveOpenPlot`,
-        payload,
-        { withCredentials: true },
-      );
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Open plot created");
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
-      setDialogOpenPlot(false);
-      setCurrentOpenPlot(undefined);
-    },
-    onError: (err: any) => {
-      console.error("createOpenPlot error:", err?.response || err);
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 409) {
-          toast.error(
-            err.response?.data?.message || "Conflict while creating open plot",
-          );
-        } else {
-          toast.error(
-            err.response?.data?.message || "Failed to create open plot",
-          );
-        }
-      } else {
-        toast.error("Failed to create open plot");
-      }
-    },
-  });
-  const updateOpenPlotMutation = useMutation({
-    mutationFn: async ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: Partial<OpenPlot>;
-    }) => {
-      const { data } = await axios.put(
-        `${import.meta.env.VITE_URL}/api/openPlot/updateOpenPlot/${id}`,
-        payload,
-        { withCredentials: true },
-      );
-      return data;
-    },
-    onSuccess: (updatedData) => {
-      toast.success("Open plot updated");
-
-      const updated = updatedData?.plot || updatedData?.data || updatedData;
-
-      // 🔥 instantly re-render right-side details
-      // setSelectedOpenPlot(updated);
-      setCurrentOpenPlot(updated);
-
-      setDialogOpenPlot(false);
-
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
-    },
-
-    onError: (err: any) => {
-      console.error("updateOpenPlot error:", err?.response || err);
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Failed to update open plot",
-        );
-      } else {
-        toast.error("Failed to update open plot");
-      }
-    },
-  });
   const deleteOpenPlotMutation = useMutation({
     mutationFn: async () => {
       if (!currentOpenPlot) return;
@@ -249,69 +172,6 @@ const NewProperties = () => {
     onError: (err: any) => {
       console.error("deleteOpenLand error:", err?.response || err);
       toast.error(err?.response?.data?.message || "Failed to delete open land");
-    },
-  });
-  const createOpenLandMutation = useMutation({
-    mutationFn: async (payload: Partial<OpenLand>) => {
-      const { data } = await axios.post(
-        `${import.meta.env.VITE_URL}/api/openLand/saveOpenLand`,
-        payload,
-        { withCredentials: true },
-      );
-      return data;
-    },
-
-    onSuccess: (data) => {
-      toast.success("Open land created");
-
-      const created = data?.land || data;
-
-      // 🔥 immediately update React Query cache (no refresh needed)
-      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) => [
-        created,
-        ...old,
-      ]);
-
-      // update right panel if open
-      setCurrentOpenLand(created);
-      // setSelectedOpenLand(created);
-
-      setopenLandDialog(false);
-    },
-
-    onError: (err: any) => {
-      console.error("createOpenLand error:", err?.response || err);
-      toast.error(err?.response?.data?.message || "Failed to create open land");
-    },
-  });
-  const updateOpenLandMutation = useMutation({
-    mutationFn: async ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: Partial<OpenLand>;
-    }) => {
-      const { data } = await axios.put(
-        `${import.meta.env.VITE_URL}/api/openLand/updateOpenLand/${id}`,
-        payload,
-        { withCredentials: true },
-      );
-      return data;
-    },
-
-    onSuccess: (updatedData) => {
-      toast.success("Open land updated");
-
-      const updated = updatedData?.land || updatedData?.data || updatedData;
-
-      queryClient.setQueryData<OpenLand[]>(["openLand"], (old = []) =>
-        old.map((l) => (l._id === updated._id ? updated : l)),
-      );
-
-      setCurrentOpenLand(updated);
-      // setSelectedOpenLand(updated);
-      setopenLandDialog(false);
     },
   });
 
@@ -364,18 +224,6 @@ const NewProperties = () => {
     setBuildingDialogOpen(true);
   };
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setBuildingToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  // const handleDeleteConfirm = () => {
-  //   if (!buildingToDelete) return;
-  //   deleteBuilding.mutate(buildingToDelete);
-  //   setBuildingToDelete(null);
-  //   setDeleteDialogOpen(false);
-  // };
   const handleDeleteConfirm = () => {
     if (!deleteType || !itemToDeleteId) return;
 
@@ -400,25 +248,6 @@ const NewProperties = () => {
 
   const handleSuccessfulSave = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
-  };
-
-  const handleOpenPlotSubmit = async (formData: any) => {
-    try {
-      setOpenPlotSubmitting(true);
-      if (currentOpenPlot && currentOpenPlot._id) {
-        await updateOpenPlotMutation.mutateAsync({
-          id: currentOpenPlot._id,
-          payload: formData,
-        });
-      } else {
-        await createOpenPlotMutation.mutateAsync(formData);
-      }
-      // react-query invalidation in mutation callbacks will refresh openPlotsData
-    } catch (err) {
-      console.error("handleOpenPlotSubmit error:", err);
-    } finally {
-      setOpenPlotSubmitting(false);
-    }
   };
 
   const handleOpenLandSubmit = (savedLand: OpenLand) => {
@@ -460,28 +289,6 @@ const NewProperties = () => {
     setDeleteDialogOpen(true);
   };
 
-  // const handleDeleteOpenPlot = (id: string, e?: React.MouseEvent) => {
-  //   e?.stopPropagation();
-  //   setCurrentOpenPlot(openPlots.find((p) => p._id === id));
-  //   // confirm quickly
-  //   if (!window.confirm("Delete this open plot?")) return;
-  //   deleteOpenPlotMutation.mutate();
-  // };
-
-  // const handleDeleteOpenPlotFromDetails = async () => {
-  //   if (!selectedOpenPlot) return;
-  //   setCurrentOpenPlot(selectedOpenPlot);
-  //   if (!window.confirm("Delete this open plot?")) return;
-  //   await deleteOpenPlotMutation.mutateAsync();
-  //   setSelectedOpenPlot(null); // Go back to the list view
-  // };
-  // const handleDeleteOpenLandFromDetails = async () => {
-  //   if (!selectedOpenLand) return;
-  //   setCurrentOpenLand(selectedOpenLand);
-  //   if (!window.confirm("Delete this open Land?")) return;
-  //   await deleteOpenLandMutation.mutateAsync();
-  //   setSelectedOpenLand(null); // Go back to the list view
-  // };
   const handleDownload = async (
     e: React.MouseEvent,
     url: string,
@@ -934,20 +741,6 @@ const NewProperties = () => {
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>
-                                {/* <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={(e) =>
-                                      handleShare(
-                                        e,
-                                        plot.brochureUrl!,
-                                        plot.projectName
-                                      )
-                                    }
-                                    title="Copy Share Link"
-                                  >
-                                    <Share2 className="h-4 w-4" />
-                                  </Button> */}
                               </div>
                             )}
                           </div>

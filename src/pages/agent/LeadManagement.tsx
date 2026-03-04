@@ -77,6 +77,7 @@ const LeadManagement = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadToDelete, setLeadToDelete] = useState("");
   const { user } = useAuth();
+  const isAdmin = user.role === "admin";
 
   const [propertyLeadToEdit, setPropertyLeadToEdit] = useState<Lead | null>(
     null,
@@ -441,7 +442,7 @@ const LeadManagement = () => {
               open={isAddLeadDialogOpen}
             >
               <DialogTrigger asChild>
-                {userCanAddUser && (
+                {userCanAddUser && !isAdmin && (
                   <Button
                     onClick={() => {
                       setPropertyLeadToEdit(null);
@@ -696,12 +697,16 @@ const LeadManagement = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Button onClick={() => setIsOpenPlotLead(true)}>
-              <LandPlot /> Add Open Plot Lead
-            </Button>
-            <Button onClick={() => setIsOpenLandLead(true)}>
-              <LandPlotIcon /> Add Open Land Lead
-            </Button>
+            {!isAdmin && (
+              <>
+                <Button onClick={() => setIsOpenPlotLead(true)}>
+                  <LandPlot /> Add Open Plot Lead
+                </Button>
+                <Button onClick={() => setIsOpenLandLead(true)}>
+                  <LandPlotIcon /> Add Open Land Lead
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -966,7 +971,7 @@ const LeadManagement = () => {
                   Close
                 </Button>
 
-                {!isSalesManager && (
+                {!isSalesManager && !isAdmin && (
                   <Button onClick={() => navigate("/visits")}>
                     Schedule Site Visit
                   </Button>

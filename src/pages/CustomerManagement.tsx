@@ -2,16 +2,8 @@ import CustomerDialog from "@/components/helpers/CustomerDialog";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -62,17 +54,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import * as XLSX from "xlsx";
+import { useRBAC } from "@/config/RBAC";
 
 const CustomerManagement = () => {
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
+    null,
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
-    null
+    null,
   );
   const [editOpen, setEditOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -81,8 +74,12 @@ const CustomerManagement = () => {
   const [search, setSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState("add");
 
-  const isSalesManager =
-    (user && user.role === "sales_manager") || user.role === "accountant";
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Customer Management" });
 
   const {
     data: customersResponse,
@@ -150,7 +147,7 @@ const CustomerManagement = () => {
     mutationFn: async (id: string) => {
       const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/customer/deleteCustomer/${id}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -182,7 +179,7 @@ const CustomerManagement = () => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       return data;
@@ -228,7 +225,7 @@ const CustomerManagement = () => {
   };
 
   const renderPaymentStatusBadge = (
-    paymentStatus: Customer["paymentStatus"]
+    paymentStatus: Customer["paymentStatus"],
   ) => {
     if (!paymentStatus) return null;
     const map: Record<NonNullable<Customer["paymentStatus"]>, string> = {
@@ -322,7 +319,7 @@ const CustomerManagement = () => {
                   (p: any) =>
                     `₹${p.amount} | ${p.paymentMode} | ${
                       p.date?.split("T")[0]
-                    } | ${p.referenceNumber || "-"}`
+                    } | ${p.referenceNumber || "-"}`,
                 )
                 .join(" || ")
             : "N/A",
@@ -375,7 +372,7 @@ const CustomerManagement = () => {
           </TabsList>
           <TabsContent value="add">
             <>
-              {isSalesManager && (
+              {userCanAddUser && (
                 <div className="flex md:justify-end justify-normal w-full mb-5 md:gap-5 gap-2 md:flex-row flex-col">
                   <Button
                     variant="outline"
@@ -425,8 +422,8 @@ const CustomerManagement = () => {
                           <TableRow>
                             <TableHead>Customer</TableHead>
                             <TableHead>Agent</TableHead>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Unit</TableHead>
+                            <TableHead>Property Type</TableHead>
+                            <TableHead>Asset</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Advance</TableHead>
                             <TableHead>Status</TableHead>
@@ -487,47 +484,92 @@ const CustomerManagement = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">
-                                      {(typeof customer.property === "object" &&
-                                        customer.property?.projectName) ||
-                                        "N/A"}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {typeof customer.property === "object" &&
-                                        customer.property?.location}
-                                    </span>
-                                  </div>
+                                  <Badge
+                                    className={
+                                      customer?.purchaseType === "BUILDING"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : customer?.purchaseType === "PLOT"
+                                          ? "bg-purple-100 text-purple-800"
+                                          : "bg-green-100 text-green-800"
+                                    }
+                                  >
+                                    {customer?.purchaseType}
+                                  </Badge>
                                 </TableCell>
+
                                 <TableCell>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">
-                                      {(typeof customer.unit === "object" &&
-                                        customer.unit?.plotNo) ||
-                                        "N/A"}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {typeof customer.floorUnit === "object" &&
-                                      customer.floorUnit?.floorNumber
-                                        ? `Floor ${
-                                            typeof customer.floorUnit ===
-                                              "object" &&
-                                            customer.floorUnit.floorNumber
-                                          }`
-                                        : ""}
-                                    </span>
-                                  </div>
+                                  {/* BUILDING */}
+                                  {customer?.purchaseType === "BUILDING" && (
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {(typeof customer.property ===
+                                          "object" &&
+                                          customer.property?.projectName) ||
+                                          "N/A"}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {(typeof customer.unit === "object" &&
+                                          customer.unit?.plotNo) ||
+                                          ""}
+                                        {typeof customer.floorUnit ===
+                                          "object" &&
+                                        customer.floorUnit?.floorNumber
+                                          ? ` • Floor ${customer.floorUnit.floorNumber}`
+                                          : ""}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* PLOT */}
+                                  {customer?.purchaseType === "PLOT" && (
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {(typeof customer.openPlot ===
+                                          "object" &&
+                                          customer.openPlot?.projectName) ||
+                                          "N/A"}
+                                      </span>
+
+                                      <span className="text-xs text-gray-500">
+                                        Plot No:{" "}
+                                        {(typeof customer.innerPlot ===
+                                          "object" &&
+                                          customer.innerPlot?.plotNo) ||
+                                          "N/A"}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* LAND */}
+                                  {customer?.purchaseType === "LAND" && (
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {(typeof customer.openLand ===
+                                          "object" &&
+                                          customer.openLand?.projectName) ||
+                                          "N/A"}
+                                      </span>
+
+                                      <span className="text-xs text-gray-500">
+                                        Survey:{" "}
+                                        {(typeof customer.openLand ===
+                                          "object" &&
+                                          customer.openLand?.surveyNumber) ||
+                                          "N/A"}
+                                      </span>
+                                    </div>
+                                  )}
                                 </TableCell>
                                 <TableCell>
                                   ₹
                                   {customer.totalAmount?.toLocaleString(
-                                    "en-IN"
+                                    "en-IN",
                                   )}
                                 </TableCell>
                                 <TableCell>
                                   {customer.advanceReceived != null
                                     ? `₹${customer.advanceReceived.toLocaleString(
-                                        "en-IN"
+                                        "en-IN",
                                       )}`
                                     : "-"}
                                 </TableCell>
@@ -536,7 +578,7 @@ const CustomerManagement = () => {
                                 </TableCell>
                                 <TableCell>
                                   {renderPaymentStatusBadge(
-                                    customer.paymentStatus
+                                    customer.paymentStatus,
                                   )}
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -552,11 +594,13 @@ const CustomerManagement = () => {
                                       >
                                         View Details
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => handleEdit(customer)}
-                                      >
-                                        Edit
-                                      </DropdownMenuItem>
+                                      {userCanEditUser && (
+                                        <DropdownMenuItem
+                                          onClick={() => handleEdit(customer)}
+                                        >
+                                          Edit
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedCustomer(customer);
@@ -566,14 +610,16 @@ const CustomerManagement = () => {
                                         Upload PDF
                                       </DropdownMenuItem>
 
-                                      <DropdownMenuItem
-                                        className="text-red-600"
-                                        onClick={() =>
-                                          handleDeleteClick(customer)
-                                        }
-                                      >
-                                        Delete
-                                      </DropdownMenuItem>
+                                      {userCanDeleteUser && (
+                                        <DropdownMenuItem
+                                          className="text-red-600"
+                                          onClick={() =>
+                                            handleDeleteClick(customer)
+                                          }
+                                        >
+                                          Delete
+                                        </DropdownMenuItem>
+                                      )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>
@@ -620,6 +666,7 @@ const CustomerManagement = () => {
                 Detailed information about this customer purchase.
               </DialogDescription>
             </DialogHeader>
+
             {selectedCustomer && (
               <div className="space-y-6 text-sm max-h-[80vh] overflow-y-auto max-w-[80vw]">
                 {/* CUSTOMER & AGENT */}
@@ -629,8 +676,8 @@ const CustomerManagement = () => {
                   <InfoItem
                     label="Customer"
                     value={
-                      typeof selectedCustomer.customerId === "object"
-                        ? `${selectedCustomer.customerId.name} (${selectedCustomer.customerId.email})`
+                      typeof selectedCustomer?.customerId === "object"
+                        ? `${selectedCustomer?.customerId?.name ?? ""} (${selectedCustomer?.customerId?.email ?? ""})`
                         : "N/A"
                     }
                   />
@@ -638,8 +685,8 @@ const CustomerManagement = () => {
                   <InfoItem
                     label="Agent"
                     value={
-                      typeof selectedCustomer.purchasedFrom === "object"
-                        ? `${selectedCustomer.purchasedFrom.name} (${selectedCustomer.purchasedFrom.email})`
+                      typeof selectedCustomer?.purchasedFrom === "object"
+                        ? `${selectedCustomer?.purchasedFrom?.name ?? ""} (${selectedCustomer?.purchasedFrom?.email ?? ""})`
                         : "N/A"
                     }
                   />
@@ -649,33 +696,110 @@ const CustomerManagement = () => {
                 <div className="space-y-3">
                   <SectionTitle title="Property Details" />
 
-                  <InfoItem
-                    label="Project"
-                    value={
-                      typeof selectedCustomer.property === "object"
-                        ? selectedCustomer.property.projectName
-                        : "N/A"
-                    }
-                    subValue={
-                      typeof selectedCustomer.property === "object"
-                        ? selectedCustomer.property.location
-                        : ""
-                    }
-                  />
+                  {/* BUILDING PURCHASE */}
+                  {selectedCustomer?.purchaseType === "BUILDING" && (
+                    <>
+                      <InfoItem
+                        label="Project"
+                        value={
+                          typeof selectedCustomer?.property === "object"
+                            ? selectedCustomer?.property?.projectName
+                            : "N/A"
+                        }
+                        subValue={
+                          typeof selectedCustomer?.property === "object"
+                            ? selectedCustomer?.property?.location
+                            : ""
+                        }
+                      />
 
-                  <InfoItem
-                    label="Unit"
-                    value={
-                      typeof selectedCustomer.unit === "object"
-                        ? selectedCustomer.unit.plotNo
-                        : "N/A"
-                    }
-                    subValue={
-                      typeof selectedCustomer.floorUnit === "object"
-                        ? `Floor ${selectedCustomer.floorUnit.floorNumber}`
-                        : ""
-                    }
-                  />
+                      <InfoItem
+                        label="Unit"
+                        value={
+                          typeof selectedCustomer?.unit === "object"
+                            ? selectedCustomer?.unit?.plotNo
+                            : "N/A"
+                        }
+                        subValue={
+                          typeof selectedCustomer?.floorUnit === "object"
+                            ? `Floor ${selectedCustomer?.floorUnit?.floorNumber}`
+                            : ""
+                        }
+                      />
+                    </>
+                  )}
+
+                  {/* PLOT PURCHASE */}
+                  {selectedCustomer?.purchaseType === "PLOT" && (
+                    <>
+                      <InfoItem
+                        label="Layout"
+                        value={
+                          typeof selectedCustomer?.openPlot === "object"
+                            ? selectedCustomer?.openPlot?.projectName
+                            : "N/A"
+                        }
+                        subValue={
+                          typeof selectedCustomer?.openPlot === "object"
+                            ? selectedCustomer?.openPlot?.location
+                            : ""
+                        }
+                      />
+
+                      <InfoItem
+                        label="Plot Number"
+                        value={
+                          typeof selectedCustomer?.innerPlot === "object"
+                            ? selectedCustomer?.innerPlot?.plotNo
+                            : "N/A"
+                        }
+                        subValue={
+                          typeof selectedCustomer?.innerPlot === "object"
+                            ? `${selectedCustomer?.innerPlot?.area ?? ""} Sqft`
+                            : ""
+                        }
+                      />
+                    </>
+                  )}
+
+                  {/* LAND PURCHASE */}
+                  {selectedCustomer?.purchaseType === "LAND" && (
+                    <>
+                      <InfoItem
+                        label="Land Project"
+                        value={
+                          typeof selectedCustomer?.openLand === "object"
+                            ? selectedCustomer?.openLand?.projectName
+                            : "N/A"
+                        }
+                        subValue={
+                          typeof selectedCustomer?.openLand === "object"
+                            ? selectedCustomer?.openLand?.location
+                            : ""
+                        }
+                      />
+
+                      <InfoItem
+                        label="Survey Number"
+                        value={
+                          typeof selectedCustomer?.openLand === "object"
+                            ? selectedCustomer?.openLand?.surveyNumber || "N/A"
+                            : "N/A"
+                        }
+                      />
+
+                      <InfoItem
+                        label="Land Size"
+                        value={
+                          typeof selectedCustomer?.openLand === "object"
+                            ? `${selectedCustomer?.openLand?.landArea ?? ""} ${
+                                selectedCustomer?.openLand?.areaUnit ?? ""
+                              }`
+                            : "N/A"
+                        }
+                      />
+                    </>
+                  )}
                 </div>
 
                 {/* FINANCIAL INFO */}
@@ -685,17 +809,17 @@ const CustomerManagement = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <InfoItem
                       label="Total Amount"
-                      value={`₹${selectedCustomer.totalAmount.toLocaleString(
-                        "en-IN"
+                      value={`₹${selectedCustomer?.totalAmount?.toLocaleString?.(
+                        "en-IN",
                       )}`}
                     />
 
                     <InfoItem
                       label="Advance Received"
                       value={
-                        selectedCustomer.advanceReceived != null
-                          ? `₹${selectedCustomer.advanceReceived.toLocaleString(
-                              "en-IN"
+                        selectedCustomer?.advanceReceived != null
+                          ? `₹${selectedCustomer?.advanceReceived?.toLocaleString?.(
+                              "en-IN",
                             )}`
                           : "-"
                       }
@@ -703,18 +827,16 @@ const CustomerManagement = () => {
 
                     <InfoItem
                       label="Balance Payment"
-                      value={`₹${selectedCustomer.balancePayment?.toLocaleString(
-                        "en-IN"
+                      value={`₹${selectedCustomer?.balancePayment?.toLocaleString?.(
+                        "en-IN",
                       )}`}
                     />
 
                     <InfoItem
                       label="Final Price"
                       value={
-                        selectedCustomer.finalPrice != null
-                          ? `₹${selectedCustomer.finalPrice.toLocaleString(
-                              "en-IN"
-                            )}`
+                        selectedCustomer?.finalPrice != null
+                          ? `₹${selectedCustomer?.finalPrice?.toLocaleString?.("en-IN")}`
                           : "-"
                       }
                     />
@@ -728,26 +850,32 @@ const CustomerManagement = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <InfoItem
                       label="Registration Status"
-                      value={selectedCustomer.registrationStatus}
+                      value={selectedCustomer?.registrationStatus}
                     />
+
                     <InfoItem
                       label="Payment Status"
-                      value={selectedCustomer.paymentStatus || "N/A"}
+                      value={selectedCustomer?.paymentStatus || "N/A"}
                     />
+
                     <InfoItem
                       label="Payment Plan"
-                      value={selectedCustomer.paymentPlan || "N/A"}
+                      value={selectedCustomer?.paymentPlan || "N/A"}
                     />
+
                     <InfoItem
                       label="Booking Date"
                       value={
-                        selectedCustomer.bookingDate?.split("T")[0] || "N/A"
+                        selectedCustomer?.bookingDate?.split?.("T")?.[0] ||
+                        "N/A"
                       }
                     />
+
                     <InfoItem
                       label="Last Payment Date"
                       value={
-                        selectedCustomer.lastPaymentDate?.split("T")[0] || "N/A"
+                        selectedCustomer?.lastPaymentDate?.split?.("T")?.[0] ||
+                        "N/A"
                       }
                     />
                   </div>
@@ -757,82 +885,84 @@ const CustomerManagement = () => {
                 <div className="space-y-3">
                   <SectionTitle title="Construction Details" />
 
-                  {/* Construction Stage */}
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Site Incharge */}
                     <InfoItem
                       label="Site Incharge"
                       value={
-                        typeof selectedCustomer.siteInchargeId === "object"
-                          ? `${selectedCustomer.siteInchargeId.name} (${selectedCustomer.siteInchargeId.phone})`
+                        typeof selectedCustomer?.siteInchargeId === "object"
+                          ? `${selectedCustomer?.siteInchargeId?.name ?? ""} (${selectedCustomer?.siteInchargeId?.phone ?? ""})`
                           : "N/A"
                       }
                       subValue={
-                        typeof selectedCustomer.siteInchargeId === "object"
-                          ? selectedCustomer.siteInchargeId.email
+                        typeof selectedCustomer?.siteInchargeId === "object"
+                          ? selectedCustomer?.siteInchargeId?.email
                           : ""
                       }
                     />
 
-                    {/* Contractor */}
                     <InfoItem
                       label="Contractor"
                       value={
-                        typeof selectedCustomer.contractorId === "object"
-                          ? `${selectedCustomer.contractorId.name} (${selectedCustomer.contractorId.phone})`
+                        typeof selectedCustomer?.contractorId === "object"
+                          ? `${selectedCustomer?.contractorId?.name ?? ""} (${selectedCustomer?.contractorId?.phone ?? ""})`
                           : "N/A"
                       }
                       subValue={
-                        typeof selectedCustomer.contractorId === "object"
-                          ? selectedCustomer.contractorId.email
+                        typeof selectedCustomer?.contractorId === "object"
+                          ? selectedCustomer?.contractorId?.email
                           : ""
                       }
                     />
                   </div>
 
-                  {/* Delivery Dates */}
                   <div className="grid grid-cols-2 gap-4">
                     <InfoItem
                       label="Expected Delivery Date"
                       value={
-                        selectedCustomer.expectedDeliveryDate?.split("T")[0] ||
-                        "N/A"
+                        selectedCustomer?.expectedDeliveryDate?.split?.(
+                          "T",
+                        )?.[0] || "N/A"
                       }
                     />
+
                     <InfoItem
                       label="Delivery Date"
                       value={
-                        selectedCustomer.deliveryDate?.split("T")[0] || "N/A"
+                        selectedCustomer?.deliveryDate?.split?.("T")?.[0] ||
+                        "N/A"
                       }
                     />
+
                     <InfoItem
                       label="Construction Stage"
-                      value={selectedCustomer.constructionStage || "N/A"}
+                      value={selectedCustomer?.constructionStage || "N/A"}
                     />
                   </div>
                 </div>
 
                 {/* REFERRAL DETAILS */}
-                {(selectedCustomer.referralName ||
-                  selectedCustomer.referralContact) && (
+                {(selectedCustomer?.referralName ||
+                  selectedCustomer?.referralContact) && (
                   <div className="space-y-3">
                     <SectionTitle title="Referral Details" />
+
                     <InfoItem
                       label="Referral Name"
-                      value={selectedCustomer.referralName || "N/A"}
+                      value={selectedCustomer?.referralName || "N/A"}
                     />
+
                     <InfoItem
                       label="Referral Contact"
-                      value={selectedCustomer.referralContact || "N/A"}
+                      value={selectedCustomer?.referralContact || "N/A"}
                     />
                   </div>
                 )}
 
                 {/* NOTES */}
-                {selectedCustomer.notes && (
+                {selectedCustomer?.notes && (
                   <div className="space-y-3">
                     <SectionTitle title="Notes" />
-                    <p className="text-sm">{selectedCustomer.notes}</p>
+                    <p className="text-sm">{selectedCustomer?.notes}</p>
                   </div>
                 )}
 
@@ -840,13 +970,13 @@ const CustomerManagement = () => {
                 <div className="space-y-3">
                   <SectionTitle title="Documents" />
 
-                  {selectedCustomer.images?.length ? (
+                  {selectedCustomer?.images?.length ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {selectedCustomer.images.map((doc, idx) => {
-                        const clean = doc.split("?")[0];
-                        const name = clean.split("/").pop() || "Document";
+                      {selectedCustomer?.images?.map((doc, idx) => {
+                        const clean = doc?.split?.("?")?.[0];
+                        const name = clean?.split?.("/")?.pop?.() || "Document";
                         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(
-                          clean
+                          clean,
                         );
 
                         return (
@@ -867,6 +997,7 @@ const CustomerManagement = () => {
                                 </span>
                               </div>
                             )}
+
                             <span className="absolute bottom-1 left-1 bg-black text-white text-xs px-2 py-1 rounded">
                               Doc
                             </span>
@@ -874,12 +1005,12 @@ const CustomerManagement = () => {
                         );
                       })}
 
-                      {selectedCustomer.pdfDocument ? (
+                      {selectedCustomer?.pdfDocument ? (
                         <div className="space-y-2">
                           <SectionTitle title="PDF Document" />
 
                           <a
-                            href={selectedCustomer.pdfDocument}
+                            href={selectedCustomer?.pdfDocument}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-blue-600 hover:underline"
@@ -901,32 +1032,36 @@ const CustomerManagement = () => {
                 </div>
 
                 {/* PAYMENT DETAILS */}
-                {selectedCustomer.paymentDetails?.length ? (
+                {selectedCustomer?.paymentDetails?.length ? (
                   <div className="space-y-3">
                     <SectionTitle title="Payment Details" />
 
                     <div className="space-y-2">
-                      {selectedCustomer.paymentDetails.map((p, i) => (
+                      {selectedCustomer?.paymentDetails?.map((p, i) => (
                         <div
                           key={i}
                           className="p-3 border rounded-lg bg-gray-50 grid grid-cols-2 md:grid-cols-5 gap-4 text-xs"
                         >
-                          <InfoItem label="Amount" value={`₹${p.amount}`} />
+                          <InfoItem label="Amount" value={`₹${p?.amount}`} />
+
                           <InfoItem
                             label="Date"
-                            value={p.date?.split("T")[0] || "N/A"}
+                            value={p?.date?.split?.("T")?.[0] || "N/A"}
                           />
+
                           <InfoItem
                             label="Mode"
-                            value={p.paymentMode || "N/A"}
+                            value={p?.paymentMode || "N/A"}
                           />
+
                           <InfoItem
                             label="Ref No"
-                            value={p.referenceNumber || "N/A"}
+                            value={p?.referenceNumber || "N/A"}
                           />
+
                           <InfoItem
                             label="Remarks"
-                            value={p.remarks || "N/A"}
+                            value={p?.remarks || "N/A"}
                           />
                         </div>
                       ))}

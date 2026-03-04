@@ -58,6 +58,8 @@ const TeamManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
+  const isAdmin = user.role === "admin";
+
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
     "active",
   );

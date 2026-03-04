@@ -28,7 +28,12 @@ import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
 import { memo, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchAllCustomer_purchased } from "@/utils/leads/LeadConfig";
+import {
+  fetchAllCustomer_purchased,
+  useInnerPlotDropdown,
+  useOpenLandDropdown,
+  useOpenPlotDropdown,
+} from "@/utils/leads/LeadConfig";
 import {
   useProjects,
   useFloorUnits,
@@ -61,6 +66,9 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
   const [newDocuments, setNewDocuments] = useState<File[]>([]);
   const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [purchaseType, setPurchaseType] = useState<
+    "BUILDING" | "PLOT" | "LAND" | ""
+  >("");
 
   const {
     register,
@@ -145,8 +153,27 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
     error: unitsErrorMessage,
   } = useAvaliableUnits(projectId, floorUnitId);
 
+  const { data: openPlots = [] } = useOpenPlotDropdown(open);
+
+  const { data: innerPlots = [] } = useInnerPlotDropdown(watch("openPlot"));
+
+  const { data: openLands = [] } = useOpenLandDropdown(open);
+
   useEffect(() => {
     if (mode !== "edit" || !initialData || !open) return;
+    const purchaseType = initialData?.purchaseType || "BUILDING";
+    const propertyId =
+      typeof initialData.property === "object" ? initialData.property?._id : "";
+
+    const floorUnitId =
+      typeof initialData.floorUnit === "object"
+        ? initialData.floorUnit?._id
+        : "";
+
+    setProjectId(propertyId);
+    setFloorUnitId(floorUnitId);
+    setPurchaseType(purchaseType);
+    setValue("purchaseType", purchaseType);
 
     reset({
       customerId:
@@ -157,9 +184,30 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
         typeof initialData.purchasedFrom === "object"
           ? initialData.purchasedFrom?._id
           : "",
+      purchaseType: initialData.purchaseType || "BUILDING",
       property:
         typeof initialData.property === "object"
           ? initialData.property?._id
+          : "",
+      floorUnit:
+        typeof initialData.floorUnit === "object"
+          ? initialData.floorUnit?._id
+          : "",
+
+      unit: typeof initialData.unit === "object" ? initialData.unit?._id : "",
+      openPlot:
+        typeof initialData.openPlot === "object"
+          ? initialData.openPlot?._id
+          : "",
+
+      innerPlot:
+        typeof initialData.innerPlot === "object"
+          ? initialData.innerPlot?._id
+          : "",
+
+      openLand:
+        typeof initialData.openLand === "object"
+          ? initialData.openLand?._id
           : "",
       projectCompany: initialData.projectCompany || "",
       referralName: initialData.referralName || "",
@@ -192,17 +240,6 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
           date: p.date?.split("T")[0] || "",
         })) || [],
     });
-
-    const propertyId =
-      typeof initialData.property === "object" ? initialData.property?._id : "";
-
-    const floorUnitId =
-      typeof initialData.floorUnit === "object"
-        ? initialData.floorUnit?._id
-        : "";
-
-    setProjectId(propertyId);
-    setFloorUnitId(floorUnitId);
   }, [mode, initialData, open, reset]);
 
   useEffect(() => {
@@ -238,6 +275,49 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       setValue("unit", unitId, { shouldValidate: false });
       setIsEditLoading(false);
     }
+    if (purchaseType === "BUILDING") {
+      const propertyId =
+        typeof initialData.property === "object"
+          ? initialData.property?._id
+          : "";
+
+      const floorUnitId =
+        typeof initialData.floorUnit === "object"
+          ? initialData.floorUnit?._id
+          : "";
+
+      const unitId =
+        typeof initialData.unit === "object" ? initialData.unit?._id : "";
+
+      setProjectId(propertyId);
+      setFloorUnitId(floorUnitId);
+
+      setValue("property", propertyId);
+      setValue("floorUnit", floorUnitId);
+      setValue("unit", unitId);
+    }
+    if (purchaseType === "PLOT") {
+      const openPlotId =
+        typeof initialData.openPlot === "object"
+          ? initialData.openPlot?._id
+          : "";
+
+      const innerPlotId =
+        typeof initialData.innerPlot === "object"
+          ? initialData.innerPlot?._id
+          : "";
+
+      setValue("openPlot", openPlotId);
+      setValue("innerPlot", innerPlotId);
+    }
+    if (purchaseType === "LAND") {
+      const openLandId =
+        typeof initialData.openLand === "object"
+          ? initialData.openLand?._id
+          : "";
+
+      setValue("openLand", openLandId);
+    }
   }, [
     open,
     mode,
@@ -246,6 +326,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
     units,
     floorUnitsLoading,
     unitsLoading,
+    purchaseType,
     setValue,
   ]);
 
@@ -270,7 +351,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/customer/addCustomer`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -298,7 +379,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
           initialData?._id
         }`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       return data;
     },
@@ -310,7 +391,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
     onError: (err) => {
       if (err instanceof AxiosError) {
         toast.error(
-          err?.response?.data?.message || "Failed to updated customer"
+          err?.response?.data?.message || "Failed to updated customer",
         );
       } else {
         toast.error(err?.message || "Failed to updated customer");
@@ -335,6 +416,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       if (
         value !== undefined &&
         value !== null &&
+        value !== "" &&
         key !== "documents" &&
         key !== "paymentDetails"
       ) {
@@ -443,8 +525,8 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                             isLoadingCustomers
                               ? "Loading customers..."
                               : isErrorCustomers
-                              ? "Failed to load customers"
-                              : "Select Customer"
+                                ? "Failed to load customers"
+                                : "Select Customer"
                           }
                         />
                       </SelectTrigger>
@@ -493,8 +575,8 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                           isLoadingAgents
                             ? "Loading agents..."
                             : isErrorAgents
-                            ? "Failed to load agents"
-                            : "Select Agent"
+                              ? "Failed to load agents"
+                              : "Select Agent"
                         }
                       />
                     </SelectTrigger>
@@ -528,164 +610,274 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                 </div>
 
                 <div className="space-y-1">
-                  <Label>Property</Label>
+                  <Label>Purchase Type</Label>
+
                   <Select
-                    disabled={projectLoading || projectError}
-                    onValueChange={(id) => {
-                      setProjectId(id);
-                      setValue("property", id, { shouldValidate: true });
-                      setFloorUnitId("");
-                      setValue("floorUnit", "", { shouldValidate: false });
-                      setValue("unit", "", { shouldValidate: false });
+                    onValueChange={(v: any) => {
+                      setPurchaseType(v);
+
+                      setValue("purchaseType", v, { shouldValidate: true });
+
+                      setValue("property", "");
+                      setValue("floorUnit", "");
+                      setValue("unit", "");
+                      setValue("openPlot", "");
+                      setValue("innerPlot", "");
+                      setValue("openLand", "");
                     }}
-                    value={watchedProperty}
+                    value={purchaseType}
                   >
                     <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          projectLoading
-                            ? "Loading projects..."
-                            : projectError
-                            ? "Failed to load projects"
-                            : "Select project"
-                        }
-                      />
+                      <SelectValue placeholder="Select Purchase Type" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {projects.length === 0 &&
-                      !projectLoading &&
-                      !projectError ? (
-                        <SelectItem value="empty" disabled>
-                          No projects found
-                        </SelectItem>
-                      ) : (
-                        projects.map((project) => (
-                          <SelectItem key={project._id} value={project._id}>
-                            {project.projectName} , {project.propertyType}
-                          </SelectItem>
-                        ))
-                      )}
+                      <SelectItem value="BUILDING">Building</SelectItem>
+                      <SelectItem value="PLOT">Plot</SelectItem>
+                      <SelectItem value="LAND">Land</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.property?.message && (
-                    <p className="text-red-500 text-sm">
-                      {errors.property.message}
-                    </p>
-                  )}
-                  {projectError && (
-                    <p className="text-red-500 text-xs">
-                      {(projectErrorMessage as Error)?.message ||
-                        "Error loading projects"}
-                    </p>
-                  )}
                 </div>
 
-                <div className="space-y-1">
-                  <Label>Floor Unit</Label>
-                  <Select
-                    disabled={
-                      !projectId || floorUnitsLoading || floorUnitsError
-                    }
-                    onValueChange={(id) => {
-                      setFloorUnitId(id);
-                      setValue("floorUnit", id, { shouldValidate: true });
-                    }}
-                    value={watchedFloorUnit}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          !projectId
-                            ? "Select project first"
-                            : floorUnitsLoading
-                            ? "Loading floor units..."
-                            : floorUnitsError
-                            ? "Failed to load floor units"
-                            : "Select Floor Unit"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {floorUnits.length === 0 &&
-                      !floorUnitsLoading &&
-                      !floorUnitsError &&
-                      projectId ? (
-                        <SelectItem value="no-floor-units" disabled>
-                          No floor units found
-                        </SelectItem>
-                      ) : (
-                        floorUnits.map((f) => (
-                          <SelectItem key={f._id} value={f._id}>
-                            {f.floorNumber}
-                          </SelectItem>
-                        ))
+                {purchaseType === "BUILDING" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label>Property</Label>
+                      <Select
+                        disabled={projectLoading || projectError}
+                        onValueChange={(id) => {
+                          setProjectId(id);
+                          setValue("property", id, { shouldValidate: true });
+                          setFloorUnitId("");
+                          setValue("floorUnit", "", { shouldValidate: false });
+                          setValue("unit", "", { shouldValidate: false });
+                        }}
+                        value={watchedProperty}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              projectLoading
+                                ? "Loading projects..."
+                                : projectError
+                                  ? "Failed to load projects"
+                                  : "Select project"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects.length === 0 &&
+                          !projectLoading &&
+                          !projectError ? (
+                            <SelectItem value="empty" disabled>
+                              No projects found
+                            </SelectItem>
+                          ) : (
+                            projects.map((project) => (
+                              <SelectItem key={project._id} value={project._id}>
+                                {project.projectName} , {project.propertyType}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {errors.property?.message && (
+                        <p className="text-red-500 text-sm">
+                          {errors.property.message}
+                        </p>
                       )}
-                    </SelectContent>
-                  </Select>
-                  {errors.floorUnit?.message && (
-                    <p className="text-red-500 text-sm">
-                      {errors.floorUnit.message}
-                    </p>
-                  )}
-                  {floorUnitsError && (
-                    <p className="text-red-500 text-xs">
-                      {(floorUnitsErrorMessage as Error)?.message ||
-                        "Error loading floor units"}
-                    </p>
-                  )}
-                </div>
+                      {projectError && (
+                        <p className="text-red-500 text-xs">
+                          {(projectErrorMessage as Error)?.message ||
+                            "Error loading projects"}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="space-y-1">
-                  <Label>Unit</Label>
-                  <Select
-                    disabled={!floorUnitId || unitsLoading || unitsError}
-                    onValueChange={(id) => {
-                      setValue("unit", id, { shouldValidate: true });
-                    }}
-                    value={watchedUnit}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          !floorUnitId
-                            ? "Select floor unit first"
-                            : unitsLoading
-                            ? "Loading units..."
-                            : unitsError
-                            ? "Failed to load units"
-                            : "Select Unit"
+                    <div className="space-y-1">
+                      <Label>Floor Unit</Label>
+                      <Select
+                        disabled={
+                          !projectId || floorUnitsLoading || floorUnitsError
                         }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {units.length === 0 &&
-                      !unitsLoading &&
-                      !unitsError &&
-                      floorUnitId ? (
-                        <SelectItem value="no-units" disabled>
-                          No units found
-                        </SelectItem>
-                      ) : (
-                        units.map((u) => (
-                          <SelectItem key={u._id} value={u._id}>
-                            {u.plotNo}
-                          </SelectItem>
-                        ))
+                        onValueChange={(id) => {
+                          setFloorUnitId(id);
+                          setValue("floorUnit", id, { shouldValidate: true });
+                        }}
+                        value={watchedFloorUnit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              !projectId
+                                ? "Select project first"
+                                : floorUnitsLoading
+                                  ? "Loading floor units..."
+                                  : floorUnitsError
+                                    ? "Failed to load floor units"
+                                    : "Select Floor Unit"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {floorUnits.length === 0 &&
+                          !floorUnitsLoading &&
+                          !floorUnitsError &&
+                          projectId ? (
+                            <SelectItem value="no-floor-units" disabled>
+                              No floor units found
+                            </SelectItem>
+                          ) : (
+                            floorUnits.map((f) => (
+                              <SelectItem key={f._id} value={f._id}>
+                                {f.floorNumber}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {errors.floorUnit?.message && (
+                        <p className="text-red-500 text-sm">
+                          {errors.floorUnit.message}
+                        </p>
                       )}
-                    </SelectContent>
-                  </Select>
-                  {errors.unit?.message && (
-                    <p className="text-red-500 text-sm">
-                      {errors.unit.message}
-                    </p>
-                  )}
-                  {unitsError && (
-                    <p className="text-red-500 text-xs">
-                      {(unitsErrorMessage as Error)?.message ||
-                        "Error loading units"}
-                    </p>
-                  )}
-                </div>
+                      {floorUnitsError && (
+                        <p className="text-red-500 text-xs">
+                          {(floorUnitsErrorMessage as Error)?.message ||
+                            "Error loading floor units"}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label>Unit</Label>
+                      <Select
+                        disabled={!floorUnitId || unitsLoading || unitsError}
+                        onValueChange={(id) => {
+                          setValue("unit", id, { shouldValidate: true });
+                        }}
+                        value={watchedUnit}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              !floorUnitId
+                                ? "Select floor unit first"
+                                : unitsLoading
+                                  ? "Loading units..."
+                                  : unitsError
+                                    ? "Failed to load units"
+                                    : "Select Unit"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {units.length === 0 &&
+                          !unitsLoading &&
+                          !unitsError &&
+                          floorUnitId ? (
+                            <SelectItem value="no-units" disabled>
+                              No units found
+                            </SelectItem>
+                          ) : (
+                            units.map((u) => (
+                              <SelectItem key={u._id} value={u._id}>
+                                {u.plotNo}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {errors.unit?.message && (
+                        <p className="text-red-500 text-sm">
+                          {errors.unit.message}
+                        </p>
+                      )}
+                      {unitsError && (
+                        <p className="text-red-500 text-xs">
+                          {(unitsErrorMessage as Error)?.message ||
+                            "Error loading units"}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {purchaseType === "PLOT" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label>Layout (Open Plot)</Label>
+
+                      <Select
+                        onValueChange={(v) => {
+                          setValue("openPlot", v, { shouldValidate: true });
+                          setValue("innerPlot", "");
+                        }}
+                        value={watch("openPlot")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Layout" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          {openPlots.map((p: any) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {p.projectName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label>Plot Number</Label>
+
+                      <Select
+                        onValueChange={(v) =>
+                          setValue("innerPlot", v, { shouldValidate: true })
+                        }
+                        value={watch("innerPlot")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Plot" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          {innerPlots.map((p: any) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {p.plotNumber}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {purchaseType === "LAND" && (
+                  <div className="space-y-1">
+                    <Label>Select Land</Label>
+
+                    <Select
+                      onValueChange={(v) =>
+                        setValue("openLand", v, { shouldValidate: true })
+                      }
+                      value={watch("openLand")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Land Parcel" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {openLands.map((l: any) => (
+                          <SelectItem key={l._id} value={l._id}>
+                            {l.projectName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -726,7 +918,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                       setValue(
                         "registrationStatus",
                         v as CustomerForm["registrationStatus"],
-                        { shouldValidate: true }
+                        { shouldValidate: true },
                       )
                     }
                     value={watch("registrationStatus")}
@@ -843,8 +1035,8 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                         isLoadingContractors
                           ? "Loading contractors..."
                           : isErrorContractors
-                          ? "Failed to load contractors"
-                          : "Select Contractor"
+                            ? "Failed to load contractors"
+                            : "Select Contractor"
                       }
                     />
                   </SelectTrigger>
@@ -892,8 +1084,8 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                         isLoadingSiteIncharge
                           ? "Loading site incharge..."
                           : isErrorSiteIncharge
-                          ? "Failed to load site incharge"
-                          : "Select Incharge"
+                            ? "Failed to load site incharge"
+                            : "Select Incharge"
                       }
                     />
                   </SelectTrigger>
@@ -979,7 +1171,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                     v as CustomerForm["paymentStatus"],
                     {
                       shouldValidate: true,
-                    }
+                    },
                   )
                 }
                 value={watch("paymentStatus")}
@@ -1044,7 +1236,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                         url.split("/").pop()?.split("?")[0] || "Document";
                       const path = url.split("?")[0];
                       const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(
-                        path
+                        path,
                       );
                       return (
                         <div
@@ -1258,8 +1450,8 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                     ? "Updating..."
                     : "Update"
                   : addMutation.isPending
-                  ? "Saving..."
-                  : "Save"}
+                    ? "Saving..."
+                    : "Save"}
               </Button>
             </DialogFooter>
           </form>
