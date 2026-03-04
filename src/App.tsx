@@ -163,7 +163,6 @@ import Kanban from "./pages/Kanban";
 import Department from "./pages/Department";
 import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
 import TrashBuildingsPage from "./pages/TrashBuildingsPage";
-import { OpenPlotDetails } from "./components/properties/OpenPlotDetails";
 import OpenPlotDetailsPage from "./pages/OpenPlotDetailsPage";
 import AuditLogViewer from "./utils/AuditLogResponse";
 const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
@@ -208,18 +207,6 @@ const App = () => {
     const role = String(user?.role || "").toLowerCase();
     if (role === "admin") return <AdminTeamLead />;
     return <TeamLeadManagement />;
-  };
-  const LeadManagementWrapper = () => {
-    const { user } = useAuth();
-    const role = String(user?.role || "").toLowerCase();
-    if (role === "admin") return <AdminLeadManagement />;
-    return <LeadManagement />;
-  };
-  const CommissionsWrapper = () => {
-    const { user } = useAuth();
-    const role = String(user?.role || "").toLowerCase();
-    if (role === "admin") return <AdminMyCommissions />;
-    return <MyCommissions />;
   };
 
   return (
@@ -609,7 +596,7 @@ const App = () => {
                     path="/leads"
                     element={
                       <ProtectedRoute roleSubmodule={"Lead Management"}>
-                        {<LeadManagementWrapper />}
+                        {<LeadManagement />}
                       </ProtectedRoute>
                     }
                   />
@@ -649,7 +636,7 @@ const App = () => {
                     path="/commissions"
                     element={
                       <ProtectedRoute roleSubmodule={"Commissions"}>
-                        <CommissionsWrapper />
+                        <MyCommissions />
                       </ProtectedRoute>
                     }
                   />

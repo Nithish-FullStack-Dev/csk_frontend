@@ -29,6 +29,7 @@ import { Lead } from "@/utils/leads/LeadConfig";
 import { EmptyState } from "@/utils/agent/EmptyState";
 import { OpenPlot } from "@/types/OpenPlots";
 import { InnerPlot } from "@/types/InnerPlot";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   leads: Lead[];
@@ -47,8 +48,9 @@ export default function OpenPlotLeadsTable({
   userCanEditUser,
   userCanDeleteUser,
 }: Props) {
+  const { user } = useAuth();
   const data = leads.filter((l) => l.openPlot && l.innerPlot && !l.openLand);
-
+  const isAdmin = user.role === "admin";
   if (!data.length) {
     return <EmptyState text="No Open Plot Leads Found" />;
   }
@@ -108,53 +110,55 @@ export default function OpenPlotLeadsTable({
                   </Button>
                 )}
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                {!isAdmin && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end">
-                    <a href={`tel:${lead.phone}`}>
-                      <DropdownMenuItem>
-                        <PhoneCall className="mr-2 h-4 w-4" />
-                        Call
-                      </DropdownMenuItem>
-                    </a>
+                    <DropdownMenuContent align="end">
+                      <a href={`tel:${lead.phone}`}>
+                        <DropdownMenuItem>
+                          <PhoneCall className="mr-2 h-4 w-4" />
+                          Call
+                        </DropdownMenuItem>
+                      </a>
 
-                    <a
-                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                        lead.email,
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <DropdownMenuItem>
-                        <Mail className="mr-2 h-4 w-4" />
-                        Email
-                      </DropdownMenuItem>
-                    </a>
-
-                    <DropdownMenuSeparator />
-
-                    {userCanEditUser && onEdit && (
-                      <DropdownMenuItem onClick={() => onEdit(lead)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                    )}
-
-                    {userCanDeleteUser && handleDeleteLead && (
-                      <DropdownMenuItem
-                        onClick={(e) => handleDeleteLead(lead._id, e)}
+                      <a
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                          lead.email,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <DropdownMenuItem>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Email
+                        </DropdownMenuItem>
+                      </a>
+
+                      <DropdownMenuSeparator />
+
+                      {userCanEditUser && onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(lead)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
+
+                      {userCanDeleteUser && handleDeleteLead && (
+                        <DropdownMenuItem
+                          onClick={(e) => handleDeleteLead(lead._id, e)}
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </TableCell>
           </TableRow>

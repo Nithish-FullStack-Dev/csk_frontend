@@ -44,6 +44,7 @@ import axios from "axios";
 import Loader from "@/components/Loader";
 
 import { useSiteIncharges } from "@/utils/useSiteIncharges";
+import { useRBAC } from "@/config/RBAC";
 
 // Project form values type
 interface ProjectFormValues {
@@ -116,6 +117,10 @@ const ContractorProjects = () => {
     Partial<Record<keyof ProjectFormValues, string>>
   >({});
   const query = useQueryClient();
+
+  const { userCanAddUser } = useRBAC({
+    roleSubmodule: "Projects Overview",
+  });
 
   const {
     data: projectsDropDown = [],
@@ -286,10 +291,12 @@ const ContractorProjects = () => {
               Manage and track your construction projects
             </p>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Project
-          </Button>
+          {userCanAddUser && (
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Project
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

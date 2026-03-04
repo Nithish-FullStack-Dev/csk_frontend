@@ -39,6 +39,7 @@ import { useNavigate } from "react-router-dom";
 import { Lead } from "@/utils/leads/LeadConfig";
 import { Property } from "@/types/property";
 import { Building } from "@/types/building";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   filteredLeads: Lead[];
@@ -263,58 +264,63 @@ function ActionsMenu({
   onDelete,
   onVisit,
 }: any) {
+  const { user } = useAuth();
+  const isAdmin = user.role === "admin";
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="icon" onClick={onView}>
         <ChevronRight className="h-4 w-4" />
       </Button>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+      {!isAdmin && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end">
-          <a href={`tel:${lead.phone}`}>
-            <DropdownMenuItem>
-              <PhoneCall className="mr-2 h-4 w-4" /> Call
-            </DropdownMenuItem>
-          </a>
-          <a
-            href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-              lead.email,
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <DropdownMenuItem>
-              <Mail className="mr-2 h-4 w-4" /> Email
-            </DropdownMenuItem>
-          </a>
+          <DropdownMenuContent align="end">
+            <a href={`tel:${lead.phone}`}>
+              <DropdownMenuItem>
+                <PhoneCall className="mr-2 h-4 w-4" /> Call
+              </DropdownMenuItem>
+            </a>
+            <a
+              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                lead.email,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <DropdownMenuItem>
+                <Mail className="mr-2 h-4 w-4" /> Email
+              </DropdownMenuItem>
+            </a>
 
-          {!isSalesManager && (
-            <DropdownMenuItem onClick={onVisit}>
-              <Calendar className="mr-2 h-4 w-4" /> Schedule Visit
-            </DropdownMenuItem>
-          )}
+            {!isSalesManager && (
+              <DropdownMenuItem onClick={onVisit}>
+                <Calendar className="mr-2 h-4 w-4" /> Schedule Visit
+              </DropdownMenuItem>
+            )}
 
-          <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
 
-          {userCanEditUser && (
-            <DropdownMenuItem onClick={onEdit}>
-              <FileText className="mr-2 h-4 w-4" /> Edit
-            </DropdownMenuItem>
-          )}
+            {userCanEditUser && (
+              <DropdownMenuItem onClick={onEdit}>
+                <FileText className="mr-2 h-4 w-4" /> Edit
+              </DropdownMenuItem>
+            )}
 
-          {userCanDeleteUser && (
-            <DropdownMenuItem onClick={onDelete}>
-              <Trash className="mr-2 h-4 w-4" /> Delete
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {userCanDeleteUser && (
+              <DropdownMenuItem onClick={onDelete}>
+                <Trash className="mr-2 h-4 w-4" /> Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
