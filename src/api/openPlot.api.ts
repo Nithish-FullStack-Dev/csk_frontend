@@ -1,4 +1,4 @@
-// src\api\openPlot.api.ts
+// src/api/openPlot.api.ts
 import { OpenPlotFormValues } from "@/types/OpenPlots";
 import axios from "axios";
 
@@ -7,16 +7,23 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const getCsrfToken = async () => {
+  const res = await api.get("/api/csrf-token");
+  return res.data.csrfToken;
+};
+
 export const saveOpenPlot = async (
   data: OpenPlotFormValues,
   thumbnail: File,
   images: File[],
   brochure: File
 ) => {
+  const csrfToken = await getCsrfToken();
+
   const formData = new FormData();
 
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
+    if (value !== undefined && value !== null && value !== "") {
       formData.append(key, String(value));
     }
   });
@@ -24,9 +31,16 @@ export const saveOpenPlot = async (
   formData.append("thumbnailUrl", thumbnail);
   formData.append("brochureUrl", brochure);
 
-  images.forEach((img) => formData.append("images", img));
+  images.forEach((img) => {
+    formData.append("images", img);
+  });
 
-  const res = await api.post("/api/openPlot/saveOpenplot", formData);
+  const res = await api.post("/api/openPlot/saveOpenplot", formData, {
+    headers: {
+      "X-CSRF-Token": csrfToken,
+    },
+  });
+
   return res.data.data;
 };
 
@@ -38,10 +52,12 @@ export const updateOpenPlot = async (
   brochure?: File,
   removedImages?: string[]
 ) => {
+  const csrfToken = await getCsrfToken();
+
   const formData = new FormData();
 
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
+    if (value !== undefined && value !== null && value !== "") {
       formData.append(key, String(value));
     }
   });
@@ -49,12 +65,25 @@ export const updateOpenPlot = async (
   if (thumbnail) formData.append("thumbnailUrl", thumbnail);
   if (brochure) formData.append("brochureUrl", brochure);
 
-  images?.forEach((img) => formData.append("images", img));
-
-  removedImages?.forEach((img) => {
-    formData.append("removedImages", img);
+  images?.forEach((img) => {
+    formData.append("images", img);
   });
 
-  const res = await api.put(`/api/openPlot/updateOpenplot/${id}`, formData);
+  if (removedImages?.length) {
+    removedImages.forEach((img) => {
+      formData.append("removedImages", img);
+    });
+  }
+
+  const res = await api.put(
+    `/api/openPlot/updateOpenplot/${id}`,
+    formData,
+    {
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+    }
+  );
+
   return res.data.data;
 };

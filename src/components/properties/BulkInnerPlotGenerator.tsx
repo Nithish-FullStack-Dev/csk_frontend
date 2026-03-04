@@ -1,3 +1,4 @@
+// src\components\properties\BulkInnerPlotGenerator.tsx
 "use client";
 
 import { useState } from "react";
@@ -44,6 +45,11 @@ export default function BulkInnerPlotGenerator({
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (!totalPlots || !area) {
+        toast.error("Total plots and area are required");
+        return;
+      }
+
       await axios.post(
         `${import.meta.env.VITE_URL}/api/innerPlot/generate-bulk`,
         {
@@ -94,6 +100,7 @@ export default function BulkInnerPlotGenerator({
             type="number"
             min={0}
             placeholder="Plot area"
+            value={area}
             onChange={(e) => setArea(Number(e.target.value))}
           />
 
@@ -135,7 +142,7 @@ export default function BulkInnerPlotGenerator({
 
           <Button
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !totalPlots || !area}
           >
             Generate Plots
           </Button>
