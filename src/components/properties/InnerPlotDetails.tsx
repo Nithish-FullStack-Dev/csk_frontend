@@ -49,6 +49,15 @@ export function getInnerPlotStatusBadge(status: string) {
     </Badge>
   );
 }
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
+
+  // Cloudinary or external images
+  if (url.startsWith("http")) return url;
+
+  // Local images
+  return `${import.meta.env.VITE_URL}${url}`;
+};
 
 export function InnerPlotDetails() {
   const { _id } = useParams<{ _id: string }>();
@@ -96,8 +105,7 @@ export function InnerPlotDetails() {
   const galleryImages = useMemo(() => {
     if (!plot) return [];
     const imgs = new Set<string>(plot.images || []);
-    if (plot.thumbnailUrl) imgs.add(plot.thumbnailUrl);
-    return Array.from(imgs);
+    if (plot.thumbnailUrl) return Array.from(imgs);
   }, [plot]);
 
   if (isLoading) return <Loader />;
@@ -135,7 +143,7 @@ export function InnerPlotDetails() {
             {plot.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={`${import.meta.env.VITE_URL}${plot?.thumbnailUrl}`}
+                  src={getImageUrl(plot?.thumbnailUrl)}
                   alt={`Plot ${plot.plotNo}`}
                   className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -303,7 +311,7 @@ export function InnerPlotDetails() {
                       }`}
                     >
                       <img
-                        src={`${import.meta.env.VITE_URL}${img}`}
+                        src={getImageUrl(img)}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </div>
@@ -345,7 +353,7 @@ export function InnerPlotDetails() {
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
             <img
-              src={`${import.meta.env.VITE_URL}${currentImage}`}
+              src={getImageUrl(currentImage)}
               className="w-full h-full object-contain"
             />
           </DialogContent>

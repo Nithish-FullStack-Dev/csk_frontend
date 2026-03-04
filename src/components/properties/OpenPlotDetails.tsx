@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { getAllInnerPlot } from "@/api/innerPlot.api";
 import MainLayout from "../layout/MainLayout";
 import { OpenPlotDialog } from "./OpenPlotsDialog";
+import { get } from "http";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -60,7 +61,15 @@ interface OpenPlotDetailsProps {
   onDelete: () => void;
   onBack: () => void;
 }
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
 
+  // Cloudinary or external images
+  if (url.startsWith("http")) return url;
+
+  // Local images
+  return `${import.meta.env.VITE_URL}${url}`;
+};
 export function OpenPlotDetails({
   plot,
   onEdit,
@@ -108,9 +117,8 @@ export function OpenPlotDetails({
 
   const galleryImages = useMemo(() => {
     const allImages = new Set<string>(openPlotData?.images || []);
-    if (openPlotData?.thumbnailUrl) allImages.add(openPlotData?.thumbnailUrl);
-    return Array.from(allImages);
-  }, [openPlotData?.images, openPlotData?.thumbnailUrl]);
+    if (openPlotData?.thumbnailUrl) return Array.from(allImages);
+  }, [openPlotData?.images]);
 
   const openLightbox = (imageSrc: string) => {
     setCurrentImage(imageSrc);
@@ -272,7 +280,7 @@ export function OpenPlotDetails({
                     {/* Thumbnail */}
                     {inner.thumbnailUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_URL}${inner.thumbnailUrl}`}
+                        src={getImageUrl(inner?.thumbnailUrl)}
                         alt={inner.plotNo}
                         className="h-40 w-full object-cover"
                       />
