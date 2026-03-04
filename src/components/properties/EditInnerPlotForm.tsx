@@ -29,6 +29,7 @@ interface Props {
 
 export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
     innerPlot.thumbnailUrl || "",
   );
@@ -64,21 +65,39 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
 
   const onImagesChange = (files: FileList | null) => {
     if (!files) return;
-    const list = Array.from(files);
-    setImages(list);
-    setImagePreviews(list.map((f) => URL.createObjectURL(f)));
+    const newFiles = Array.from(files);
+    setImages((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [
+      ...prev,
+      ...newFiles.map((f) => URL.createObjectURL(f)),
+    ]);
   };
 
   const removeImage = (index: number) => {
-    setImagePreviews((p) => p.filter((_, i) => i !== index));
-    setImages((p) => p.filter((_, i) => i !== index));
+    setImagePreviews((prev) => {
+      const updated = [...prev];
+      const removed = updated[index];
+      if (removed && !removed.startsWith("blob:")) {
+        const cleanPath = removed.replace(import.meta.env.VITE_URL, "");
+        setRemovedImages((p) => [...p, cleanPath]);
+      }
+      updated.splice(index, 1);
+      return updated;
+    });
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   /* ---------- MUTATION ---------- */
 
   const mutation = useMutation({
     mutationFn: (data: InnerPlotFormValues) =>
-      updateInnerPlot(innerPlot._id, data, thumbnail ?? undefined, images),
+      updateInnerPlot(
+        innerPlot._id,
+        data,
+        thumbnail ?? undefined,
+        images,
+        removedImages,
+      ),
 
     onSuccess: async () => {
       toast.success("Inner plot updated successfully");
@@ -181,7 +200,11 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         <Label>Thumbnail</Label>
         {thumbnailPreview && (
           <img
-            src={thumbnailPreview}
+            src={
+              thumbnailPreview?.startsWith("blob:")
+                ? thumbnailPreview
+                : `${import.meta.env.VITE_URL}${thumbnailPreview}`
+            }
             className="h-28 w-40 object-cover rounded border"
           />
         )}
@@ -206,7 +229,11 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
           {imagePreviews.map((img, i) => (
             <div key={i} className="relative">
               <img
-                src={img}
+                src={
+                  img?.startsWith("blob:")
+                    ? img
+                    : `${import.meta.env.VITE_URL}${img}`
+                }
                 className="h-24 w-full object-cover rounded border"
               />
               <button

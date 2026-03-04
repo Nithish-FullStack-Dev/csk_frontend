@@ -1,3 +1,4 @@
+// src\components\properties\InnerPlotForm.tsx
 "use client";
 
 import { useForm } from "react-hook-form";

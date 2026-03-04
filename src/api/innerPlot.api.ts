@@ -10,6 +10,7 @@ export const createInnerPlot = async (
   data: InnerPlotFormValues,
   thumbnail?: File,
   images?: File[],
+
 ) => {
   const formData = new FormData();
 
@@ -29,6 +30,7 @@ export const updateInnerPlot = async (
   data: InnerPlotFormValues,
   thumbnail?: File,
   images?: File[],
+  removedImages?: string[],
 ) => {
   const formData = new FormData();
 
@@ -37,9 +39,18 @@ export const updateInnerPlot = async (
   });
 
   if (thumbnail) formData.append("thumbnailUrl", thumbnail);
+
   images?.forEach((img) => formData.append("images", img));
 
-  const res = await api.put(`/api/innerPlot/updateInnerPlot/${id}`, formData);
+  // 🔥 IMPORTANT FIX
+  if (removedImages && removedImages.length > 0) {
+    formData.append("removedImages", JSON.stringify(removedImages));
+  }
+
+  const res = await api.put(
+    `/api/innerPlot/updateInnerPlot/${id}`,
+    formData
+  );
 
   return res.data.data;
 };

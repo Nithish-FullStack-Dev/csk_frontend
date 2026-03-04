@@ -91,7 +91,6 @@ export default function BulkFloorGenerator({
       payload,
       {
         withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
       },
     );
     return data.data;
@@ -188,21 +187,28 @@ export default function BulkFloorGenerator({
 
           for (let i = 1; i <= unit.count; i++) {
             const formData = new FormData();
-            formData.append("buildingId", buildingId);
-            formData.append("floorId", floorId);
-            // formData.append("flatNo", `${floor}-${unit.type}-${i}`);
+
             const unitNumber = `${floor}-${unit.type}-${i}`;
 
-            formData.append("plotNo", unitNumber); // REQUIRED for backend
-            formData.append("flatNo", unitNumber); // optional UI naming
+            formData.append("buildingId", buildingId);
+            formData.append("floorId", floorId);
+
+            formData.append("plotNo", unitNumber);
+            formData.append("flatNo", unitNumber);
+
             formData.append("unitType", unit.type);
             formData.append("extent", config.sqft.toString());
             formData.append("villaFacing", config.facing);
 
-            if (config.thumbnail)
+            if (config.thumbnail) {
               formData.append("thumbnailUrl", config.thumbnail);
+            }
 
-            config.images?.forEach((img) => formData.append("images", img));
+            if (config.images?.length) {
+              config.images.forEach((img) => {
+                formData.append("images", img);
+              });
+            }
 
             await createUnit(formData);
           }

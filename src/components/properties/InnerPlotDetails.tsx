@@ -1,3 +1,4 @@
+// src\components\properties\InnerPlotDetails.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -134,7 +135,7 @@ export function InnerPlotDetails() {
             {plot.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={plot.thumbnailUrl}
+                  src={`${import.meta.env.VITE_URL}${plot?.thumbnailUrl}`}
                   alt={`Plot ${plot.plotNo}`}
                   className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -282,25 +283,32 @@ export function InnerPlotDetails() {
                 <ImageIcon className="mr-2 h-5 w-5" /> Gallery
               </CardTitle>
             </CardHeader>
+
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-[150px]">
-                {galleryImages.map((img, i) => (
-                  <div
-                    key={i}
-                    onClick={() => {
-                      setCurrentImage(img);
-                      setLightboxOpen(true);
-                    }}
-                    className={`cursor-pointer overflow-hidden rounded-lg ${
-                      i % 5 === 0 ? "col-span-2 row-span-2" : ""
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      className="w-full h-full object-cover hover:scale-110 transition"
-                    />
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-[160px]">
+                {galleryImages.map((img, i) => {
+                  const isLarge = i % 5 === 0;
+
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => {
+                        setCurrentImage(img);
+                        setLightboxOpen(true);
+                      }}
+                      className={`relative cursor-pointer overflow-hidden rounded-xl ${
+                        isLarge
+                          ? "col-span-2 row-span-2 h-[320px]"
+                          : "h-[160px]"
+                      }`}
+                    >
+                      <img
+                        src={`${import.meta.env.VITE_URL}${img}`}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -336,7 +344,10 @@ export function InnerPlotDetails() {
         {/* ---------- LIGHTBOX ---------- */}
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
-            <img src={currentImage} className="w-full h-full object-contain" />
+            <img
+              src={`${import.meta.env.VITE_URL}${currentImage}`}
+              className="w-full h-full object-contain"
+            />
           </DialogContent>
         </Dialog>
 

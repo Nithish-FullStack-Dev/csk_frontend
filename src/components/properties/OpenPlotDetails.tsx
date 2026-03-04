@@ -35,6 +35,7 @@ import CsvInnerPlotUploader from "./CsvInnerPlotUploader";
 import { toast } from "sonner";
 import { getAllInnerPlot } from "@/api/innerPlot.api";
 import MainLayout from "../layout/MainLayout";
+import { OpenPlotDialog } from "./OpenPlotsDialog";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -80,7 +81,7 @@ export function OpenPlotDetails({
   const [innerPlotDialogOpen, setInnerPlotDialogOpen] = useState(false);
   const [bulkManualOpen, setBulkManualOpen] = useState(false);
   const [csvUploadOpen, setCsvUploadOpen] = useState(false);
-
+  const [editOpen, setEditOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
   const queryClient = useQueryClient();
 
@@ -150,7 +151,7 @@ export function OpenPlotDetails({
           <div className="flex md:flex-row flex-col gap-3">
             {canEdit && (
               <>
-                <Button size="sm" onClick={onEdit}>
+                <Button size="sm" onClick={() => setEditOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
                 <Button
@@ -271,7 +272,7 @@ export function OpenPlotDetails({
                     {/* Thumbnail */}
                     {inner.thumbnailUrl ? (
                       <img
-                        src={inner.thumbnailUrl}
+                        src={`${import.meta.env.VITE_URL}${inner.thumbnailUrl}`}
                         alt={inner.plotNo}
                         className="h-40 w-full object-cover"
                       />
@@ -504,7 +505,11 @@ export function OpenPlotDetails({
             </div>
           </DialogContent>
         </Dialog>
-
+        <OpenPlotDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          openPlot={openPlotData}
+        />
         {/* Lightbox */}
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">

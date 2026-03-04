@@ -1,8 +1,8 @@
+// src\components\properties\CsvInnerPlotUploader.tsx
 "use client";
 
 import { useState } from "react";
 import axios from "axios";
-import Papa from "papaparse";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
