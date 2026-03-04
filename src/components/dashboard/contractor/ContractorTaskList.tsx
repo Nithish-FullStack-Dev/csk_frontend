@@ -153,6 +153,7 @@ const ContractorTaskList = () => {
 
     // 1. Upload photos one-by-one
     const uploadedImageUrls: string[] = [];
+
     try {
       for (const photo of photos) {
         const formData = new FormData();
@@ -161,22 +162,21 @@ const ContractorTaskList = () => {
         const res = await axios.post(
           `${import.meta.env.VITE_URL}/api/uploads/upload`,
           formData,
-          { headers: { "Content-Type": "multipart/form-data" } },
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
         );
 
-        const cloudinaryResponse = res.data?.url;
-        const imageUrl =
-          typeof cloudinaryResponse === "string"
-            ? cloudinaryResponse
-            : cloudinaryResponse?.secure_url;
+        const filePath = res.data?.url;
 
-        if (!imageUrl) {
+        if (!filePath) {
           throw new Error("Image upload failed");
         }
 
-        uploadedImageUrls.push(imageUrl);
+        uploadedImageUrls.push(filePath);
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("One or more images failed to upload");
       setIsUpdating(false);
       return;
@@ -199,13 +199,12 @@ const ContractorTaskList = () => {
         return;
       }
       await axios.patch(
-        `${import.meta.env.VITE_URL}/api/project/contractor/${
-          selectedTask.projectId
-        }/${selectedTask._id}/task`,
+        `${import.meta.env.VITE_URL}/api/project/contractor/${selectedTask.projectId}/${selectedTask._id}/task`,
         newTask,
         { withCredentials: true },
       );
       toast.success("Task Updated successfully!");
+      setExistingPhotos((prev) => [...prev, ...uploadedImageUrls]);
       fetchTasks();
     } catch (error) {
       toast.error("Failed to update task.");
@@ -724,7 +723,7 @@ const ContractorTaskList = () => {
                     className="relative rounded-md overflow-hidden border h-32 group"
                   >
                     <img
-                      src={url}
+                      src={`${import.meta.env.VITE_URL}${url}`}
                       alt={`Uploaded ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

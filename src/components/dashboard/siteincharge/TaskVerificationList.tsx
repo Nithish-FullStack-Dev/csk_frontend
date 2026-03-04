@@ -47,7 +47,15 @@ const statusColors: Record<string, string> = {
   rejected: "bg-red-100 text-red-800",
   rework: "bg-amber-100 text-amber-800",
 };
+const getImageUrl = (url?: string) => {
+  if (!url) return "";
 
+  // cloudinary or external
+  if (url.startsWith("http")) return url;
+
+  // local upload
+  return `${import.meta.env.VITE_URL}${url}`;
+};
 const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +65,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [quality, setQuality] = useState("good");
   const [photos, setPhotos] = useState<File[]>([]);
   const [selectedTask, setSelectedTask] = useState<VerificationTask | null>(
-    null
+    null,
   );
   const [isUploading, setIsUploading] = useState(false);
 
@@ -70,7 +78,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
           selectedTask?.projectId
         }/${selectedTask?._id}/task`,
         updatedTaskData,
-        { withCredentials: true }
+        { withCredentials: true },
       );
     },
     onSuccess: () => {
@@ -109,7 +117,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         if (res.data.url) uploadedImageUrls.push(res.data.url);
       }
@@ -203,7 +211,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                     <TableCell>{task?.contractorName}</TableCell>
                     <TableCell>
                       {new Date(
-                        task?.submittedByContractorOn
+                        task?.submittedByContractorOn,
                       ).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
@@ -231,7 +239,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                         onClick={() => {
                           setSelectedTask(task);
                           setVerificationStatus(
-                            task?.verificationDecision || "approved"
+                            task?.verificationDecision || "approved",
                           );
                           setQuality(task?.qualityAssessment || "good");
                           setNotes(task?.noteBySiteIncharge || "");
@@ -287,10 +295,10 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                     (photo, index) => (
                       <img
                         key={index}
-                        src={photo}
+                        src={getImageUrl(photo)}
                         className="w-full h-48 object-cover rounded-md"
                       />
-                    )
+                    ),
                   )}
                 </div>
               </TabsContent>
@@ -308,10 +316,10 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                       (photo, index) => (
                         <img
                           key={index}
-                          src={photo}
+                          src={getImageUrl(photo)}
                           className="w-full h-48 object-cover rounded-md"
                         />
-                      )
+                      ),
                     )}
                   </div>
                 </div>
