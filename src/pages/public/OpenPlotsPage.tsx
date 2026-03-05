@@ -238,7 +238,7 @@ const OpenPlotsPage = () => {
                 whileInView="show"
                 viewport={{ once: true, amount: 0.3 }}
               >
-                {plotProjects?.plots?.map((plot: OpenPlot) => (
+                {plotProjects?.map((plot: OpenPlot) => (
                   <CardContainer key={plot._id} className="inter-var">
                     <CardBody
                       className="
@@ -275,16 +275,16 @@ const OpenPlotsPage = () => {
                       {/* Info */}
                       <div className="mt-3 space-y-1">
                         {/* Location with Map */}
-                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-70">
+                        <CardItem className="mt-2 flex flex-col text-xs sm:text-sm text-gray-600 dark:text-gray-300 w-full">
                           <div className="flex items-center mb-1">
                             {/* <MapPin className="h-4 w-4 mr-1" />
                                              <span>{project.location}</span> */}
                           </div>
                           {/* Map */}
-                          {plot?.googleMapsLink ? (
+                          {plot?.googleMapsLocation ? (
                             <div className="w-full h-32 rounded-lg overflow-hidden">
                               <iframe
-                                src={plot?.googleMapsLink}
+                                src={plot?.googleMapsLocation}
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
@@ -306,7 +306,7 @@ const OpenPlotsPage = () => {
                           translateZ={20}
                           className="text-xs sm:text-sm text-gray-600 dark:text-gray-300"
                         >
-                          Plot Type: {plot?.plotType || "-"}
+                          Plot Type: {plot?.titleStatus || "-"}
                         </CardItem>
                       </div>
 

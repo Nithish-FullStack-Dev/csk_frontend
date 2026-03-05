@@ -249,6 +249,15 @@ const App = () => {
                     path="/public/open-lands"
                     element={<OpenLandsPage />}
                   />
+                  {/* ✅ ADD THIS HERE */}
+                  <Route
+                    path="/public/openLand/:id"
+                    element={<OpenLandDetails />}
+                  />
+                  <Route
+                    path="/public/openPlot/:id"
+                    element={<OpenPlotsDetails />}
+                  />
                   {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
                   {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                   <Route path="/public/contact" element={<ContactPage />} />
@@ -273,14 +282,14 @@ const App = () => {
                     path="/public/project/:id"
                     element={<ProjectDetailsPage />}
                   />
-                  <Route
+                  {/* <Route
                     path="/public/openPlot/:id"
                     element={<OpenPlotsDetails />}
-                  />
-                  <Route
+                  /> */}
+                  {/* <Route
                     path="/public/openLand/:id"
                     element={<OpenLandDetails />}
-                  />
+                  /> */}
                   <Route
                     path="/enquiry"
                     element={

@@ -39,15 +39,17 @@ const OpenLandsPage = () => {
     error: openLandsErr,
     refetch,
   } = useOpenLand();
-  const openLandList: OpenLand[] = Array.isArray(landProjects)
-    ? landProjects
-    : Array.isArray((landProjects as any)?.lands)
-    ? (landProjects as any)?.lands
-    : Array.isArray((landProjects as any)?.openlands)
-    ? (landProjects as any)?.openlands
-    : Array.isArray((landProjects as any)?.openLands)
-    ? (landProjects as any)?.openLands
-    : [];
+  const openLandList: OpenLand[] = useMemo(() => {
+    if (!landProjects) return [];
+
+    if (Array.isArray(landProjects)) return landProjects;
+
+    if (Array.isArray((landProjects as any)?.data)) {
+      return (landProjects as any).data;
+    }
+
+    return [];
+  }, [landProjects]);
 
   if (openLandsError) {
     toast.error(openLandsErr.message);
