@@ -1,71 +1,41 @@
 export interface OpenPlot {
-  // MongoDB automatically adds _id and timestamps
-  _id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  _id?: string
+  createdAt?: string
+  updatedAt?: string
 
-  // Basic Plot Information
-  memNo: string;
-  projectName: string;
-  plotNo: string;
-  facing:
-  | "North"
-  | "East"
-  | "West"
-  | "South"
-  | "North-East"
-  | "North-West"
-  | "South-East"
-  | "South-West";
-  extentSqYards: number;
-  plotType: "Residential" | "Commercial" | "Agricultural" | "Industrial";
-  approval:
-  | "DTCP"
-  | "HMDA"
-  | "Panchayat"
-  | "Municipality"
-  | "Unapproved"
-  | "Other";
-  isCornerPlot?: boolean;
-  isGatedCommunity?: boolean;
+  // Project Info
+  projectName: string
+  openPlotNo: string
+  surveyNo?: string
+  location?: string
 
-  // Financial Details
-  pricePerSqYard: number;
-  totalAmount: number;
-  bookingAmount?: number;
-  amountReceived?: number;
-  balanceAmount?: number;
-  emiScheme?: boolean;
-  registrationStatus:
-  | "Not Started"
-  | "In Progress"
-  | "Pending Documents"
-  | "Pending Payment"
-  | "Scheduled"
-  | "Completed"
-  | "Delayed"
-  | "Cancelled";
-  listedDate: Date;
-  availableFrom: Date;
+  // Plot Layout Details
+  totalArea?: number
+  areaUnit?: string
+  roadWidthFt?: number
+  boundaries?: string
 
-  // Availability & Customer Details
-  availabilityStatus:
-  | "Available"
-  | "Sold"
-  | "Reserved"
-  | "Blocked"
-  | "Under Dispute";
-  customerName?: string;
-  customerContact?: string;
-  agentName?: string;
-  brochureUrl?: string;
-  // Location & Images
-  googleMapsLink?: string;
-  thumbnailUrl?: string;
-  images?: string[];
+  // Legal
+  approvalAuthority?: "DTCP" | "HMDA" | "Panchayat" | "Municipality" | "Unapproved" | "Other"
+  titleStatus?: string
+  reraNo?: string
+  documentNo?: string
 
-  // Additional Details
-  remarks?: string;
-  roadWidthFt?: number;
-  landmarkNearby?: string;
+  // Plot Info
+  facing?: "North" | "East" | "West" | "South" | "North-East" | "North-West" | "South-East" | "South-West"
+  plotType?: "Residential" | "Commercial" | "Agricultural" | "Industrial"
+
+  // Status
+  status?: "Available" | "Sold" | "Reserved" | "Blocked" | "Under Dispute"
+
+  // Media
+  thumbnailUrl?: string
+  images?: string[]
+  brochureUrl?: string
+
+  // Map
+  googleMapsLocation?: string
+
+  // Extra
+  remarks?: string
 }

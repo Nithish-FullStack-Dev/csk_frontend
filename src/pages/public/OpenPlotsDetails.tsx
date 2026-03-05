@@ -25,20 +25,14 @@ import {
 } from "lucide-react";
 import { SiteVisitDialog } from "@/components/public/SiteVisitDialog";
 import axios from "axios";
-// import { OpenPlot } from "./OpenPlotInterface";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
-// --- Carousel Imports ---
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-
-// --- Skeleton Loader Import ---
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
 import { OpenPlot } from "@/components/public/OpenPlotInterface";
 import { toast } from "sonner";
-
-// --- Horizontal line for better separation ---
 
 interface Amenity {
   name: string;
@@ -54,8 +48,7 @@ const OpenPlotsDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
-
-  // Embla Carousel Hooks
+  const [innerPlots, setInnerPlots] = useState<any[]>([]);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 3000, stopOnInteraction: false }),
   ]);
@@ -65,25 +58,22 @@ const OpenPlotsDetails = () => {
   const scrollNext = useCallback(() => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
-
-  // Define a mapping of amenity names to icons for dynamic rendering
   const amenityIcons: { [key: string]: React.ElementType } = {
     Parking: Car,
     Garden: Trees,
     "Wi-Fi": Wifi,
     Gym: Dumbbell,
-    "Swimming Pool": Bath, // Reusing Bath icon for pool, or you can add a new one
-    // Add more mappings as needed based on your `amenities` data
+    "Swimming Pool": Bath,
   };
 
   const fetchOpenPlotById = async () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_URL}/api/openPlot/getOpenPlotById/${id}`
+        `${import.meta.env.VITE_URL}/api/openPlot/getOpenplot/${id}`,
       );
-      if (response.data) {
-        setOpenPlot(response.data);
+      if (response.data?.data) {
+        setOpenPlot(response.data?.data);
         setError(null);
       } else {
         setOpenPlot(null);
@@ -97,9 +87,22 @@ const OpenPlotsDetails = () => {
       setLoading(false);
     }
   };
+  const fetchInnerPlots = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/innerPlot/getAllInnerPlot/${id}`,
+      );
 
+      if (res.data?.data) {
+        setInnerPlots(res.data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch inner plots", error);
+    }
+  };
   useEffect(() => {
     fetchOpenPlotById();
+    fetchInnerPlots();
     window.scrollTo(0, 0);
   }, [id]);
 
@@ -133,8 +136,6 @@ const OpenPlotsDetails = () => {
       </PublicLayout>
     );
   }
-
-  // Helper function to render amenity icons
   const renderAmenity = (amenityName: string) => {
     const IconComponent = amenityIcons[amenityName];
     if (IconComponent) {
@@ -162,53 +163,53 @@ const OpenPlotsDetails = () => {
   ];
 
   const title = openPlot.projectName;
-  const location = openPlot?.googleMapsLink || "Location Not Specified";
-  const status = openPlot.availabilityStatus;
-  const category = openPlot.plotType;
+  const location = openPlot?.googleMapsLocation || "Location Not Specified";
+  const status = openPlot?.status ?? "unknown";
+  const category = openPlot?.location;
+  const unitSize =
+    openPlot?.totalArea && openPlot?.areaUnit
+      ? `${openPlot.totalArea} ${openPlot.areaUnit}`
+      : "N/A";
   const description =
     openPlot?.remarks || "No description available for this property.";
-  const price = openPlot.totalAmount.toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
-  });
+  const price = openPlot?.totalAmount
+    ? openPlot.totalAmount.toLocaleString("en-IN", {
+        style: "currency",
+        currency: "INR",
+      })
+    : "Price Not Available";
   const completionDate = openPlot?.listedDate
     ? new Date(openPlot.listedDate).toLocaleDateString()
     : "N/A";
+  const totalArea =
+    openPlot?.totalArea && openPlot?.areaUnit
+      ? `${openPlot.totalArea} ${openPlot.areaUnit}`
+      : "N/A";
 
-  const totalUnits = openPlot.plotNo ? `Unit ${openPlot.plotNo}` : "N/A";
+  const roadWidth = openPlot?.roadWidthFt
+    ? `${openPlot.roadWidthFt} ft`
+    : "N/A";
+  const totalUnits = innerPlots.length || "N/A";
   const floors = openPlot.plotType === "Residential" ? "Commercial" : "N/A";
-  const unitSize = `${openPlot.extentSqYards} Sq. units`;
   const launched = openPlot.createdAt
     ? new Date(openPlot.createdAt).toLocaleDateString()
     : "N/A";
-  const possession = completionDate;
-  const approved = openPlot?.isGatedCommunity ? "Approved" : "Pending";
+  const roadwidth = openPlot?.roadWidthFt
+    ? `${openPlot.roadWidthFt} ft`
+    : "N/A";
+  const approved = openPlot?.approvalAuthority ?? "N/A";
 
-  // --- MODIFIED GALLERY IMAGES LOGIC ---
   let allGalleryImages: string[] = [];
-
-  // 1. Add images from property.images
   if (openPlot.images && openPlot.images.length > 0) {
     allGalleryImages = [...allGalleryImages, ...openPlot.images];
   }
-
-  // 2. Add images from additionalPropertyImages (ensure no duplicates if both overlap)
-  // For simplicity, we'll just add them. If strict de-duplication is needed,
-  // you might use a Set or filter before spreading.
   if (openPlot?.images && openPlot.images.length > 0) {
     allGalleryImages = [...allGalleryImages, ...openPlot?.images];
   }
-
-  // 3. If no other images, use mainPropertyImage as a fallback for the gallery
   if (allGalleryImages.length === 0 && openPlot?.thumbnailUrl) {
     allGalleryImages.push(openPlot?.thumbnailUrl);
   }
-
-  // Ensure allGalleryImages only contains unique values if you fear duplicates from backend
-  // For now, we'll assume the backend provides clean arrays.
   const galleryImages = allGalleryImages;
-  // --- END MODIFIED GALLERY IMAGES LOGIC ---
-
   const developer = {
     name: "CSK Real Estate",
     experience: "15+ years of experience",
@@ -217,7 +218,7 @@ const OpenPlotsDetails = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) {
@@ -228,10 +229,8 @@ const OpenPlotsDetails = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
-
-      // Open in a new tab so browser handles the download (server redirects to signed Cloudinary URL)
       window.open(proxyUrl, "_blank", "noopener,noreferrer");
       toast.success("Download starting...");
     } catch (err) {
@@ -262,8 +261,8 @@ const OpenPlotsDetails = () => {
                   status === "Available"
                     ? "bg-green-500 hover:bg-green-600"
                     : status === "Sold"
-                    ? "bg-gold-500 hover:bg-gold-600 text-navy-900"
-                    : "bg-orange-500 hover:bg-orange-600"
+                      ? "bg-gold-500 hover:bg-gold-600 text-navy-900"
+                      : "bg-orange-500 hover:bg-orange-600"
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -316,7 +315,7 @@ const OpenPlotsDetails = () => {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {dummyAmenities.map((amenity) =>
-                      renderAmenity(amenity.name)
+                      renderAmenity(amenity.name),
                     )}
                     {/* You would ideally map through property.amenities here */}
                   </div>
@@ -356,16 +355,12 @@ const OpenPlotsDetails = () => {
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
-                        <span className="font-semibold">Possession:</span>{" "}
-                        {possession}
+                        <span className="font-semibold">Road Width:</span>{" "}
+                        {roadwidth}
                       </p>
                     </div>
                     <div className="flex items-center space-x-3">
-                      {approved === "Approved" ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
+                      <CheckCircle className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Approval:</span>{" "}
                         {approved}
@@ -443,7 +438,7 @@ const OpenPlotsDetails = () => {
               )}
 
               {/* Location Map Placeholder */}
-              {openPlot?.googleMapsLink && (
+              {openPlot?.googleMapsLocation && (
                 <Card className="shadow-xl border-t-4 border-gold-600 bg-navy-50">
                   <CardHeader>
                     <CardTitle className="text-2xl font-md font-vidaloka text-navy-800">
@@ -453,7 +448,7 @@ const OpenPlotsDetails = () => {
                   <CardContent>
                     <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-sm italic overflow-hidden">
                       <iframe
-                        src={openPlot?.googleMapsLink}
+                        src={openPlot?.googleMapsLocation}
                         width="100%"
                         height="250"
                         style={{ border: 0 }}
@@ -464,7 +459,7 @@ const OpenPlotsDetails = () => {
                     </div>
                     <p className="mt-4 text-center text-gold-600 hover:underline cursor-pointer">
                       <a
-                        href={openPlot?.googleMapsLink}
+                        href={openPlot?.googleMapsLocation}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -505,7 +500,7 @@ const OpenPlotsDetails = () => {
                         handleDownload(
                           e,
                           openPlot?.brochureUrl,
-                          openPlot?.projectName
+                          openPlot?.projectName,
                         )
                       }
                     >
@@ -531,11 +526,13 @@ const OpenPlotsDetails = () => {
                         status === "Available"
                           ? "bg-green-500"
                           : status === "Sold"
-                          ? "bg-gold-500 text-navy-900"
-                          : "bg-orange-500"
+                            ? "bg-gold-500 text-navy-900"
+                            : "bg-orange-500"
                       }`}
                     >
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status
+                        ? status.charAt(0).toUpperCase() + status.slice(1)
+                        : "Unknown"}
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b last:border-b-0 border-navy-100">

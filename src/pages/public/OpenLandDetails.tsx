@@ -168,7 +168,7 @@ const OpenLandDetails: React.FC = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) {
@@ -179,7 +179,7 @@ const OpenLandDetails: React.FC = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL || "";
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
       window.open(proxyUrl, "_blank", "noopener,noreferrer");
       toast.success("Download starting...");
@@ -238,8 +238,8 @@ const OpenLandDetails: React.FC = () => {
                   land.landStatus === "Available"
                     ? "bg-green-500"
                     : land.landStatus === "Sold"
-                    ? "bg-red-500"
-                    : "bg-yellow-500"
+                      ? "bg-red-500"
+                      : "bg-yellow-500"
                 }`}
               >
                 {land.landStatus || "Status"}
@@ -326,13 +326,13 @@ const OpenLandDetails: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    <div className="flex items-center space-x-3">
+                    {/* <div className="flex items-center space-x-3">
                       <Building className="h-5 w-5 text-gold-600" />
                       <p className="text-navy-700">
                         <span className="font-semibold">Owner:</span>{" "}
                         {land.ownerName || "-"}
                       </p>
-                    </div>
+                    </div> */}
 
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-5 w-5 text-gold-600" />
@@ -345,7 +345,7 @@ const OpenLandDetails: React.FC = () => {
                                 year: "numeric",
                                 month: "short",
                                 day: "numeric",
-                              }
+                              },
                             )
                           : "-"}
                       </p>
@@ -505,7 +505,7 @@ const OpenLandDetails: React.FC = () => {
                         handleDownload(
                           e,
                           land.brochureUrl ?? null,
-                          land.projectName
+                          land.projectName,
                         )
                       }
                     >
@@ -530,8 +530,8 @@ const OpenLandDetails: React.FC = () => {
                         land.landStatus === "Available"
                           ? "bg-green-500"
                           : land.landStatus === "Sold"
-                          ? "bg-red-500"
-                          : "bg-yellow-500"
+                            ? "bg-red-500"
+                            : "bg-yellow-500"
                       }`}
                     >
                       {land.landStatus}

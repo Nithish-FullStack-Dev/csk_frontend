@@ -35,18 +35,19 @@ export async function fetchCompletedProperties() {
 }
 
 export async function fetchOpenPlots() {
-  const { data } = await axios.get(
+  const res = await axios.get(
     `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
     { withCredentials: true }
   );
-  return data;
+
+  return res.data.data;
 }
 export async function fetchOpenLand() {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
     { withCredentials: true }
   );
-  return data;
+  return data.data;
 }
 
 export const getBuildingById = async (buildingId: string) => {
@@ -105,22 +106,20 @@ export const usePropertyById = (id: string) => {
   });
 };
 export const fetchOpenLandById = async (id: string) => {
-  const { data } = await axios.get(
+  const res = await axios.get(
     `${import.meta.env.VITE_URL}/api/openLand/getOpenLandById/${id}`,
     { withCredentials: true }
   );
 
-  // your API returns: { success: true, land: {...} }
-  return data.land;
+  return res.data.data;
 };
 
 export const useOpenLandById = (id: string) => {
   return useQuery<OpenLand>({
     queryKey: ["openLandById", id],
     queryFn: () => fetchOpenLandById(id),
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
     enabled: !!id,
+    staleTime: Infinity,
   });
 };
 
