@@ -150,14 +150,14 @@ const BudgetTracking = () => {
         `${import.meta.env.VITE_URL}/api/budget/expenses/all`,
         {
           withCredentials: true,
-        }
+        },
       );
 
       return res.data; // array of expenses
     } catch (err) {
       console.error(
         "Error fetching expenses:",
-        err.response?.data || err.message
+        err.response?.data || err.message,
       );
       return [];
     }
@@ -169,13 +169,13 @@ const BudgetTracking = () => {
         `${import.meta.env.VITE_URL}/api/budget`,
         {
           withCredentials: true, // required for cookies/JWT auth
-        }
+        },
       );
       return response.data;
     } catch (error) {
       console.error(
         "Error fetching budget data:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       throw error;
     }
@@ -198,11 +198,11 @@ const BudgetTracking = () => {
 
         const totalSpentVal = formattedCategories.reduce(
           (sum, p) => sum + p.spent,
-          0
+          0,
         );
         const totalBudgetVal = formattedCategories.reduce(
           (sum, p) => sum + p.budgeted,
-          0
+          0,
         );
 
         setBudgetCategories(formattedCategories);
@@ -220,13 +220,13 @@ const BudgetTracking = () => {
         `${import.meta.env.VITE_URL}/api/budget/cashflow`,
         {
           withCredentials: true,
-        }
+        },
       );
       return res.data; // array of { month, inflow, outflow, net }
     } catch (err) {
       console.error(
         "Cash flow fetch failed:",
-        err.response?.data || err.message
+        err.response?.data || err.message,
       );
       return [];
     }
@@ -254,13 +254,13 @@ const BudgetTracking = () => {
             {
               headers: { "Content-Type": "multipart/form-data" },
               withCredentials: true,
-            }
+            },
           );
           proofUrl = uploadRes.data.url;
         } catch (err) {
           console.error(
             "Proof upload failed:",
-            err.response?.data || err.message
+            err.response?.data || err.message,
           );
           alert("Failed to upload proof. Please try again.");
           return;
@@ -276,7 +276,7 @@ const BudgetTracking = () => {
           description: expense.description,
           proof: proofUrl, // <-- Cloudinary link
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       await getBudget();
       const cashFlow: CashFlowItem[] = await fetchCashFlowData(); // assuming this returns the data
@@ -339,7 +339,7 @@ const BudgetTracking = () => {
       const data = await fetchExpenses();
       setExpenseTransactions(data);
       const pending = data.filter(
-        (expense) => expense.status === "Pending"
+        (expense) => expense.status === "Pending",
       ).length;
       setPendingCount(pending);
     };
@@ -525,7 +525,7 @@ const BudgetTracking = () => {
                               />
                               <span className="text-sm">
                                 {Math.round(
-                                  (category.spent / category.budgeted) * 100
+                                  (category.spent / category.budgeted) * 100,
                                 )}
                                 %
                               </span>
@@ -600,7 +600,7 @@ const BudgetTracking = () => {
                             />
                             <span className="text-sm">
                               {Math.round(
-                                (category.spent / category.budgeted) * 100
+                                (category.spent / category.budgeted) * 100,
                               )}
                               %
                             </span>
@@ -733,8 +733,8 @@ const BudgetTracking = () => {
                                 transaction.status === "Approved"
                                   ? "default"
                                   : transaction.status === "Pending"
-                                  ? "secondary"
-                                  : "destructive"
+                                    ? "secondary"
+                                    : "destructive"
                               }
                             >
                               {transaction.status}
@@ -743,7 +743,7 @@ const BudgetTracking = () => {
                           <TableCell>
                             {transaction.proof ? (
                               <a
-                                href={transaction.proof}
+                                href={`${import.meta.env.VITE_URL}${transaction.proof}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
@@ -777,8 +777,8 @@ const BudgetTracking = () => {
                             transaction.status === "Approved"
                               ? "default"
                               : transaction.status === "Pending"
-                              ? "secondary"
-                              : "destructive"
+                                ? "secondary"
+                                : "destructive"
                           }
                         >
                           {transaction.status}
@@ -808,7 +808,7 @@ const BudgetTracking = () => {
                       <div className="mt-3">
                         {transaction.proof ? (
                           <a
-                            href={transaction.proof}
+                            href={`${import.meta.env.VITE_URL}${transaction.proof}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
