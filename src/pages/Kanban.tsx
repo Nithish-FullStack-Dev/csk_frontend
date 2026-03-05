@@ -1440,7 +1440,8 @@ const KanbanBoard: React.FC = () => {
     [],
   );
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState(String);
+  // const [selectedTaskId, setSelectedTaskId] = useState(String);
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("");
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [commentText, setCommentText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1480,6 +1481,7 @@ const KanbanBoard: React.FC = () => {
   const [roles, setRoles] = useState<string[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [projectRoles, setProjectRoles] = useState<string[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [projectPeople, setProjectPeople] = useState<any[]>([]);
   const columns = [
     {
@@ -2738,25 +2740,25 @@ const KanbanBoard: React.FC = () => {
   }, [selectedRole, selectedProject]);
 
   useEffect(() => {
-  // only for non-admin
-  if (!currentUser || userRole === "ADMIN") return;
+    // only for non-admin
+    if (!currentUser || userRole === "ADMIN") return;
 
-  // already selected → stop
-  if (selectedEmployee) return;
+    // already selected → stop
+    if (selectedEmployee) return;
 
-  for (const dept of departments) {
-    for (const label of dept.labels || []) {
-      for (const emp of label.types || []) {
-        if (emp.userId === currentUser._id) {
-          setSelectedDepartmentId(dept._id);
-          setSelectedLabel(label.name);
-          setSelectedEmployee(emp.userId);
-          return;
+    for (const dept of departments) {
+      for (const label of dept.labels || []) {
+        for (const emp of label.types || []) {
+          if (emp.userId === currentUser._id) {
+            setSelectedDepartmentId(dept._id);
+            setSelectedLabel(label.name);
+            setSelectedEmployee(emp.userId);
+            return;
+          }
         }
       }
     }
-  }
-}, [departments, currentUser, userRole]);
+  }, [departments, currentUser, userRole]);
 
   // useEffect(() => {
   //   if (!selectedEmployee) return;
@@ -2792,6 +2794,25 @@ const KanbanBoard: React.FC = () => {
     fetchTasks(userId);
     settaskemployee(userId);
   }, [selectedEmployee, selectedRole, selectedProjectId, currentUser]);
+
+const selectedDept = departments.find(
+  (d) => d._id === selectedDepartmentId
+);
+
+const normalize = (str: string) =>
+  str?.toLowerCase().replace(/[_\s]+/g, "");
+
+const employeesToShow =
+  selectedDept?.name?.toUpperCase() === "PURCHASED CUSTOMER" &&
+  selectedLabel?.toUpperCase() === "CUSTOMERS"
+    ? employees.filter(
+        (emp: any) => normalize(emp.role) === "customerpurchased"
+      )
+    : availableEmployees;
+
+    console.log("Dept:", selectedDept?.name);
+console.log("Label:", selectedLabel);
+console.log("EmployeesToShow:", employeesToShow);
 
   return (
     <MainLayout>
@@ -2887,16 +2908,25 @@ const KanbanBoard: React.FC = () => {
                   <select
                     value={selectedDepartmentId}
                     onChange={(e) => {
-                      setSelectedDepartmentId(e.target.value);
-                      setSelectedLabel("");
+                      const deptId = e.target.value;
+
+                      setSelectedDepartmentId(deptId);
                       setSelectedEmployee("");
                       setTasks([]);
+
+                      const dept = departments.find((d) => d._id === deptId);
+
+                      if (dept?.name?.toUpperCase() === "PURCHASED CUSTOMER" && dept.labels?.length) {
+                        setSelectedLabel(dept.labels[0].name); // prefill first label
+                      } else {
+                        setSelectedLabel("");
+                      }
                     }}
                     className="w-full sm:w-auto px-4 py-2 rounded-lg border
-                       bg-white
-                       border-gray-300
-                       text-gray-900
-                      focus:outline-none focus:ring-2 focus:ring-blue-500"
+     bg-white
+     border-gray-300
+     text-gray-900
+     focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">All Departments</option>
 
@@ -2933,25 +2963,53 @@ const KanbanBoard: React.FC = () => {
                   </select>
 
                   {/* EMPLOYEE SELECT */}
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                    disabled={!selectedLabel}
-                    className="w-full sm:w-auto px-4 py-2 rounded-lg border
-                     bg-white dark:bg-gray-800
-                     border-gray-300 dark:border-gray-700
-                     text-gray-900 dark:text-white
-                     focus:outline-none focus:ring-2 focus:ring-blue-500
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Choose…</option>
+                  {/* <select
+  value={selectedEmployee}
+  onChange={(e) => setSelectedEmployee(e.target.value)}
+  disabled={!selectedLabel}
+  className="w-full sm:w-auto px-4 py-2 rounded-lg border
+   bg-white dark:bg-gray-800
+   border-gray-300 dark:border-gray-700
+   text-gray-900 dark:text-white
+   focus:outline-none focus:ring-2 focus:ring-blue-500
+   disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <option value="">Choose…</option>
 
-                    {availableEmployees.map((emp: any) => (
-                      <option key={emp.userId} value={emp.userId}>
-                        {emp.name}
-                      </option>
-                    ))}
-                  </select>
+  {employeesToShow.map((emp: any) => (
+    <option key={emp.userId} value={emp.userId}>
+      {emp.name}
+    </option>
+  ))}
+</select> */}
+
+<select
+  value={selectedEmployee}
+  onChange={(e) => setSelectedEmployee(e.target.value)}
+  disabled={!selectedLabel}
+  className="w-full sm:w-auto px-4 py-2 rounded-lg border
+  bg-white dark:bg-gray-800
+  border-gray-300 dark:border-gray-700
+  text-gray-900 dark:text-white
+  focus:outline-none focus:ring-2 focus:ring-blue-500
+  disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <option value="">Choose…</option>
+
+  {employeesToShow.map((emp: any) => {
+    const id = emp._id || emp.userId;
+    const role =
+      emp.role
+        ?.replace(/_/g, " ")
+        .replace(/\b\w/g, (c: string) => c.toUpperCase()) || "";
+
+    return (
+      <option key={id} value={id}>
+        {emp.name} — {role}
+      </option>
+    );
+  })}
+</select>
                 </div>
 
                 {/* SEARCH */}

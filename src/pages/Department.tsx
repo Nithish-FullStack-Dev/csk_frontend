@@ -391,29 +391,31 @@ const Department = () => {
                     {department.name}
                   </CardTitle>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="p-2 rounded-md hover:bg-muted transition"
-                      onClick={() => {
-                        setSelectedDepartment(department);
-                        form.setValue("name", department.name);
-                        setLabels(department.labels);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pen className="h-4 w-4 text-muted-foreground hover:text-foreground transition" />
-                    </button>
+                  {department.name !== "PURCHASED CUSTOMER" && department.labels[0].name !== "CUSTOMERS" && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="p-2 rounded-md hover:bg-muted transition"
+                        onClick={() => {
+                          setSelectedDepartment(department);
+                          form.setValue("name", department.name);
+                          setLabels(department.labels);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pen className="h-4 w-4 text-muted-foreground hover:text-foreground transition" />
+                      </button>
 
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      className="p-2 rounded-md hover:bg-muted transition"
-                      onClick={() => handleDeleteDepartment(department._id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition" />
-                    </button>
-                  </div>
+                      {/* Delete */}
+                      <button
+                        type="button"
+                        className="p-2 rounded-md hover:bg-muted transition"
+                        onClick={() => handleDeleteDepartment(department._id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
 
@@ -561,20 +563,20 @@ const Department = () => {
                                     prev.map((l, i) =>
                                       i === index
                                         ? l.types.some(
-                                            (emp) => emp._id === value,
-                                          )
+                                          (emp) => emp._id === value,
+                                        )
                                           ? l
                                           : {
-                                              ...l,
-                                              types: [
-                                                ...l.types,
-                                                {
-                                                  _id: selectedEmp._id,
-                                                  name: selectedEmp.name,
-                                                  role: selectedEmp.role,
-                                                },
-                                              ],
-                                            }
+                                            ...l,
+                                            types: [
+                                              ...l.types,
+                                              {
+                                                _id: selectedEmp._id,
+                                                name: selectedEmp.name,
+                                                role: selectedEmp.role,
+                                              },
+                                            ],
+                                          }
                                         : l,
                                     ),
                                   );
@@ -643,12 +645,12 @@ const Department = () => {
                                           prev.map((l, i) =>
                                             i === index
                                               ? {
-                                                  ...l,
-                                                  types: l.types.filter(
-                                                    (employee) =>
-                                                      employee._id !== emp._id,
-                                                  ),
-                                                }
+                                                ...l,
+                                                types: l.types.filter(
+                                                  (employee) =>
+                                                    employee._id !== emp._id,
+                                                ),
+                                              }
                                               : l,
                                           ),
                                         );
