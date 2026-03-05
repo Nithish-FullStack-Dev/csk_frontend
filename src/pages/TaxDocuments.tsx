@@ -135,7 +135,7 @@ const TaxDocuments = () => {
         `${import.meta.env.VITE_URL}/api/tax/documents`,
         {
           withCredentials: true,
-        }
+        },
       );
 
       const {
@@ -153,14 +153,14 @@ const TaxDocuments = () => {
       // Calculate overview data
       const gstCollected = gstDocuments.reduce(
         (sum, doc) => sum + (doc.amount || 0),
-        0
+        0,
       );
       const tdsDeducted = tdsDocuments.reduce(
         (sum, doc) => sum + (doc.amountDeducted || 0),
-        0
+        0,
       );
       const pendingReturns = gstDocuments.filter(
-        (doc) => doc.status !== "Filed"
+        (doc) => doc.status !== "Filed",
       ).length;
 
       const totalReturns =
@@ -187,19 +187,19 @@ const TaxDocuments = () => {
 
       // Determine compliance status
       const gstFiled = gstDocuments.some(
-        (doc) => doc.status?.toLowerCase() === "filed"
+        (doc) => doc.status?.toLowerCase() === "filed",
       );
       const tdsPaid = tdsDocuments.some(
-        (doc) => doc.status?.toLowerCase() === "paid"
+        (doc) => doc.status?.toLowerCase() === "paid",
       );
       const itrFiled = itrDocuments.some(
-        (doc) => doc.status?.toLowerCase() === "filed"
+        (doc) => doc.status?.toLowerCase() === "filed",
       );
       const auditDone = gstDocuments
         .concat(itrDocuments)
         .some(
           (doc) =>
-            doc.status?.toLowerCase() === "filed" && doc.isApprovedByAuditor
+            doc.status?.toLowerCase() === "filed" && doc.isApprovedByAuditor,
         );
 
       // ROC Filed — since it’s not in DB, keep false (or fetch it separately if added later)
@@ -235,7 +235,7 @@ const TaxDocuments = () => {
           fileForm,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
 
         fileUrl = uploadRes.data.url;
@@ -296,7 +296,7 @@ const TaxDocuments = () => {
         payload,
         {
           withCredentials: true,
-        }
+        },
       );
 
       toast.success("Tax document added successfully!");
@@ -669,7 +669,7 @@ const TaxDocuments = () => {
                                 <Calendar className="h-4 w-4" />
                                 {format(
                                   new Date(gstReturn.dueDate),
-                                  "dd-MM-yyyy"
+                                  "dd-MM-yyyy",
                                 )}
                               </TableCell>
                               <TableCell>
@@ -713,7 +713,7 @@ const TaxDocuments = () => {
                                       onClick={() => {
                                         const link =
                                           document.createElement("a");
-                                        link.href = gstReturn.documentUrl;
+                                        link.href = `${import.meta.env.VITE_URL}${gstReturn.documentUrl}`;
                                         link.download = "";
                                         document.body.appendChild(link);
                                         link.click();
@@ -770,7 +770,7 @@ const TaxDocuments = () => {
                                 <Calendar className="h-4 w-4" />
                                 {format(
                                   new Date(gstReturn.dueDate),
-                                  "dd-MM-yyyy"
+                                  "dd-MM-yyyy",
                                 )}
                               </div>
                             </div>
@@ -807,7 +807,7 @@ const TaxDocuments = () => {
                                 size="sm"
                                 onClick={() => {
                                   const link = document.createElement("a");
-                                  link.href = gstReturn.documentUrl;
+                                  link.href = `${import.meta.env.VITE_URL}${gstReturn.documentUrl}`;
                                   link.download = "";
                                   document.body.appendChild(link);
                                   link.click();
@@ -896,7 +896,7 @@ const TaxDocuments = () => {
                                   size="sm"
                                   onClick={() => {
                                     const link = document.createElement("a");
-                                    link.href = record.documentUrl;
+                                    link.href = `${import.meta.env.VITE_URL}${record.documentUrl}`;
                                     link.download = "";
                                     document.body.appendChild(link);
                                     link.click();
@@ -980,7 +980,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = record.documentUrl;
+                                link.href = `${import.meta.env.VITE_URL}${record.documentUrl}`;
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1040,8 +1040,8 @@ const TaxDocuments = () => {
                                     doc.status === "filed"
                                       ? "default"
                                       : doc.status === "Generated"
-                                      ? "secondary"
-                                      : "outline"
+                                        ? "secondary"
+                                        : "outline"
                                   }
                                 >
                                   {doc.status.toUpperCase()}
@@ -1073,7 +1073,7 @@ const TaxDocuments = () => {
                                       onClick={() => {
                                         const link =
                                           document.createElement("a");
-                                        link.href = doc.documentUrl;
+                                        link.href = `${import.meta.env.VITE_URL}${doc.documentUrl}`;
                                         link.download = "";
                                         document.body.appendChild(link);
                                         link.click();
@@ -1120,8 +1120,8 @@ const TaxDocuments = () => {
                               doc.status === "filed"
                                 ? "default"
                                 : doc.status === "Generated"
-                                ? "secondary"
-                                : "outline"
+                                  ? "secondary"
+                                  : "outline"
                             }
                           >
                             {doc.status.toUpperCase()}
@@ -1160,7 +1160,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = doc.documentUrl;
+                                link.href = `${import.meta.env.VITE_URL}${doc.documentUrl}`;
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1406,7 +1406,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Uploaded Document</Label>
                     <a
-                      href={selectedGstDoc.documentUrl}
+                      href={`${import.meta.env.VITE_URL}${selectedGstDoc.documentUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1449,7 +1449,7 @@ const TaxDocuments = () => {
                     Payment Date:{" "}
                     {format(
                       new Date(selectedTdsRecord.paymentDate),
-                      "dd-MM-yyyy"
+                      "dd-MM-yyyy",
                     )}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -1461,7 +1461,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Supporting Document</Label>
                     <a
-                      href={selectedTdsRecord.documentUrl}
+                      href={`${import.meta.env.VITE_URL}${selectedTdsRecord.documentUrl}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1616,7 +1616,7 @@ const TaxDocuments = () => {
                                 ? auditorName
                                 : undefined,
                           },
-                          { withCredentials: true }
+                          { withCredentials: true },
                         );
 
                         toast.success("Status updated successfully!");
@@ -1731,7 +1731,7 @@ const TaxDocuments = () => {
                             auditStatus,
                             type: selectedAudit.type,
                           },
-                          { withCredentials: true }
+                          { withCredentials: true },
                         );
                         toast.success("Audit status updated!");
                         setAuditDialogOpen(false);
