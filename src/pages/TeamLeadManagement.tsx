@@ -68,7 +68,7 @@ interface User {
 const fetchUnassignedMem = async (): Promise<User[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/teamLead/unassigned`,
-    { withCredentials: false },
+    { withCredentials: true },
   );
   return data.data || [];
 };

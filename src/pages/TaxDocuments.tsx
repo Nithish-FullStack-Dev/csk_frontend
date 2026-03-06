@@ -98,7 +98,7 @@ const TaxDocuments = () => {
         type: doc.type, // <-- MUST be "gstr1" or "gstr3b"
         period: doc.period,
         auditor: doc.auditorName || "—",
-        status: doc.isApprovedByAuditor ? "Completed" : "Pending",
+        status: doc.isApprovedByAuditor ? "Completed" : "pending",
         date: doc.dueDate ? new Date(doc.dueDate).toLocaleDateString() : "—",
       }));
 
@@ -109,7 +109,7 @@ const TaxDocuments = () => {
         type: "itr", // <-- backend expects exactly "itr"
         period: doc.financialYear,
         auditor: doc.auditorName || "—",
-        status: doc.isApprovedByAuditor ? "Completed" : "Pending",
+        status: doc.isApprovedByAuditor ? "Completed" : "pending",
         date: doc.filingDate
           ? new Date(doc.filingDate).toLocaleDateString()
           : "—",
@@ -118,15 +118,14 @@ const TaxDocuments = () => {
     return [...auditFromGST, ...auditFromITR];
   };
 
-  // const handleAddTaxDoc = () => {
-  //   console.log("Adding tax document:", newTaxDoc);
-  //   setNewTaxDoc({
-  //     type: "",
-  //     period: "",
-  //     amount: "",
-  //     dueDate: "",
-  //   });
-  // };
+  const safeDate = (date) => {
+    if (!date) return "—";
+    try {
+      return format(new Date(date), "dd-MM-yyyy");
+    } catch {
+      return "—";
+    }
+  };
 
   const fetchTaxDocuments = async () => {
     try {
@@ -138,12 +137,23 @@ const TaxDocuments = () => {
         },
       );
 
-      const {
-        gstDocuments = [],
-        tdsDocuments = [],
-        itrDocuments = [],
-        form16Documents = [],
-      } = res.data.taxDocuments || {};
+      const taxData = res?.data?.taxDocuments || {};
+
+      const gstDocuments = Array.isArray(taxData.gstDocuments)
+        ? taxData.gstDocuments
+        : [];
+
+      const tdsDocuments = Array.isArray(taxData.tdsDocuments)
+        ? taxData.tdsDocuments
+        : [];
+
+      const itrDocuments = Array.isArray(taxData.itrDocuments)
+        ? taxData.itrDocuments
+        : [];
+
+      const form16Documents = Array.isArray(taxData.form16Documents)
+        ? taxData.form16Documents
+        : [];
 
       setGstDocs(gstDocuments);
       setTdsDocs(tdsDocuments);
@@ -160,7 +170,7 @@ const TaxDocuments = () => {
         0,
       );
       const pendingReturns = gstDocuments.filter(
-        (doc) => doc.status !== "Filed",
+        (doc) => doc.status !== "filed",
       ).length;
 
       const totalReturns =
@@ -169,10 +179,10 @@ const TaxDocuments = () => {
         itrDocuments.length +
         form16Documents.length;
       const filedReturns =
-        gstDocuments.filter((doc) => doc.status === "Filed").length +
-        tdsDocuments.filter((doc) => doc.status === "Paid").length +
-        itrDocuments.filter((doc) => doc.status === "Filed").length +
-        form16Documents.filter((doc) => doc.status === "Generated").length;
+        gstDocuments.filter((doc) => doc.status === "filed").length +
+        tdsDocuments.filter((doc) => doc.status === "paid").length +
+        itrDocuments.filter((doc) => doc.status === "filed").length +
+        form16Documents.filter((doc) => doc.status === "generated").length;
 
       const complianceScore =
         totalReturns > 0 ? Math.round((filedReturns / totalReturns) * 100) : 0;
@@ -230,15 +240,21 @@ const TaxDocuments = () => {
         const fileForm = new FormData();
         fileForm.append("file", formData.file);
 
-        const uploadRes = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          fileForm,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
-        );
+        try {
+          const uploadRes = await axios.post(
+            `${import.meta.env.VITE_URL}/api/uploads/upload`,
+            fileForm,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            },
+          );
 
-        fileUrl = uploadRes.data.url;
+          fileUrl = uploadRes.data.url || "";
+        } catch (error) {
+          toast.error("File upload failed");
+          setIsLoading(false);
+          return;
+        }
       }
 
       // 2. Prepare payload
@@ -305,7 +321,11 @@ const TaxDocuments = () => {
       setOpenAddDoc(false);
     } catch (error) {
       console.error("Add Tax Doc Error:", error);
-      toast.error("Error adding tax document");
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response.data.message
+          : error.message || "Error adding tax document",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -321,6 +341,12 @@ const TaxDocuments = () => {
       setAuditDocuments(audits);
     }
   }, [gstDocs, itrDocs]);
+
+  const buildFileUrl = (url) => {
+    if (!url) return "#";
+    if (url.startsWith("http")) return url;
+    return `${import.meta.env.VITE_URL}${url}`;
+  };
 
   return (
     <MainLayout>
@@ -479,7 +505,7 @@ const TaxDocuments = () => {
                           })
                         }
                         placeholder="Enter deducted amount"
-                        max={0}
+                        min={0}
                       />
                     </div>
                     <div>
@@ -575,7 +601,7 @@ const TaxDocuments = () => {
                           })
                         }
                         placeholder="Enter amount"
-                        max={0}
+                        min={0}
                       />
                     </div>
                   </>
@@ -635,9 +661,9 @@ const TaxDocuments = () => {
               </CardHeader>
               <CardContent>
                 {loadingDocs ? (
-                  <p className="text-muted-foreground">
-                    Loading tax documents...
-                  </p>
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
                 ) : (
                   <>
                     {/* Desktop Table */}
@@ -654,59 +680,74 @@ const TaxDocuments = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {gstDocs.map((gstReturn, idx) => (
-                            <TableRow key={gstReturn._id || idx}>
-                              <TableCell>{gstReturn.period}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {gstReturn.type.toUpperCase()}
-                                </Badge>
+                          {gstDocs.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={6}
+                                className="text-center py-6 text-muted-foreground"
+                              >
+                                No GST returns found
                               </TableCell>
-                              <TableCell>
-                                ₹{gstReturn.amount.toLocaleString()}
-                              </TableCell>
-                              <TableCell className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                {format(
-                                  new Date(gstReturn.dueDate),
-                                  "dd-MM-yyyy",
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    gstReturn.status === "filed"
-                                      ? "default"
-                                      : "destructive"
-                                  }
-                                >
-                                  {gstReturn.status.toUpperCase()}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedDoc(gstReturn);
-                                      setNewStatus(gstReturn.status);
-                                      setStatusDialogOpen(true);
-                                    }}
+                            </TableRow>
+                          ) : (
+                            gstDocs.map((gstReturn, idx) => (
+                              <TableRow key={gstReturn?._id ?? `gst-${idx}`}>
+                                <TableCell>{gstReturn.period}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {(
+                                      gstReturn?.type || "unknown"
+                                    ).toUpperCase()}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  ₹
+                                  {Number(
+                                    gstReturn?.amount || 0,
+                                  ).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  {safeDate(gstReturn?.dueDate)}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      gstReturn?.status?.toLowerCase() ===
+                                      "filed"
+                                        ? "default"
+                                        : "destructive"
+                                    }
                                   >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedGstDoc(gstReturn);
-                                      setViewGstDialogOpen(true);
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  {/* {gstReturn.documentUrl && (
+                                    {(gstReturn?.status || "unknown")
+                                      .toString()
+                                      .toUpperCase()}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedDoc(gstReturn);
+                                        setNewStatus(gstReturn?.status || "");
+                                        setStatusDialogOpen(true);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedGstDoc(gstReturn);
+                                        setViewGstDialogOpen(true);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    {/* {gstReturn.documentUrl && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -723,104 +764,119 @@ const TaxDocuments = () => {
                                       <Download className="h-4 w-4" />
                                     </Button>
                                   )} */}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
                         </TableBody>
                       </Table>
                     </div>
 
                     {/* Mobile Cards */}
                     <div className="block md:hidden space-y-4">
-                      {gstDocs.map((gstReturn, idx) => (
-                        <div
-                          key={gstReturn._id || idx}
-                          className="rounded-lg border p-4 shadow-sm bg-white"
-                        >
-                          <div className="flex justify-between items-center">
-                            <h3 className="font-semibold">
-                              {gstReturn.period}
-                            </h3>
-                            <Badge
-                              variant={
-                                gstReturn.status === "filed"
-                                  ? "default"
-                                  : "destructive"
-                              }
-                            >
-                              {gstReturn.status.toUpperCase()}
-                            </Badge>
-                          </div>
-
-                          <div className="mt-2 space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="font-medium">Return Type:</span>
-                              <Badge variant="outline">
-                                {gstReturn.type.toUpperCase()}
+                      {gstDocs.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">
+                          No GST returns found.
+                        </div>
+                      ) : (
+                        gstDocs.map((gstReturn, idx) => (
+                          <div
+                            key={gstReturn?._id ?? `gst-${idx}`}
+                            className="rounded-lg border p-4 shadow-sm bg-white"
+                          >
+                            <div className="flex justify-between items-center">
+                              <h3 className="font-semibold">
+                                {gstReturn.period}
+                              </h3>
+                              <Badge
+                                variant={
+                                  gstReturn?.status?.toLowerCase() === "filed"
+                                    ? "default"
+                                    : "destructive"
+                                }
+                              >
+                                {(gstReturn?.status || "unknown")
+                                  .toString()
+                                  .toUpperCase()}
                               </Badge>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="font-medium">Tax Amount:</span>
-                              <span>₹{gstReturn.amount.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">Due Date:</span>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {format(
-                                  new Date(gstReturn.dueDate),
-                                  "dd-MM-yyyy",
-                                )}
+
+                            <div className="mt-2 space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="font-medium">
+                                  Return Type:
+                                </span>
+                                <Badge variant="outline">
+                                  {(gstReturn?.type || "unknown").toUpperCase()}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">Tax Amount:</span>
+                                <span>
+                                  ₹
+                                  {Number(
+                                    gstReturn?.amount || 0,
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">Due Date:</span>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  {safeDate(gstReturn?.dueDate)}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Actions */}
-                          <div className="mt-3 flex gap-2 md:flex-row flex-col">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedDoc(gstReturn);
-                                setNewStatus(gstReturn.status);
-                                setStatusDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedGstDoc(gstReturn);
-                                setViewGstDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            {gstReturn.documentUrl && (
+                            {/* Actions */}
+                            <div className="mt-3 flex gap-2 md:flex-row flex-col">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  const link = document.createElement("a");
-                                  link.href = `${import.meta.env.VITE_URL}${gstReturn.documentUrl}`;
-                                  link.download = "";
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
+                                  setSelectedDoc(gstReturn);
+                                  setNewStatus(gstReturn.status);
+                                  setStatusDialogOpen(true);
                                 }}
                               >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
                               </Button>
-                            )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedGstDoc(gstReturn);
+                                  setViewGstDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              {gstReturn.documentUrl && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement("a");
+                                    link.href = buildFileUrl(
+                                      gstReturn.documentUrl,
+                                    );
+                                    link.download = "";
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-1" />
+                                  Download
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </>
                 )}
@@ -849,67 +905,83 @@ const TaxDocuments = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {tdsDocs.map((record, idx) => (
-                        <TableRow key={record._id || idx}>
-                          <TableCell>{record.quarter}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{record.section}</Badge>
+                      {tdsDocs.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="text-center py-6 text-muted-foreground"
+                          >
+                            No TDS records found
                           </TableCell>
-                          <TableCell>
-                            ₹{record.amountDeducted.toLocaleString()}
-                          </TableCell>
-                          <TableCell>{record.challanNumber}</TableCell>
-                          <TableCell>
-                            {format(new Date(record.paymentDate), "dd-MM-yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="default">
-                              {record.status.toUpperCase()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedDoc(record);
-                                  setNewStatus(record.status);
-                                  setStatusDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedTdsRecord(record);
-                                  setTdsDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {record.documentUrl && (
+                        </TableRow>
+                      ) : (
+                        tdsDocs.map((record, idx) => (
+                          <TableRow key={record?._id ?? `tds-${idx}`}>
+                            <TableCell>{record.quarter}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{record.section}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              ₹
+                              {Number(
+                                record?.amountDeducted || 0,
+                              ).toLocaleString()}
+                            </TableCell>
+                            <TableCell>{record.challanNumber}</TableCell>
+                            <TableCell>
+                              {safeDate(record?.paymentDate)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="default">
+                                {(record?.status || "unknown").toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    const link = document.createElement("a");
-                                    link.href = `${import.meta.env.VITE_URL}${record.documentUrl}`;
-                                    link.download = "";
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
+                                    setSelectedDoc(record);
+                                    setNewStatus(record?.status || "");
+                                    setStatusDialogOpen(true);
                                   }}
                                 >
-                                  <Download className="h-4 w-4" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTdsRecord(record);
+                                    setTdsDialogOpen(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {record.documentUrl && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const link = document.createElement("a");
+                                      link.href = buildFileUrl(
+                                        record.documentUrl,
+                                      );
+                                      link.download = "";
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    }}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -919,7 +991,7 @@ const TaxDocuments = () => {
               {!loadingDocs && (
                 <div className="md:hidden space-y-4">
                   {tdsDocs.map((record, idx) => (
-                    <Card key={record._id || idx} className="w-full">
+                    <Card key={record?._id ?? `tds-${idx}`} className="w-full">
                       <CardHeader>
                         <CardTitle>TDS Deduction Record</CardTitle>
                       </CardHeader>
@@ -934,7 +1006,12 @@ const TaxDocuments = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Amount Deducted:</span>
-                          <span>₹{record.amountDeducted.toLocaleString()}</span>
+                          <span>
+                            ₹
+                            {Number(
+                              record?.amountDeducted || 0,
+                            ).toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Challan Number:</span>
@@ -942,14 +1019,12 @@ const TaxDocuments = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Payment Date:</span>
-                          <span>
-                            {format(new Date(record.paymentDate), "dd-MM-yyyy")}
-                          </span>
+                          <span>{safeDate(record?.paymentDate)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Status:</span>
                           <Badge variant="default">
-                            {record.status.toUpperCase()}
+                            {(record?.status || "unknown").toUpperCase()}
                           </Badge>
                         </div>
                         <div className="flex gap-2 mt-2">
@@ -958,7 +1033,7 @@ const TaxDocuments = () => {
                             size="sm"
                             onClick={() => {
                               setSelectedDoc(record);
-                              setNewStatus(record.status);
+                              setNewStatus(record?.status || "");
                               setStatusDialogOpen(true);
                             }}
                           >
@@ -980,7 +1055,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = `${import.meta.env.VITE_URL}${record.documentUrl}`;
+                                link.href = buildFileUrl(record.documentUrl);
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1025,68 +1100,81 @@ const TaxDocuments = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {itrDocs.map((doc, idx) => (
-                            <TableRow key={doc._id || idx}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  {doc.type || "unknown type"}
-                                </div>
+                          {itrDocs.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={7}
+                                className="text-center py-6 text-muted-foreground"
+                              >
+                                No TDS records found
                               </TableCell>
-                              <TableCell>{doc.financialYear}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    doc.status === "filed"
-                                      ? "default"
-                                      : doc.status === "Generated"
-                                        ? "secondary"
-                                        : "outline"
-                                  }
-                                >
-                                  {doc.status.toUpperCase()}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {format(new Date(doc.filingDate), "dd-MM-yyyy")}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedDoc(doc);
-                                      setNewStatus(doc.status);
-                                      setStatusDialogOpen(true);
-                                    }}
+                            </TableRow>
+                          ) : (
+                            itrDocs.map((doc, idx) => (
+                              <TableRow key={doc?._id ?? `itr-${idx}`}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    {doc.type || "unknown type"}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{doc.financialYear}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      doc.status === "filed"
+                                        ? "default"
+                                        : doc.status === "generated"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
                                   >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  {doc.documentUrl && (
+                                    {(doc?.status || "unknown").toUpperCase()}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {safeDate(doc.filingDate)}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => {
-                                        const link =
-                                          document.createElement("a");
-                                        link.href = `${import.meta.env.VITE_URL}${doc.documentUrl}`;
-                                        link.download = "";
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
+                                        setSelectedDoc(doc);
+                                        setNewStatus(doc?.status || "");
+                                        setStatusDialogOpen(true);
                                       }}
                                     >
-                                      <Download className="h-4 w-4" />
+                                      <Edit className="h-4 w-4" />
                                     </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                    <Button variant="ghost" size="sm">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    {doc.documentUrl && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          const link =
+                                            document.createElement("a");
+                                          link.href = buildFileUrl(
+                                            doc.documentUrl,
+                                          );
+                                          link.download = "";
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                        }}
+                                      >
+                                        <Download className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
                         </TableBody>
                       </Table>
                     </CardContent>
@@ -1098,7 +1186,7 @@ const TaxDocuments = () => {
               {!loadingDocs && (
                 <div className="md:hidden space-y-4">
                   {itrDocs.map((doc, idx) => (
-                    <Card key={doc._id || idx} className="w-full">
+                    <Card key={doc?._id ?? `itr-${idx}`} className="w-full">
                       <CardHeader>
                         <CardTitle>Income Tax Document</CardTitle>
                       </CardHeader>
@@ -1119,19 +1207,17 @@ const TaxDocuments = () => {
                             variant={
                               doc.status === "filed"
                                 ? "default"
-                                : doc.status === "Generated"
+                                : doc.status === "generated"
                                   ? "secondary"
                                   : "outline"
                             }
                           >
-                            {doc.status.toUpperCase()}
+                            {(doc?.status || "unknown").toUpperCase()}
                           </Badge>
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Date:</span>
-                          <span>
-                            {format(new Date(doc.filingDate), "dd-MM-yyyy")}
-                          </span>
+                          <span>{safeDate(doc.filingDate)}</span>
                         </div>
                         <div className="flex gap-2 mt-2">
                           <Button
@@ -1160,7 +1246,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = `${import.meta.env.VITE_URL}${doc.documentUrl}`;
+                                link.href = buildFileUrl(doc.documentUrl);
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1200,40 +1286,41 @@ const TaxDocuments = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {auditDocuments.map((audit) => (
-                          <TableRow key={audit.id}>
-                            <TableCell>{audit.type}</TableCell>
-                            <TableCell>{audit.period}</TableCell>
-                            <TableCell>{audit.auditor}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  audit.status === "Completed"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {audit.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{audit.date}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedAudit(audit);
-                                    setAuditStatus(audit.status);
-                                    setAuditDialogOpen(true);
-                                  }}
+                        {Array.isArray(auditDocuments) &&
+                          auditDocuments.map((audit) => (
+                            <TableRow key={audit.id}>
+                              <TableCell>{audit.type}</TableCell>
+                              <TableCell>{audit.period}</TableCell>
+                              <TableCell>{audit.auditor}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    audit.status === "Completed"
+                                      ? "default"
+                                      : "secondary"
+                                  }
                                 >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                  {audit.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{audit.date}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedAudit(audit);
+                                      setAuditStatus(audit.status);
+                                      setAuditDialogOpen(true);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -1282,7 +1369,7 @@ const TaxDocuments = () => {
 
               {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
-                {auditDocuments.map((audit) => (
+                {(auditDocuments || []).map((audit) => (
                   <Card key={audit.id} className="w-full">
                     <CardHeader>
                       <CardTitle>Audit Status</CardTitle>
@@ -1387,18 +1474,19 @@ const TaxDocuments = () => {
               <div className="space-y-4">
                 <div className="bg-muted p-3 rounded-md space-y-1">
                   <p className="font-medium text-lg">
-                    {selectedGstDoc.type?.toUpperCase()} -{" "}
-                    {selectedGstDoc.period}
+                    {(selectedGstDoc?.type || "unknown").toUpperCase()} -{" "}
+                    {selectedGstDoc?.period || "-"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Amount: ₹{selectedGstDoc.amount?.toLocaleString()}
+                    Amount: ₹
+                    {Number(selectedGstDoc?.amount ?? 0).toLocaleString()}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Due Date:{" "}
-                    {format(new Date(selectedGstDoc.dueDate), "dd-MM-yyyy")}
+                    Due Date: {safeDate(selectedGstDoc.dueDate)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Status: {selectedGstDoc.status}
+                    Status:{" "}
+                    {(selectedGstDoc?.status || "unknown").toUpperCase()}
                   </p>
                 </div>
 
@@ -1406,7 +1494,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Uploaded Document</Label>
                     <a
-                      href={`${import.meta.env.VITE_URL}${selectedGstDoc.documentUrl}`}
+                      href={buildFileUrl(selectedGstDoc.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1440,20 +1528,19 @@ const TaxDocuments = () => {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Amount Deducted: ₹
-                    {selectedTdsRecord.amountDeducted.toLocaleString()}
+                    {Number(
+                      selectedTdsRecord?.amountDeducted || 0,
+                    ).toLocaleString()}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Challan No: {selectedTdsRecord.challanNumber}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Payment Date:{" "}
-                    {format(
-                      new Date(selectedTdsRecord.paymentDate),
-                      "dd-MM-yyyy",
-                    )}
+                    Payment Date: {safeDate(selectedTdsRecord?.paymentDate)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Status: {selectedTdsRecord.status}
+                    Status:{" "}
+                    {(selectedTdsRecord?.status || "unknown").toUpperCase()}
                   </p>
                 </div>
 
@@ -1461,7 +1548,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Supporting Document</Label>
                     <a
-                      href={`${import.meta.env.VITE_URL}${selectedTdsRecord.documentUrl}`}
+                      href={buildFileUrl(selectedTdsRecord.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1495,20 +1582,20 @@ const TaxDocuments = () => {
                   </div>
                   <div className="mt-1">
                     <p className="font-medium text-lg">
-                      {selectedDoc.type?.toUpperCase() ||
+                      {(selectedDoc?.type || "").toUpperCase() ||
                         selectedDoc.section ||
                         "Tax Document"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Amount: ₹
-                      {(
-                        selectedDoc.amount || selectedDoc.amountDeducted
-                      )?.toLocaleString()}
+                      {Number(
+                        selectedDoc?.amount || selectedDoc?.amountDeducted || 0,
+                      ).toLocaleString()}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Current Status:{" "}
                       <span className="font-semibold">
-                        {selectedDoc.status}
+                        {selectedDoc?.status || "unknown"}
                       </span>
                     </p>
                   </div>
@@ -1520,23 +1607,22 @@ const TaxDocuments = () => {
                     Update Status
                   </Label>
                   <div className="flex gap-3 justify-between bg-secondary rounded-lg p-3">
-                    {(selectedDoc.type ||
-                      (!selectedDoc.type && !selectedDoc.section)) && (
+                    {!selectedDoc?.section && (
                       <>
                         <Button
                           variant={
-                            newStatus === "Filed" ? "default" : "outline"
+                            newStatus === "filed" ? "default" : "outline"
                           }
-                          onClick={() => setNewStatus("Filed")}
+                          onClick={() => setNewStatus("filed")}
                           className="flex-1 justify-center"
                         >
                           ✅ Filed
                         </Button>
                         <Button
                           variant={
-                            newStatus === "Pending" ? "default" : "outline"
+                            newStatus === "pending" ? "default" : "outline"
                           }
-                          onClick={() => setNewStatus("Pending")}
+                          onClick={() => setNewStatus("pending")}
                           className="flex-1 justify-center"
                         >
                           ⏳ Pending
@@ -1546,17 +1632,17 @@ const TaxDocuments = () => {
                     {selectedDoc.section && (
                       <>
                         <Button
-                          variant={newStatus === "Paid" ? "default" : "outline"}
-                          onClick={() => setNewStatus("Paid")}
+                          variant={newStatus === "paid" ? "default" : "outline"}
+                          onClick={() => setNewStatus("paid")}
                           className="flex-1 justify-center"
                         >
                           💰 Paid
                         </Button>
                         <Button
                           variant={
-                            newStatus === "Unpaid" ? "default" : "outline"
+                            newStatus === "unpaid" ? "default" : "outline"
                           }
-                          onClick={() => setNewStatus("Unpaid")}
+                          onClick={() => setNewStatus("unpaid")}
                           className="flex-1 justify-center"
                         >
                           ❌ Unpaid
@@ -1567,7 +1653,7 @@ const TaxDocuments = () => {
                 </div>
 
                 {/* Auditor Name input (only if 'Filed' and not TDS) */}
-                {newStatus === "Filed" && !selectedDoc.section && (
+                {newStatus === "filed" && !selectedDoc.section && (
                   <div>
                     <Label className="block mb-1 text-sm font-medium">
                       Auditor Name <span className="text-red-500">*</span>
@@ -1598,7 +1684,7 @@ const TaxDocuments = () => {
                     disabled={
                       updating || // disable while updating
                       selectedDoc?.status === newStatus ||
-                      (newStatus === "Filed" &&
+                      (newStatus === "filed" &&
                         !selectedDoc?.section &&
                         !auditorName)
                     }
@@ -1612,7 +1698,7 @@ const TaxDocuments = () => {
                           {
                             status: newStatus,
                             auditorName:
-                              newStatus === "Filed" && !selectedDoc.section
+                              newStatus === "filed" && !selectedDoc.section
                                 ? auditorName
                                 : undefined,
                           },
@@ -1624,7 +1710,11 @@ const TaxDocuments = () => {
                         setAuditorName("");
                         fetchTaxDocuments();
                       } catch (err) {
-                        toast.error("Failed to update status.");
+                        toast.error(
+                          axios.isAxiosError(err)
+                            ? err.response.data.message
+                            : err.message || "Failed to update status.",
+                        );
                       } finally {
                         setUpdating(false); // re-enable after done
                       }
