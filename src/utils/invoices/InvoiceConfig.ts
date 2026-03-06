@@ -15,21 +15,28 @@ export interface InvoiceItem {
 
 export interface Invoice {
   _id: string;
-  to: string;
+  invoiceNumber?: string;
   project: Building;
-  issueDate: string;
-  dueDate: string;
-  sgst: number;
-  cgst: number;
-  total: number;
-  subtotal: number;
-  status: "draft" | "pending" | "approved" | "paid" | "rejected";
-  paymentDate: string | null;
-  notes?: string;
-  task?: string;
   unit: Property;
   floorUnit: FloorUnit;
-  invoiceNumber?: string;
+  issueDate: string;
+  dueDate: string;
+  subtotal: number;
+  total: number;
+  paidAmount: number;
+  remainingAmount: number;
+  sgst: number;
+  cgst: number;
+  status:
+  | "draft"
+  | "pending"
+  | "approved"
+  | "partially_paid"
+  | "paid"
+  | "rejected";
+  paymentDate: string | null;
+  notes?: string;
+  task?: string | null;
   items: InvoiceItem[];
 }
 
@@ -37,7 +44,7 @@ export const fetchInvoices = async () => {
   const response = await axios.get(`${import.meta.env.VITE_URL}/api/invoices`, {
     withCredentials: true,
   });
-  return response.data;
+  return response.data as Invoice[];
 };
 
 export const fetchCompletedTasks = async () => {
