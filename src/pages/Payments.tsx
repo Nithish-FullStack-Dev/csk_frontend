@@ -274,7 +274,25 @@ const Payments = () => {
                       Filter
                     </Button>
                   </DropdownMenuTrigger>
+                  {filters.paymentMethod && (
+                    <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-md text-sm">
+                      <span className="capitalize">
+                        {filters.paymentMethod}
+                      </span>
 
+                      <button
+                        onClick={() =>
+                          setFilters({
+                            ...filters,
+                            paymentMethod: "",
+                          })
+                        }
+                        className="text-muted-foreground hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() =>
