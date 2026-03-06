@@ -65,7 +65,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Separator } from "@radix-ui/react-dropdown-menu";
+// import { Separator } from "@radix-ui/react-dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { forwardRef } from "react";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -86,7 +87,7 @@ const CustomDateInput = forwardRef<HTMLButtonElement, CustomInputProps>(
     >
       {value || "Select date range"}
     </button>
-  )
+  ),
 );
 
 CustomDateInput.displayName = "CustomDateInput"; // important for forwardRef
@@ -114,7 +115,12 @@ const Payments = () => {
     startDate: null as Date | null,
     endDate: null as Date | null,
   });
-
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(new Date());
+  const [nextPaymentDate, setNextPaymentDate] = useState<Date | null>(null);
+  const [note, setNote] = useState("");
+  const [referenceNumber, setReferenceNumber] = useState("");
   const [filters, setFilters] = useState({
     paymentMethod: "",
     startDate: null,
@@ -129,17 +135,22 @@ const Payments = () => {
   const fetchInvoices = async () => {
     try {
       setLoading(true);
+
       const response = await axios.get(
         `${import.meta.env.VITE_URL}/api/invoices`,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true },
       );
-      setInvoices(response.data.filter((invoice) => invoice.status !== "paid"));
-      setError("");
+
+      // Only show invoices that are approved and not fully paid
+      const validInvoices = response.data.filter(
+        (inv: any) =>
+          ["approved", "partially_paid"].includes(inv.status) &&
+          (inv.paidAmount || 0) < inv.total,
+      );
+
+      setInvoices(validInvoices);
     } catch (err) {
       console.error("Failed to fetch invoices", err);
-      setError("Failed to fetch invoices");
     } finally {
       setLoading(false);
     }
@@ -151,7 +162,7 @@ const Payments = () => {
         `${import.meta.env.VITE_URL}/api/payments/accountant`,
         {
           withCredentials: true, // if using cookies/auth
-        }
+        },
       );
       setPayments(res.data);
     } catch (error) {
@@ -166,26 +177,23 @@ const Payments = () => {
     fetchInvoices();
   }, []);
 
-  const filteredPayments = payments.filter((payment) => {
+  const filteredPayments = payments.filter((payment: any) => {
     const invoice = payment?.invoice;
-    // if invoice is missing, skip this payment
     if (!invoice) return false;
 
-    // match payment method (support array or string)
     const matchesMethod = filters.paymentMethod
-      ? Array.isArray(invoice.paymentMethod)
-        ? invoice.paymentMethod.includes(filters.paymentMethod)
-        : invoice.paymentMethod === filters.paymentMethod
+      ? payment?.paymentMethod?.toLowerCase() ===
+        filters.paymentMethod.toLowerCase()
       : true;
 
-    // match date range only when filters.startDate & filters.endDate exist AND invoice.paymentDate exists
     let matchesDateRange = true;
-    if (filters.startDate && filters.endDate && invoice.paymentDate) {
-      const paymentDate = new Date(invoice.paymentDate);
 
-      // normalize range to include full days (optional but usually desired)
+    if (filters.startDate && filters.endDate && payment.paymentDate) {
+      const paymentDate = new Date(payment.paymentDate);
+
       const start = new Date(filters.startDate);
       start.setHours(0, 0, 0, 0);
+
       const end = new Date(filters.endDate);
       end.setHours(23, 59, 59, 999);
 
@@ -194,7 +202,6 @@ const Payments = () => {
 
     return matchesMethod && matchesDateRange;
   });
-
   const exportPaymentsToExcel = () => {
     const dataToExport = filteredPayments.map((payment) => ({
       "Payment ID": payment.paymentNumber,
@@ -203,7 +210,7 @@ const Payments = () => {
         payment?.invoice.project?.projectId?.projectName +
         " / " +
         payment.invoice.unit,
-      Amount: payment.invoice.total,
+      Amount: payment.amount,
       Method: payment.invoice.paymentMethod,
       Date: new Date(payment.invoice.paymentDate).toLocaleDateString(),
     }));
@@ -271,18 +278,23 @@ const Payments = () => {
                   <DropdownMenuContent>
                     <DropdownMenuItem
                       onClick={() =>
-                        setFilters({ ...filters, paymentMethod: "Cash" })
+                        setFilters({ ...filters, paymentMethod: "cash" })
                       }
                     >
                       Cash
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() =>
-                        setFilters({ ...filters, paymentMethod: "Bank" })
+                        setFilters({
+                          ...filters,
+                          paymentMethod: "bank_transfer",
+                        })
                       }
                     >
                       Bank
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() =>
                         setFilters({ ...filters, paymentMethod: "cheque" })
@@ -290,19 +302,13 @@ const Payments = () => {
                     >
                       Cheque
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() =>
-                        setFilters({ ...filters, paymentMethod: "UPI" })
+                        setFilters({ ...filters, paymentMethod: "upi" })
                       }
                     >
                       UPI
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        setFilters({ ...filters, paymentMethod: "" })
-                      }
-                    >
-                      Clear
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -360,9 +366,11 @@ const Payments = () => {
                       <TableHead>Reference</TableHead>
                       <TableHead>Property</TableHead>
                       {/* <TableHead>Client</TableHead> */}
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Total Amount</TableHead>
+                      <TableHead>Paid Amount</TableHead>
+                      <TableHead>Balance</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead>Payment Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -387,7 +395,7 @@ const Payments = () => {
                           {payment?.invoice?.project?.projectName +
                             " / floor Number -" +
                             payment?.invoice?.floorUnit?.floorNumber +
-                            "/ Plot No -" +
+                            "/ Flot No -" +
                             payment?.invoice?.unit?.plotNo}
                           {/* {payment?.invoice?.project?.projectId?.projectName ||
                           payment?.invoice?.unit?.unitName
@@ -400,38 +408,34 @@ const Payments = () => {
 
                         {/* Total Amount */}
                         <TableCell>
-                          ₹
-                          {payment?.invoice?.total
-                            ? payment.invoice.total.toLocaleString()
-                            : "0"}
+                          ₹{payment?.invoice?.total?.toLocaleString() || "0"}
                         </TableCell>
 
-                        {/* Payment Method(s) */}
-                        <TableCell className="space-x-1">
-                          {Array.isArray(payment?.invoice?.paymentMethod) ? (
-                            [...new Set(payment.invoice.paymentMethod)].map(
-                              (method: string, index: number) => (
-                                <span
-                                  key={index}
-                                  className="inline-block bg-muted px-2 py-1 text-xs rounded-md text-muted-foreground"
-                                >
-                                  {method?.toUpperCase() || "-"}
-                                </span>
-                              )
-                            )
-                          ) : (
-                            <span>
-                              {payment?.invoice?.paymentMethod || "-"}
-                            </span>
-                          )}
+                        {/* Paid Amount */}
+                        <TableCell className="text-green-600 font-medium">
+                          ₹{payment?.amount?.toLocaleString() || "0"}
+                        </TableCell>
+
+                        {/* Balance Amount */}
+                        <TableCell className="text-red-600 font-medium">
+                          ₹
+                          {(
+                            payment?.invoice?.total -
+                            (payment?.invoice?.paidAmount || 0)
+                          ).toLocaleString()}
+                        </TableCell>
+
+                        {/* Mode of Payment */}
+                        <TableCell>
+                          <span className="px-2 py-1 rounded-md bg-muted text-xs">
+                            {payment?.paymentMethod?.toUpperCase()}
+                          </span>
                         </TableCell>
 
                         {/* Payment Date */}
                         <TableCell>
-                          {payment?.invoice?.paymentDate
-                            ? new Date(
-                                payment.invoice.paymentDate
-                              ).toLocaleDateString()
+                          {payment?.paymentDate
+                            ? new Date(payment.paymentDate).toLocaleDateString()
                             : "-"}
                         </TableCell>
 
@@ -481,7 +485,7 @@ const Payments = () => {
 
                               <DropdownMenuSeparator />
 
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedPayment(payment);
                                   setShowReconciliationDialog(true);
@@ -489,7 +493,7 @@ const Payments = () => {
                               >
                                 <CreditCard className="mr-2 h-4 w-4" />
                                 Reconcile
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -513,7 +517,7 @@ const Payments = () => {
                       </div>
                       <span className="text-sm text-muted-foreground">
                         {new Date(
-                          payment.invoice.paymentDate
+                          payment.invoice.paymentDate,
                         ).toLocaleDateString()}
                       </span>
                     </div>
@@ -536,7 +540,7 @@ const Payments = () => {
                       <div>
                         <span className="font-semibold">Amount: </span>₹
                         {payment.invoice?.total
-                          ? payment.invoice.total.toLocaleString()
+                          ? payment.amount.toLocaleString()
                           : "0"}
                       </div>
 
@@ -551,7 +555,7 @@ const Payments = () => {
                               >
                                 {method?.toUpperCase() || "N/A"}
                               </span>
-                            )
+                            ),
                           )
                         ) : (
                           <span>{payment.invoice?.paymentMethod || "N/A"}</span>
@@ -662,7 +666,7 @@ const Payments = () => {
                         <p className="font-semibold">Payment Date</p>
                         <p>
                           {new Date(
-                            selectedPayment?.invoice?.paymentDate
+                            selectedPayment?.invoice?.paymentDate,
                           ).toLocaleDateString()}
                         </p>
                       </div>
@@ -673,12 +677,12 @@ const Payments = () => {
                     <div className="text-xs text-muted-foreground">
                       Issued on:{" "}
                       {new Date(
-                        selectedPayment?.invoice?.issueDate
+                        selectedPayment?.invoice?.issueDate,
                       ).toLocaleDateString()}{" "}
                       <br />
                       Due Date:{" "}
                       {new Date(
-                        selectedPayment?.invoice?.dueDate
+                        selectedPayment?.invoice?.dueDate,
                       ).toLocaleDateString()}
                     </div>
 
@@ -717,10 +721,10 @@ const Payments = () => {
                           selectedPayment?.invoice?.status === "Paid"
                             ? "bg-green-100 text-green-800"
                             : selectedPayment?.invoice?.status === "Pending"
-                            ? "bg-blue-100 text-blue-800"
-                            : selectedPayment?.invoice?.status === "Overdue"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-800"
+                              ? "bg-blue-100 text-blue-800"
+                              : selectedPayment?.invoice?.status === "Overdue"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
                         } text-sm py-1 px-3`}
                       >
                         {selectedPayment?.invoice?.status}
@@ -740,7 +744,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment?.invoice?.issueDate
+                              selectedPayment?.invoice?.issueDate,
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -754,7 +758,7 @@ const Payments = () => {
                           </p>
                           <p>
                             {new Date(
-                              selectedPayment?.invoice?.issueDate
+                              selectedPayment?.invoice?.issueDate,
                             ).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "2-digit",
@@ -778,7 +782,7 @@ const Payments = () => {
                             </p>
                             <p>
                               {new Date(
-                                selectedPayment?.invoice?.paymentDate
+                                selectedPayment?.invoice?.paymentDate,
                               ).toLocaleDateString("en-GB", {
                                 day: "2-digit",
                                 month: "2-digit",
@@ -897,42 +901,171 @@ const Payments = () => {
               open={showPaymentDialog}
               onOpenChange={setShowPaymentDialog}
             >
-              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+              <DialogContent className="md:max-w-[80vw] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl">
                 <DialogHeader>
-                  <DialogTitle>Mark Invoice as Paid</DialogTitle>
+                  <DialogTitle>Record Payment</DialogTitle>
                   <DialogDescription>
-                    Select payment method before marking this invoice as paid.
+                    Record a payment against an invoice.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                  <Label htmlFor="invoiceId">Invoice Number</Label>
+                {/* Invoice Select */}
+                <div className="space-y-2">
+                  <Label>Invoice Number</Label>
                   <Select
-                    value={selectedInvoiceId}
-                    onValueChange={setSelectedInvoiceId}
+                    onValueChange={(value) => {
+                      setSelectedInvoiceId(value);
+
+                      const invoice = invoices.find(
+                        (i: any) => i._id === value,
+                      );
+                      setSelectedInvoice(invoice);
+
+                      if (invoice) {
+                        const remaining =
+                          invoice.total - (invoice.paidAmount || 0);
+
+                        // auto-fill payment amount with remaining
+                        setPaymentAmount(String(remaining));
+
+                        // reset reference when invoice changes
+                        setReferenceNumber("");
+                        setPaymentMethod("");
+                      }
+                    }}
                   >
-                    <SelectTrigger id="invoiceId">
-                      <SelectValue placeholder="Select Invoice Number" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select invoice" />
                     </SelectTrigger>
+
                     <SelectContent>
                       {invoices.map((invoice) => (
-                        <SelectItem key={invoice?._id} value={invoice?._id}>
-                          {invoice?.invoiceNumber}
+                        <SelectItem key={invoice._id} value={invoice._id}>
+                          {invoice.invoiceNumber}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+                {selectedInvoice && Array.isArray(selectedInvoice.items) && (
+                  <div className="border rounded-xl overflow-x-auto mt-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Qty</TableHead>
+                          <TableHead>Rate</TableHead>
+                          <TableHead>Tax %</TableHead>
+                          <TableHead>Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
 
-                <div className="space-y-4">
-                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                      <TableBody>
+                        {selectedInvoice.items.map(
+                          (item: any, index: number) => (
+                            <TableRow key={item._id || index}>
+                              <TableCell>{item.description}</TableCell>
+
+                              <TableCell>
+                                {item.quantity} {item.unit}
+                              </TableCell>
+
+                              <TableCell>
+                                ₹{Number(item.rate || 0).toLocaleString()}
+                              </TableCell>
+
+                              <TableCell>{item.taxRate || 0}%</TableCell>
+
+                              <TableCell>
+                                ₹{Number(item.amount || 0).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          ),
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+                {/* Invoice Info */}
+                {selectedInvoice && (
+                  <div className="grid grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Total</p>
+                      <p className="font-semibold">
+                        ₹{selectedInvoice.total?.toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground">Paid</p>
+                      <p className="font-semibold text-green-600">
+                        ₹{(selectedInvoice.paidAmount || 0).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-muted-foreground">Remaining</p>
+                      <p className="font-semibold text-red-600">
+                        ₹
+                        {(
+                          selectedInvoice.total -
+                          (selectedInvoice.paidAmount || 0)
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Amount */}
+                <div className="space-y-2">
+                  <Label>Payment Amount</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={
+                      selectedInvoice
+                        ? selectedInvoice.total -
+                          (selectedInvoice.paidAmount || 0)
+                        : undefined
+                    }
+                    value={paymentAmount}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+
+                      const remaining =
+                        selectedInvoice.total -
+                        (selectedInvoice.paidAmount || 0);
+
+                      if (value > remaining) {
+                        toast.error(`Maximum allowed payment is ₹${remaining}`);
+                        return;
+                      }
+
+                      setPaymentAmount(e.target.value);
+                    }}
+                  />
+                  {selectedInvoice && (
+                    <p className="text-xs text-muted-foreground">
+                      Maximum payable: ₹
+                      {(
+                        selectedInvoice.total -
+                        (selectedInvoice.paidAmount || 0)
+                      ).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Payment Method */}
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
                   <Select
                     value={paymentMethod}
                     onValueChange={setPaymentMethod}
                   >
-                    <SelectTrigger id="paymentMethod">
-                      <SelectValue placeholder="Select payment method" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select method" />
                     </SelectTrigger>
+
                     <SelectContent>
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
@@ -943,25 +1076,97 @@ const Payments = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {paymentMethod !== "cash" && (
+                  <div className="space-y-2">
+                    <Label>
+                      {paymentMethod === "upi"
+                        ? "UPI Reference / UTR"
+                        : paymentMethod === "cheque"
+                          ? "Cheque Number"
+                          : "Transaction ID"}
+                    </Label>
 
-                <div className="flex justify-end gap-2 pt-4">
+                    <Input
+                      value={referenceNumber}
+                      onChange={(e) => setReferenceNumber(e.target.value)}
+                      placeholder="Enter reference number"
+                    />
+                  </div>
+                )}
+
+                {/* Next Payment Date */}
+                {selectedInvoice &&
+                  Number(paymentAmount) <
+                    selectedInvoice.total -
+                      (selectedInvoice.paidAmount || 0) && (
+                    <div className="space-y-2 ">
+                      <Label>Next Payment Date :</Label>{" "}
+                      <DatePicker
+                        placeholderText="select date"
+                        selected={nextPaymentDate}
+                        onChange={(date: Date | null) =>
+                          setNextPaymentDate(date)
+                        }
+                        className="border rounded-md ms-4 px-3 py-2 w-full"
+                      />
+                    </div>
+                  )}
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Input
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Optional note"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setShowPaymentDialog(false);
-                      setSelectedInvoiceId("");
-                      setPaymentMethod("");
-                    }}
+                    onClick={() => setShowPaymentDialog(false)}
                   >
                     Cancel
                   </Button>
+
                   <Button
-                    onClick={() => {
-                      setShowPaymentDialog(false);
+                    onClick={async () => {
+                      try {
+                        await axios.post(
+                          `${import.meta.env.VITE_URL}/api/payments`,
+                          {
+                            invoiceId: selectedInvoiceId,
+                            amount: Number(paymentAmount),
+                            paymentMethod,
+                            referenceNumber,
+                            paymentDate,
+                            nextPaymentDate,
+                            note,
+                          },
+                          { withCredentials: true },
+                        );
+
+                        toast.success(
+                          `Payment of ₹${Number(paymentAmount).toLocaleString()} recorded successfully`,
+                        );
+
+                        await fetchPayments();
+                        await fetchInvoices();
+
+                        setPaymentAmount("");
+                        setReferenceNumber("");
+                        setPaymentMethod("");
+                        setSelectedInvoice(null);
+
+                        setShowPaymentDialog(false);
+                      } catch (err) {
+                        toast.error("Failed to record payment");
+                      }
                     }}
-                    disabled={!paymentMethod && selectedInvoiceId != ""}
                   >
-                    Mark as Paid
+                    Record Payment
                   </Button>
                 </div>
               </DialogContent>
@@ -1099,7 +1304,7 @@ const Payments = () => {
                             isPaid,
                             reconciledItemId: selectedItemId,
                           },
-                          { withCredentials: true }
+                          { withCredentials: true },
                         );
 
                         toast.success("Invoice updated successfully");

@@ -79,7 +79,7 @@ export const invoiceSchema = z.object({
   cgst: z.coerce.number().min(0).max(14),
   status: z.enum(["draft", "pending", "approved", "paid", "rejected"]),
   notes: z.string().optional(),
-  task: z.string().optional(),
+  task: z.string().nullable().optional(),
   unit: z.string(),
   floorUnit: z.string(),
 });
@@ -119,6 +119,7 @@ const ContractorInvoices = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [taxType, setTaxType] = useState<"gst" | "igst">("gst");
   const query = useQueryClient();
 
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
@@ -164,23 +165,23 @@ const ContractorInvoices = () => {
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
 
-const form = useForm<InvoiceFormValues>({
-  resolver: zodResolver(invoiceSchema),
-  defaultValues: {
-    project: "",
-    issueDate: new Date().toISOString().split("T")[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0],
-    sgst: 9,
-    cgst: 9,
-    status: "pending", 
-    floorUnit: "",
-    unit: "",
-    task: undefined,
-    notes: "",
-  },
-});
+  const form = useForm<InvoiceFormValues>({
+    resolver: zodResolver(invoiceSchema),
+    defaultValues: {
+      project: "",
+      issueDate: new Date().toISOString().split("T")[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+      sgst: 9,
+      cgst: 9,
+      status: "pending",
+      floorUnit: "",
+      unit: "",
+      task: undefined,
+      notes: "",
+    },
+  });
 
   const watchProject = form.watch("project"); // watches selected projectId
 
@@ -252,7 +253,7 @@ const form = useForm<InvoiceFormValues>({
         cgst: 9,
         floorUnit: "",
         unit: "",
-        task: null,
+        task: undefined,
         notes: "",
       });
       setInvoiceItems([]);
@@ -340,7 +341,9 @@ const form = useForm<InvoiceFormValues>({
   ) => {
     event?.preventDefault();
     // Prevent default form submission
-    const amount = data.quantity * data.rate;
+    const base = data.quantity * data.rate;
+    const taxAmount = base * (data.taxRate / 100);
+    const amount = base + taxAmount;
 
     const newItem: InvoiceItem = {
       description: data.description,
@@ -363,8 +366,8 @@ const form = useForm<InvoiceFormValues>({
     toast.success("Item added to invoice");
   };
 
-  const removeInvoiceItem = (id: string) => {
-    setInvoiceItems(invoiceItems.filter((item) => item._id !== id));
+  const removeInvoiceItem = (index: number) => {
+    setInvoiceItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const viewInvoice = (invoice: Invoice) => {
@@ -844,7 +847,7 @@ const form = useForm<InvoiceFormValues>({
 
       {/* Create Invoice Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="w-full max-w-3xl max-h-[80vh] overflow-y-auto rounded-2xl p-6 sm:p-8">
+        <DialogContent className="w-full md:max-w-[80vw] max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle>Create New Invoice</DialogTitle>
           </DialogHeader>
@@ -1048,81 +1051,143 @@ const form = useForm<InvoiceFormValues>({
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="sgst"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>SGST (%)</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select SGST rate" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="0">0%</SelectItem>
-                          <SelectItem value="2.5">2.5%</SelectItem>
-                          <SelectItem value="6">6%</SelectItem>
-                          <SelectItem value="9">9%</SelectItem>
-                          <SelectItem value="14">14%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* TAX CONFIGURATION */}
 
-                <FormField
-                  control={form.control}
-                  name="cgst"
-                  render={({ field }) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormItem>
+                    <FormLabel>Tax Type</FormLabel>
+
+                    <Select
+                      value={taxType}
+                      onValueChange={(value: "gst" | "igst") =>
+                        setTaxType(value)
+                      }
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tax type" />
+                        </SelectTrigger>
+                      </FormControl>
+
+                      <SelectContent>
+                        <SelectItem value="gst">GST (CGST + SGST)</SelectItem>
+                        <SelectItem value="igst">IGST</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+
+                  {taxType === "gst" && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="sgst"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>SGST (%)</FormLabel>
+
+                            <Select
+                              value={field.value?.toString()}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select SGST" />
+                                </SelectTrigger>
+                              </FormControl>
+
+                              <SelectContent>
+                                <SelectItem value="0">0%</SelectItem>
+                                <SelectItem value="2.5">2.5%</SelectItem>
+                                <SelectItem value="6">6%</SelectItem>
+                                <SelectItem value="9">9%</SelectItem>
+                                <SelectItem value="14">14%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="cgst"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CGST (%)</FormLabel>
+
+                            <Select
+                              value={field.value?.toString()}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select CGST" />
+                                </SelectTrigger>
+                              </FormControl>
+
+                              <SelectContent>
+                                <SelectItem value="0">0%</SelectItem>
+                                <SelectItem value="2.5">2.5%</SelectItem>
+                                <SelectItem value="6">6%</SelectItem>
+                                <SelectItem value="9">9%</SelectItem>
+                                <SelectItem value="14">14%</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+
+                  {taxType === "igst" && (
                     <FormItem>
-                      <FormLabel>CGST (%)</FormLabel>
+                      <FormLabel>IGST (%)</FormLabel>
+
                       <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value?.toString()}
+                        onValueChange={(value) => {
+                          const v = Number(value);
+                          form.setValue("sgst", v / 2);
+                          form.setValue("cgst", v / 2);
+                        }}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select CGST rate" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select IGST" />
+                        </SelectTrigger>
+
                         <SelectContent>
                           <SelectItem value="0">0%</SelectItem>
-                          <SelectItem value="2.5">2.5%</SelectItem>
-                          <SelectItem value="6">6%</SelectItem>
-                          <SelectItem value="9">9%</SelectItem>
-                          <SelectItem value="14">14%</SelectItem>
+                          <SelectItem value="5">5%</SelectItem>
+                          <SelectItem value="12">12%</SelectItem>
+                          <SelectItem value="18">18%</SelectItem>
+                          <SelectItem value="28">28%</SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
                     </FormItem>
                   )}
-                />
+                </div>
               </div>
 
               {/* Related to a Task */}
               <div className="col-span-1 md:col-span-2">
                 <FormItem>
                   <FormLabel>Related to a Task?</FormLabel>
-                  <div className="flex space-x-4 mt-1">
+                  <div className="flex gap-3 mt-2">
                     <Button
                       type="button"
                       variant={relatedToTask ? "default" : "outline"}
                       onClick={() => setRelatedToTask(true)}
                     >
-                      Yes
+                      Task Based
                     </Button>
+
                     <Button
                       type="button"
                       variant={!relatedToTask ? "default" : "outline"}
-                      onClick={() => setRelatedToTask(false)}
+                      onClick={() => {
+                        setRelatedToTask(false);
+                        form.setValue("task", undefined);
+                      }}
                     >
-                      No
+                      General Invoice
                     </Button>
                   </div>
                 </FormItem>
@@ -1191,7 +1256,7 @@ const form = useForm<InvoiceFormValues>({
                           <TableHead>Description</TableHead>
                           <TableHead>Qty</TableHead>
                           <TableHead>Unit</TableHead>
-                          <TableHead>Rate (₹)</TableHead>
+                          <TableHead>Rate / Unit (₹)</TableHead>
                           <TableHead>Tax %</TableHead>
                           <TableHead>Amount (₹)</TableHead>
                           <TableHead></TableHead>
@@ -1212,7 +1277,7 @@ const form = useForm<InvoiceFormValues>({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeInvoiceItem(item._id)}
+                                onClick={() => removeInvoiceItem(idx)}
                               >
                                 Remove
                               </Button>
@@ -1311,7 +1376,9 @@ const form = useForm<InvoiceFormValues>({
                           name="rate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Rate (₹)</FormLabel>
+                              <FormLabel>
+                                Rate per {itemForm.watch("unit") || "Unit"} (₹)
+                              </FormLabel>
                               <FormControl>
                                 <div className="relative">
                                   <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -1330,22 +1397,22 @@ const form = useForm<InvoiceFormValues>({
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={itemForm.control}
                           name="taxRate"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Tax Rate (%)</FormLabel>
+                              <FormLabel>Tax %</FormLabel>
                               <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value.toString()}
+                                value={field.value?.toString()}
+                                onValueChange={(v) => field.onChange(Number(v))}
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select tax rate" />
+                                    <SelectValue placeholder="Select Tax" />
                                   </SelectTrigger>
                                 </FormControl>
+
                                 <SelectContent>
                                   <SelectItem value="0">0%</SelectItem>
                                   <SelectItem value="5">5%</SelectItem>
@@ -1400,29 +1467,31 @@ const form = useForm<InvoiceFormValues>({
                 const total = subtotal + sgstAmount + cgstAmount;
 
                 return (
-                  <div className="border rounded-md p-4">
-                    <div className="flex justify-between mb-2">
-                      <span>Subtotal:</span>
-                      <span>₹{subtotal.toLocaleString()}</span>
-                    </div>
+                  <Card className="shadow-sm">
+                    <CardContent className="p-5 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal</span>
+                        <span>₹{subtotal.toLocaleString()}</span>
+                      </div>
 
-                    <div className="flex justify-between mb-2">
-                      <span>SGST ({sgst}%):</span>
-                      <span>₹{sgstAmount.toLocaleString()}</span>
-                    </div>
+                      <div className="flex justify-between text-sm">
+                        <span>SGST ({sgst}%)</span>
+                        <span>₹{sgstAmount.toLocaleString()}</span>
+                      </div>
 
-                    <div className="flex justify-between mb-2">
-                      <span>CGST ({cgst}%):</span>
-                      <span>₹{cgstAmount.toLocaleString()}</span>
-                    </div>
+                      <div className="flex justify-between text-sm">
+                        <span>CGST ({cgst}%)</span>
+                        <span>₹{cgstAmount.toLocaleString()}</span>
+                      </div>
 
-                    <Separator className="my-2" />
+                      <Separator />
 
-                    <div className="flex justify-between font-bold">
-                      <span>Total:</span>
-                      <span>₹{total.toLocaleString()}</span>
-                    </div>
-                  </div>
+                      <div className="flex justify-between text-lg font-semibold">
+                        <span>Total</span>
+                        <span>₹{total.toLocaleString()}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })()}
               {isEditMode && (
