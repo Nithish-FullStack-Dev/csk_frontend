@@ -46,7 +46,10 @@ import {
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
 import { useRBAC } from "@/config/RBAC";
-
+const fixImageUrl = (url?: string) => {
+  if (!url) return "";
+  return url.replace("/uploads/", "/api/uploads/");
+};
 const NewProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -622,7 +625,7 @@ const NewProperties = () => {
                         <div className="relative">
                           {plot.thumbnailUrl ? (
                             <img
-                              src={plot.thumbnailUrl}
+                              src={`${fixImageUrl(plot.thumbnailUrl)}?t=${plot.updatedAt || Date.now()}`}
                               alt={plot.projectName}
                               className="h-48 w-full object-cover"
                             />

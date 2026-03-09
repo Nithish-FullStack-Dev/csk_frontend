@@ -50,4 +50,5 @@ export interface OpenPlot extends OpenPlotFormValues {
   images: string[];
   brochureUrl?: string;
   googleMapsLocation?: string;
+  updatedAt?: string
 }
