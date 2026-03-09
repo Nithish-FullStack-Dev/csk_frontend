@@ -55,7 +55,7 @@ const statusColors: Record<string, string> = {
 //   if (url.startsWith("http")) return url;
 
 //   // local upload
-//   return `${import.meta.env.IMAGE_URL}${url}`;
+//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
 // };
 const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [filter, setFilter] = useState("all");

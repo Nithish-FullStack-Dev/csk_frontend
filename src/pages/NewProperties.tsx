@@ -626,7 +626,7 @@ const NewProperties = () => {
                         <div className="relative">
                           {plot.thumbnailUrl ? (
                             <img
-                              src={getImageUrl(plot.thumbnailUrl)}
+                              src={plot.thumbnailUrl}
                               alt={plot.projectName}
                               className="h-48 w-full object-cover"
                             />

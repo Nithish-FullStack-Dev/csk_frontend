@@ -145,7 +145,7 @@ const ModernEnquiryForm: React.FC = () => {
         source = "openland";
       }
 
-      const res = await axios.get(`${import.meta.env.IMAGE_URL}${url}`);
+      const res = await axios.get(`${import.meta.env.VITE_IMAGE_URL}${url}`);
 
       const apiData = res.data;
 
