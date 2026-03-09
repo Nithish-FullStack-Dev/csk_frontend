@@ -91,37 +91,77 @@ const SalesManagerDashboard = () => {
     fetchTeam();
   }, []);
 
+  const filteredTeam = useMemo(() => {
+    if (!team.length) return [];
+
+    const now = new Date();
+
+    return team.filter((item) => {
+      const date = new Date(item.performance?.lastActivity);
+
+      if (!date) return false;
+
+      if (timeframe === "week") {
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        return date >= weekAgo;
+      }
+
+      if (timeframe === "month") {
+        return (
+          date.getMonth() === now.getMonth() &&
+          date.getFullYear() === now.getFullYear()
+        );
+      }
+
+      if (timeframe === "quarter") {
+        const quarter = Math.floor(now.getMonth() / 3);
+        const itemQuarter = Math.floor(date.getMonth() / 3);
+
+        return (
+          quarter === itemQuarter && date.getFullYear() === now.getFullYear()
+        );
+      }
+
+      if (timeframe === "year") {
+        return date.getFullYear() === now.getFullYear();
+      }
+
+      return true;
+    });
+  }, [team, timeframe]);
+
   /* ===== STATS ===== */
 
   const stats = useMemo(() => {
-    const totalSales = team.reduce(
+    const totalSales = filteredTeam.reduce(
       (acc, cur) => acc + (cur.performance?.sales || 0),
       0,
     );
 
-    const totalDeals = team.reduce(
+    const totalDeals = filteredTeam.reduce(
       (acc, cur) => acc + (cur.performance?.deals || 0),
       0,
     );
 
-    const totalLeads = team.reduce(
+    const totalLeads = filteredTeam.reduce(
       (acc, cur) => acc + (cur.performance?.leads || 0),
       0,
     );
 
     const avgConversion =
-      team.length > 0
-        ? team.reduce(
+      filteredTeam.length > 0
+        ? filteredTeam.reduce(
             (acc, cur) => acc + (cur.performance?.conversionRate || 0),
             0,
-          ) / team.length
+          ) / filteredTeam.length
         : 0;
 
     return { totalSales, totalDeals, totalLeads, avgConversion };
-  }, [team]);
+  }, [filteredTeam]);
 
   const teamPerformance = useMemo(() => {
-    return team.map((item) => ({
+    return filteredTeam?.map((item) => ({
       id: item._id,
       name: item.teamLeadId?.name,
       avatar: item.teamLeadId?.avatar,
@@ -129,7 +169,7 @@ const SalesManagerDashboard = () => {
       target: item.performance?.target || 0,
       deals: item.performance?.deals || 0,
     }));
-  }, [team]);
+  }, [filteredTeam]);
 
   /* ===== STATES ===== */
 

@@ -45,7 +45,7 @@ import { fetchRolePermissions } from "@/utils/units/Methods";
 export const fetchAllRoles = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/roles`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data || [];
 };
@@ -54,7 +54,7 @@ const fetchAllUsers = async () => {
   const csrfToken = await getCsrfToken();
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/user/getUsers`,
-    { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
+    { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } },
   );
   return data.users || [];
 };
@@ -110,12 +110,20 @@ const UserManagement = () => {
   });
 
   const filteredUsers = useMemo(() => {
-    return usersData.filter((user) =>
-      [user.name, user.email, user.role]
-        .join(" ")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
-    );
+    const normalize = (str: string) =>
+      str?.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+
+    const query = normalize(searchQuery);
+
+    return usersData.filter((user) => {
+      const name = normalize(user.name);
+      const email = normalize(user.email);
+      const role = normalize(user.role);
+
+      const combined = `${name} ${email} ${role}`;
+
+      return combined.includes(query);
+    });
   }, [usersData, searchQuery]);
 
   if (isRolePermissionsError) {
@@ -128,13 +136,13 @@ const UserManagement = () => {
   }
 
   const userCanAddUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "User Management" && per.actions.write
+    (per) => per.submodule === "User Management" && per.actions.write,
   );
   const userCanEditUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "User Management" && per.actions.edit
+    (per) => per.submodule === "User Management" && per.actions.edit,
   );
   const userCanDeleteUser = rolePermissions?.permissions.some(
-    (per) => per.submodule === "User Management" && per.actions.delete
+    (per) => per.submodule === "User Management" && per.actions.delete,
   );
 
   const handleAddUser = async () => {
@@ -152,7 +160,7 @@ const UserManagement = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user/addUser`,
         createdUser,
-        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } }
+        { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } },
       );
       if (response.status === 201) {
         toast.success("User added successfully", {
@@ -182,7 +190,7 @@ const UserManagement = () => {
     try {
       await axios.delete(
         `${import.meta.env.VITE_URL}/api/user/deleteUser/${selectedUser._id}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("User deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -203,7 +211,7 @@ const UserManagement = () => {
       await axios.post(
         `${import.meta.env.VITE_URL}/api/user/updateUser`,
         { updatedUser: selectedUser },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -229,7 +237,7 @@ const UserManagement = () => {
       await axios.post(
         `${import.meta.env.VITE_URL}/api/user/resetPassword`,
         { id: selectedUser?._id, password: newPassword },
-        { withCredentials: true }
+        { withCredentials: true },
       );
       toast.success("Password updated successfully");
       setShowResetPasswordDialog(false);
@@ -475,7 +483,7 @@ const UserManagement = () => {
                                   new Date(user.lastLogin),
                                   {
                                     addSuffix: true,
-                                  }
+                                  },
                                 )
                               : "Never logged in"}
                           </TableCell>
@@ -571,7 +579,7 @@ const UserManagement = () => {
                                 new Date(user.lastLogin),
                                 {
                                   addSuffix: true,
-                                }
+                                },
                               )
                             : "Never logged in"}
                         </span>
