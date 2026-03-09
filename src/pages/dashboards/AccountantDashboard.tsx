@@ -1,187 +1,172 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import MainLayout from "@/components/layout/MainLayout";
+import Loader from "@/components/Loader";
 import StatCard from "@/components/dashboard/StatCard";
-import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import { toast } from "sonner";
+
 import {
   FileText,
   CreditCard,
-  BarChart3,
-  Calculator,
   Receipt,
-  ClipboardList,
+  Wallet,
+  TrendingUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import MainLayout from "@/components/layout/MainLayout";
-import Loader from "@/components/Loader";
-import {
-  Bar,
   BarChart,
-  CartesianGrid,
+  Bar,
   ResponsiveContainer,
-  Tooltip,
+  CartesianGrid,
   XAxis,
   YAxis,
+  Tooltip,
+  Legend,
 } from "recharts";
-import {
-  fetchInvoices,
-  fetchPayments,
-  fetchRecentInvoices,
-} from "@/utils/accountant/AccountantConfig";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+const API = import.meta.env.VITE_URL;
 
 const AccountantDashboard = () => {
-  const { user, isLoading, isAuthenticated } = useAuth();
-  const [pendingInvoices, setPendingInvoices] = useState(0);
-  const [monthlyRevenue, setMonthlyRevenue] = useState(0);
-  const [overduePayments, setOverduePayments] = useState(0);
-  const [budgetVariance, setBudgetVariance] = useState(0);
-  const [monthlyData, setMonthlyData] = useState<
-    { month: string; revenue: number }[]
-  >([]);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  // Format currency
-  const formatCurrency = (value) => {
-    if (value >= 10000000) {
-      return `₹${(value / 10000000).toFixed(1)}Cr`;
-    } else if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(1)}L`;
-    } else if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(1)}K`;
-    }
+  const [pendingInvoices, setPendingInvoices] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalCash, setTotalCash] = useState(0);
+  const [remainingAmount, setRemainingAmount] = useState(0);
+
+  const [chartData, setChartData] = useState([]);
+
+  const formatCurrency = (value: number) => {
+    if (!value) return "₹0";
+
+    if (value >= 10000000) return `₹${(value / 10000000).toFixed(1)}Cr`;
+
+    if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+
+    if (value >= 1000) return `₹${(value / 1000).toFixed(1)}K`;
+
     return `₹${value}`;
   };
 
-  // Fetch stats for overview
-  const fetchStats = async () => {
+  // =============================
+  // FETCH DASHBOARD DATA
+  // =============================
+
+  const fetchDashboard = async () => {
     try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
+      const year = new Date().getFullYear();
 
-      // Fetch all invoices to calculate stats
-      const { data: allInvoices } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/invoices`,
-        { withCredentials: true }
-      );
+      const [invoiceRes, paymentRes, cashRes, expenseRes] = await Promise.all([
+        axios.get(`${API}/api/invoices`, { withCredentials: true }),
+        axios.get(`${API}/api/payments/accountant`, {
+          withCredentials: true,
+        }),
+        axios.get(`${API}/api/cash-expenses/getAllCashExp`, {
+          withCredentials: true,
+        }),
+        axios.get(`${API}/api/expenses`, {
+          withCredentials: true,
+        }),
+      ]);
 
-      // Pending invoices count
-      const pending = allInvoices.filter(
-        (inv: any) => inv.status === "pending"
+      const invoices = invoiceRes.data || [];
+      const payments = paymentRes.data || [];
+      const cash = cashRes.data?.data || [];
+      const expenses = expenseRes.data || [];
+
+      // ====================
+      // STATS
+      // ====================
+
+      const pending = invoices.filter(
+        (i: any) => i.status === "pending",
       ).length;
-      setPendingInvoices(pending);
 
-      // Monthly revenue (client-side aggregation)
-      const startOfMonth = new Date(year, month - 1, 1);
-      const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
-      const monthlyRev = allInvoices
-        .filter(
-          (inv: any) =>
-            inv.status === "paid" &&
-            new Date(inv.paymentDate) >= startOfMonth &&
-            new Date(inv.paymentDate) <= endOfMonth
-        )
-        .reduce((sum: number, inv: any) => sum + (inv.total || 0), 0);
-      setMonthlyRevenue(monthlyRev);
+      const revenue = invoices
+        .filter((i: any) => i.status === "paid")
+        .reduce((sum: number, i: any) => sum + i.total, 0);
 
-      // Overdue payments
-      const overdueTotal = allInvoices
-        .filter(
-          (inv: any) => inv.status !== "paid" && new Date(inv.dueDate) < now
-        )
-        .reduce((sum: number, inv: any) => sum + (inv.total || 0), 0);
-      setOverduePayments(overdueTotal);
-
-      // Budget variance (using cashflow)
-      const cashFlowRes = await axios.get(
-        `${import.meta.env.VITE_URL}/api/budget/cashflow`,
-        { withCredentials: true }
+      const remaining = invoices.reduce(
+        (sum: number, i: any) => sum + (i.remainingAmount || 0),
+        0,
       );
-      const variance =
-        cashFlowRes.data[0]?.net && cashFlowRes.data[0]?.inflow
-          ? (cashFlowRes.data[0].net / cashFlowRes.data[0].inflow) * 100
-          : 0;
-      setBudgetVariance(variance);
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-      toast.error("Failed to fetch dashboard stats");
+
+      const expenseTotal = expenses.reduce(
+        (sum: number, e: any) => sum + e.amount,
+        0,
+      );
+
+      const cashTotal = cash.reduce((sum: number, c: any) => sum + c.amount, 0);
+
+      setPendingInvoices(pending);
+      setTotalRevenue(revenue);
+      setRemainingAmount(remaining);
+      setTotalExpenses(expenseTotal);
+      setTotalCash(cashTotal);
+
+      // ====================
+      // CHART DATA
+      // ====================
+
+      const months = Array(12)
+        .fill(0)
+        .map((_, i) => ({
+          month: new Date(year, i, 1).toLocaleString("default", {
+            month: "short",
+          }),
+          revenue: 0,
+          expense: 0,
+          payment: 0,
+        }));
+
+      invoices.forEach((inv: any) => {
+        if (
+          inv.paymentDate &&
+          new Date(inv.paymentDate).getFullYear() === year
+        ) {
+          const m = new Date(inv.paymentDate).getMonth();
+
+          if (inv.status === "paid") months[m].revenue += inv.total;
+        }
+      });
+
+      expenses.forEach((e: any) => {
+        if (new Date(e.date).getFullYear() === year) {
+          const m = new Date(e.date).getMonth();
+          months[m].expense += e.amount;
+        }
+      });
+
+      payments.forEach((p: any) => {
+        if (new Date(p.paymentDate).getFullYear() === year) {
+          const m = new Date(p.paymentDate).getMonth();
+          months[m].payment += p.amount;
+        }
+      });
+
+      setChartData(months);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load dashboard");
     }
   };
 
-  // Fetch data on mount
   useEffect(() => {
     if (isAuthenticated && user?.role === "accountant" && !isLoading) {
-      fetchStats();
-      fetchRecentInvoices();
+      fetchDashboard();
     }
   }, [isAuthenticated, user, isLoading]);
 
-  // Fetch and aggregate monthly revenue data
-  useEffect(() => {
-    const fetchMonthlyData = async () => {
-      try {
-        const year = new Date().getFullYear();
-        const { data: invoices } = await axios.get(
-          `${import.meta.env.VITE_URL}/api/invoices`,
-          { withCredentials: true }
-        );
-
-        // Aggregate revenue by month for the current year
-        const monthlyRevenues = Array(12)
-          .fill(0)
-          .map((_, i) => ({
-            month: new Date(year, i, 1).toLocaleString("default", {
-              month: "short",
-            }),
-            revenue: 0,
-          }));
-
-        invoices.forEach((inv: any) => {
-          if (
-            inv.status === "paid" &&
-            new Date(inv.paymentDate).getFullYear() === year
-          ) {
-            const monthIndex = new Date(inv.paymentDate).getMonth();
-            monthlyRevenues[monthIndex].revenue += inv.total || 0;
-          }
-        });
-
-        setMonthlyData(monthlyRevenues);
-      } catch (error) {
-        console.error("Failed to fetch chart data:", error);
-        toast.error("Failed to load financial chart data");
-      }
-    };
-
-    if (isAuthenticated && user?.role === "accountant" && !isLoading) {
-      fetchMonthlyData();
-    }
-  }, [isAuthenticated, user, isLoading]);
-
-  if (isLoading) {
-    return <Loader />;
-  }
+  if (isLoading) return <Loader />;
 
   if (!isAuthenticated || user?.role !== "accountant") {
     return (
       <MainLayout>
-        <div className="text-center py-10">
-          <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
-          <p className="text-muted-foreground">
-            Only accountants can access this dashboard.
-          </p>
-        </div>
+        <div className="text-center py-10">Access denied</div>
       </MainLayout>
     );
   }
@@ -189,143 +174,96 @@ const AccountantDashboard = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex flex-col justify-between ">
-          <div>
-            <h1 className="text-3xl font-bold">Finance Dashboard</h1>
-            <p className="text-muted-foreground">
-              Welcome to CSK - Real Manager financial overview
-            </p>
-          </div>
-          <div className="flex flex-col gap-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard
-                title="Pending Invoices"
-                value={pendingInvoices.toString()}
-                icon={<FileText className="h-6 w-6 text-estate-navy" />}
-                trend={{ value: 5.2, isPositive: false }}
-              />
-              <StatCard
-                title="Monthly Revenue"
-                value={formatCurrency(monthlyRevenue.toFixed(1))}
-                icon={<CreditCard className="h-6 w-6 text-estate-teal" />}
-                trend={{ value: 8.4, isPositive: true }}
-              />
-              <StatCard
-                title="Overdue Payments"
-                value={formatCurrency(overduePayments.toFixed(1))}
-                icon={<Receipt className="h-6 w-6 text-estate-error" />}
-                trend={{ value: 2.1, isPositive: false }}
-              />
-              <StatCard
-                title="Budget Variance"
-                value={
-                  budgetVariance >= 0
-                    ? `+${budgetVariance.toFixed(1)}%`
-                    : `${budgetVariance.toFixed(1)}%`
-                }
-                icon={<Calculator className="h-6 w-6 text-estate-gold" />}
-                trend={{ value: 1.8, isPositive: budgetVariance >= 0 }}
-              />
-            </div>
+        {/* ================= STATS ================= */}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Financial Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="90%" height={260}>
-                      <BarChart
-                        data={monthlyData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="month" stroke="#6b7280" />
-                        <YAxis stroke="#6b7280" />
-                        <Tooltip
-                          formatter={(value: number) => [
-                            `₹${value.toLocaleString()}`,
-                            "Revenue",
-                          ]}
-                          contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
-                          }}
-                        />
-                        <Bar
-                          dataKey="revenue"
-                          fill="#1A365D"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-              {/* <ActivityFeed activities={recentActivities} /> */}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatCard
+            title="Pending Invoices"
+            value={pendingInvoices}
+            icon={<FileText />}
+          />
 
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Invoices</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60 flex flex-col gap-2 overflow-y-auto">
-                    {recentInvoices.map((inv: any) => (
-                      <div
-                        key={inv._id}
-                        className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Receipt className="h-5 w-5 text-estate-navy" />
-                          <div>
-                            <p className="text-sm font-medium">
-                              Invoice #{inv.invoiceNumber || inv._id.slice(-4)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Property:{" "}
-                              {inv.project?.projectId?.basicInfo?.projectName ||
-                                "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {formatCurrency(inv.total || 0)}
-                          </p>
-                          <p
-                            className={`text-xs ${
-                              inv.status === "Pending"
-                                ? "text-estate-teal"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {inv.status || "Pending"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Budget Tracking</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-60 flex items-center justify-center bg-muted/50 rounded-md">
-                    <ClipboardList className="h-12 w-12 text-estate-navy/20" />
-                    <p className="text-muted-foreground ml-2">
-                      Budget tracking details
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div> */}
-          </div>
+          <StatCard
+            title="Revenue"
+            value={formatCurrency(totalRevenue)}
+            icon={<TrendingUp />}
+          />
+
+          <StatCard
+            title="Remaining"
+            value={formatCurrency(remainingAmount)}
+            icon={<Receipt />}
+          />
+
+          <StatCard
+            title="Expenses"
+            value={formatCurrency(totalExpenses)}
+            icon={<Wallet />}
+          />
+
+          <StatCard
+            title="Cash Flow"
+            value={formatCurrency(totalCash)}
+            icon={<CreditCard />}
+          />
         </div>
+
+        {/* ================= CHART ================= */}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Performance</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+                <XAxis dataKey="month" stroke="#6b7280" />
+
+                <YAxis stroke="#6b7280" />
+
+                <Tooltip
+                  formatter={(value) => [
+                    `₹${value.toLocaleString()}`,
+                    "Amount",
+                  ]}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+
+                <Legend />
+
+                {/* Revenue */}
+                <Bar
+                  dataKey="revenue"
+                  fill="#1A365D"
+                  radius={[4, 4, 0, 0]}
+                  name="Revenue"
+                />
+
+                {/* Expense */}
+                <Bar
+                  dataKey="expense"
+                  fill="#0F766E"
+                  radius={[4, 4, 0, 0]}
+                  name="Expense"
+                />
+
+                {/* Payments */}
+                <Bar
+                  dataKey="payment"
+                  fill="#F59E0B"
+                  radius={[4, 4, 0, 0]}
+                  name="Payments"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );
