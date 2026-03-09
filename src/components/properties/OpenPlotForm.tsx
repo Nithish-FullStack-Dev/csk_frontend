@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import axios from "axios";
 
 interface Props {
   openPlot?: any;
@@ -168,7 +169,12 @@ export function OpenPlotForm({ openPlot, onSuccess }: Props) {
     },
 
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Something went wrong");
+      toast.error(
+        axios.isAxiosError(err)
+          ? err?.response?.data?.message
+          : err.message || "Something went wrong",
+      );
+      console.log("err", err);
     },
   });
 

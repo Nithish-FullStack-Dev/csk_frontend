@@ -65,6 +65,9 @@ const TaxDocuments = () => {
   const [selectedGstDoc, setSelectedGstDoc] = useState(null);
   const [tdsDialogOpen, setTdsDialogOpen] = useState(false);
   const [selectedTdsRecord, setSelectedTdsRecord] = useState(null);
+  const [viewItrDialogOpen, setViewItrDialogOpen] = useState(false);
+  const [selectedItrDoc, setSelectedItrDoc] = useState(null);
+
   const [openAddDoc, setOpenAddDoc] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null); // holds gstDoc, tdsDoc, etc.
@@ -95,10 +98,10 @@ const TaxDocuments = () => {
       .filter((doc) => doc.status === "filed")
       .map((doc) => ({
         id: doc._id,
-        type: doc.type, // <-- MUST be "gstr1" or "gstr3b"
+        type: doc.type,
         period: doc.period,
         auditor: doc.auditorName || "—",
-        status: doc.isApprovedByAuditor ? "Completed" : "pending",
+        status: doc.auditStatus || "pending",
         date: doc.dueDate ? new Date(doc.dueDate).toLocaleDateString() : "—",
       }));
 
@@ -106,10 +109,10 @@ const TaxDocuments = () => {
       .filter((doc) => doc.status === "filed")
       .map((doc) => ({
         id: doc._id,
-        type: "itr", // <-- backend expects exactly "itr"
+        type: "itr",
         period: doc.financialYear,
         auditor: doc.auditorName || "—",
-        status: doc.isApprovedByAuditor ? "Completed" : "pending",
+        status: doc.auditStatus || "pending",
         date: doc.filingDate
           ? new Date(doc.filingDate).toLocaleDateString()
           : "—",
@@ -289,6 +292,7 @@ const TaxDocuments = () => {
 
         case "itr":
           payload.data = {
+            type: formData.docType,
             financialYear: formData.financialYear,
             filingDate: formData.filingDate,
             amount: formData.amount,
@@ -298,6 +302,7 @@ const TaxDocuments = () => {
 
         case "form16":
           payload.data = {
+            type: formData.docType,
             financialYear: formData.financialYear,
             issueDate: formData.filingDate,
             amount: formData.amount,
@@ -1148,7 +1153,14 @@ const TaxDocuments = () => {
                                     >
                                       <Edit className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="sm">
+                                    <Button
+                                      onClick={() => {
+                                        setSelectedItrDoc(doc);
+                                        setViewItrDialogOpen(true);
+                                      }}
+                                      variant="ghost"
+                                      size="sm"
+                                    >
                                       <Eye className="h-4 w-4" />
                                     </Button>
                                     {doc.documentUrl && (
@@ -1235,7 +1247,8 @@ const TaxDocuments = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              setSelectedDoc(doc);
+                              setSelectedItrDoc(doc);
+                              setViewItrDialogOpen(true);
                             }}
                           >
                             <Eye className="h-4 w-4" />
@@ -1552,6 +1565,57 @@ const TaxDocuments = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
+                    >
+                      View / Download File
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={viewItrDialogOpen} onOpenChange={setViewItrDialogOpen}>
+          <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+            <DialogHeader>
+              <DialogTitle>Income Tax Document Details</DialogTitle>
+            </DialogHeader>
+
+            {selectedItrDoc && (
+              <div className="space-y-4">
+                <div className="bg-muted p-3 rounded-md space-y-1">
+                  <p className="font-medium text-lg">
+                    {selectedItrDoc?.type || "ITR"} -{" "}
+                    {selectedItrDoc?.financialYear || "-"}
+                  </p>
+
+                  <p className="text-sm text-muted-foreground">
+                    Amount: ₹
+                    {Number(selectedItrDoc?.amount || 0).toLocaleString()}
+                  </p>
+
+                  <p className="text-sm text-muted-foreground">
+                    Filing Date: {safeDate(selectedItrDoc?.filingDate)}
+                  </p>
+
+                  <p className="text-sm text-muted-foreground">
+                    Status:{" "}
+                    {(selectedItrDoc?.status || "unknown").toUpperCase()}
+                  </p>
+
+                  <p className="text-sm text-muted-foreground">
+                    Audit Status: {selectedItrDoc?.auditStatus || "pending"}
+                  </p>
+                </div>
+
+                {selectedItrDoc?.documentUrl && (
+                  <div className="space-y-2">
+                    <Label>Uploaded Document</Label>
+                    <a
+                      href={buildFileUrl(selectedItrDoc.documentUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-blue-600"
                     >
                       View / Download File
                     </a>
