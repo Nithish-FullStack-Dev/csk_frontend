@@ -75,7 +75,7 @@ export function InnerPlotForm({ openPlotId, onSuccess }: Props) {
 
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["inner-plots", openPlotId],
+        queryKey: ["inner-plots"],
       });
 
       onSuccess();
