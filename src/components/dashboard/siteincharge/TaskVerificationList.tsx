@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VerificationTask } from "@/utils/contractor/ContractorConfig";
+import { getImageUrl } from "@/lib/image";
 
 const priorityColors: Record<string, string> = {
   high: "bg-red-100 text-red-800",
@@ -47,15 +48,15 @@ const statusColors: Record<string, string> = {
   rejected: "bg-red-100 text-red-800",
   rework: "bg-amber-100 text-amber-800",
 };
-const getImageUrl = (url?: string) => {
-  if (!url) return "";
+// const getImageUrl = (url?: string) => {
+//   if (!url) return "";
 
-  // cloudinary or external
-  if (url.startsWith("http")) return url;
+//   // cloudinary or external
+//   if (url.startsWith("http")) return url;
 
-  // local upload
-  return `${import.meta.env.VITE_URL}${url}`;
-};
+//   // local upload
+//   return `${import.meta.env.IMAGE_URL}${url}`;
+// };
 const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");

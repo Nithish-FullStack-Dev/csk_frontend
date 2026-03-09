@@ -46,6 +46,7 @@ import {
 import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
 import { useRBAC } from "@/config/RBAC";
+import { getImageUrl } from "@/lib/image";
 const fixImageUrl = (url?: string) => {
   if (!url) return "";
   return url.replace("/uploads/", "/api/uploads/");
@@ -447,7 +448,7 @@ const NewProperties = () => {
                     <div className="relative">
                       {b.thumbnailUrl ? (
                         <img
-                          src={b.thumbnailUrl}
+                          src={getImageUrl(b.thumbnailUrl)}
                           alt={b.projectName}
                           className="h-48 w-full object-cover"
                         />
@@ -625,7 +626,7 @@ const NewProperties = () => {
                         <div className="relative">
                           {plot.thumbnailUrl ? (
                             <img
-                              src={`${fixImageUrl(plot.thumbnailUrl)}?t=${plot.updatedAt || Date.now()}`}
+                              src={getImageUrl(plot.thumbnailUrl)}
                               alt={plot.projectName}
                               className="h-48 w-full object-cover"
                             />
@@ -787,7 +788,7 @@ const NewProperties = () => {
                         <div className="relative">
                           {land?.thumbnailUrl ? (
                             <img
-                              src={land?.thumbnailUrl}
+                              src={getImageUrl(land?.thumbnailUrl)}
                               alt={land?.projectName}
                               className="h-48 w-full object-cover"
                             />

@@ -49,6 +49,7 @@ import {
 import BulkFloorGenerator from "./Properties/BulkFloorGenerator";
 import BulkCsvUploader from "./Properties/BulkCsvUploader";
 import { Progress } from "@radix-ui/react-progress";
+import { getImageUrl } from "@/lib/image";
 
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
@@ -383,7 +384,7 @@ const BuildingDetails = () => {
             {building.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={building.thumbnailUrl}
+                  src={getImageUrl(building.thumbnailUrl)}
                   alt={building.projectName}
                   className="h-full w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -790,7 +791,7 @@ const BuildingDetails = () => {
                     onClick={() => setSelectedImage(img)}
                   >
                     <img
-                      src={img}
+                      src={getImageUrl(img)}
                       alt={`Building Image ${index + 1}`}
                       className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
                     />
@@ -821,7 +822,7 @@ const BuildingDetails = () => {
                     </button>
 
                     <img
-                      src={selectedImage}
+                      src={getImageUrl(selectedImage)}
                       alt="Preview"
                       className="w-auto max-w-full h-auto max-h-[80vh] rounded-lg shadow-lg object-contain"
                     />

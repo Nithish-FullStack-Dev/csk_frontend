@@ -60,6 +60,7 @@ import { fetchAllLeads } from "@/utils/leads/LeadConfig";
 import { useLeadbyOpenLandId } from "@/utils/buildings/Projects";
 import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 import MainLayout from "../layout/MainLayout";
+import { getImageUrl } from "@/lib/image";
 
 type InterestedEntry = {
   _id: string;
@@ -182,7 +183,7 @@ export default function OpenLandDetails({
             {land.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={land.thumbnailUrl}
+                  src={getImageUrl(land.thumbnailUrl)}
                   alt={land.projectName}
                   className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -391,7 +392,7 @@ export default function OpenLandDetails({
                     className="cursor-pointer rounded-lg overflow-hidden"
                   >
                     <img
-                      src={img}
+                      src={getImageUrl(img)}
                       alt="Land"
                       className="w-full h-32 object-cover hover:scale-110 transition"
                     />

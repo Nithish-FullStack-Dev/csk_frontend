@@ -345,7 +345,7 @@ const TaxDocuments = () => {
   const buildFileUrl = (url) => {
     if (!url) return "#";
     if (url.startsWith("http")) return url;
-    return `${import.meta.env.VITE_URL}${url}`;
+    return `${import.meta.env.IMAGE_URL}${url}`;
   };
 
   return (

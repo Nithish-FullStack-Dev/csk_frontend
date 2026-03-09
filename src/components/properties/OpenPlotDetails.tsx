@@ -37,6 +37,7 @@ import { getAllInnerPlot } from "@/api/innerPlot.api";
 import MainLayout from "../layout/MainLayout";
 import { OpenPlotDialog } from "./OpenPlotsDialog";
 import { get } from "http";
+import { getImageUrl } from "@/lib/image";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -61,15 +62,15 @@ interface OpenPlotDetailsProps {
   onDelete: () => void;
   onBack: () => void;
 }
-const getImageUrl = (url?: string) => {
-  if (!url) return "";
+// const getImageUrl = (url?: string) => {
+//   if (!url) return "";
 
-  // Cloudinary or external images
-  if (url.startsWith("http")) return url;
+//   // Cloudinary or external images
+//   if (url.startsWith("http")) return url;
 
-  // Local images
-  return `${import.meta.env.VITE_URL}${url}`;
-};
+//   // Local images
+//   return `${import.meta.env.IMAGE_URL}${url}`;
+// };
 export function OpenPlotDetails({
   plot,
   onEdit,
@@ -436,7 +437,7 @@ export function OpenPlotDetails({
                     onClick={() => openLightbox(image)}
                   >
                     <img
-                      src={`${image}?t=${openPlotData?.updatedAt || Date.now()}`}
+                      src={getImageUrl(image)}
                       alt={`Plot image ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                     />
@@ -532,7 +533,7 @@ export function OpenPlotDetails({
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
             <img
-              src={currentImage}
+              src={getImageUrl(currentImage)}
               alt="Full view of plot"
               className="w-full h-full object-contain"
             />

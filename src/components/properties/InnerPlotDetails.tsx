@@ -34,6 +34,7 @@ import { EditInnerPlotForm } from "./EditInnerPlotForm";
 import Loader from "../Loader";
 import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
+import { getImageUrl } from "@/lib/image";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -49,15 +50,15 @@ export function getInnerPlotStatusBadge(status: string) {
     </Badge>
   );
 }
-const getImageUrl = (url?: string) => {
-  if (!url) return "";
+// const getImageUrl = (url?: string) => {
+//   if (!url) return "";
 
-  // Cloudinary or external images
-  if (url.startsWith("http")) return url;
+//   // Cloudinary or external images
+//   if (url.startsWith("http")) return url;
 
-  // Local images
-  return `${import.meta.env.VITE_URL}${url}`;
-};
+//   // Local images
+//   return `${import.meta.env.IMAGE_URL}${url}`;
+// };
 
 export function InnerPlotDetails() {
   const { _id } = useParams<{ _id: string }>();
