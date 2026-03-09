@@ -103,7 +103,6 @@ export function OpenPlotDetails({
       return res.data.data;
     },
     enabled: !!plot?._id,
-    initialData: plot,
   });
   const {
     data: innerPlots = [],
@@ -116,8 +115,7 @@ export function OpenPlotDetails({
   });
 
   const galleryImages = useMemo(() => {
-    const allImages = new Set<string>(openPlotData?.images || []);
-    if (openPlotData?.thumbnailUrl) return Array.from(allImages);
+    return openPlotData?.images || [];
   }, [openPlotData?.images]);
 
   const openLightbox = (imageSrc: string) => {
@@ -180,9 +178,9 @@ export function OpenPlotDetails({
             {openPlotData?.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={openPlotData?.thumbnailUrl}
+                  src={`${openPlotData?.thumbnailUrl}?t=${openPlotData?.updatedAt || Date.now()}`}
                   alt={openPlotData?.projectName}
-                  className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                  className="h-64 w-full object-cover"
                 />
               </div>
             )}
@@ -438,7 +436,7 @@ export function OpenPlotDetails({
                     onClick={() => openLightbox(image)}
                   >
                     <img
-                      src={image}
+                      src={`${image}?t=${openPlotData?.updatedAt || Date.now()}`}
                       alt={`Plot image ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                     />
@@ -515,7 +513,19 @@ export function OpenPlotDetails({
         </Dialog>
         <OpenPlotDialog
           open={editOpen}
-          onOpenChange={setEditOpen}
+          onOpenChange={(val) => {
+            setEditOpen(val);
+
+            if (!val) {
+              queryClient.invalidateQueries({
+                queryKey: ["open-plot", openPlotData?._id],
+              });
+
+              queryClient.refetchQueries({
+                queryKey: ["open-plot", openPlotData?._id],
+              });
+            }
+          }}
           openPlot={openPlotData}
         />
         {/* Lightbox */}
