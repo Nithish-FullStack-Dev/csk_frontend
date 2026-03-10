@@ -426,8 +426,10 @@ const ModernEnquiryForm: React.FC = () => {
     }, 3000);
   };
 
-  const selectedVisuals = propertyVisuals[formData.propertyType || "default"];
-
+  const selectedVisuals =
+    propertyVisuals[
+      (formData.propertyType as keyof typeof propertyVisuals) || "default"
+    ] || propertyVisuals.default;
   const steps: JSX.Element[] = [
     // --- Step 1: Property Details ---
     <motion.div
