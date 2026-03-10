@@ -767,14 +767,14 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="/budgets"
                     element={
                       <ProtectedRoute roleSubmodule={"Budget Tracking"}>
                         <BudgetTracking />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
                   <Route
                     path="/taxes"
                     element={

@@ -56,7 +56,7 @@ const Profile = () => {
       accountant: [
         "Financial Management",
         "Tax Documents",
-        "Budget Tracking",
+        // "Budget Tracking",
         "Invoice Processing",
       ],
       customer_purchased: [

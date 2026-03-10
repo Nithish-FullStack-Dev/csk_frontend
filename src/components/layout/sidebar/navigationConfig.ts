@@ -292,11 +292,11 @@ export const moduleToNavItem: Record<string, any> = {
   "Sales Overview": { to: "/sales", icon: BarChart3, label: "Sales Overview" },
   Operations: { to: "/operations", icon: Settings, label: "Operations" },
   Finances: { to: "/finances", icon: IndianRupee, label: "Finances" },
-  "Budget Tracking": {
-    to: "/budgets",
-    icon: FileText,
-    label: "Budget Tracking",
-  },
+  // "Budget Tracking": {
+  //   to: "/budgets",
+  //   icon: FileText,
+  //   label: "Budget Tracking",
+  // },
   "Tax Documents": { to: "/taxes", icon: FileText, label: "Tax Documents" },
   Reports: { to: "/reports", icon: BarChart3, label: "Reports" },
   "Customer Management": {
@@ -333,17 +333,22 @@ export const buildNavigationForRole = (
       const hasAnyPermission = Object.values(perm.actions).some((val) => val);
       if (!hasAnyPermission) return;
 
-      const navItem = moduleToNavItem[
-        Object.keys(moduleToNavItem).find(
-          (key) => key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
-        ) as string
-      ];
+      const navItem =
+        moduleToNavItem[
+          Object.keys(moduleToNavItem).find(
+            (key) =>
+              key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
+          ) as string
+        ];
       if (navItem && !middle.find((n) => n.label === navItem.label)) {
         middle.push(navItem);
       }
     });
     // Admin always sees Role Management (in middle flow)
-    if (roleName?.toLowerCase() === "admin" || roleName?.toLowerCase() === "owner") {
+    if (
+      roleName?.toLowerCase() === "admin" ||
+      roleName?.toLowerCase() === "owner"
+    ) {
       middle.push(moduleToNavItem["Role Management"]);
       middle.push(moduleToNavItem["Audit Logs"]);
     }

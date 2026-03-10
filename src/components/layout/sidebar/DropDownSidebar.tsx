@@ -110,7 +110,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Financial Reports",
       "Reports",
       "Tax Documents",
-      "Budget Tracking",
+      // "Budget Tracking",
     ],
   },
   {
