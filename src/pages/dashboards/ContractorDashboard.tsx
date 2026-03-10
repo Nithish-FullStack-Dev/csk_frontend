@@ -375,7 +375,7 @@ const ContractorDashboard = () => {
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
-          <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
+          {/* <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="mr-2 h-4 w-4" />
@@ -386,9 +386,9 @@ const ContractorDashboard = () => {
               onOpenChange={setAddTaskOpen}
               fetchTasks={fetchTasks}
             />
-          </Dialog>
+          </Dialog> */}
 
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          {/* <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700">
                 <Receipt className="mr-2 h-4 w-4" />
@@ -939,7 +939,7 @@ const ContractorDashboard = () => {
                 </form>
               </Form>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
 
           {/* <Dialog
             open={uploadEvidenceOpen}
