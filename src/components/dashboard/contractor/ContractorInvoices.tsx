@@ -77,7 +77,14 @@ export const invoiceSchema = z.object({
   dueDate: z.string().min(1, "Due date is required"),
   sgst: z.coerce.number().min(0).max(14),
   cgst: z.coerce.number().min(0).max(14),
-  status: z.enum(["draft", "pending", "approved", "paid", "rejected"]),
+  status: z.enum([
+    "draft",
+    "pending",
+    "approved",
+    "partially_paid",
+    "paid",
+    "rejected",
+  ]),
   notes: z.string().optional(),
   task: z.string().nullable().optional(),
   unit: z.string(),
@@ -103,7 +110,6 @@ type InvoiceItemFormValues = z.infer<typeof invoiceItemSchema>;
 
 const ContractorInvoices = () => {
   const { user } = useAuth();
-  // const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewInvoiceDialogOpen, setViewInvoiceDialogOpen] = useState(false);
@@ -112,9 +118,6 @@ const ContractorInvoices = () => {
   const [showAddItem, setShowAddItem] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [relatedToTask, setRelatedToTask] = useState(false);
-  // const [completedTasks, setCompletedTasks] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedFloorUnit, setSelectedFloorUnit] = useState("");
@@ -149,7 +152,7 @@ const ContractorInvoices = () => {
     isLoading: projectLoading,
     error: dropdownError,
     isError: dropdownIsError,
-  } = useProjects();
+  } = useProjects(createDialogOpen);
 
   const {
     data: floorUnits = [],
@@ -164,6 +167,35 @@ const ContractorInvoices = () => {
     isError: unitsByFloorError,
     error: unitsByFloorErrorMessage,
   } = useUnits(selectedProject, selectedFloorUnit);
+
+  useEffect(() => {
+    if (!selectedInvoice) return;
+    if (!createDialogOpen) return;
+
+    // wait until dropdown data loaded
+    if (
+      !selectedInvoice.project ||
+      !selectedInvoice.floorUnit ||
+      !selectedInvoice.unit
+    )
+      return;
+
+    if (floorUnitsLoading || unitsByFloorLoading) return;
+
+    form.reset({
+      project: selectedInvoice.project?._id || "",
+      floorUnit: selectedInvoice.floorUnit?._id || "",
+      unit: selectedInvoice.unit?._id || "",
+      issueDate: selectedInvoice.issueDate?.split("T")[0],
+      dueDate: selectedInvoice.dueDate?.split("T")[0],
+      sgst: selectedInvoice.sgst || 0,
+      cgst: selectedInvoice.cgst || 0,
+      status: selectedInvoice.status || "pending",
+      notes: selectedInvoice.notes || "",
+    });
+
+    setInvoiceItems(selectedInvoice.items || []);
+  }, [selectedInvoice, createDialogOpen, floorUnits, unitsByFloor]);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -182,8 +214,6 @@ const ContractorInvoices = () => {
       notes: "",
     },
   });
-
-  const watchProject = form.watch("project"); // watches selected projectId
 
   const itemForm = useForm<InvoiceItemFormValues>({
     resolver: zodResolver(invoiceItemSchema),
@@ -642,13 +672,15 @@ const ContractorInvoices = () => {
                           className={`${
                             invoice?.status === "paid"
                               ? "bg-green-100 text-green-800"
-                              : invoice?.status === "pending"
-                                ? "bg-blue-100 text-blue-800"
-                                : invoice?.status === "rejected"
-                                  ? "bg-red-100 text-red-800"
+                              : invoice?.status === "partially_paid"
+                                ? "bg-orange-100 text-orange-800"
+                                : invoice?.status === "pending"
+                                  ? "bg-blue-100 text-blue-800"
                                   : invoice?.status === "approved"
                                     ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-100 text-gray-800"
+                                    : invoice?.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
                           } text-sm py-1 px-3`}
                         >
                           {invoice?.status}
@@ -672,18 +704,12 @@ const ContractorInvoices = () => {
                                 setIsEditMode(true);
                                 setSelectedInvoice(invoice);
 
-                                form.reset({
-                                  project: invoice.project?._id,
-                                  floorUnit: invoice.floorUnit?._id,
-                                  unit: invoice.unit?._id,
-                                  issueDate: invoice.issueDate.split("T")[0],
-                                  dueDate: invoice.dueDate.split("T")[0],
-                                  sgst: invoice.sgst,
-                                  cgst: invoice.cgst,
-                                  notes: invoice.notes || "",
-                                });
+                                setSelectedProject(invoice.project?._id || "");
+                                setSelectedFloorUnit(
+                                  invoice.floorUnit?._id || "",
+                                );
+                                setSelectedUnit(invoice.unit?._id || "");
 
-                                setInvoiceItems(invoice.items);
                                 setCreateDialogOpen(true);
                               }}
                             >
@@ -833,6 +859,9 @@ const ContractorInvoices = () => {
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="partially_paid">
+                          Partially Paid
+                        </SelectItem>
                         <SelectItem value="paid">Paid</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
                       </SelectContent>
@@ -1494,7 +1523,7 @@ const ContractorInvoices = () => {
                   </Card>
                 );
               })()}
-              {isEditMode && (
+              {isEditMode && user?.role !== "contractor" && (
                 <FormField
                   control={form.control}
                   name="status"
@@ -1575,30 +1604,27 @@ const ContractorInvoices = () => {
           <DialogContent className="w-full md:max-w-[800px] max-w-[95vw] max-h-[90vh] overflow-auto rounded-xl p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-lg md:text-xl font-semibold">
-                Invoice {selectedInvoice._id}
+                Invoice {selectedInvoice?.invoiceNumber}
               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-6 mt-2">
               {/* Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start gap-2">
-                <div>
-                  <h3 className="font-bold text-xl">INVOICE</h3>
-                  <p className="text-muted-foreground">
-                    {selectedInvoice.invoiceNumber}
-                  </p>
-                </div>
+              <div className="">
+                Status:{" "}
                 <Badge
                   className={`${
                     selectedInvoice.status === "paid"
                       ? "bg-green-100 text-green-800"
-                      : selectedInvoice.status === "pending"
-                        ? "bg-blue-100 text-blue-800"
-                        : selectedInvoice.status === "rejected"
-                          ? "bg-red-100 text-red-800"
-                          : selectedInvoice.status === "approved"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
+                      : selectedInvoice.status === "partially_paid"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : selectedInvoice.status === "pending"
+                          ? "bg-blue-100 text-blue-800"
+                          : selectedInvoice.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : selectedInvoice.status === "approved"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                   } text-sm py-1 px-3`}
                 >
                   {selectedInvoice.status}
@@ -1613,47 +1639,67 @@ const ContractorInvoices = () => {
                     <p>
                       {new Date(selectedInvoice.issueDate).toLocaleDateString(
                         "en-GB",
-                        {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "2-digit",
-                        },
                       )}
                     </p>
                   </div>
+
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Due Date:</p>
                     <p>
                       {new Date(selectedInvoice.dueDate).toLocaleDateString(
                         "en-GB",
-                        {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "2-digit",
-                        },
                       )}
                     </p>
                   </div>
+
                   <div className="grid grid-cols-2">
                     <p className="text-sm text-muted-foreground">Project:</p>
                     <p>
-                      {selectedInvoice.project?.projectName +
-                        " / " +
-                        (selectedInvoice?.floorUnit?.floorNumber || "-") +
-                        " " +
-                        (selectedInvoice?.floorUnit?.unitType || "-") +
-                        " / " +
-                        (selectedInvoice?.unit?.propertyType || "-") +
-                        " " +
-                        (selectedInvoice?.unit?.plotNo || "-")}
+                      {selectedInvoice?.project?.projectName} / Floor{" "}
+                      {selectedInvoice?.floorUnit?.floorNumber} / Plot{" "}
+                      {selectedInvoice?.unit?.plotNo}
                     </p>
                   </div>
-                  {selectedInvoice.paymentDate && (
+
+                  <div className="grid grid-cols-2">
+                    <p className="text-sm text-muted-foreground">Created By:</p>
+
+                    <p>
+                      {selectedInvoice?.user?.name || "-"} (
+                      {selectedInvoice?.user?.email || "-"})
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2">
+                    <p className="text-sm text-muted-foreground">Role:</p>
+
+                    <p>{selectedInvoice?.createdRole}</p>
+                  </div>
+
+                  {selectedInvoice?.approvedByAccountant && (
+                    <div className="grid grid-cols-2">
+                      <p className="text-sm text-muted-foreground">
+                        Approved By:
+                      </p>
+
+                      <p>
+                        {selectedInvoice?.approvedByAccountant?.name} (
+                        {selectedInvoice?.approvedByAccountant?.email})
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedInvoice?.paymentDate && (
                     <div className="grid grid-cols-2">
                       <p className="text-sm text-muted-foreground">
                         Payment Date:
                       </p>
-                      <p>{selectedInvoice.paymentDate}</p>
+
+                      <p>
+                        {new Date(
+                          selectedInvoice.paymentDate,
+                        ).toLocaleDateString()}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1672,14 +1718,14 @@ const ContractorInvoices = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedInvoice.items.map((item) => (
-                      <TableRow key={item._id}>
-                        <TableCell>{item.description}</TableCell>
+                    {selectedInvoice?.items?.map((item, idx) => (
+                      <TableRow key={item._id || idx}>
+                        <TableCell>{item?.description}</TableCell>
                         <TableCell>
-                          {item.quantity} {item.unit}
+                          {item?.quantity} {item?.unit}
                         </TableCell>
-                        <TableCell>₹{item.rate.toLocaleString()}</TableCell>
-                        <TableCell>₹{item.amount.toLocaleString()}</TableCell>
+                        <TableCell>₹{item?.rate?.toLocaleString()}</TableCell>
+                        <TableCell>₹{item?.amount?.toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1688,22 +1734,22 @@ const ContractorInvoices = () => {
 
               {/* Mobile Cards */}
               <div className="md:hidden space-y-3">
-                {selectedInvoice.items.map((item) => (
+                {selectedInvoice?.items?.map((item, idx) => (
                   <div
-                    key={item._id}
+                    key={item?._id || idx}
                     className="border rounded-md p-4 shadow-sm bg-white"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{item.description}</span>
+                      <span className="font-medium">{item?.description}</span>
                       <span className="text-sm text-gray-500">
-                        ₹{item.amount.toLocaleString()}
+                        ₹{item?.amount?.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600">
                       <span>
-                        Qty: {item.quantity} {item.unit}
+                        Qty: {item?.quantity} {item?.unit}
                       </span>
-                      <span>Rate: ₹{item.rate.toLocaleString()}</span>
+                      <span>Rate: ₹{item?.rate?.toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -1714,31 +1760,31 @@ const ContractorInvoices = () => {
                 <div className="w-full md:w-1/2 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal:</span>
-                    <span>₹{selectedInvoice.subtotal.toLocaleString()}</span>
+                    <span>₹{selectedInvoice?.subtotal?.toLocaleString()}</span>
                   </div>
 
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      SGST ({selectedInvoice.sgst}%):
+                      SGST ({selectedInvoice?.sgst || 0}%):
                     </span>
                     <span>
                       ₹
                       {(
-                        selectedInvoice.subtotal *
-                        (selectedInvoice.sgst / 100)
+                        selectedInvoice?.subtotal ||
+                        0 * (selectedInvoice?.sgst / 100)
                       ).toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      CGST ({selectedInvoice.cgst}%):
+                      CGST ({selectedInvoice?.cgst || 0}%):
                     </span>
                     <span>
                       ₹
                       {(
-                        selectedInvoice.subtotal *
-                        (selectedInvoice.cgst / 100)
+                        selectedInvoice?.subtotal ||
+                        0 * (selectedInvoice?.cgst / 100)
                       ).toLocaleString()}
                     </span>
                   </div>
@@ -1747,17 +1793,19 @@ const ContractorInvoices = () => {
 
                   <div className="flex justify-between font-bold">
                     <span>Total Amount:</span>
-                    <span>₹{selectedInvoice.total.toLocaleString()}</span>
+                    <span>
+                      ₹{selectedInvoice?.total?.toLocaleString() || 0}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Notes */}
-              {selectedInvoice.notes && (
+              {selectedInvoice?.notes && (
                 <div className="mt-2">
                   <h4 className="text-sm font-medium">Notes:</h4>
                   <p className="text-muted-foreground">
-                    {selectedInvoice.notes}
+                    {selectedInvoice?.notes}
                   </p>
                 </div>
               )}

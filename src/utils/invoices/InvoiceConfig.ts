@@ -1,3 +1,4 @@
+import { User } from "@/contexts/AuthContext";
 import { Building, FloorUnit } from "@/types/building";
 import { Property } from "@/types/property";
 import { useQuery } from "@tanstack/react-query";
@@ -28,16 +29,19 @@ export interface Invoice {
   sgst: number;
   cgst: number;
   status:
-  | "draft"
-  | "pending"
-  | "approved"
-  | "partially_paid"
-  | "paid"
-  | "rejected";
+    | "draft"
+    | "pending"
+    | "approved"
+    | "partially_paid"
+    | "paid"
+    | "rejected";
   paymentDate: string | null;
   notes?: string;
   task?: string | null;
   items: InvoiceItem[];
+  user?: User | null;
+  approvedByAccountant?: User | null;
+  createdRole?: "contractor" | "accountant";
 }
 
 export const fetchInvoices = async () => {
@@ -50,7 +54,7 @@ export const fetchInvoices = async () => {
 export const fetchCompletedTasks = async () => {
   const res = await axios.get(
     `${import.meta.env.VITE_URL}/api/invoices/completed/tasks`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return res.data.tasks;
 };

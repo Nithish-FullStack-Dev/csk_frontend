@@ -144,7 +144,7 @@ const Payments = () => {
       // Only show invoices that are approved and not fully paid
       const validInvoices = response.data.filter(
         (inv: any) =>
-          ["approved", "partially_paid"].includes(inv.status) &&
+          ["approved", "partially_paid", "pending"].includes(inv.status) &&
           (inv.paidAmount || 0) < inv.total,
       );
 
@@ -202,21 +202,32 @@ const Payments = () => {
 
     return matchesMethod && matchesDateRange;
   });
+
   const exportPaymentsToExcel = () => {
-    const dataToExport = filteredPayments.map((payment) => ({
-      "Payment ID": payment.paymentNumber,
-      Reference: payment.invoice.invoiceNumber,
-      Property:
-        payment?.invoice.project?.projectId?.projectName +
-        " / " +
-        payment.invoice.unit,
-      Amount: payment.amount,
-      Method: payment.invoice.paymentMethod,
-      Date: new Date(payment.invoice.paymentDate).toLocaleDateString(),
+    const dataToExport = filteredPayments.map((payment: any) => ({
+      "Payment ID": payment.paymentNumber || "-",
+
+      Reference: payment?.invoice?.invoiceNumber || "-",
+
+      Property: `${payment?.invoice?.project?.projectName || "-"} / Floor ${
+        payment?.invoice?.floorUnit?.floorNumber ?? "-"
+      } / Plot ${payment?.invoice?.unit?.plotNo ?? "-"}`,
+
+      Amount: payment?.amount || 0,
+
+      Method: payment?.paymentMethod || "-",
+
+      "Paid By": payment?.accountant?.name || "-", // ✅ added
+
+      Date: payment?.paymentDate
+        ? new Date(payment.paymentDate).toLocaleDateString()
+        : "-",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
     const workbook = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
 
     const excelBuffer = XLSX.write(workbook, {
@@ -230,6 +241,9 @@ const Payments = () => {
 
     saveAs(fileData, "Payments.xlsx");
   };
+
+  const status = selectedPayment?.invoice?.status;
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -387,6 +401,7 @@ const Payments = () => {
                       <TableHead>Total Amount</TableHead>
                       <TableHead>Paid Amount</TableHead>
                       <TableHead>Balance</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Mode</TableHead>
                       <TableHead>Payment Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -410,11 +425,9 @@ const Payments = () => {
 
                         {/* Project Name / Unit */}
                         <TableCell>
-                          {payment?.invoice?.project?.projectName +
-                            " / floor Number -" +
-                            payment?.invoice?.floorUnit?.floorNumber +
-                            "/ Flot No -" +
-                            payment?.invoice?.unit?.plotNo}
+                          {`${payment?.invoice?.project?.projectName || "-"} / Floor ${
+                            payment?.invoice?.floorUnit?.floorNumber ?? "-"
+                          } / Plot ${payment?.invoice?.unit?.plotNo ?? "-"}`}
                           {/* {payment?.invoice?.project?.projectId?.projectName ||
                           payment?.invoice?.unit?.unitName
                             ? `${
@@ -443,10 +456,14 @@ const Payments = () => {
                           ).toLocaleString()}
                         </TableCell>
 
+                        <TableCell>{payment?.invoice?.status}</TableCell>
+
                         {/* Mode of Payment */}
                         <TableCell>
                           <span className="px-2 py-1 rounded-md bg-muted text-xs">
-                            {payment?.paymentMethod?.toUpperCase()}
+                            {payment?.paymentMethod
+                              ? payment.paymentMethod.toUpperCase()
+                              : "-"}
                           </span>
                         </TableCell>
 
@@ -503,7 +520,7 @@ const Payments = () => {
 
                               <DropdownMenuSeparator />
 
-                              {/* <DropdownMenuItem
+                              <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedPayment(payment);
                                   setShowReconciliationDialog(true);
@@ -511,7 +528,7 @@ const Payments = () => {
                               >
                                 <CreditCard className="mr-2 h-4 w-4" />
                                 Reconcile
-                              </DropdownMenuItem> */}
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -523,9 +540,9 @@ const Payments = () => {
 
               {/* Card view for mobile */}
               <div className="block md:hidden space-y-4 p-2">
-                {filteredPayments.map((payment) => (
+                {filteredPayments.map((payment, idx) => (
                   <div
-                    key={payment._id}
+                    key={payment._id || idx}
                     className="rounded-lg border p-4 shadow-sm bg-white"
                   >
                     <div className="flex items-center justify-between">
@@ -534,9 +551,7 @@ const Payments = () => {
                         {payment.paymentNumber}
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(
-                          payment.invoice.paymentDate,
-                        ).toLocaleDateString()}
+                        {new Date(payment.paymentDate).toLocaleDateString()}
                       </span>
                     </div>
 
@@ -548,10 +563,10 @@ const Payments = () => {
 
                       <div>
                         <span className="font-semibold">Property: </span>
-                        {payment.invoice?.project?.projectId?.projectName
+                        {payment.invoice?.project?.projectName
                           ? `${
-                              payment.invoice.project.projectId.projectName
-                            } / ${payment.invoice?.unit || "N/A"}`
+                              payment.invoice?.project?.projectName
+                            } / ${payment.invoice?.unit ? payment.invoice?.unit?.plotNo : "N/A"}`
                           : "N/A"}
                       </div>
 
@@ -576,7 +591,11 @@ const Payments = () => {
                             ),
                           )
                         ) : (
-                          <span>{payment.invoice?.paymentMethod || "N/A"}</span>
+                          <span className="px-2 py-1 rounded-md bg-muted text-xs">
+                            {payment?.paymentMethod
+                              ? payment.paymentMethod.toUpperCase()
+                              : "-"}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -660,8 +679,9 @@ const Payments = () => {
                       <div>
                         <p className="font-semibold">Project / Unit</p>
                         <p>
-                          {selectedPayment?.invoice?.project?.projectName} /{" "}
-                          {selectedPayment?.invoice?.unit?.plotNo}
+                          {selectedPayment?.invoice?.project?.projectName ||
+                            "-"}{" "}
+                          / {selectedPayment?.invoice?.unit?.plotNo || "-"}
                         </p>
                       </div>
                       <div>
@@ -672,20 +692,27 @@ const Payments = () => {
                       </div>
                       <div>
                         <p className="font-semibold">Payment Method</p>
-                        <p>{selectedPayment?.invoice?.paymentMethod[0]}</p>
+                        <p>
+                          {selectedPayment?.invoice?.paymentMethod?.[0] || "-"}
+                        </p>
                       </div>
                       <div>
                         <p className="font-semibold">Amount</p>
                         <p>
-                          ₹{selectedPayment?.invoice?.total?.toLocaleString()}
+                          ₹
+                          {Number(
+                            selectedPayment?.invoice?.total || 0,
+                          ).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="font-semibold">Payment Date</p>
                         <p>
-                          {new Date(
-                            selectedPayment?.invoice?.paymentDate,
-                          ).toLocaleDateString()}
+                          {selectedPayment?.invoice?.paymentDate
+                            ? new Date(
+                                selectedPayment.invoice.paymentDate,
+                              ).toLocaleDateString()
+                            : "-"}
                         </p>
                       </div>
                     </div>
@@ -735,17 +762,19 @@ const Payments = () => {
                         </p>
                       </div>
                       <Badge
-                        className={`${
-                          selectedPayment?.invoice?.status === "Paid"
+                        className={
+                          status === "paid"
                             ? "bg-green-100 text-green-800"
-                            : selectedPayment?.invoice?.status === "Pending"
+                            : status === "pending"
                               ? "bg-blue-100 text-blue-800"
-                              : selectedPayment?.invoice?.status === "Overdue"
+                              : status === "rejected"
                                 ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
-                        } text-sm py-1 px-3`}
+                                : status === "approved"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-gray-100 text-gray-800"
+                        }
                       >
-                        {selectedPayment?.invoice?.status}
+                        {status}
                       </Badge>
                     </div>
 
@@ -789,8 +818,8 @@ const Payments = () => {
                             Project:
                           </p>
                           <p>
-                            {selectedPayment?.invoice?.project?.projectId
-                              ?.projectName || "-"}
+                            {selectedPayment?.invoice?.project?.projectName ||
+                              "-"}
                           </p>
                         </div>
                         {selectedPayment.invoice.paymentDate && (
@@ -799,13 +828,15 @@ const Payments = () => {
                               Payment Date:
                             </p>
                             <p>
-                              {new Date(
-                                selectedPayment?.invoice?.paymentDate,
-                              ).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "2-digit",
-                              })}
+                              {selectedPayment?.invoice?.paymentDate
+                                ? new Date(
+                                    selectedPayment.invoice.paymentDate,
+                                  ).toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "2-digit",
+                                  })
+                                : "-"}
                             </p>
                           </div>
                         )}
@@ -826,17 +857,17 @@ const Payments = () => {
                         </TableHeader>
                         <TableBody>
                           {/* Use sample items when viewing an invoice */}
-                          {selectedPayment?.invoice?.items.map((item) => (
+                          {selectedPayment?.invoice?.items?.map((item) => (
                             <TableRow key={item?._id}>
                               <TableCell>{item?.description}</TableCell>
                               <TableCell>
                                 {item?.quantity} {item?.unit}
                               </TableCell>
                               <TableCell>
-                                ₹{item?.rate.toLocaleString()}
+                                ₹{Number(item?.rate || 0).toLocaleString()}
                               </TableCell>
                               <TableCell>
-                                ₹{item?.amount.toLocaleString()}
+                                ₹{Number(item?.amount || 0).toLocaleString()}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -852,7 +883,9 @@ const Payments = () => {
                           </span>
                           <span>
                             ₹
-                            {selectedPayment?.invoice?.subtotal.toLocaleString()}
+                            {Number(
+                              selectedPayment?.invoice?.subtotal || 0,
+                            ).toLocaleString()}
                           </span>
                         </div>
 
@@ -863,8 +896,8 @@ const Payments = () => {
                           <span>
                             ₹
                             {(
-                              selectedPayment.invoice.subtotal *
-                              (selectedPayment?.invoice?.sgst / 100)
+                              Number(selectedPayment?.invoice?.subtotal || 0) *
+                              ((selectedPayment?.invoice?.sgst || 0) / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
@@ -876,8 +909,8 @@ const Payments = () => {
                           <span>
                             ₹
                             {(
-                              selectedPayment?.invoice?.subtotal *
-                              (selectedPayment?.invoice?.cgst / 100)
+                              Number(selectedPayment?.invoice?.subtotal || 0) *
+                              ((selectedPayment?.invoice?.cgst || 0) / 100)
                             ).toLocaleString()}
                           </span>
                         </div>
@@ -887,7 +920,10 @@ const Payments = () => {
                         <div className="flex justify-between font-bold">
                           <span>Total Amount:</span>
                           <span>
-                            ₹{selectedPayment?.invoice?.total.toLocaleString()}
+                            ₹
+                            {Number(
+                              selectedPayment?.invoice?.total || 0,
+                            ).toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -940,6 +976,10 @@ const Payments = () => {
                       setSelectedInvoice(invoice);
 
                       if (invoice) {
+                        if (invoice.status === "paid") {
+                          toast.error("Invoice already paid");
+                          return;
+                        }
                         const remaining =
                           invoice.total - (invoice.paidAmount || 0);
 
@@ -1224,7 +1264,7 @@ const Payments = () => {
                         <SelectValue placeholder="Select invoice item" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedPayment?.invoice?.items.map((item, index) => (
+                        {selectedPayment?.invoice?.items?.map((item, index) => (
                           <SelectItem
                             key={index}
                             value={item?._id || index.toString()}
