@@ -130,7 +130,7 @@ const ModernEnquiryForm: React.FC = () => {
       let url = "";
       let source: FormData["propertySource"] = "";
 
-      if (type === "villa" || type === "apartment") {
+      if (type === "villa" || type === "apartment" || type === "Commercial") {
         url = "/api/building/getAllBuildings";
         source = "building";
       }
@@ -145,20 +145,32 @@ const ModernEnquiryForm: React.FC = () => {
         source = "openland";
       }
 
-      const res = await axios.get(`${import.meta.env.IMAGE_URL}${url}`);
+      const res = await axios.get(`${import.meta.env.VITE_URL}${url}`);
 
-      const apiData = res.data;
+      let normalized = res.data?.data || [];
 
-      // 🔥 normalize backend responses
-      const normalized =
-        apiData?.data ||
-        apiData?.buildings ||
-        apiData?.plots ||
-        apiData?.lands ||
-        apiData ||
-        [];
+      // 🔥 Filter buildings based on enquiry type
+      if (source === "building") {
+        if (type === "villa") {
+          normalized = normalized.filter(
+            (b: any) => b.propertyType === "Villa Complex",
+          );
+        }
 
-      setProjects(Array.isArray(normalized) ? normalized : []);
+        if (type === "apartment") {
+          normalized = normalized.filter(
+            (b: any) => b.propertyType === "Apartment Complex",
+          );
+        }
+
+        // if (type === "Commercial") {
+        //   normalized = normalized.filter(
+        //     (b: any) => b.propertyType === "Commercial",
+        //   );
+        // }
+      }
+
+      setProjects(normalized);
 
       setFormData((p) => ({
         ...p,
@@ -414,8 +426,10 @@ const ModernEnquiryForm: React.FC = () => {
     }, 3000);
   };
 
-  const selectedVisuals = propertyVisuals[formData.propertyType || "default"];
-
+  const selectedVisuals =
+    propertyVisuals[
+      (formData.propertyType as keyof typeof propertyVisuals) || "default"
+    ] || propertyVisuals.default;
   const steps: JSX.Element[] = [
     // --- Step 1: Property Details ---
     <motion.div

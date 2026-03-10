@@ -723,7 +723,7 @@ const ContractorTaskList = () => {
                     className="relative rounded-md overflow-hidden border h-32 group"
                   >
                     <img
-                      src={`${import.meta.env.IMAGE_URL}${url}`}
+                      src={`${import.meta.env.VITE_IMAGE_URL}${url}`}
                       alt={`Uploaded ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

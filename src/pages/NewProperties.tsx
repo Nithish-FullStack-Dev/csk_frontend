@@ -306,11 +306,13 @@ const NewProperties = () => {
     }
 
     try {
-      const response = await fetch(url);
+      const fixedUrl = url.replace("http://", "https://");
+
+      const response = await fetch(fixedUrl);
+
       if (!response.ok) throw new Error("Download failed");
 
       const blob = await response.blob();
-
       const blobUrl = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
@@ -626,7 +628,7 @@ const NewProperties = () => {
                         <div className="relative">
                           {plot.thumbnailUrl ? (
                             <img
-                              src={getImageUrl(plot.thumbnailUrl)}
+                              src={plot.thumbnailUrl}
                               alt={plot.projectName}
                               className="h-48 w-full object-cover"
                             />

@@ -57,7 +57,7 @@ export function getInnerPlotStatusBadge(status: string) {
 //   if (url.startsWith("http")) return url;
 
 //   // Local images
-//   return `${import.meta.env.IMAGE_URL}${url}`;
+//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
 // };
 
 export function InnerPlotDetails() {
@@ -105,8 +105,10 @@ export function InnerPlotDetails() {
   /* ---------- GALLERY ---------- */
   const galleryImages = useMemo(() => {
     if (!plot) return [];
+
     const imgs = new Set<string>(plot.images || []);
-    if (plot.thumbnailUrl) return Array.from(imgs);
+
+    return Array.from(imgs);
   }, [plot]);
 
   if (isLoading) return <Loader />;
@@ -144,7 +146,7 @@ export function InnerPlotDetails() {
             {plot.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={getImageUrl(plot?.thumbnailUrl)}
+                  src={`${import.meta.env.VITE_URL}/api${plot?.thumbnailUrl}`}
                   alt={`Plot ${plot.plotNo}`}
                   className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -312,7 +314,7 @@ export function InnerPlotDetails() {
                       }`}
                     >
                       <img
-                        src={getImageUrl(img)}
+                        src={`${import.meta.env.VITE_URL}/api${img}`}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </div>

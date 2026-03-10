@@ -69,7 +69,7 @@ interface OpenPlotDetailsProps {
 //   if (url.startsWith("http")) return url;
 
 //   // Local images
-//   return `${import.meta.env.IMAGE_URL}${url}`;
+//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
 // };
 export function OpenPlotDetails({
   plot,
@@ -179,7 +179,7 @@ export function OpenPlotDetails({
             {openPlotData?.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={`${openPlotData?.thumbnailUrl}?t=${openPlotData?.updatedAt || Date.now()}`}
+                  src={openPlotData?.thumbnailUrl}
                   alt={openPlotData?.projectName}
                   className="h-64 w-full object-cover"
                 />
@@ -279,7 +279,7 @@ export function OpenPlotDetails({
                     {/* Thumbnail */}
                     {inner.thumbnailUrl ? (
                       <img
-                        src={getImageUrl(inner?.thumbnailUrl)}
+                        src={`${import.meta.env.VITE_URL}/api${inner.thumbnailUrl}`}
                         alt={inner.plotNo}
                         className="h-40 w-full object-cover"
                       />
@@ -437,7 +437,7 @@ export function OpenPlotDetails({
                     onClick={() => openLightbox(image)}
                   >
                     <img
-                      src={getImageUrl(image)}
+                      src={image}
                       alt={`Plot image ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                     />
@@ -533,7 +533,7 @@ export function OpenPlotDetails({
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
             <img
-              src={getImageUrl(currentImage)}
+              src={currentImage}
               alt="Full view of plot"
               className="w-full h-full object-contain"
             />

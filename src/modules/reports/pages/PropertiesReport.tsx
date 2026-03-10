@@ -30,16 +30,17 @@ export default function PropertiesReport() {
   } = useQuery({
     queryKey: ["properties-report", filters],
     queryFn: async () => {
-      const API_BASE = import.meta.env.VITE_URL || "http://localhost:3000";
-
-      const res = await axios.get(`${API_BASE}/api/reports/properties`, {
-        params: {
-          dateFrom: filters.dateFrom.toISOString(),
-          dateTo: filters.dateTo.toISOString(),
-          groupBy: filters.groupBy,
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/reports/properties`,
+        {
+          params: {
+            dateFrom: filters.dateFrom.toISOString(),
+            dateTo: filters.dateTo.toISOString(),
+            groupBy: filters.groupBy,
+          },
+          withCredentials: true,
         },
-        withCredentials: true,
-      });
+      );
       return res.data.data as PropertiesReportRow[];
     },
   });
