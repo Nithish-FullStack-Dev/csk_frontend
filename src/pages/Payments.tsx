@@ -144,7 +144,7 @@ const Payments = () => {
       // Only show invoices that are approved and not fully paid
       const validInvoices = response.data.filter(
         (inv: any) =>
-          ["approved", "partially_paid", "pending"].includes(inv.status) &&
+          ["approved", "partially_paid"].includes(inv.status) &&
           (inv.paidAmount || 0) < inv.total,
       );
 
@@ -973,10 +973,14 @@ const Payments = () => {
                       const invoice = invoices.find(
                         (i: any) => i._id === value,
                       );
+                      console.log(invoice);
                       setSelectedInvoice(invoice);
 
                       if (invoice) {
-                        if (invoice.status === "paid") {
+                        if (
+                          invoice.status === "paid" ||
+                          invoice.status === ""
+                        ) {
                           toast.error("Invoice already paid");
                           return;
                         }
