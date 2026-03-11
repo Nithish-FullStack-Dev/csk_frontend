@@ -144,6 +144,7 @@
 //   ],
 // };
 // src\components\layout\sidebar\navigationConfig.ts
+import { getCookie } from "@/utils/getCookie";
 import {
   Home,
   Building,
@@ -310,6 +311,12 @@ export const moduleToNavItem: Record<string, any> = {
   //   label: "Photo Evidence",
   // },
   Trash: { to: "/trash-buildings", icon: Trash, label: "Trash – Buildings" },
+
+  Secure: {
+    to: "/secure/dashboard",
+    icon: Shield,
+    label: "Secure",
+  },
 };
 
 // Build dynamic navigation based on role + permissions
@@ -317,6 +324,8 @@ export const buildNavigationForRole = (
   rolePermissions: any[],
   roleName: string,
 ): any[] => {
+  const token = getCookie("secure_access");
+
   // const topDefaults = [moduleToNavItem["Dashboard"]];
   const bottomDefaults = [
     moduleToNavItem["System Settings"],
@@ -351,6 +360,14 @@ export const buildNavigationForRole = (
     ) {
       middle.push(moduleToNavItem["Role Management"]);
       middle.push(moduleToNavItem["Audit Logs"]);
+    }
+
+    if (
+      (roleName?.toLowerCase() === "owner" ||
+        roleName?.toLowerCase() === "accountant") &&
+      token
+    ) {
+      middle.push(moduleToNavItem["Secure"]);
     }
   }
 

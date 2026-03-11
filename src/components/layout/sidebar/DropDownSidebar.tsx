@@ -131,6 +131,12 @@ const NAV_GROUPS: NavGroup[] = [
     icon: HelpCircle,
     modules: ["Help & Support"],
   },
+  {
+    key: "secure",
+    label: "Secure",
+    icon: Shield,
+    modules: ["Secure"],
+  },
 ];
 const fetchRolePermissions = async (roleName: string) => {
   const { data } = await axios.get(

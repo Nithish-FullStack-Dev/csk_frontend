@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarHeaderProps {
   collapsed: boolean;
@@ -8,17 +10,38 @@ interface SidebarHeaderProps {
 }
 
 const SidebarHeader = ({ collapsed, toggleCollapsed }: SidebarHeaderProps) => {
+  const holdTimer = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleMouseDown = () => {
+    if (user?.role !== "owner" && user?.role !== "accountant") return;
+    holdTimer.current = setTimeout(() => {
+      navigate("/secure");
+    }, 3000);
+  };
+
+  const clearTimer = () => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+  };
+
   return (
     <div
       className={cn(
         "h-16 flex items-center px-3 border-b border-estate-blue/30 transition-all duration-300",
-        collapsed ? "justify-center" : "justify-between"
+        collapsed ? "justify-center" : "justify-between",
       )}
     >
       {!collapsed ? (
         <Link
           to="/"
           className="flex items-center gap-2 transition-all duration-300 hover:opacity-90"
+          onMouseDown={handleMouseDown}
+          onMouseUp={clearTimer}
+          onMouseLeave={clearTimer}
         >
           <img
             src="/assets/images/logo.png"
@@ -34,10 +57,12 @@ const SidebarHeader = ({ collapsed, toggleCollapsed }: SidebarHeaderProps) => {
           src="/assets/images/logo.png"
           alt="CSK Realtors Logo"
           className="h-10 w-auto transition-all duration-300"
+          onMouseDown={handleMouseDown}
+          onMouseUp={clearTimer}
+          onMouseLeave={clearTimer}
         />
       )}
 
-      {/* Collapse button hidden on mobile (sm:) */}
       <button
         onClick={toggleCollapsed}
         className="hidden sm:block p-1 rounded-md hover:bg-white/10 text-white transition-all duration-300"
