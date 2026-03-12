@@ -80,14 +80,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
     watch,
   } = useForm<CustomerForm>({
     resolver: zodResolver(CustomerValidationSchema),
-    defaultValues: {
-      paymentDetails: [],
-    },
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "paymentDetails",
+    defaultValues: {},
   });
 
   const watchedCustomerId = watch("customerId");
@@ -400,44 +393,63 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
   });
 
   const onSubmit = (formData: CustomerForm) => {
-    const adjustedFormData = { ...formData };
-    if (adjustedFormData.lastPaymentDate) {
-      adjustedFormData.lastPaymentDate += "T00:00:00";
-    }
-    if (adjustedFormData.expectedDeliveryDate) {
-      adjustedFormData.expectedDeliveryDate += "T00:00:00";
-    }
-    if (adjustedFormData.deliveryDate) {
-      adjustedFormData.deliveryDate += "T00:00:00";
-    }
-
     const payload = new FormData();
-    Object.entries(adjustedFormData).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== "" &&
-        key !== "documents" &&
-        key !== "paymentDetails"
-      ) {
-        payload.append(key, value as any);
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        payload.append(key, String(value));
       }
     });
 
-    adjustedFormData.paymentDetails?.forEach((p, index) => {
-      Object.entries(p).forEach(([key, value]) => {
-        payload.append(`paymentDetails[${index}][${key}]`, value as any);
-      });
-    });
-    if (pdfFile) {
-      payload.append("pdfFile", pdfFile);
+    if (formData.purchaseType === "BUILDING") {
+      payload.delete("openPlot");
+      payload.delete("innerPlot");
+      payload.delete("openLand");
     }
+
+    if (formData.purchaseType === "PLOT") {
+      payload.delete("property");
+      payload.delete("floorUnit");
+      payload.delete("unit");
+      payload.delete("openLand");
+    }
+
+    if (formData.purchaseType === "LAND") {
+      payload.delete("property");
+      payload.delete("floorUnit");
+      payload.delete("unit");
+      payload.delete("openPlot");
+      payload.delete("innerPlot");
+    }
+
+    if (formData.lastPaymentDate) {
+      payload.set("lastPaymentDate", formData.lastPaymentDate + "T00:00:00");
+    }
+
+    if (formData.expectedDeliveryDate) {
+      payload.set(
+        "expectedDeliveryDate",
+        formData.expectedDeliveryDate + "T00:00:00",
+      );
+    }
+
+    if (formData.deliveryDate) {
+      payload.set("deliveryDate", formData.deliveryDate + "T00:00:00");
+    }
+
     newDocuments.forEach((file) => {
       payload.append("documents", file);
     });
 
-    if (mode === "edit") updateMutation.mutate(payload);
-    else addMutation.mutate(payload);
+    if (pdfFile) {
+      payload.append("pdf", pdfFile);
+    }
+
+    if (mode === "edit") {
+      updateMutation.mutate(payload);
+    } else {
+      addMutation.mutate(payload);
+    }
   };
 
   const handleDocumentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1263,125 +1275,6 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                       );
                     })}
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-4 md:p-5 p-2">
-              <Label>Payment Details</Label>
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                  <div
-                    key={field.id}
-                    className="flex flex-col md:flex-row gap-2 border p-4 rounded-lg bg-gray-50"
-                  >
-                    <Controller
-                      name={`paymentDetails.${index}.amount`}
-                      control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          type="number"
-                          placeholder="Amount"
-                          value={value || ""}
-                          onChange={(e) => onChange(Number(e.target.value))}
-                          className="flex-1"
-                        />
-                      )}
-                    />
-                    {errors.paymentDetails?.[index]?.amount && (
-                      <p className="text-red-500 text-sm">
-                        {errors.paymentDetails[index]?.amount?.message}
-                      </p>
-                    )}
-
-                    <Controller
-                      name={`paymentDetails.${index}.date`}
-                      control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          type="date"
-                          value={value || ""}
-                          onChange={onChange}
-                          className="flex-1"
-                        />
-                      )}
-                    />
-                    {errors.paymentDetails?.[index]?.date && (
-                      <p className="text-red-500 text-sm">
-                        {errors.paymentDetails[index]?.date?.message}
-                      </p>
-                    )}
-
-                    <Controller
-                      name={`paymentDetails.${index}.paymentMode`}
-                      control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          placeholder="Payment Mode"
-                          value={value || ""}
-                          onChange={onChange}
-                          className="flex-1"
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name={`paymentDetails.${index}.referenceNumber`}
-                      control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          placeholder="Ref Number"
-                          value={value || ""}
-                          onChange={onChange}
-                          className="flex-1"
-                        />
-                      )}
-                    />
-
-                    <Controller
-                      name={`paymentDetails.${index}.remarks`}
-                      control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Input
-                          placeholder="Remarks"
-                          value={value || ""}
-                          onChange={onChange}
-                          className="flex-1"
-                        />
-                      )}
-                    />
-
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => remove(index)}
-                      className="w-20"
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                onClick={() =>
-                  append({
-                    amount: 0,
-                    date: "",
-                    paymentMode: "",
-                    referenceNumber: "",
-                    remarks: "",
-                  })
-                }
-              >
-                Add Payment Row
-              </Button>
-              {errors.paymentDetails && (
-                <p className="text-red-500 text-sm">
-                  {typeof errors.paymentDetails === "string"
-                    ? errors.paymentDetails
-                    : ""}
-                </p>
               )}
             </div>
 
