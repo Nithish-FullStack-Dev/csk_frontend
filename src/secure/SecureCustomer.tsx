@@ -36,10 +36,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Customer, useGetCustomers } from "@/utils/buildings/CustomerConfig";
-import { Loader2, MoreHorizontal, Plus } from "lucide-react";
+import { Loader2, MoreHorizontal, Plus, Trash } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PurchaseCrud from "@/components/customer/PurchaseCrud";
@@ -55,6 +55,11 @@ import {
 } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import { useRBAC } from "@/config/RBAC";
+import CustomerPaymentDialog from "@/components/helpers/CustomerPaymentDialog";
+import {
+  deleteCustomerPayment,
+  fetchCustomerPayments,
+} from "@/utils/accountant/CustomerPaymentConfig";
 
 const SecureCustomer = () => {
   const { user } = useAuth();
@@ -73,12 +78,14 @@ const SecureCustomer = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState("add");
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMode, setPaymentMode] = useState("");
-  const [paymentDate, setPaymentDate] = useState("");
-  const [paymentRef, setPaymentRef] = useState("");
-  const [paymentRemarks, setPaymentRemarks] = useState("");
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    null,
+  );
+  const [deletePaymentDialogOpen, setDeletePaymentDialogOpen] = useState(false);
+
+  const [paymentToDelete, setPaymentToDelete] = useState<any | null>(null);
 
   const {
     isRolePermissionsLoading,
@@ -93,6 +100,12 @@ const SecureCustomer = () => {
     isError: isErrorCustomers,
     error: customersError,
   } = useGetCustomers(user);
+
+  const { data: payments = [], isLoading: paymentsLoading } = useQuery({
+    queryKey: ["customerPayments", selectedCustomer?._id],
+    queryFn: () => fetchCustomerPayments(selectedCustomer?._id),
+    enabled: viewDialogOpen && !!selectedCustomer?._id,
+  });
 
   const customers = customersResponse?.data ?? [];
 
@@ -149,6 +162,23 @@ const SecureCustomer = () => {
 
   const queryClient = useQueryClient();
 
+  const deletePaymentMutation = useMutation({
+    mutationFn: deleteCustomerPayment,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["customerPayments", selectedCustomer?._id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+
+      setDeletePaymentDialogOpen(true);
+      setPaymentToDelete(null);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await axios.delete(
@@ -165,29 +195,6 @@ const SecureCustomer = () => {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to delete customer");
-    },
-  });
-
-  const addPaymentMutation = useMutation({
-    mutationFn: async () => {
-      const { data } = await axios.put(
-        `${import.meta.env.VITE_URL}/api/customer/${selectedCustomer._id}/add-payment`,
-        {
-          amount: Number(paymentAmount),
-          date: paymentDate,
-          paymentMode,
-          referenceNumber: paymentRef,
-          remarks: paymentRemarks,
-        },
-        { withCredentials: true },
-      );
-
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Payment added");
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      setPaymentDialogOpen(false);
     },
   });
 
@@ -454,7 +461,7 @@ const SecureCustomer = () => {
                             <TableHead>Property Type</TableHead>
                             <TableHead>Asset</TableHead>
                             <TableHead>Total</TableHead>
-                            <TableHead>Advance</TableHead>
+                            <TableHead>Balance</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Payment Status</TableHead>
                             <TableHead className="text-right">
@@ -597,7 +604,7 @@ const SecureCustomer = () => {
                                 </TableCell>
                                 <TableCell>
                                   {customer.advanceReceived != null
-                                    ? `₹${customer.advanceReceived.toLocaleString(
+                                    ? `₹${customer.balancePayment.toLocaleString(
                                         "en-IN",
                                       )}`
                                     : "-"}
@@ -641,8 +648,8 @@ const SecureCustomer = () => {
 
                                       <DropdownMenuItem
                                         onClick={() => {
-                                          setSelectedCustomer(customer);
-                                          setPaymentDialogOpen(true);
+                                          setSelectedCustomerId(customer._id);
+                                          setPaymentOpen(true);
                                         }}
                                       >
                                         Add Payment
@@ -1069,45 +1076,57 @@ const SecureCustomer = () => {
                   )}
                 </div>
 
-                {/* PAYMENT DETAILS */}
-                {selectedCustomer?.paymentDetails?.length ? (
-                  <div className="space-y-3">
-                    <SectionTitle title="Payment Details" />
+                <table className="w-full border text-sm">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border p-2">Date</th>
+                      <th className="border p-2">Type</th>
+                      <th className="border p-2">Amount</th>
+                      <th className="border p-2">Mode</th>
+                      <th className="border p-2">Reference</th>
+                      <th className="border p-2">Remarks</th>
+                      <th className="border p-2">Created</th>
+                      <th className="border p-2"></th>
+                    </tr>
+                  </thead>
 
-                    <div className="space-y-2">
-                      {selectedCustomer?.paymentDetails?.map((p, i) => (
-                        <div
-                          key={i}
-                          className="p-3 border rounded-lg bg-gray-50 grid grid-cols-2 md:grid-cols-5 gap-4 text-xs"
-                        >
-                          <InfoItem label="Amount" value={`₹${p?.amount}`} />
+                  <tbody>
+                    {payments?.map((p: any) => (
+                      <tr key={p._id}>
+                        <td className="border p-2">{p.date?.split("T")[0]}</td>
 
-                          <InfoItem
-                            label="Date"
-                            value={p?.date?.split?.("T")?.[0] || "N/A"}
-                          />
+                        <td className="border p-2">{p?.type}</td>
 
-                          <InfoItem
-                            label="Mode"
-                            value={p?.paymentMode || "N/A"}
-                          />
+                        <td className="border p-2">₹{p?.amount}</td>
 
-                          <InfoItem
-                            label="Ref No"
-                            value={p?.referenceNumber || "N/A"}
-                          />
+                        <td className="border p-2">{p?.paymentMode}</td>
 
-                          <InfoItem
-                            label="Remarks"
-                            value={p?.remarks || "N/A"}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No payments recorded.</p>
-                )}
+                        <td className="border p-2">
+                          {p?.referenceNumber || "-"}
+                        </td>
+
+                        <td className="border p-2">{p?.remarks || "-"}</td>
+
+                        <td className="border p-2">
+                          {p?.createdAt?.split("T")[0]}
+                        </td>
+
+                        <td className="border p-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setPaymentToDelete(p);
+                              setDeletePaymentDialogOpen(true);
+                            }}
+                          >
+                            <Trash color="red" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </DialogContent>
@@ -1181,54 +1200,13 @@ const SecureCustomer = () => {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Payment</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-3">
-              <Input
-                placeholder="Amount"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-              />
-
-              <Input
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
-
-              <Input
-                placeholder="Mode"
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-              />
-
-              <Input
-                placeholder="Reference"
-                value={paymentRef}
-                onChange={(e) => setPaymentRef(e.target.value)}
-              />
-
-              <Input
-                placeholder="Remarks"
-                value={paymentRemarks}
-                onChange={(e) => setPaymentRemarks(e.target.value)}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                disabled={addPaymentMutation.isPending}
-                onClick={() => addPaymentMutation.mutate()}
-              >
-                Add Payment
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {selectedCustomerId && (
+          <CustomerPaymentDialog
+            open={paymentOpen}
+            onOpenChange={setPaymentOpen}
+            customerId={selectedCustomerId}
+          />
+        )}
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
@@ -1256,6 +1234,50 @@ const SecureCustomer = () => {
                 }}
               >
                 {deleteMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Deleting...
+                  </span>
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={deletePaymentDialogOpen}
+          onOpenChange={setDeletePaymentDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+
+              <AlertDialogDescription>
+                Are you sure you want to delete this payment? This action cannot
+                be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setPaymentToDelete(null);
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => {
+                  if (paymentToDelete?._id) {
+                    deletePaymentMutation.mutate(paymentToDelete._id);
+                  }
+                }}
+              >
+                {deletePaymentMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Deleting...
