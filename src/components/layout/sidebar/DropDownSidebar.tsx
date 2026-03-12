@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: IndianRupee,
     modules: [
       "Lead Management",
-      "Customer Management",
+      // "Customer Management",
       "Enquiry",
       "Commissions",
       "My Commissions",
@@ -135,7 +135,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: "secure",
     label: "Secure",
     icon: Shield,
-    modules: ["Secure"],
+    modules: ["Secure", "Customer Purchased"],
   },
 ];
 const fetchRolePermissions = async (roleName: string) => {

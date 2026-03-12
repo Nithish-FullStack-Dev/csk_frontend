@@ -4,7 +4,12 @@ import { Loader2 } from "lucide-react";
 import React from "react";
 import { Navigate } from "react-router-dom";
 
-const SecureRoute = ({ children }: any) => {
+type SecureRouteProps = {
+  children: React.ReactNode;
+  requireToken?: boolean;
+};
+
+const SecureRoute = ({ children, requireToken = true }: SecureRouteProps) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -17,13 +22,15 @@ const SecureRoute = ({ children }: any) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const token = getCookie("secure_access");
-  if (!user || (user?.role !== "owner" && user?.role !== "accountant")) {
+  if (user?.role !== "owner" && user?.role !== "accountant") {
     return <Navigate to="/" />;
   }
 
-  if (!token) {
-    return <Navigate to="/secure" />;
+  if (requireToken) {
+    const token = getCookie("secure_access");
+    if (!token) {
+      return <Navigate to="/" />;
+    }
   }
 
   return children;

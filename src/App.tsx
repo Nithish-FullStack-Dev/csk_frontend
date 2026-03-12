@@ -168,6 +168,7 @@ import AuditLogViewer from "./utils/AuditLogResponse";
 import Form from "./secure/Form";
 import SecureDashboard from "./secure/SecureDashboard";
 import SecureRoute from "./config/SecureRoute";
+import SecureCustomer from "./secure/SecureCustomer";
 const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -287,12 +288,27 @@ const App = () => {
                   />
 
                   {/* Secured */}
-                  <Route path="/secure" element={<Form />} />
+                  <Route
+                    path="/secure"
+                    element={
+                      <SecureRoute requireToken={false}>
+                        <Form />
+                      </SecureRoute>
+                    }
+                  />
                   <Route
                     path="/secure/dashboard"
                     element={
-                      <SecureRoute>
+                      <SecureRoute requireToken>
                         <SecureDashboard />
+                      </SecureRoute>
+                    }
+                  />
+                  <Route
+                    path="/secure/customer"
+                    element={
+                      <SecureRoute requireToken>
+                        <SecureCustomer />
                       </SecureRoute>
                     }
                   />

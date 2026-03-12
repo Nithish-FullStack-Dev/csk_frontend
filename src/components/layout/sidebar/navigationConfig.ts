@@ -300,11 +300,11 @@ export const moduleToNavItem: Record<string, any> = {
   // },
   "Tax Documents": { to: "/taxes", icon: FileText, label: "Tax Documents" },
   Reports: { to: "/reports", icon: BarChart3, label: "Reports" },
-  "Customer Management": {
-    to: "/customer",
-    icon: BarChart3,
-    label: "Customer Management",
-  },
+  // "Customer Management": {
+  //   to: "/customer",
+  //   icon: BarChart3,
+  //   label: "Customer Management",
+  // },
   // "Photo Evidence": {
   //   to: "/evidence",
   //   icon: Camera,
@@ -316,6 +316,12 @@ export const moduleToNavItem: Record<string, any> = {
     to: "/secure/dashboard",
     icon: Shield,
     label: "Secure",
+  },
+
+  "Customer Purchased": {
+    to: "/secure/customer",
+    icon: BarChart3,
+    label: "Customer Purchased",
   },
 };
 
@@ -368,6 +374,7 @@ export const buildNavigationForRole = (
       token
     ) {
       middle.push(moduleToNavItem["Secure"]);
+      middle.push(moduleToNavItem["Customer Purchased"]);
     }
   }
 

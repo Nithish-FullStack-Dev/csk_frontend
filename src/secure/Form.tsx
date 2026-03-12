@@ -25,6 +25,7 @@ const Form = () => {
         {
           email,
         },
+        { withCredentials: true },
       );
       return res.data;
     },
@@ -50,6 +51,7 @@ const Form = () => {
           email,
           otp,
         },
+        { withCredentials: true },
       );
       return res.data;
     },

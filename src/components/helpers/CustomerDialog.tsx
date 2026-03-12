@@ -507,7 +507,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-6 max-h-[80vh] overflow-y-scroll"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-4">
                 {mode === "add" && (
                   <div className="space-y-1">
@@ -980,7 +980,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-1">
                 <Label>Payment Plan</Label>
                 <Select
@@ -1019,7 +1019,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-1">
                 <Label>Contractor</Label>
                 <Select
@@ -1119,7 +1119,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-1">
                 <Label>Status</Label>
                 <Select
@@ -1162,7 +1162,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 md:p-5 p-2">
               <Label>Payment Status</Label>
               <Select
                 onValueChange={(v) =>
@@ -1192,7 +1192,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 md:p-5 p-2">
               <Label>Images</Label>
               <Input
                 type="file"
@@ -1266,7 +1266,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 md:p-5 p-2">
               <Label>Payment Details</Label>
               <div className="space-y-4">
                 {fields.map((field, index) => (
@@ -1385,7 +1385,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-1">
                 <Label>Last Payment Date</Label>
                 <Input {...register("lastPaymentDate")} type="date" />
@@ -1405,7 +1405,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:p-5 p-2">
               <div className="space-y-1">
                 <Label>Expected Delivery Date</Label>
                 <Input {...register("expectedDeliveryDate")} type="date" />
