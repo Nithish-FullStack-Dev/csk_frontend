@@ -627,7 +627,7 @@ const ContractorInvoices = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices.map((invoice, idx) => {
+                filteredInvoices?.map((invoice, idx) => {
                   return (
                     <TableRow key={invoice?._id || idx}>
                       <TableCell className="font-medium">
@@ -696,26 +696,29 @@ const ContractorInvoices = () => {
                             View
                           </Button>
 
-                          {invoice.status !== "paid" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setIsEditMode(true);
-                                setSelectedInvoice(invoice);
+                          {invoice.status !== "paid" &&
+                            user?.role !== "contractor" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setIsEditMode(true);
+                                  setSelectedInvoice(invoice);
 
-                                setSelectedProject(invoice.project?._id || "");
-                                setSelectedFloorUnit(
-                                  invoice.floorUnit?._id || "",
-                                );
-                                setSelectedUnit(invoice.unit?._id || "");
+                                  setSelectedProject(
+                                    invoice.project?._id || "",
+                                  );
+                                  setSelectedFloorUnit(
+                                    invoice.floorUnit?._id || "",
+                                  );
+                                  setSelectedUnit(invoice.unit?._id || "");
 
-                                setCreateDialogOpen(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          )}
+                                  setCreateDialogOpen(true);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            )}
 
                           {/* {invoice.status !== "paid" && (
                             <Button
@@ -817,55 +820,52 @@ const ContractorInvoices = () => {
                       View
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsEditMode(true);
-                        setSelectedInvoice(invoice);
+                    {invoice.status !== "paid" &&
+                      user?.role !== "contractor" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setIsEditMode(true);
+                            setSelectedInvoice(invoice);
 
-                        form.reset({
-                          project: invoice.project?._id,
-                          floorUnit: invoice.floorUnit?._id,
-                          unit: invoice.unit?._id,
-                          issueDate: invoice.issueDate.split("T")[0],
-                          dueDate: invoice.dueDate.split("T")[0],
-                          sgst: invoice.sgst,
-                          cgst: invoice.cgst,
-                          notes: invoice.notes || "",
-                        });
+                            setSelectedProject(invoice.project?._id || "");
+                            setSelectedFloorUnit(invoice.floorUnit?._id || "");
+                            setSelectedUnit(invoice.unit?._id || "");
 
-                        setInvoiceItems(invoice.items);
-                        setCreateDialogOpen(true);
-                      }}
-                    >
-                      Edit
-                    </Button>
+                            setCreateDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      )}
 
-                    <Select
-                      value={invoice.status}
-                      disabled={updateStatusMutation.isPending}
-                      onValueChange={(value) =>
-                        updateStatusMutation.mutate({
-                          id: invoice._id,
-                          status: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="h-8 w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="partially_paid">
-                          Partially Paid
-                        </SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {user?.role !== "contractor" && (
+                      <Select
+                        value={invoice.status}
+                        disabled={updateStatusMutation.isPending}
+                        onValueChange={(value) =>
+                          updateStatusMutation.mutate({
+                            id: invoice._id,
+                            status: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="partially_paid">
+                            Partially Paid
+                          </SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </TableCell>
               </div>
@@ -1543,6 +1543,9 @@ const ContractorInvoices = () => {
                           <SelectItem value="draft">Draft</SelectItem>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="partially_paid">
+                            Partially Paid
+                          </SelectItem>
                           <SelectItem value="paid">Paid</SelectItem>
                           <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>

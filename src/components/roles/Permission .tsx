@@ -68,7 +68,7 @@ const moduleConfig: Record<string, string[]> = {
   "Finance Modules": [
     "Invoices",
     "Payments",
-    "Budget Tracking",
+    // "Budget Tracking",
     "Tax Documents",
     "Reports",
   ],

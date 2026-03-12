@@ -144,6 +144,7 @@
 //   ],
 // };
 // src\components\layout\sidebar\navigationConfig.ts
+import { getCookie } from "@/utils/getCookie";
 import {
   Home,
   Building,
@@ -292,24 +293,36 @@ export const moduleToNavItem: Record<string, any> = {
   "Sales Overview": { to: "/sales", icon: BarChart3, label: "Sales Overview" },
   Operations: { to: "/operations", icon: Settings, label: "Operations" },
   Finances: { to: "/finances", icon: IndianRupee, label: "Finances" },
-  "Budget Tracking": {
-    to: "/budgets",
-    icon: FileText,
-    label: "Budget Tracking",
-  },
+  // "Budget Tracking": {
+  //   to: "/budgets",
+  //   icon: FileText,
+  //   label: "Budget Tracking",
+  // },
   "Tax Documents": { to: "/taxes", icon: FileText, label: "Tax Documents" },
   Reports: { to: "/reports", icon: BarChart3, label: "Reports" },
-  "Customer Management": {
-    to: "/customer",
-    icon: BarChart3,
-    label: "Customer Management",
-  },
+  // "Customer Management": {
+  //   to: "/customer",
+  //   icon: BarChart3,
+  //   label: "Customer Management",
+  // },
   // "Photo Evidence": {
   //   to: "/evidence",
   //   icon: Camera,
   //   label: "Photo Evidence",
   // },
   Trash: { to: "/trash-buildings", icon: Trash, label: "Trash – Buildings" },
+
+  Secure: {
+    to: "/secure/dashboard",
+    icon: Shield,
+    label: "Secure",
+  },
+
+  "Customer Purchased": {
+    to: "/secure/customer",
+    icon: BarChart3,
+    label: "Customer Purchased",
+  },
 };
 
 // Build dynamic navigation based on role + permissions
@@ -317,6 +330,8 @@ export const buildNavigationForRole = (
   rolePermissions: any[],
   roleName: string,
 ): any[] => {
+  const token = getCookie("secure_access");
+
   // const topDefaults = [moduleToNavItem["Dashboard"]];
   const bottomDefaults = [
     moduleToNavItem["System Settings"],
@@ -333,19 +348,33 @@ export const buildNavigationForRole = (
       const hasAnyPermission = Object.values(perm.actions).some((val) => val);
       if (!hasAnyPermission) return;
 
-      const navItem = moduleToNavItem[
-        Object.keys(moduleToNavItem).find(
-          (key) => key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
-        ) as string
-      ];
+      const navItem =
+        moduleToNavItem[
+          Object.keys(moduleToNavItem).find(
+            (key) =>
+              key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
+          ) as string
+        ];
       if (navItem && !middle.find((n) => n.label === navItem.label)) {
         middle.push(navItem);
       }
     });
     // Admin always sees Role Management (in middle flow)
-    if (roleName?.toLowerCase() === "admin" || roleName?.toLowerCase() === "owner") {
+    if (
+      roleName?.toLowerCase() === "admin" ||
+      roleName?.toLowerCase() === "owner"
+    ) {
       middle.push(moduleToNavItem["Role Management"]);
       middle.push(moduleToNavItem["Audit Logs"]);
+    }
+
+    if (
+      (roleName?.toLowerCase() === "owner" ||
+        roleName?.toLowerCase() === "accountant") &&
+      token
+    ) {
+      middle.push(moduleToNavItem["Secure"]);
+      middle.push(moduleToNavItem["Customer Purchased"]);
     }
   }
 

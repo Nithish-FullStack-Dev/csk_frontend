@@ -441,7 +441,19 @@ const QualityControl = () => {
                       <SelectItem key={project?._id} value={project?._id}>
                         {(typeof project?.projectId === "object" &&
                           project?.projectId?.projectName) ||
-                          "Untitled Project"}
+                          "Untitled Project"}{" "}
+                        - Floor{" "}
+                        {typeof project?.floorUnit === "object"
+                          ? project?.floorUnit?.floorNumber
+                          : "N/A"}{" "}
+                        (
+                        {typeof project?.floorUnit === "object"
+                          ? (project?.floorUnit?.unitType ?? "N/A")
+                          : "N/A"}
+                        ) - Unit{" "}
+                        {typeof project?.unit === "object"
+                          ? (project?.unit?.plotNo ?? "N/A")
+                          : "N/A"}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -746,7 +758,23 @@ const QualityControl = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>{getProjectName(issue.project)}</TableCell>
+                          <TableCell>
+                            {(typeof issue?.project?.projectId === "object" &&
+                              issue?.project?.projectId?.projectName) ||
+                              "Untitled Project"}{" "}
+                            - Floor{" "}
+                            {typeof issue?.project?.floorUnit === "object"
+                              ? issue?.project?.floorUnit?.floorNumber
+                              : "N/A"}{" "}
+                            (
+                            {typeof issue?.project?.floorUnit === "object"
+                              ? (issue?.project?.floorUnit?.unitType ?? "N/A")
+                              : "N/A"}
+                            ) - Unit{" "}
+                            {typeof issue?.project?.unit === "object"
+                              ? (issue?.project?.unit?.plotNo ?? "N/A")
+                              : "N/A"}
+                          </TableCell>
                           <TableCell>
                             {issue?.contractor?.name || "N/A"}
                           </TableCell>
@@ -1087,6 +1115,7 @@ const QualityControl = () => {
                       <Button
                         onClick={async () => {
                           try {
+                            console.log(selectedIssue?._id);
                             await axios.patch(
                               `${
                                 import.meta.env.VITE_URL

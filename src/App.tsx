@@ -165,6 +165,10 @@ import { InnerPlotDetails } from "./components/properties/InnerPlotDetails";
 import TrashBuildingsPage from "./pages/TrashBuildingsPage";
 import OpenPlotDetailsPage from "./pages/OpenPlotDetailsPage";
 import AuditLogViewer from "./utils/AuditLogResponse";
+import Form from "./secure/Form";
+import SecureDashboard from "./secure/SecureDashboard";
+import SecureRoute from "./config/SecureRoute";
+import SecureCustomer from "./secure/SecureCustomer";
 const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -282,6 +286,33 @@ const App = () => {
                     path="/public/project/:id"
                     element={<ProjectDetailsPage />}
                   />
+
+                  {/* Secured */}
+                  <Route
+                    path="/secure"
+                    element={
+                      <SecureRoute requireToken={false}>
+                        <Form />
+                      </SecureRoute>
+                    }
+                  />
+                  <Route
+                    path="/secure/dashboard"
+                    element={
+                      <SecureRoute requireToken>
+                        <SecureDashboard />
+                      </SecureRoute>
+                    }
+                  />
+                  <Route
+                    path="/secure/customer"
+                    element={
+                      <SecureRoute requireToken>
+                        <SecureCustomer />
+                      </SecureRoute>
+                    }
+                  />
+
                   {/* <Route
                     path="/public/openPlot/:id"
                     element={<OpenPlotsDetails />}
@@ -767,14 +798,14 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="/budgets"
                     element={
                       <ProtectedRoute roleSubmodule={"Budget Tracking"}>
                         <BudgetTracking />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
                   <Route
                     path="/taxes"
                     element={

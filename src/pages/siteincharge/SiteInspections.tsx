@@ -113,7 +113,7 @@ const SiteInspections = () => {
   const queryClient = useQueryClient();
 
   const {
-    data: siteInspections,
+    data: siteInspections = [],
     isLoading: siteLoading,
     error: siteError,
     isError: siteIsError,
@@ -124,7 +124,7 @@ const SiteInspections = () => {
   });
 
   const {
-    data: projects,
+    data: projects = [],
     isLoading: projectLoading,
     error: dropdownError,
     isError: dropdownIsError,
@@ -138,7 +138,7 @@ const SiteInspections = () => {
   } = useFloorUnits(selectedProject);
 
   const {
-    data: unitsByFloor,
+    data: unitsByFloor = [],
     isLoading: unitsByFloorLoading,
     isError: unitsByFloorError,
     error: unitsByFloorErrorMessage,
@@ -258,12 +258,12 @@ const SiteInspections = () => {
   if (siteLoading) return <Loader />;
 
   const selectedProjectName =
-    projects?.find((p) => p._id === projectFilter)?.projectName ||
+    (projects || [])?.find((p) => p._id === projectFilter)?.projectName ||
     (projectFilter === "all-projects" || !projectFilter
       ? "All Projects"
       : "Unknown");
 
-  const filteredInspections = siteInspections.filter((inspection) => {
+  const filteredInspections = (siteInspections || []).filter((inspection) => {
     if (
       searchQuery &&
       !inspection.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -382,7 +382,7 @@ const SiteInspections = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {siteInspections.reduce(
+                {(siteInspections || []).reduce(
                   (sum, inspection) => sum + (inspection.photos?.length || 0),
                   0,
                 )}
@@ -415,11 +415,13 @@ const SiteInspections = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all-projects">All Projects</SelectItem>
-                {projects.map((project, idx) => (
-                  <SelectItem key={project._id || idx} value={project._id}>
-                    {project.projectName}
-                  </SelectItem>
-                ))}
+                {(Array.isArray(projects) ? projects : [])?.map(
+                  (project, idx) => (
+                    <SelectItem key={project._id || idx} value={project._id}>
+                      {project.projectName}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
 
@@ -433,7 +435,7 @@ const SiteInspections = () => {
                       : typeFilter
                           .replace("_", " ")
                           .split(" ")
-                          .map(
+                          ?.map(
                             (word) =>
                               word.charAt(0).toUpperCase() + word.slice(1),
                           )
@@ -529,7 +531,7 @@ const SiteInspections = () => {
                           </SelectItem>
                         ) : (
                           projects &&
-                          projects.map((project, idx) => (
+                          (projects || [])?.map((project, idx) => (
                             <SelectItem
                               key={project._id || idx}
                               value={project._id}
@@ -576,7 +578,7 @@ const SiteInspections = () => {
                           </SelectItem>
                         ) : (
                           floorUnits &&
-                          floorUnits?.map((floor, idx) => (
+                          (floorUnits || [])?.map((floor, idx) => (
                             <SelectItem
                               key={floor._id || idx}
                               value={floor._id}
@@ -623,7 +625,7 @@ const SiteInspections = () => {
                           </SelectItem>
                         ) : (
                           unitsByFloor &&
-                          unitsByFloor?.map((unit, idx) => (
+                          (unitsByFloor || [])?.map((unit, idx) => (
                             <SelectItem key={unit._id || idx} value={unit._id}>
                               plot no:{unit.plotNo}
                             </SelectItem>
@@ -680,7 +682,7 @@ const SiteInspections = () => {
                 <div className="space-y-2">
                   <Label>Upload Photos</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2">
-                    {photos.map((photo, index) => (
+                    {(photos || [])?.map((photo, index) => (
                       <div
                         key={index}
                         className="relative rounded-md overflow-hidden border border-border h-32"
@@ -777,7 +779,7 @@ const SiteInspections = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredInspections.map((inspection) => (
+                    (filteredInspections || [])?.map((inspection) => (
                       <TableRow key={inspection._id}>
                         <TableCell className="font-medium">
                           {inspection.title}
@@ -869,7 +871,7 @@ const SiteInspections = () => {
                   No inspections found matching your filters
                 </div>
               ) : (
-                filteredInspections.map((inspection) => (
+                (filteredInspections || [])?.map((inspection) => (
                   <div
                     key={inspection._id}
                     className="border rounded-md p-4 shadow-sm bg-white space-y-2"
@@ -995,7 +997,7 @@ const SiteInspections = () => {
                       <strong>Photos:</strong>
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         {selectedInspection.photos?.length > 0 ? (
-                          selectedInspection.photos.map((url, i) => (
+                          (selectedInspection.photos || [])?.map((url, i) => (
                             <img
                               key={i}
                               src={url}
@@ -1028,7 +1030,7 @@ const SiteInspections = () => {
                 </div>
                 <div className="grid gap-4 mt-4">
                   <div className="flex gap-2 justify-between">
-                    {["completed", "planned"].map((status) => (
+                    {["completed", "planned"]?.map((status) => (
                       <Button
                         key={status}
                         variant={newStatus === status ? "default" : "outline"}
@@ -1101,7 +1103,7 @@ const SiteInspections = () => {
                   />
                   {photoFiles.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
-                      {photoFiles.map((file, i) => (
+                      {(photoFiles || [])?.map((file, i) => (
                         <img
                           key={i}
                           src={URL.createObjectURL(file)}

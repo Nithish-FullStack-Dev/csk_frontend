@@ -60,6 +60,26 @@ const SiteInchargeDashboard = () => {
     queryFn: fetchTasks,
   });
 
+  const totalProjects = projects?.length || 0;
+
+  const pendingVerifications =
+    tasks?.filter(
+      (t) =>
+        t?.status === "pending verification" ||
+        t?.verificationDecision === "" ||
+        t?.verificationDecision === undefined,
+    ).length || 0;
+
+  const approvedTasks =
+    tasks?.filter(
+      (t) => t?.status === "approved" || t?.verificationDecision === "approved",
+    ).length || 0;
+
+  const totalQualityIssues = qualityIssues?.length || 0;
+
+  const criticalIssues =
+    qualityIssues?.filter((q) => q?.severity === "critical").length || 0;
+
   return (
     <MainLayout>
       <div className="space-y-4 md:p-8 p-2">
@@ -72,6 +92,7 @@ const SiteInchargeDashboard = () => {
           </p>
         </div>
 
+        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -81,8 +102,10 @@ const SiteInchargeDashboard = () => {
               <Building className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">Total projects: 5</p>
+              <div className="text-2xl font-bold">{totalProjects}</div>
+              <p className="text-xs text-muted-foreground">
+                Total projects assigned
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -93,9 +116,9 @@ const SiteInchargeDashboard = () => {
               <ClipboardCheck className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
+              <div className="text-2xl font-bold">{pendingVerifications}</div>
               <p className="text-xs text-muted-foreground">
-                +3 since yesterday
+                Waiting for approval
               </p>
             </CardContent>
           </Card>
@@ -107,8 +130,10 @@ const SiteInchargeDashboard = () => {
               <CheckCircle2 className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">32</div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <div className="text-2xl font-bold">{approvedTasks}</div>
+              <p className="text-xs text-muted-foreground">
+                Approved by Site Incharge
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -119,8 +144,10 @@ const SiteInchargeDashboard = () => {
               <AlertOctagon className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5</div>
-              <p className="text-xs text-muted-foreground">2 critical</p>
+              <div className="text-2xl font-bold">{totalQualityIssues}</div>
+              <p className="text-xs text-muted-foreground">
+                {criticalIssues} critical
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -213,7 +240,7 @@ const SiteInchargeDashboard = () => {
                             <p className="text-xs">
                               {task.submittedByContractorOn
                                 ? new Date(
-                                    task.submittedByContractorOn
+                                    task.submittedByContractorOn,
                                   ).toLocaleString("en-IN", {
                                     dateStyle: "medium",
                                     timeStyle: "short",

@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: IndianRupee,
     modules: [
       "Lead Management",
-      "Customer Management",
+      // "Customer Management",
       "Enquiry",
       "Commissions",
       "My Commissions",
@@ -110,7 +110,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Financial Reports",
       "Reports",
       "Tax Documents",
-      "Budget Tracking",
+      // "Budget Tracking",
     ],
   },
   {
@@ -130,6 +130,12 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Support",
     icon: HelpCircle,
     modules: ["Help & Support"],
+  },
+  {
+    key: "secure",
+    label: "Secure",
+    icon: Shield,
+    modules: ["Secure", "Customer Purchased"],
   },
 ];
 const fetchRolePermissions = async (roleName: string) => {
