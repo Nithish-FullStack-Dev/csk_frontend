@@ -402,7 +402,13 @@ const SiteVisits = () => {
             <DialogHeader>
               <DialogTitle>Book a Site Visit</DialogTitle>
               <DialogDescription>
-                Complete the form to book a vehicle for your client's site visit
+                {selectedClient?.isLandLead
+                  ? "Complete the form to book a vehicle for client's land visit"
+                  : selectedClient?.isPlotLead
+                    ? "Complete the form to book a vehicle for client's plot visit"
+                    : selectedClient?.isPropertyLead
+                      ? "Complete the form to book a vehicle for client's property visit"
+                      : "Complete the form to book a vehicle for client's site visit"}
               </DialogDescription>
             </DialogHeader>
 
@@ -446,9 +452,25 @@ const SiteVisits = () => {
                         <span className="font-medium text-gray-800">
                           Property:{" "}
                         </span>
-                        {typeof selectedClient?.property === "object"
-                          ? `${selectedClient?.property?.projectName || "Unknown Project"} - ${(typeof selectedClient?.floorUnit === "object" && selectedClient?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof selectedClient?.unit === "object" && selectedClient?.unit?.propertyType) || "Unknown Type"}`
-                          : "Property not assigned"}
+
+                        {selectedClient?.isPropertyLead &&
+                        typeof selectedClient?.property === "object"
+                          ? `${selectedClient.property.projectName} - ${
+                              typeof selectedClient.floorUnit === "object"
+                                ? selectedClient.floorUnit?.floorNumber
+                                : "-"
+                            } - ${
+                              typeof selectedClient.unit === "object"
+                                ? selectedClient.unit?.propertyType
+                                : "-"
+                            }`
+                          : selectedClient?.isPlotLead &&
+                              typeof selectedClient?.openPlot === "object"
+                            ? `${selectedClient.openPlot.projectName} - Plot`
+                            : selectedClient?.isLandLead &&
+                                typeof selectedClient?.openLand === "object"
+                              ? `${selectedClient.openLand.projectName} - ${selectedClient.openLand.location} (${selectedClient.openLand.landType})`
+                              : "Property not assigned"}
                       </div>
                       <div className="text-sm text-gray-600">
                         <span className="font-medium text-gray-800">
