@@ -45,10 +45,18 @@ import {
   fetchAllVehicles,
   SiteVisitData,
   SiteVisitPayload,
+  updateVisitStatus,
   useBookSiteVisit,
   Vehicle,
   VisitCardProps,
 } from "@/utils/site-visit/SiteVisitConfig";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 const SiteVisits = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -65,6 +73,9 @@ const SiteVisits = () => {
   const bookSiteVisitMutation = useBookSiteVisit();
   const isTeamLead = user && user.role === "team_lead";
   const isAgent = user && user.role === "agent";
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusVisit, setStatusVisit] = useState<SiteVisitData | null>(null);
+  const [newStatus, setNewStatus] = useState("");
 
   const [selectedVisit, setSelectedVisit] = useState<SiteVisitData | null>(
     null,
@@ -129,6 +140,25 @@ const SiteVisits = () => {
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: updateVisitStatus,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Status updated");
+      setStatusDialogOpen(false);
+      setStatusVisit(null);
+      setNewStatus("");
+      refetch();
+      refetchSiteVisits();
+    },
+    onError: (err) => {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response.data.message
+          : err?.message || "Failed to update status",
+      );
+    },
+  });
+
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
     roleSubmodule: "Site Visits",
   });
@@ -168,11 +198,13 @@ const SiteVisits = () => {
   const visitsToUse = isAgent ? siteVisitOfAgent : siteVisits; // Use agent's visits if role is agent
 
   const upcomingVisits =
-    visitsToUse?.filter(
-      (visit) => visit.status === "pending" || visit.status === "confirmed",
-    ) || [];
+    visitsToUse?.filter((v) => v.visitStatus === "scheduled") || [];
+
   const completedVisits =
-    visitsToUse?.filter((visit) => visit.status === "completed") || [];
+    visitsToUse?.filter((v) => v.visitStatus === "completed") || [];
+
+  const cancelledVisits =
+    visitsToUse?.filter((v) => v.visitStatus === "cancelled") || [];
 
   const handleVehicleSelect = (vehicle: Vehicle) => {
     if (!selectedClient) {
@@ -240,8 +272,7 @@ const SiteVisits = () => {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-blue-100 text-blue-800",
-      pending: "bg-yellow-100 text-yellow-800",
+      scheduled: "bg-yellow-100 text-yellow-800",
       completed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
     };
@@ -267,9 +298,10 @@ const SiteVisits = () => {
         </div>
 
         <Tabs defaultValue="upcoming">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upcoming">Upcoming Visits</TabsTrigger>
             <TabsTrigger value="completed">Completed Visits</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled Visits</TabsTrigger>
           </TabsList>
           <div className="mt-6">
             <TabsContent value="upcoming">
@@ -281,6 +313,10 @@ const SiteVisits = () => {
                       visit={visit}
                       buttonText="View Details"
                       buttonVariant="outline"
+                      onEditStatus={(v) => {
+                        setStatusVisit(v);
+                        setStatusDialogOpen(true);
+                      }}
                       onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
                     />
                   ))
@@ -299,11 +335,34 @@ const SiteVisits = () => {
                       buttonText="View Details"
                       buttonVariant="outline"
                       showNotes
+                      onEditStatus={(v) => {
+                        setStatusVisit(v);
+                        setStatusDialogOpen(true);
+                      }}
                       onViewDetails={setSelectedVisit} // Pass the setter for selectedVisit
                     />
                   ))
                 ) : (
                   <p className="text-muted-foreground">No completed visits.</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="cancelled">
+              <div className="grid gap-6">
+                {cancelledVisits.length > 0 ? (
+                  cancelledVisits.map((visit) => (
+                    <VisitCard
+                      key={visit._id}
+                      visit={visit}
+                      onViewDetails={setSelectedVisit}
+                      onEditStatus={(v) => {
+                        setStatusVisit(v);
+                        setStatusDialogOpen(true);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <p className="text-muted-foreground">No cancelled visits.</p>
                 )}
               </div>
             </TabsContent>
@@ -402,7 +461,13 @@ const SiteVisits = () => {
             <DialogHeader>
               <DialogTitle>Book a Site Visit</DialogTitle>
               <DialogDescription>
-                Complete the form to book a vehicle for your client's site visit
+                {selectedClient?.isLandLead
+                  ? "Complete the form to book a vehicle for client's land visit"
+                  : selectedClient?.isPlotLead
+                    ? "Complete the form to book a vehicle for client's plot visit"
+                    : selectedClient?.isPropertyLead
+                      ? "Complete the form to book a vehicle for client's property visit"
+                      : "Complete the form to book a vehicle for client's site visit"}
               </DialogDescription>
             </DialogHeader>
 
@@ -444,11 +509,37 @@ const SiteVisits = () => {
                     <div className="space-y-1">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium text-gray-800">
-                          Property:{" "}
+                          {selectedClient?.isPropertyLead
+                            ? "Property: "
+                            : selectedClient?.isPlotLead
+                              ? "Open Plot: "
+                              : selectedClient?.isLandLead
+                                ? "Open Land: "
+                                : "-"}
                         </span>
-                        {typeof selectedClient?.property === "object"
-                          ? `${selectedClient?.property?.projectName || "Unknown Project"} - ${(typeof selectedClient?.floorUnit === "object" && selectedClient?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof selectedClient?.unit === "object" && selectedClient?.unit?.propertyType) || "Unknown Type"}`
-                          : "Property not assigned"}
+
+                        {selectedClient?.isPropertyLead &&
+                        typeof selectedClient?.property === "object"
+                          ? `${selectedClient.property.projectName} - ${
+                              typeof selectedClient.floorUnit === "object"
+                                ? selectedClient.floorUnit?.floorNumber
+                                : "-"
+                            } - ${
+                              typeof selectedClient.unit === "object"
+                                ? selectedClient.unit?.plotNo
+                                : "-"
+                            }`
+                          : selectedClient?.isPlotLead &&
+                              typeof selectedClient?.openPlot === "object"
+                            ? `${selectedClient.openPlot.projectName} - Plot ${
+                                typeof selectedClient.innerPlot === "object"
+                                  ? selectedClient.innerPlot?.plotNo
+                                  : "-"
+                              }`
+                            : selectedClient?.isLandLead &&
+                                typeof selectedClient?.openLand === "object"
+                              ? `${selectedClient.openLand.projectName} - ${selectedClient.openLand.location} (${selectedClient.openLand.landType})`
+                              : "Property not assigned"}
                       </div>
                       <div className="text-sm text-gray-600">
                         <span className="font-medium text-gray-800">
@@ -696,9 +787,32 @@ const SiteVisits = () => {
 
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {typeof selectedVisit.clientId?.property === "object"
-                          ? `${selectedVisit?.clientId?.property?.projectName || "Unknown Project"} - ${(typeof selectedVisit?.clientId?.floorUnit === "object" && selectedVisit.clientId?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof selectedVisit.clientId.unit === "object" && selectedVisit?.clientId?.unit?.propertyType) || "Unknown Type"}`
-                          : "Property not assigned"}
+                        {selectedVisit?.clientId?.isPropertyLead &&
+                        typeof selectedVisit?.clientId?.property === "object"
+                          ? `${selectedVisit.clientId?.property.projectName} - ${
+                              typeof selectedVisit.clientId?.floorUnit ===
+                              "object"
+                                ? selectedVisit.clientId?.floorUnit?.floorNumber
+                                : "-"
+                            } - ${
+                              typeof selectedVisit.clientId?.unit === "object"
+                                ? selectedVisit.clientId?.unit?.plotNo
+                                : "-"
+                            }`
+                          : selectedVisit?.clientId?.isPlotLead &&
+                              typeof selectedVisit?.clientId?.openPlot ===
+                                "object"
+                            ? `${selectedVisit.clientId?.openPlot.projectName} - Plot ${
+                                typeof selectedVisit.clientId?.innerPlot ===
+                                "object"
+                                  ? selectedVisit.clientId?.innerPlot?.plotNo
+                                  : "-"
+                              }`
+                            : selectedVisit?.clientId?.isLandLead &&
+                                typeof selectedVisit?.clientId?.openLand ===
+                                  "object"
+                              ? `${selectedVisit.clientId?.openLand.projectName} - ${selectedVisit.clientId?.openLand.location} (${selectedVisit.clientId?.openLand.landType})`
+                              : "Property not assigned"}
                       </p>
                     </div>
                   </div>
@@ -760,10 +874,10 @@ const SiteVisits = () => {
                       <p className="font-medium">Status:</p>
                       <Badge
                         className={getStatusColor(
-                          selectedVisit.status || "pending",
+                          selectedVisit.visitStatus || "pending",
                         )}
                       >
-                        {selectedVisit.status || "pending"}
+                        {selectedVisit.visitStatus || "scheduled"}
                       </Badge>
                     </div>
                   </div>
@@ -856,6 +970,58 @@ const SiteVisits = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Update Visit Status</DialogTitle>
+              <DialogDescription>
+                Select new status for this visit
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label>Status</Label>
+
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="completed">Completed</SelectItem>
+
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setStatusDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                disabled={!newStatus || updateStatusMutation.isPending}
+                onClick={() =>
+                  updateStatusMutation.mutate({
+                    visitId: statusVisit!._id,
+                    visitStatus: newStatus as "completed" | "cancelled",
+                  })
+                }
+              >
+                {updateStatusMutation.isPending
+                  ? "Updating..."
+                  : "Update Status"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
@@ -867,13 +1033,19 @@ const VisitCard = ({
   buttonText = "View",
   buttonVariant = "default",
   showNotes = false,
-  onViewDetails, // Destructure the new prop
+  onViewDetails,
+  onEditStatus,
 }: VisitCardProps) => {
-  const statusColors = {
-    confirmed: "bg-green-100 text-green-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    completed: "bg-blue-100 text-blue-800",
+  const visitStatusColors = {
+    scheduled: "bg-yellow-100 text-yellow-800",
+    completed: "bg-green-100 text-green-800",
     cancelled: "bg-red-100 text-red-800",
+  };
+
+  const approvalColors = {
+    pending: "bg-orange-100 text-orange-800",
+    approved: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
   };
 
   const displayDate = new Date(visit.date).toLocaleDateString("en-IN", {
@@ -901,17 +1073,54 @@ const VisitCard = ({
               <p className="font-medium">{visit?.clientId?.name}</p>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
-                {visit.clientId && typeof visit.clientId?.property === "object"
-                  ? `${visit.clientId?.property?.projectName || "Unknown Project"} - ${(typeof visit.clientId?.floorUnit === "object" && visit.clientId?.floorUnit?.floorNumber) || "Unknown Floor"} - ${(typeof visit.clientId?.unit === "object" && visit.clientId.unit?.propertyType) || "Unknown Type"}`
-                  : "Property not assigned"}
+                {visit?.clientId?.isPropertyLead &&
+                typeof visit?.clientId?.property === "object"
+                  ? `${visit.clientId?.property.projectName} - ${
+                      typeof visit.clientId?.floorUnit === "object"
+                        ? visit.clientId?.floorUnit?.floorNumber
+                        : "-"
+                    } - ${
+                      typeof visit.clientId?.unit === "object"
+                        ? visit.clientId?.unit?.plotNo
+                        : "-"
+                    }`
+                  : visit?.clientId?.isPlotLead &&
+                      typeof visit?.clientId?.openPlot === "object"
+                    ? `${visit.clientId?.openPlot.projectName} - Plot ${
+                        typeof visit.clientId?.innerPlot === "object"
+                          ? visit.clientId?.innerPlot?.plotNo
+                          : "-"
+                      }`
+                    : visit?.clientId?.isLandLead &&
+                        typeof visit?.clientId?.openLand === "object"
+                      ? `${visit.clientId?.openLand.projectName} - ${visit.clientId?.openLand.location} (${visit.clientId?.openLand.landType})`
+                      : "Property not assigned"}
               </div>
             </div>
           </div>
-          <Badge
-            className={statusColors[visit.status as keyof typeof statusColors]}
-          >
-            {visit?.status}
-          </Badge>
+          <div className="flex gap-2">
+            {/* approval status */}
+            <Badge
+              className={
+                approvalColors[
+                  visit.approvalStatus as keyof typeof approvalColors
+                ]
+              }
+            >
+              {visit.approvalStatus}
+            </Badge>
+
+            {/* visit status */}
+            <Badge
+              className={
+                visitStatusColors[
+                  visit.visitStatus as keyof typeof visitStatusColors
+                ]
+              }
+            >
+              {visit.visitStatus}
+            </Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
@@ -939,12 +1148,26 @@ const VisitCard = ({
         )}
 
         <div className="flex justify-end mt-4">
-          <Button
-            variant={buttonVariant}
-            onClick={() => onViewDetails?.(visit)}
-          >
-            {buttonText}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onViewDetails?.(visit)}>
+                View Details
+              </DropdownMenuItem>
+
+              {visit.visitStatus !== "completed" &&
+                visit.visitStatus !== "cancelled" && (
+                  <DropdownMenuItem onClick={() => onEditStatus?.(visit)}>
+                    Edit Status
+                  </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardContent>
     </Card>

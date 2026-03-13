@@ -7,7 +7,7 @@ export const createSiteVisit = async (bookDetails: any) => {
   const { data } = await axios.post(
     `${import.meta.env.VITE_URL}/api/siteVisit/bookSite`,
     bookDetails,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };
@@ -15,7 +15,7 @@ export const createSiteVisit = async (bookDetails: any) => {
 export const fetchAllSiteVisits = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/siteVisit/getAllSiteVis`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };
@@ -29,8 +29,28 @@ export const useBookSiteVisit = () => {
 export const fetchAllVehicles = async (): Promise<Vehicle[]> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/cars/getAllCars`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
+  return data;
+};
+
+export const updateVisitStatus = async ({
+  visitId,
+  visitStatus,
+}: {
+  visitId: string;
+  visitStatus: "completed" | "cancelled";
+}) => {
+  console.log(visitId);
+  const { data } = await axios.patch(
+    `${import.meta.env.VITE_URL}/api/siteVisit/updateVisitStatus`,
+    {
+      visitId,
+      visitStatus,
+    },
+    { withCredentials: true },
+  );
+
   return data;
 };
 
@@ -52,7 +72,11 @@ export interface SiteVisitData {
   vehicleId: Vehicle;
   date: string;
   time: string;
-  status: "confirmed" | "pending" | "completed" | "cancelled";
+
+  approvalStatus: "pending" | "approved" | "rejected";
+
+  visitStatus: "scheduled" | "completed" | "cancelled";
+
   notes?: string;
   bookedBy: string | User;
   priority: "high" | "medium" | "low";
@@ -65,6 +89,7 @@ export interface VisitCardProps {
   buttonText?: string;
   buttonVariant?: "default" | "outline";
   showNotes?: boolean;
+  onEditStatus?: (visit: SiteVisitData) => void;
   onViewDetails?: (visit: SiteVisitData) => void; // Added for detail view
 }
 
@@ -82,4 +107,3 @@ export interface SiteVisitPayload {
   time: string;
   notes?: string;
 }
-

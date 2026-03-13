@@ -618,10 +618,24 @@ const CarAllocation = () => {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="lastService">Last Service</Label>
-                    <DatePicker date={lastService} setDate={setLastService} />
+
+                    <input
+                      type="date"
+                      id="lastService"
+                      value={
+                        lastService
+                          ? lastService.toISOString().split("T")[0]
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setLastService(
+                          e.target.value ? new Date(e.target.value) : undefined,
+                        )
+                      }
+                      className="w-full border rounded-md px-3 py-2"
+                    />
                   </div>
                   <Label htmlFor="location">Location</Label>
                   <Input

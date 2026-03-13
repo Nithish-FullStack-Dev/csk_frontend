@@ -63,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Projects Overview",
       "Task Tracker",
       "Site Visits",
+      "Approvals",
       "Construction Timeline",
       "Quality Control",
       "Site Inspections",
