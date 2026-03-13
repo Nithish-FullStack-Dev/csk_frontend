@@ -56,10 +56,11 @@ interface SiteVisitRequest {
   date: string;
   time: string;
   notes?: string;
-  status: "pending" | "confirmed" | "cancelled"; // Add status to the type
-  approvedAt?: string; // For approved requests
-  approvedBy?: string; // For approved requests
-  approvalNotes?: string; // For approved/rejected requests
+  approvalStatus: "pending" | "approved" | "rejected";
+  visitStatus: "scheduled" | "completed" | "cancelled";
+  updatedAt?: string;
+  approvedBy?: string;
+  approvalNotes?: string;
 }
 
 const fetchAllAgentSiteVisit = async (): Promise<SiteVisitRequest[]> => {
@@ -91,27 +92,38 @@ const Approvals = () => {
   const updateSiteVisitStatus = useMutation({
     mutationFn: async ({
       id,
-      status,
+      approvalStatus,
       approvalNotes,
     }: {
       id: string;
-      status: "confirmed" | "cancelled";
+      approvalStatus: "approved" | "rejected";
       approvalNotes?: string | null;
     }) => {
       const response = await axios.patch(
         `${import.meta.env.VITE_URL}/api/siteVisit/approvalOrReject`,
         {
-          _id: id,
-          status,
+          visitId: id,
+          approvalStatus,
           approvalNotes: approvalNotes || null,
         },
         { withCredentials: true },
       );
+
       return response.data;
     },
     onSuccess: () => {
       toast.success("Request updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["siteVisitsOfAgents"] });
+      queryClient.invalidateQueries({
+        queryKey: ["siteVisitsOfAgents"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["siteVisits"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["siteVisitOfAgent"],
+      });
       setApprovalNotes("");
       setSelectedRequest(null);
       setIsDialogOpen(false);
@@ -142,15 +154,16 @@ const Approvals = () => {
     );
   }
 
-  // Filter requests based on status for each tab
   const pendingRequests = allSiteVisits.filter(
-    (request) => request.status === "pending",
+    (r) => r.approvalStatus === "pending",
   );
+
   const approvedRequests = allSiteVisits.filter(
-    (request) => request.status === "confirmed",
+    (r) => r.approvalStatus === "approved",
   );
+
   const rejectedRequests = allSiteVisits.filter(
-    (request) => request.status === "cancelled",
+    (r) => r.approvalStatus === "rejected",
   );
 
   const getTypeIcon = (type: string) => {
@@ -192,8 +205,15 @@ const Approvals = () => {
     }
   };
 
-  const handleAction = (id: string, status: "confirmed" | "cancelled") => {
-    updateSiteVisitStatus.mutate({ id, status, approvalNotes });
+  const handleAction = (
+    id: string,
+    approvalStatus: "approved" | "rejected",
+  ) => {
+    updateSiteVisitStatus.mutate({
+      id,
+      approvalStatus,
+      approvalNotes,
+    });
   };
 
   return (
@@ -451,10 +471,7 @@ const Approvals = () => {
                                       variant="outline"
                                       className="flex-1 text-red-600 border-red-200"
                                       onClick={() =>
-                                        handleAction(
-                                          selectedRequest._id,
-                                          "cancelled",
-                                        )
+                                        handleAction(request!._id, "rejected")
                                       }
                                       disabled={updateSiteVisitStatus.isPending}
                                     >
@@ -468,7 +485,7 @@ const Approvals = () => {
                                       onClick={() =>
                                         handleAction(
                                           selectedRequest._id,
-                                          "confirmed",
+                                          "approved",
                                         )
                                       }
                                       disabled={updateSiteVisitStatus.isPending}
@@ -488,7 +505,7 @@ const Approvals = () => {
                             variant="outline"
                             className="text-red-600"
                             onClick={() =>
-                              handleAction(request._id, "cancelled")
+                              handleAction(request._id, "rejected")
                             }
                             disabled={updateSiteVisitStatus.isPending}
                           >
@@ -501,7 +518,7 @@ const Approvals = () => {
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() =>
-                              handleAction(request._id, "confirmed")
+                              handleAction(request._id, "approved")
                             }
                             disabled={updateSiteVisitStatus.isPending}
                           >
@@ -550,7 +567,7 @@ const Approvals = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
+                            {request.notes}
                           </p>
                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                             <span>
@@ -561,8 +578,8 @@ const Approvals = () => {
                             <span>•</span>
                             <span>
                               {/* Display approval date if available, otherwise creation date */}
-                              {request.approvedAt
-                                ? new Date(request.approvedAt).toLocaleString()
+                              {request.updatedAt
+                                ? new Date(request.updatedAt).toLocaleString()
                                 : new Date(request.createdAt).toLocaleString()}
                             </span>
                           </div>
@@ -624,8 +641,8 @@ const Approvals = () => {
                             <span>•</span>
                             <span>
                               {/* Display rejection date if available, otherwise creation date */}
-                              {request.approvedAt // Assuming 'approvedAt' could also store rejection date
-                                ? new Date(request.approvedAt).toLocaleString()
+                              {request.updatedAt
+                                ? new Date(request.updatedAt).toLocaleString()
                                 : new Date(request.createdAt).toLocaleString()}
                             </span>
                           </div>
