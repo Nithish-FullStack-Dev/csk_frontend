@@ -38,7 +38,7 @@ interface TabItem {
 const tabItems: TabItem[] = [
   { value: "permission", label: "Permission Matrix", icon: Grid },
   { value: "manage", label: "Manage Roles", icon: Shield },
-  { value: "system", label: "System Settings", icon: Settings },
+  // { value: "system", label: "System Settings", icon: Settings },
 ];
 
 const RoleManagement = () => {

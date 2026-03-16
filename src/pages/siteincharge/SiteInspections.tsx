@@ -61,6 +61,7 @@ import {
   useUnits,
 } from "@/utils/buildings/Projects";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { getImageUrl } from "@/lib/image";
 
 interface SiteInspection {
   id: string;
@@ -788,9 +789,10 @@ const SiteInspections = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {inspection?.project?.projectName || "N/A"} /{" "}
-                          {inspection?.floorUnit?.floorNumber || "N/A"}/{" "}
-                          {inspection?.unit?.propertyType || "N/A"}
+                          {inspection?.project?.projectName ||
+                            "Property not Avalible"}{" "}
+                          / {inspection?.floorUnit?.floorNumber || "N/A"}/{" "}
+                          {inspection?.unit?.plotNo || "N/A"}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -997,14 +999,16 @@ const SiteInspections = () => {
                       <strong>Photos:</strong>
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         {selectedInspection.photos?.length > 0 ? (
-                          (selectedInspection.photos || [])?.map((url, i) => (
-                            <img
-                              key={i}
-                              src={url}
-                              alt="Inspection"
-                              className="w-full h-24 object-cover rounded border"
-                            />
-                          ))
+                          (selectedInspection.photos || [])?.map((url, i) => {
+                            return (
+                              <img
+                                key={i}
+                                src={getImageUrl(url)}
+                                alt="Inspection"
+                                className="w-full h-24 object-cover rounded border"
+                              />
+                            );
+                          })
                         ) : (
                           <p className="text-muted-foreground text-xs">
                             No photos available
@@ -1169,7 +1173,9 @@ const SiteInspections = () => {
                       setPhotoFiles([]);
                       setIsUploading(false);
                       setOpenPhotoDialog(false);
-                      fetchInspections();
+                      queryClient.invalidateQueries({
+                        queryKey: ["inspections"],
+                      });
                     }}
                     disabled={isUploading || photoFiles.length === 0}
                   >

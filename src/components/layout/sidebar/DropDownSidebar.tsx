@@ -78,7 +78,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Lead Management",
       // "Customer Management",
       "Enquiry",
-      "Commissions",
+      // "Commissions",
       "My Commissions",
       "Sales Overview",
     ],
