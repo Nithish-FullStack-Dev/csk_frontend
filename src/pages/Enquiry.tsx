@@ -138,14 +138,14 @@ const EnquiryManagement = () => {
   const fetchEnquiryDetails = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/enquiryForm/getAllEnquirys`
+        `${import.meta.env.VITE_URL}/api/enquiryForm/getAllEnquirys`,
       );
 
       let filteredData = data;
       if (isSalesManager && user?._id) {
         // Sales Manager only sees enquiries assigned to them
         filteredData = data.filter(
-          (enq: Enquiry) => enq.assignedTo === user._id
+          (enq: Enquiry) => enq.assignedTo === user._id,
         );
       } else if (isAdminOrOwner) {
         // Admin/Owner sees all enquiries
@@ -164,7 +164,7 @@ const EnquiryManagement = () => {
   const fetchSalespersons = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/user/getAllSales`
+        `${import.meta.env.VITE_URL}/api/user/getAllSales`,
       );
       setSalespersons(data);
     } catch (error) {
@@ -212,7 +212,7 @@ const EnquiryManagement = () => {
     try {
       const csrfToken = await getCsrfToken();
       const selectedSalesperson = salespersons.find(
-        (sp) => sp._id === assignedSalespersonId
+        (sp) => sp._id === assignedSalespersonId,
       );
 
       if (!selectedSalesperson) {
@@ -235,7 +235,7 @@ const EnquiryManagement = () => {
             "X-CSRF-Token": csrfToken,
           },
           withCredentials: true,
-        }
+        },
       );
 
       setEnquiries((prevEnquiries) =>
@@ -247,8 +247,8 @@ const EnquiryManagement = () => {
                 assignedTo: selectedSalesperson._id,
                 status: "Assigned",
               }
-            : enq
-        )
+            : enq,
+        ),
       );
 
       toast.success("Enquiry assigned successfully!");
@@ -280,7 +280,7 @@ const EnquiryManagement = () => {
             "X-CSRF-Token": csrfToken,
           },
           withCredentials: true,
-        }
+        },
       );
 
       setEnquiries((prevEnquiries) =>
@@ -292,8 +292,8 @@ const EnquiryManagement = () => {
                 project,
                 address,
               }
-            : enq
-        )
+            : enq,
+        ),
       );
       setSelectedEnquiry(null);
       setDialogOpen(false);
@@ -307,10 +307,10 @@ const EnquiryManagement = () => {
   const handleManageEnquiryClick = (enquiry: Enquiry) => {
     setSelectedEnquiry(enquiry);
     setCurrentLastContactDate(
-      enquiry.lastContactDate ? new Date(enquiry.lastContactDate) : undefined
+      enquiry.lastContactDate ? new Date(enquiry.lastContactDate) : undefined,
     );
     setCurrentNextFollowUpDate(
-      enquiry.nextFollowUpDate ? new Date(enquiry.nextFollowUpDate) : undefined
+      enquiry.nextFollowUpDate ? new Date(enquiry.nextFollowUpDate) : undefined,
     );
     setNewNote(""); // Clear new note field
     setManageEnquiryDialogOpen(true);
@@ -349,15 +349,15 @@ const EnquiryManagement = () => {
             "X-CSRF-Token": csrfToken,
           },
           withCredentials: true,
-        }
+        },
       );
 
       setEnquiries((prevEnquiries) =>
         prevEnquiries.map((enq) =>
           enq._id === selectedEnquiry._id
             ? { ...enq, ...data.updatedEnquiry } // Backend should return updated object
-            : enq
-        )
+            : enq,
+        ),
       );
 
       toast.success("Enquiry progress updated successfully!");
@@ -377,7 +377,7 @@ const EnquiryManagement = () => {
 
   const handleStatusUpdate = async (
     id: string,
-    newStatus: Enquiry["status"]
+    newStatus: Enquiry["status"],
   ) => {
     try {
       const csrfToken = await getCsrfToken();
@@ -387,15 +387,15 @@ const EnquiryManagement = () => {
         {
           headers: { "X-CSRF-Token": csrfToken },
           withCredentials: true,
-        }
+        },
       );
 
       setEnquiries((prev) =>
         prev.map((enq) =>
           enq._id === id
             ? { ...enq, ...data.updatedEnquiry, status: newStatus }
-            : enq
-        )
+            : enq,
+        ),
       );
       fetchEnquiryDetails();
     } catch (error) {
@@ -432,7 +432,7 @@ const EnquiryManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="min-w-[120px]">Name</TableHead>
-                      <TableHead className="min-w-[150px]">Email</TableHead>
+                      {/* <TableHead className="min-w-[150px]">Email</TableHead> */}
                       <TableHead className="min-w-[120px]">Project</TableHead>
                       <TableHead className="min-w-[120px]">
                         Property type
@@ -444,7 +444,7 @@ const EnquiryManagement = () => {
                           <TableHead className="min-w-[150px]">
                             Assigned To
                           </TableHead>
-                          <TableHead className="min-w-[100px]">
+                          <TableHead className="min-w-[120px]">
                             Status
                           </TableHead>
                         </>
@@ -480,73 +480,75 @@ const EnquiryManagement = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      enquiries.map((enquiry) => (
-                        <TableRow key={enquiry._id}>
+                      (enquiries || [])?.map((enquiry, idx) => (
+                        <TableRow key={enquiry._id || idx}>
                           <TableCell className="font-medium">
-                            {enquiry.name}
+                            {enquiry?.name || "N/A"}
                           </TableCell>
-                          <TableCell>{enquiry.email}</TableCell>
-                          <TableCell>{enquiry.propertyType}</TableCell>
-                          <TableCell>{enquiry.project || "N/A"}</TableCell>
-                          <TableCell>{enquiry.budget}</TableCell>
-                          <TableCell>{enquiry.address || "N/A"}</TableCell>
+                          {/* <TableCell>{enquiry.email}</TableCell> */}
+                          <TableCell>
+                            {enquiry?.propertyType || "N/A"}
+                          </TableCell>
+                          <TableCell>{enquiry?.project || "N/A"}</TableCell>
+                          <TableCell>{enquiry?.budget || "N/A"}</TableCell>
+                          <TableCell>{enquiry?.address || "N/A"}</TableCell>
                           {isAdminOrOwner && (
                             <>
                               <TableCell>
-                                {enquiry.assignedTo
-                                  ? salespersons.find(
-                                      (sp) => sp._id === enquiry.assignedTo
+                                {enquiry?.assignedTo
+                                  ? salespersons?.find(
+                                      (sp) => sp._id === enquiry?.assignedTo,
                                     )?.name || "Unknown"
                                   : "Unassigned"}
                               </TableCell>
                               <TableCell>
                                 <span
                                   className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    enquiry.status === "New"
+                                    enquiry?.status === "New"
                                       ? "bg-blue-100 text-blue-800"
                                       : enquiry.status === "Assigned"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : enquiry.status === "Enquiry"
-                                      ? "bg-green-100 text-green-800"
-                                      : enquiry.status === "Follow up"
-                                      ? "bg-purple-100 text-purple-800"
-                                      : enquiry.status === "In Progress"
-                                      ? "bg-orange-100 text-orange-800"
-                                      : enquiry.status === "Rejected"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-gray-100 text-gray-800"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : enquiry.status === "Enquiry"
+                                          ? "bg-green-100 text-green-800"
+                                          : enquiry.status === "Follow up"
+                                            ? "bg-purple-100 text-purple-800"
+                                            : enquiry.status === "In Progress"
+                                              ? "bg-orange-100 text-orange-800"
+                                              : enquiry.status === "Rejected"
+                                                ? "bg-red-100 text-red-800"
+                                                : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
-                                  {enquiry.status}
+                                  {enquiry?.status || "N/A"}
                                 </span>
                               </TableCell>
                             </>
                           )}
                           <TableCell>
-                            {new Date(enquiry.createdAt).toLocaleDateString(
+                            {new Date(enquiry?.createdAt).toLocaleDateString(
                               "en-IN",
                               {
                                 year: "numeric",
                                 month: "short",
                                 day: "numeric",
-                              }
+                              },
                             )}
                           </TableCell>
                           {isSalesManager && (
                             <>
                               <TableCell>
-                                {enquiry.lastContactDate
+                                {enquiry?.lastContactDate
                                   ? format(
-                                      new Date(enquiry.lastContactDate),
-                                      "PPP"
+                                      new Date(enquiry?.lastContactDate),
+                                      "PPP",
                                     )
                                   : "N/A"}
                               </TableCell>
                               <TableCell>
-                                {enquiry.nextFollowUpDate
+                                {enquiry?.nextFollowUpDate
                                   ? format(
-                                      new Date(enquiry.nextFollowUpDate),
-                                      "PPP"
+                                      new Date(enquiry?.nextFollowUpDate),
+                                      "PPP",
                                     )
                                   : "N/A"}
                               </TableCell>
@@ -652,35 +654,41 @@ const EnquiryManagement = () => {
                 : "No enquiries found."}
             </p>
           ) : (
-            enquiries.map((enquiry) => (
+            (enquiries || [])?.map((enquiry, idx) => (
               <div
-                key={enquiry._id}
+                key={enquiry?._id || idx}
                 className="border rounded-lg p-4 shadow-sm bg-white"
               >
-                <p className="font-semibold text-lg">{enquiry.name}</p>
-                <p className="text-sm text-gray-600">{enquiry.email}</p>
+                <p className="font-semibold text-lg">
+                  {enquiry?.name || "N/A"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {enquiry?.email || "N/A"}
+                </p>
                 <p className="text-sm">
                   <span className="font-medium">Project:</span>{" "}
-                  {enquiry.project || "N/A"}
+                  {enquiry?.project || "N/A"}
                 </p>
                 <p className="text-sm">
                   <span className="font-medium">Property Type:</span>{" "}
-                  {enquiry.propertyType}
+                  {enquiry?.propertyType || "N/A"}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Budget:</span> {enquiry.budget}
+                  <span className="font-medium">Budget:</span>{" "}
+                  {enquiry?.budget || "N/A"}
                 </p>
                 <p className="text-sm">
                   <span className="font-medium">Address:</span>{" "}
-                  {enquiry.address || "N/A"}
+                  {enquiry?.address || "N/A"}
                 </p>
 
                 {isAdminOrOwner && (
                   <p className="text-sm">
                     <span className="font-medium">Assigned To:</span>{" "}
-                    {enquiry.assignedTo
-                      ? salespersons.find((sp) => sp._id === enquiry.assignedTo)
-                          ?.name || "Unknown"
+                    {enquiry?.assignedTo
+                      ? salespersons.find(
+                          (sp) => sp._id === enquiry?.assignedTo,
+                        )?.name || "Unknown"
                       : "Unassigned"}
                   </p>
                 )}
@@ -692,19 +700,19 @@ const EnquiryManagement = () => {
                       enquiry.status === "New"
                         ? "bg-blue-100 text-blue-800"
                         : enquiry.status === "Assigned"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : enquiry.status === "Enquiry"
-                        ? "bg-green-100 text-green-800"
-                        : enquiry.status === "Follow up"
-                        ? "bg-purple-100 text-purple-800"
-                        : enquiry.status === "In Progress"
-                        ? "bg-orange-100 text-orange-800"
-                        : enquiry.status === "Rejected"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : enquiry.status === "Enquiry"
+                            ? "bg-green-100 text-green-800"
+                            : enquiry.status === "Follow up"
+                              ? "bg-purple-100 text-purple-800"
+                              : enquiry.status === "In Progress"
+                                ? "bg-orange-100 text-orange-800"
+                                : enquiry.status === "Rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {enquiry.status}
+                    {enquiry?.status || "N/A"}
                   </span>
                 </div>
 
@@ -717,7 +725,7 @@ const EnquiryManagement = () => {
                   >
                     <Eye className="h-4 w-4" /> View
                   </Button>
-                  {isAdminOrOwner && !enquiry.assignedTo && (
+                  {isAdminOrOwner && !enquiry?.assignedTo && (
                     <Button
                       variant="default"
                       size="sm"
@@ -777,18 +785,18 @@ const EnquiryManagement = () => {
                   <AvatarImage
                     src={`https://ui-avatars.com/api/?name=${selectedEnquiry.name.replace(
                       " ",
-                      "+"
+                      "+",
                     )}&background=1A365D&color=fff&size=60`}
                   />
                   <AvatarFallback>{selectedEnquiry.name[0]}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-lg font-medium">
-                    {selectedEnquiry.name}
+                    {selectedEnquiry?.name || "N/A"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedEnquiry.propertyType || "Property Interest"} •{" "}
-                    {new Date(selectedEnquiry.createdAt).toLocaleDateString()}
+                    {selectedEnquiry?.propertyType || "Property Interest"} •{" "}
+                    {new Date(selectedEnquiry?.createdAt)?.toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -799,11 +807,11 @@ const EnquiryManagement = () => {
                   <p className="text-sm font-medium">Contact</p>
                   <div className="text-sm flex items-center gap-2">
                     <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{selectedEnquiry.email}</span>
+                    <span>{selectedEnquiry?.email || "N/A"}</span>
                   </div>
                   <div className="text-sm flex items-center gap-2">
                     <PhoneCall className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{selectedEnquiry.phone || "N/A"}</span>
+                    <span>{selectedEnquiry?.phone || "N/A"}</span>
                   </div>
                 </div>
 
@@ -811,10 +819,10 @@ const EnquiryManagement = () => {
                   <p className="text-sm font-medium">Property Details</p>
                   <div className="text-sm flex items-center gap-2">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span>{selectedEnquiry.project || "N/A"}</span>
+                    <span>{selectedEnquiry?.project || "N/A"}</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Budget: ₹{selectedEnquiry.budget}
+                    Budget: ₹{selectedEnquiry?.budget || "N/A"}
                   </div>
                 </div>
               </div>
@@ -822,11 +830,11 @@ const EnquiryManagement = () => {
               {/* Message and Address */}
               <div>
                 <p className="text-sm font-medium mb-1">Message</p>
-                <p className="text-sm">{selectedEnquiry.message || "N/A"}</p>
+                <p className="text-sm">{selectedEnquiry?.message || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium mb-1">Address</p>
-                <p className="text-sm">{selectedEnquiry.address || "N/A"}</p>
+                <p className="text-sm">{selectedEnquiry?.address || "N/A"}</p>
               </div>
 
               {/* Status and Assignment (for Admin/Owner) */}
@@ -835,9 +843,9 @@ const EnquiryManagement = () => {
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Assigned To</p>
                     <p className="text-sm">
-                      {selectedEnquiry.assignedTo
-                        ? salespersons.find(
-                            (sp) => sp._id === selectedEnquiry.assignedTo
+                      {selectedEnquiry?.assignedTo
+                        ? salespersons?.find(
+                            (sp) => sp._id === selectedEnquiry.assignedTo,
                           )?.name || "Unknown"
                         : "Unassigned"}
                     </p>
@@ -849,19 +857,19 @@ const EnquiryManagement = () => {
                         selectedEnquiry.status === "New"
                           ? "bg-blue-100 text-blue-800"
                           : selectedEnquiry.status === "Assigned"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : selectedEnquiry.status === "Enquiry"
-                          ? "bg-green-100 text-green-800"
-                          : selectedEnquiry.status === "Follow up"
-                          ? "bg-purple-100 text-purple-800"
-                          : selectedEnquiry.status === "In Progress"
-                          ? "bg-orange-100 text-orange-800"
-                          : selectedEnquiry.status === "Rejected"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-gray-100 text-gray-800"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : selectedEnquiry.status === "Enquiry"
+                              ? "bg-green-100 text-green-800"
+                              : selectedEnquiry.status === "Follow up"
+                                ? "bg-purple-100 text-purple-800"
+                                : selectedEnquiry.status === "In Progress"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : selectedEnquiry.status === "Rejected"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {selectedEnquiry.status}
+                      {selectedEnquiry?.status || "N/A"}
                     </p>
                   </div>
                 </div>
@@ -872,18 +880,21 @@ const EnquiryManagement = () => {
                 <div>
                   <p className="text-sm font-medium">Last Contact</p>
                   <p className="text-sm">
-                    {selectedEnquiry.lastContactDate
-                      ? format(new Date(selectedEnquiry.lastContactDate), "PPP")
+                    {selectedEnquiry?.lastContactDate
+                      ? format(
+                          new Date(selectedEnquiry?.lastContactDate),
+                          "PPP",
+                        )
                       : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Next Follow-up</p>
                   <p className="text-sm">
-                    {selectedEnquiry.nextFollowUpDate
+                    {selectedEnquiry?.nextFollowUpDate
                       ? format(
-                          new Date(selectedEnquiry.nextFollowUpDate),
-                          "PPP"
+                          new Date(selectedEnquiry?.nextFollowUpDate),
+                          "PPP",
                         )
                       : "N/A"}
                   </p>
@@ -894,16 +905,16 @@ const EnquiryManagement = () => {
               <div>
                 <p className="text-sm font-medium mb-1">Timeline</p>
                 <div className="text-sm space-y-2 max-h-40 overflow-y-auto border p-2 rounded-md bg-gray-50">
-                  {selectedEnquiry.timeline?.length > 0 ? (
-                    selectedEnquiry.timeline.map((entry, index) => (
+                  {selectedEnquiry?.timeline?.length > 0 ? (
+                    selectedEnquiry?.timeline?.map((entry, index) => (
                       <div
                         key={index}
                         className="border-b pb-1 last:border-b-0"
                       >
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(entry.timestamp), "PPP pp")}
+                          {format(new Date(entry?.timestamp), "PPP pp")}
                         </p>
-                        <p>{entry.note}</p>
+                        <p>{entry?.note}</p>
                       </div>
                     ))
                   ) : (
@@ -917,7 +928,7 @@ const EnquiryManagement = () => {
               <div>
                 <p className="text-sm font-medium">Received At</p>
                 <p className="text-sm">
-                  {new Date(selectedEnquiry.createdAt).toLocaleString()}
+                  {new Date(selectedEnquiry?.createdAt)?.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -966,9 +977,9 @@ const EnquiryManagement = () => {
                         No salespersons available
                       </SelectItem>
                     ) : (
-                      salespersons.map((sp) => (
-                        <SelectItem key={sp._id} value={sp._id}>
-                          {sp.name}
+                      salespersons.map((sp, idx) => (
+                        <SelectItem key={sp?._id || idx} value={sp?._id}>
+                          {sp?.name || "N/A"}
                         </SelectItem>
                       ))
                     )}
@@ -1000,7 +1011,7 @@ const EnquiryManagement = () => {
               <DialogTitle>Manage Enquiry Progress</DialogTitle>
               <DialogDescription>
                 Update details for enquiry from{" "}
-                <strong>{selectedEnquiry?.name}</strong>.
+                <strong>{selectedEnquiry?.name || "N/A"}</strong>.
               </DialogDescription>
             </DialogHeader>
             {selectedEnquiry && (
@@ -1016,7 +1027,7 @@ const EnquiryManagement = () => {
                         variant={"outline"}
                         className={cn(
                           "col-span-3 justify-start text-left font-normal",
-                          !currentLastContactDate && "text-muted-foreground"
+                          !currentLastContactDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -1049,7 +1060,7 @@ const EnquiryManagement = () => {
                         variant={"outline"}
                         className={cn(
                           "col-span-3 justify-start text-left font-normal",
-                          !currentNextFollowUpDate && "text-muted-foreground"
+                          !currentNextFollowUpDate && "text-muted-foreground",
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -1091,17 +1102,17 @@ const EnquiryManagement = () => {
                     Current Timeline:
                   </Label>
                   <div className="col-span-3 text-sm space-y-2 max-h-40 overflow-y-auto border p-2 rounded-md bg-gray-50">
-                    {selectedEnquiry.timeline &&
-                    selectedEnquiry.timeline.length > 0 ? (
-                      selectedEnquiry.timeline.map((entry, index) => (
+                    {selectedEnquiry?.timeline &&
+                    selectedEnquiry?.timeline?.length > 0 ? (
+                      selectedEnquiry?.timeline?.map((entry, index) => (
                         <div
                           key={index}
                           className="border-b pb-1 last:border-b-0"
                         >
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(entry.timestamp), "PPP pp")}
+                            {format(new Date(entry?.timestamp), "PPP pp")}
                           </p>
-                          <p>{entry.note}</p>
+                          <p>{entry?.note || "N/A"}</p>
                         </div>
                       ))
                     ) : (
@@ -1136,7 +1147,7 @@ const EnquiryManagement = () => {
               <DialogTitle>Manage Enquiry Progress</DialogTitle>
               <DialogDescription>
                 Update details for enquiry from{" "}
-                <strong>{selectedEnquiry?.name}</strong>.
+                <strong>{selectedEnquiry?.name || "N/A"}</strong>.
               </DialogDescription>
             </DialogHeader>
 

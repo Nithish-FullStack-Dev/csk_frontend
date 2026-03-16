@@ -32,8 +32,8 @@ const moduleConfig: Record<string, string[]> = {
   "Sales Modules": [
     "Team Management",
     "Lead Management",
-    "Commissions",
-    "Customer Management",
+    // "Commissions",
+    // "Customer Management",
     "Enquiry",
     "My Documents",
   ],
@@ -234,7 +234,7 @@ export default function Permission() {
                 </SelectTrigger>
                 <SelectContent>
                   {roles
-                    // ?.filter((role) => role.name !== "admin")
+                    ?.filter((role) => role.name !== "admin")
                     .map((role) => (
                       <SelectItem key={role._id} value={role.name}>
                         {role.name
