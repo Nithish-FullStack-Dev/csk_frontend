@@ -74,7 +74,7 @@ export default function OpenLandLeadDialog({
     if (mode === "create") {
       resetForm();
     }
-  }, [mode, lead]);
+  }, [mode, lead, openLands]);
 
   const resetForm = () => {
     setName("");
@@ -203,7 +203,7 @@ function SelectField({ label, value, onChange, options, disabled }: any) {
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <Select value={value || ""} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger>
           <SelectValue placeholder={`Select ${label}`} />
         </SelectTrigger>
