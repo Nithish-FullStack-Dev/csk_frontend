@@ -28,7 +28,11 @@ import CircleLoader from "../CircleLoader";
 
 const moduleConfig: Record<string, string[]> = {
   "Core Modules": ["Dashboard", "Properties"],
-  "Admin Modules": ["User Management", "Content Management", "System Settings"],
+  "Admin Modules": [
+    "User Management",
+    "Content Management",
+    // "System Settings"
+  ],
   "Sales Modules": [
     "Team Management",
     "Lead Management",

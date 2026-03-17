@@ -178,11 +178,11 @@ export const moduleToNavItem: Record<string, any> = {
   // Common modules
   Dashboard: { to: "/", icon: Home, label: "Dashboard" },
   Profile: { to: "/profile", icon: User, label: "Profile" },
-  "System Settings": {
-    to: "/settings",
-    icon: Settings,
-    label: "System Settings",
-  },
+  // "System Settings": {
+  //   to: "/settings",
+  //   icon: Settings,
+  //   label: "System Settings",
+  // },
   kanban: {
     to: "/kanban",
     icon: LayoutDashboard,
@@ -334,7 +334,7 @@ export const buildNavigationForRole = (
 
   // const topDefaults = [moduleToNavItem["Dashboard"]];
   const bottomDefaults = [
-    moduleToNavItem["System Settings"],
+    // moduleToNavItem["System Settings"],
     moduleToNavItem["kanban"],
     moduleToNavItem["department"],
     moduleToNavItem["Profile"],
@@ -379,7 +379,7 @@ export const buildNavigationForRole = (
   }
 
   // Remove System Settings and Profile if present in middle
-  middle = middle.filter((item) => item.label !== "System Settings");
+  // middle = middle.filter((item) => item.label !== "System Settings");
   // Final structure: Dashboard → middle → Profile → Communications
   return [...middle, ...bottomDefaults];
 };
