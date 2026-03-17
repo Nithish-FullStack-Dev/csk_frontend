@@ -48,7 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Dashboard",
       "User Management",
       "Role Management",
-      "System Settings",
+      // "System Settings",
       "Communications",
       "Profile",
       "Department",
