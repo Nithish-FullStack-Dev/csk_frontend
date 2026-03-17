@@ -177,6 +177,7 @@ const TeamManagement = () => {
     onSuccess: () => {
       toast.success("Team member added successfully!");
       queryClient.invalidateQueries({ queryKey: ["teams", user?._id] });
+      queryClient.invalidateQueries({ queryKey: ["agents", user?._id] });
       setDialogOpen(false);
       setIsEditing(false);
       setEditingMember(null);

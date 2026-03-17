@@ -566,7 +566,7 @@ const fetchAuditLogs = async (filters: Filters): Promise<AuditLogResponse> => {
 
   const { data } = await axios.get<AuditLogResponse>(
     `${import.meta.env.VITE_URL}/api/audit/getAll`,
-    { params },
+    { params, withCredentials: true },
   );
   return data;
 };
