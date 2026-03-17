@@ -92,9 +92,9 @@ const AdminDashboard = () => {
                   variant="outline"
                   className="h-auto py-6 flex flex-col items-center justify-center"
                 >
-                  <Link to="/settings">
+                  <Link to="/projects">
                     <Settings className="h-8 w-8 mb-2" />
-                    <span>System Settings</span>
+                    <span>Project Overview</span>
                   </Link>
                 </Button>
               </div>
@@ -181,18 +181,16 @@ const AdminDashboard = () => {
                 </div>
               </Link>
 
-              <Link to="/settings" className="group block">
+              <Link to="/roles" className="group block">
                 <div className="border rounded-lg p-6 transition-all hover:border-primary hover:shadow-sm">
                   <div className="flex items-center">
                     <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:bg-primary/20">
                       <Settings className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-medium">
-                        System Configuration
-                      </h3>
+                      <h3 className="text-xl font-medium">Role Management</h3>
                       <p className="text-sm text-muted-foreground">
-                        Manage system settings and preferences
+                        Manage roles and permissions
                       </p>
                     </div>
                   </div>
