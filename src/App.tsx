@@ -693,7 +693,7 @@ const App = () => {
                   <Route
                     path="/tasks"
                     element={
-                      <ProtectedRoute roleSubmodule={"Task Management"}>
+                      <ProtectedRoute roleSubmodule={"Project Task Management"}>
                         <ContractorTasks />
                       </ProtectedRoute>
                     }
@@ -743,7 +743,7 @@ const App = () => {
                   <Route
                     path="/verifications"
                     element={
-                      <ProtectedRoute roleSubmodule={"Task Verifications"}>
+                      <ProtectedRoute roleSubmodule={"Project Task Verifications"}>
                         <TaskVerifications />
                       </ProtectedRoute>
                     }
