@@ -9,13 +9,14 @@ import axios from "axios";
 import {
   ChevronDown,
   ChevronRight,
-  LayoutDashboard,
   FolderKanban,
   Users,
   IndianRupee,
   Globe,
   Shield,
   HelpCircle,
+  CheckSquare,
+  FileText,
 } from "lucide-react";
 
 import SidebarLink from "./SidebarLink";
@@ -23,7 +24,7 @@ import { buildNavigationForRole } from "./navigationConfig";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
-/*                                  TYPES                                     */
+/* TYPES                                                                      */
 /* -------------------------------------------------------------------------- */
 
 type NavItem = {
@@ -44,15 +45,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: "admin",
     label: "Admin",
     icon: Shield,
-    modules: [
-      "Dashboard",
-      "User Management",
-      "Role Management",
-      // "System Settings",
-      "Communications",
-      "Profile",
-      "Department",
-    ],
+    modules: ["Dashboard", "User Management", "Role Management", "Department"],
   },
   {
     key: "projects",
@@ -61,13 +54,9 @@ const NAV_GROUPS: NavGroup[] = [
     modules: [
       "Properties",
       "Projects Overview",
-      "Task Tracker",
-      "Site Visits",
-      "Approvals",
       "Construction Timeline",
-      "Quality Control",
-      "Site Inspections",
       "Trash – Buildings",
+      "Approvals",
     ],
   },
   {
@@ -75,27 +64,28 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Sales",
     icon: IndianRupee,
     modules: [
+      "My Team",
+      "Site Visits",
       "Lead Management",
-      // "Customer Management",
+      "Car Allocation",
       "Enquiry",
-      // "Commissions",
       "My Commissions",
       "Sales Overview",
     ],
   },
   {
-    key: "team",
-    label: "Team",
+    key: "project_management",
+    label: "Project Management",
     icon: Users,
     modules: [
-      "Team Management",
-      "My Team",
-      "Car Allocation",
-      "Task Management",
-      "Task Verifications",
-      "Labor Management",
-      "Materials",
+      "Site Inspections",
+      "Quality Control",
+      "Project Task Verifications",
+      "Project Task Management",
       "Contractors",
+      "Materials",
+      "Labor Management",
+      "Team Management",
     ],
   },
   {
@@ -111,7 +101,6 @@ const NAV_GROUPS: NavGroup[] = [
       "Financial Reports",
       "Reports",
       "Tax Documents",
-      // "Budget Tracking",
     ],
   },
   {
@@ -121,9 +110,15 @@ const NAV_GROUPS: NavGroup[] = [
     modules: ["CMS", "Content Management"],
   },
   {
-    key: "Audit Logs",
+    key: "task_tracker",
+    label: "Task Tracker",
+    icon: CheckSquare,
+    modules: ["Task Tracker"],
+  },
+  {
+    key: "audit_logs",
     label: "Audit Logs",
-    icon: Globe,
+    icon: FileText,
     modules: ["Audit Logs"],
   },
   {
@@ -139,6 +134,7 @@ const NAV_GROUPS: NavGroup[] = [
     modules: ["Secure", "Customer Purchased"],
   },
 ];
+
 const fetchRolePermissions = async (roleName: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/role/getRole/${roleName}`,
@@ -146,6 +142,7 @@ const fetchRolePermissions = async (roleName: string) => {
   );
   return data?.permissions || [];
 };
+
 interface DropDownSidebarProps {
   collapsed: boolean;
 }
@@ -153,7 +150,6 @@ interface DropDownSidebarProps {
 const DropDownSidebar: React.FC<DropDownSidebarProps> = ({ collapsed }) => {
   const { user } = useAuth();
   const location = useLocation();
-
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const { data: rolePermissions } = useQuery({
@@ -169,85 +165,90 @@ const DropDownSidebar: React.FC<DropDownSidebarProps> = ({ collapsed }) => {
 
   const groupedNavigation = useMemo(() => {
     const map: Record<string, NavItem[]> = {};
-
     NAV_GROUPS.forEach((group) => {
-      map[group.key] = navigation.filter((item) =>
+      const filtered = navigation.filter((item) =>
         group.modules.includes(item.label),
       );
+      map[group.key] = filtered.sort(
+        (a, b) =>
+          group.modules.indexOf(a.label) - group.modules.indexOf(b.label),
+      );
     });
-
     return map;
   }, [navigation]);
 
   const toggleGroup = (key: string) => {
-    setOpenGroups((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (!user) return null;
-  const isGroupActive = (items: NavItem[]) => {
-    return items.some((item) => location.pathname === item.to);
-  };
+
   return (
-    <nav className="flex-1 overflow-y-auto py-4 px-0 ">
-      <div className="space-y-3">
+    <nav className="flex-1 overflow-y-auto py-2 px-2 custom-scrollbar">
+      <div className="space-y-1">
         {NAV_GROUPS.map((group) => {
           const items = groupedNavigation[group.key];
           if (!items?.length) return null;
 
-          const isOpen = openGroups[group.key] ?? isGroupActive(items);
+          const active = items.some((item) => location.pathname === item.to);
+          const isOpen = openGroups[group.key] ?? active;
           const GroupIcon = group.icon;
 
           return (
-            <div key={group.key} className="rounded-2xl">
+            <div key={group.key} className="mb-1">
               {/* GROUP HEADER */}
               <button
                 onClick={() => toggleGroup(group.key)}
                 className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 rounded-xl transition",
-                  "text-lg font-semibold tracking-wide",
-                  "hover:bg-white/10",
-                  (isOpen || isGroupActive(items)) && "bg-white/10 text-white",
+                  "w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  (isOpen || active) && "bg-white/5 text-white",
                 )}
               >
-                <div className="flex items-center gap-2">
-                  <GroupIcon size={16} className="opacity-80" />
-                  {!collapsed && <span>{group.label}</span>}
+                <div className="flex items-center gap-3 min-w-0">
+                  <GroupIcon size={18} className="flex-shrink-0" />
+                  {!collapsed && (
+                    <span className="text-[16px] font-medium truncate tracking-tight">
+                      {group.label}
+                    </span>
+                  )}
                 </div>
 
                 {!collapsed && (
-                  <div>
-                    {isOpen ? (
-                      <ChevronDown size={16} />
-                    ) : (
-                      <ChevronRight size={16} />
+                  <div
+                    className={cn(
+                      "transition-transform duration-200",
+                      isOpen && "rotate-180",
                     )}
+                  >
+                    <ChevronDown size={14} className="opacity-50" />
                   </div>
                 )}
               </button>
 
-              {/* ITEMS */}
-              <div
-                className={cn(
-                  "transition-all duration-300 overflow-hidden",
-                  isOpen ? "max-h-[600px] mt-2" : "max-h-0",
-                )}
-              >
-                <div className="space-y-1 pl-2">
-                  {items.map((item) => (
-                    <SidebarLink
-                      key={item.to}
-                      to={item.to}
-                      icon={item.icon}
-                      label={item.label}
-                      active={location.pathname === item.to}
-                      collapsed={collapsed}
-                    />
-                  ))}
+              {/* NESTED ITEMS */}
+              {!collapsed && (
+                <div
+                  className={cn(
+                    "transition-all duration-300 ease-in-out overflow-hidden",
+                    isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
+                  )}
+                >
+                  <div className="mt-1 ml-4 border-l border-white/10 pl-2 space-y-0.5">
+                    {items.map((item) => (
+                      <SidebarLink
+                        key={item.to}
+                        to={item.to}
+                        icon={item.icon}
+                        label={item.label}
+                        active={location.pathname === item.to}
+                        collapsed={collapsed}
+                        // Ensure SidebarLink uses: text-[12px], whitespace-nowrap, and truncate
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}

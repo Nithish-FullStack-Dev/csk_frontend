@@ -231,7 +231,7 @@ export const moduleToNavItem: Record<string, any> = {
     label: "Construction Progress",
   },
   // "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
-  "Task Management": { to: "/tasks", icon: ListTodo, label: "Task Management" },
+  "Task Management": { to: "/tasks", icon: ListTodo, label: "Project Task Management" },
   "Invoice Management": {
     to: "/invoices",
     icon: FileText,
@@ -282,7 +282,7 @@ export const moduleToNavItem: Record<string, any> = {
   "Task Verifications": {
     to: "/verifications",
     icon: CheckCircle,
-    label: "Task Verifications",
+    label: "Project Task Verifications",
   },
   Payments: { to: "/payments", icon: IndianRupee, label: "Payments" },
   "Business Analytics": {
@@ -350,10 +350,10 @@ export const buildNavigationForRole = (
 
       const navItem =
         moduleToNavItem[
-          Object.keys(moduleToNavItem).find(
-            (key) =>
-              key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
-          ) as string
+        Object.keys(moduleToNavItem).find(
+          (key) =>
+            key.trim().toLowerCase() === perm.submodule?.trim().toLowerCase(),
+        ) as string
         ];
       if (navItem && !middle.find((n) => n.label === navItem.label)) {
         middle.push(navItem);

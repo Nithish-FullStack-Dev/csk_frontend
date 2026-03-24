@@ -17,21 +17,19 @@ const ProtectedRoute = ({ roleSubmodule, children }) => {
       </div>
     );
   }
-
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === "admin" || user.role === "owner") {
+    return children;
+  }
 
   if (roleSubmodule === "System Config" || roleSubmodule === "Profile") {
     return children;
   }
 
-  if (
-    (user.role === "admin" || user.role === "owner") &&
-    roleSubmodule === "Role Management"
-  ) {
-    return children;
+  if (!userCanViewUser) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  if (!userCanViewUser) return <Navigate to="/unauthorized" replace />;
   return children;
 };
 
