@@ -31,6 +31,7 @@ const moduleConfig: Record<string, string[]> = {
   "Admin Modules": [
     "User Management",
     "Content Management",
+    "Trash – Buildings",
     // "System Settings"
   ],
   "Sales Modules": [
@@ -54,17 +55,15 @@ const moduleConfig: Record<string, string[]> = {
     "Construction Timeline",
     "Site Inspections",
     "Contractors",
-    "Inspection Schedule",
+    // "Inspection Schedule",
     "Project Task Verifications",
     "Construction Progress",
   ],
-  Contractor: ["Project Tasks"],
-  "Operations Modules": [
-    "Projects",
+  // Contractor: ["Project Tasks",],
+  Contractor: [
+    // "Projects",
     "Project Task Management",
     "Quality Control",
-    "Site Inspections",
-    "Contractors",
     "Materials",
     "Labor Management",
     // "Photo Evidence",

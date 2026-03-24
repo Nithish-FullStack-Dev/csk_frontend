@@ -149,6 +149,15 @@ export const fetchProjectsForDropdown = async () => {
   );
   return data.data;
 };
+
+export const fetchProjectsForDropdownForIssue = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/projectDropDownDataForIssue`,
+    { withCredentials: true },
+  );
+  return data.data;
+};
+
 export const fetchProjectsForDropdownSiteIncharge = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/projectsDropdown/site-incharge`,
@@ -170,6 +179,16 @@ export const fetchContractors = async () => {
 export const fetchContractorProjects = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/project/contractorDropdown`,
+    {
+      withCredentials: true,
+    },
+  );
+  return data;
+};
+
+export const fetchContractorProjectsForIssue = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/contractorDropdownForIssue`,
     {
       withCredentials: true,
     },
@@ -271,6 +290,14 @@ export const usefetchProjectsForDropdown = () => {
     queryFn: fetchProjectsForDropdown,
   });
 };
+
+export const usefetchProjectsForDropdownForIssue = () => {
+  return useQuery<Project[]>({
+    queryKey: ["projectsForDropdownForIssue"],
+    queryFn: fetchProjectsForDropdownForIssue,
+  });
+};
+
 export const usefetchProjectsForDropdownSiteIncharge = () => {
   return useQuery<Project[]>({
     queryKey: ["ProjectsForDropdown-siteincharge"],
@@ -289,6 +316,13 @@ export const usefetchContractorDropDown = () => {
   return useQuery({
     queryKey: ["ContractorProjects"],
     queryFn: fetchContractorProjects,
+  });
+};
+
+export const usefetchContractorDropDownForIssue = () => {
+  return useQuery({
+    queryKey: ["ContractorProjectsForIssue"],
+    queryFn: fetchContractorProjectsForIssue,
   });
 };
 
