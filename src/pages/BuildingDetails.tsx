@@ -50,6 +50,7 @@ import BulkFloorGenerator from "./Properties/BulkFloorGenerator";
 import BulkCsvUploader from "./Properties/BulkCsvUploader";
 import { Progress } from "@radix-ui/react-progress";
 import { getImageUrl } from "@/lib/image";
+import { useRBAC } from "@/config/RBAC";
 
 const BuildingDetails = () => {
   const { buildingId } = useParams<{ buildingId: string }>();
@@ -178,7 +179,12 @@ const BuildingDetails = () => {
     id: string;
   } | null>(null);
 
-  const canEdit = user && ["owner", "admin"].includes(user.role);
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Properties" });
 
   // Mutations for floors
   const createFloorMutation = useMutation({
@@ -366,16 +372,18 @@ const BuildingDetails = () => {
             <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
           </Button>
 
-          {canEdit && (
-            <div className="flex gap-2 md:flex-row flex-col">
+          <div className="flex gap-2 md:flex-row flex-col">
+            {userCanEditUser && (
               <Button variant="outline" onClick={handleEditBuilding}>
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </Button>
+            )}
+            {userCanDeleteUser && (
               <Button variant="destructive" onClick={handleDeleteBuilding}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Building Info */}
@@ -514,7 +522,7 @@ const BuildingDetails = () => {
               <CardTitle className="flex items-center">
                 <Layers className="mr-2 h-5 w-5" /> Floors & Units
               </CardTitle>
-              {canEdit && (
+              {userCanAddUser && (
                 <div className="flex gap-2">
                   <Button onClick={handleAddFloor}>
                     <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
@@ -549,8 +557,9 @@ const BuildingDetails = () => {
                                 Floor {floor.floorNumber} - {floor.unitType}
                               </h3>
                             </div>
-                            {canEdit && (
-                              <div className="flex gap-1">
+
+                            <div className="flex gap-1">
+                              {userCanEditUser && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -558,6 +567,8 @@ const BuildingDetails = () => {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
+                              )}
+                              {userCanDeleteUser && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -567,8 +578,8 @@ const BuildingDetails = () => {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                             <div>
@@ -912,7 +923,7 @@ const BuildingDetails = () => {
         description={
           deleteTarget?.type === "building"
             ? "Are you sure you want to delete this building? This action cannot be undone."
-            : "Are you sure you want to delete this floor/unit? This action cannot be undone."
+            : "Are you sure you want to delete this floor/unit? The Related units will also be deleted. Instead you can edit"
         }
       />
     </MainLayout>

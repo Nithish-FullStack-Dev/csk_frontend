@@ -51,7 +51,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import axios from "axios";
-import { handleExportReport } from "./generateInspectionPDF";
+// import { handleExportReport } from "./generateInspectionPDF";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import {
@@ -62,6 +62,8 @@ import {
 } from "@/utils/buildings/Projects";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { getImageUrl } from "@/lib/image";
+import { useRBAC } from "@/config/RBAC";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SiteInspection {
   id: string;
@@ -112,6 +114,10 @@ const SiteInspections = () => {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { userCanAddUser, userCanEditUser, userCanViewUser } = useRBAC({
+    roleSubmodule: "Site Inspections",
+  });
 
   const {
     data: siteInspections = [],
@@ -474,10 +480,12 @@ const SiteInspections = () => {
 
           <Dialog open={newInspectionOpen} onOpenChange={setNewInspectionOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Inspection
-              </Button>
+              {user?.role !== "admin" && userCanAddUser && (
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Inspection
+                </Button>
+              )}
             </DialogTrigger>
             <DialogContent className="md:w-[600px] w-[95vw] max-h-[85vh] overflow-y-auto rounded-xl">
               <DialogHeader>
@@ -833,29 +841,35 @@ const SiteInspections = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem
-                                onClick={() => handleViewDetails(inspection)}
-                              >
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedInspectionForPhotos(inspection);
-                                  setOpenPhotoDialog(true);
-                                }}
-                              >
-                                Add Photos
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(inspection)}
-                              >
-                                Update Status
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
+                              {userCanViewUser && (
+                                <DropdownMenuItem
+                                  onClick={() => handleViewDetails(inspection)}
+                                >
+                                  View Details
+                                </DropdownMenuItem>
+                              )}
+                              {user?.role !== "admin" && userCanAddUser && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedInspectionForPhotos(inspection);
+                                    setOpenPhotoDialog(true);
+                                  }}
+                                >
+                                  Add Photos
+                                </DropdownMenuItem>
+                              )}
+                              {user?.role !== "admin" && userCanEditUser && (
+                                <DropdownMenuItem
+                                  onClick={() => handleUpdateStatus(inspection)}
+                                >
+                                  Update Status
+                                </DropdownMenuItem>
+                              )}
+                              {/* <DropdownMenuItem
                                 onClick={() => handleExportReport(inspection)}
                               >
                                 Export Report
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -925,29 +939,35 @@ const SiteInspections = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleViewDetails(inspection)}
-                          >
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedInspectionForPhotos(inspection);
-                              setOpenPhotoDialog(true);
-                            }}
-                          >
-                            Add Photos
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleUpdateStatus(inspection)}
-                          >
-                            Update Status
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
+                          {user?.role !== "admin" && userCanViewUser && (
+                            <DropdownMenuItem
+                              onClick={() => handleViewDetails(inspection)}
+                            >
+                              View Details
+                            </DropdownMenuItem>
+                          )}
+                          {user?.role !== "admin" && userCanAddUser && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedInspectionForPhotos(inspection);
+                                setOpenPhotoDialog(true);
+                              }}
+                            >
+                              Add Photos
+                            </DropdownMenuItem>
+                          )}
+                          {user?.role !== "admin" && userCanEditUser && (
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(inspection)}
+                            >
+                              Update Status
+                            </DropdownMenuItem>
+                          )}
+                          {/* <DropdownMenuItem
                             onClick={() => handleExportReport(inspection)}
                           >
                             Export Report
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -982,8 +1002,7 @@ const SiteInspections = () => {
                       {selectedInspection.floorUnit?.floorNumber}
                     </p>
                     <p>
-                      <strong>Unit: </strong>{" "}
-                      {selectedInspection.unit?.propertyType}
+                      <strong>Unit: </strong> {selectedInspection.unit?.plotNo}
                     </p>
                     <p>
                       <strong>Type:</strong> {selectedInspection.type}

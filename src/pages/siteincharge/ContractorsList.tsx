@@ -59,7 +59,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { toast } from "react-hot-toast";
 import {
   Contractor,
   useContractorList,
@@ -80,6 +79,9 @@ import { ContractorList } from "@/types/contractor";
 import ViewContractorDetailsCard from "@/components/helpers/ViewContractorDetailsCard";
 import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 import CircleLoader from "@/components/CircleLoader";
+import { toast } from "sonner";
+import { getImageUrl } from "@/lib/image";
+import { useRBAC } from "@/config/RBAC";
 
 const ContractorsList = () => {
   const { user } = useAuth();
@@ -113,6 +115,9 @@ const ContractorsList = () => {
   const [isContractorAdding, setIsContractorAdding] = useState(false);
 
   const queryClient = useQueryClient();
+  const { userCanAddUser, userCanEditUser, userCanDeleteUser } = useRBAC({
+    roleSubmodule: "Contractors",
+  });
 
   const deleteContractorMutation = useMutation({
     mutationFn: async (contractorId) => {
@@ -400,10 +405,12 @@ const ContractorsList = () => {
                     </div>
 
                     {/* Primary Action */}
-                    <Button onClick={() => setOpenDialog(true)}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Assign Contractor
-                    </Button>
+                    {user?.role !== "admin" && userCanAddUser && (
+                      <Button onClick={() => setOpenDialog(true)}>
+                        <Users className="h-4 w-4 mr-2" />
+                        Assign Contractor
+                      </Button>
+                    )}
                   </div>
 
                   {/* Filters */}
@@ -620,15 +627,18 @@ const ContractorsList = () => {
                                       >
                                         Send Message
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setSelectedContractor(contractor);
-                                          setNewStatus(contractor.status);
-                                          setStatusDialogOpen(true);
-                                        }}
-                                      >
-                                        Update Status
-                                      </DropdownMenuItem>
+                                      {user?.role !== "admin" &&
+                                        userCanEditUser && (
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              setSelectedContractor(contractor);
+                                              setNewStatus(contractor.status);
+                                              setStatusDialogOpen(true);
+                                            }}
+                                          >
+                                            Update Status
+                                          </DropdownMenuItem>
+                                        )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>
@@ -781,15 +791,17 @@ const ContractorsList = () => {
                         className="w-full md:w-64"
                       />
 
-                      <Button
-                        onClick={() => {
-                          setEditingContractor(null);
-                          setOpenConDialog(true);
-                        }}
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Add Contractor
-                      </Button>
+                      {user?.role !== "admin" && userCanAddUser && (
+                        <Button
+                          onClick={() => {
+                            setEditingContractor(null);
+                            setOpenConDialog(true);
+                          }}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Add Contractor
+                        </Button>
+                      )}
                     </div>
                   </div>
                   {isLoadingContractorList ? (
@@ -904,24 +916,32 @@ const ContractorsList = () => {
                                           <Eye className="h-4 w-4 mr-2" />
                                           View Details
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => handleEdit(contractor)}
-                                        >
-                                          <Edit className="h-4 w-4 mr-2" />
-                                          Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => {
-                                            setDeletecontractorId(
-                                              contractor._id,
-                                            );
-                                            setDeleteDialogOpen(true);
-                                          }}
-                                          className="text-destructive"
-                                        >
-                                          <Trash2 className="h-4 w-4 mr-2" />
-                                          Delete
-                                        </DropdownMenuItem>
+                                        {user?.role !== "admin" &&
+                                          userCanEditUser && (
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                handleEdit(contractor)
+                                              }
+                                            >
+                                              <Edit className="h-4 w-4 mr-2" />
+                                              Edit
+                                            </DropdownMenuItem>
+                                          )}
+                                        {user?.role !== "admin" &&
+                                          userCanDeleteUser && (
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setDeletecontractorId(
+                                                  contractor._id,
+                                                );
+                                                setDeleteDialogOpen(true);
+                                              }}
+                                              className="text-destructive"
+                                            >
+                                              <Trash2 className="h-4 w-4 mr-2" />
+                                              Delete
+                                            </DropdownMenuItem>
+                                          )}
                                       </DropdownMenuContent>
                                     </DropdownMenu>
                                   </TableCell>
@@ -949,25 +969,31 @@ const ContractorsList = () => {
                                     <Eye className="h-4 w-4 mr-1" />
                                     View Details
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEdit(contractor)}
-                                  >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => {
-                                      setDeletecontractorId(contractor._id);
-                                      setDeleteDialogOpen(true);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
-                                  </Button>
+                                  {user?.role !== "admin" &&
+                                    userCanEditUser && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleEdit(contractor)}
+                                      >
+                                        <Edit className="h-4 w-4 mr-1" />
+                                        Edit
+                                      </Button>
+                                    )}
+                                  {user?.role !== "admin" &&
+                                    userCanDeleteUser && (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => {
+                                          setDeletecontractorId(contractor._id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete
+                                      </Button>
+                                    )}
                                 </div>
                                 <Badge
                                   variant={
@@ -1113,7 +1139,10 @@ const ContractorsList = () => {
                       return;
                     }
 
-                    if (!formData.taskTitle) {
+                    if (
+                      !formData.taskTitle ||
+                      formData.taskTitle.trim() === ""
+                    ) {
                       toast.error("Enter task title");
                       return;
                     }
@@ -1165,8 +1194,7 @@ const ContractorsList = () => {
                         ) : !contractorDropDown.data ||
                           contractorDropDown.data.length === 0 ? (
                           <SelectItem value="empty" disabled>
-                            {contractorDropDown.message ||
-                              "No contractors available"}
+                            No contractors available
                           </SelectItem>
                         ) : (
                           contractorDropDown &&
@@ -1576,7 +1604,7 @@ const ContractorsList = () => {
                                       className="rounded-lg overflow-hidden border shadow-sm hover:scale-105 transition-transform duration-200"
                                     >
                                       <img
-                                        src={photo}
+                                        src={getImageUrl(photo)}
                                         alt={`evidence-${idx}`}
                                         className="w-full h-28 object-cover cursor-pointer"
                                         onClick={() =>

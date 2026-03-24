@@ -94,7 +94,7 @@ const QualityControl = () => {
   const [projectId, setProjectId] = useState("");
   const [phase, setPhase] = useState("");
   const [priority, setPriority] = useState("medium");
-  const [deadline, setDeadline] = useState<Date | undefined>(new Date());
+  const [deadline, setDeadline] = useState<string>("");
   const [selectedContractorId, setSelectedContractorId] = useState<
     string | null
   >(null);
@@ -176,11 +176,12 @@ const QualityControl = () => {
         contractorId: selectedContractorId,
         projectId: selectedIssue.project._id,
         priority,
-        deadline: deadline ? deadline.toISOString() : null,
+        deadline: deadline ? new Date(deadline) : null,
         phase,
         qualityIssueId: selectedIssue._id,
         description,
       };
+
       const res = await axios.post(
         `${
           import.meta.env.VITE_URL
@@ -193,7 +194,7 @@ const QualityControl = () => {
         toast.success("Task assigned and contractor updated successfully");
         setAssignDialog(false);
         setSelectedContractorId(null);
-        setDeadline(undefined);
+        setDeadline("");
         setDescription("");
         setPhase("");
         setPriority("medium");
@@ -234,37 +235,18 @@ const QualityControl = () => {
     setIsUploading(true);
 
     try {
-      const uploadedImageUrls: string[] = [];
+      const payload = new FormData();
 
-      for (const photo of photos) {
-        const fileData = new FormData();
-        fileData.append("file", photo);
+      payload.append("title", formData.title);
+      payload.append("project", projectId);
+      payload.append("contractor", formData.contractor);
+      payload.append("severity", formData.severity);
+      payload.append("status", formData.status || "open");
+      payload.append("description", formData.description);
 
-        const uploadRes = await axios.post(
-          `${import.meta.env.VITE_URL}/api/uploads/upload`,
-          fileData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-            withCredentials: true,
-          },
-        );
-
-        const secureUrl = uploadRes.data?.url?.secure_url;
-
-        if (secureUrl) {
-          uploadedImageUrls.push(secureUrl);
-        }
-      }
-
-      const payload = {
-        title: formData.title,
-        project: projectId,
-        contractor: formData.contractor,
-        severity: formData.severity,
-        status: formData.status || "open",
-        description: formData.description,
-        evidenceImages: uploadedImageUrls,
-      };
+      photos.forEach((file) => {
+        payload.append("evidenceImages", file);
+      });
 
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/quality-issue/create-quality-issue`,
@@ -1303,13 +1285,11 @@ const QualityControl = () => {
 
                     <div className="space-y-2">
                       <Label>Deadline</Label>
-                      <div className="border rounded-md p-2">
-                        <DatePicker
-                          date={deadline}
-                          setDate={setDeadline}
-                          showMonthYearDropdowns
-                        />
-                      </div>
+                      <Input
+                        type="date"
+                        value={deadline || ""}
+                        onChange={(e) => setDeadline(e.target.value)}
+                      />
                     </div>
 
                     <DialogFooter className="pt-4">

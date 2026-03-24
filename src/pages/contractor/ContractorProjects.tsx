@@ -167,6 +167,9 @@ const ContractorProjects = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Project created successfully");
       query.invalidateQueries({ queryKey: ["fetchProjects"] });
+      query.invalidateQueries({
+        queryKey: ["ProjectsForDropdown-siteincharge"],
+      });
       setDialogOpen(false);
       setFormData({
         project: "",
@@ -629,47 +632,49 @@ const ContractorProjects = () => {
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Site Incharge</label>
+            {user?.role !== "site_incharge" && (
+              <div>
+                <label className="text-sm font-medium">Site Incharge</label>
 
-              <Select
-                value={formData.siteIncharge as string}
-                onValueChange={(value) =>
-                  handleInputChange(value, "siteIncharge")
-                }
-                disabled={siteInchargesLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      siteInchargesLoading
-                        ? "Loading site incharges..."
-                        : "Select site incharge"
-                    }
-                  />
-                </SelectTrigger>
+                <Select
+                  value={formData.siteIncharge as string}
+                  onValueChange={(value) =>
+                    handleInputChange(value, "siteIncharge")
+                  }
+                  disabled={siteInchargesLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        siteInchargesLoading
+                          ? "Loading site incharges..."
+                          : "Select site incharge"
+                      }
+                    />
+                  </SelectTrigger>
 
-                <SelectContent>
-                  {siteIncharges.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No site incharges found
-                    </SelectItem>
-                  ) : (
-                    siteIncharges.map((user) => (
-                      <SelectItem key={user._id} value={user._id}>
-                        {user.name}
+                  <SelectContent>
+                    {siteIncharges.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No site incharges found
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : (
+                      siteIncharges.map((user) => (
+                        <SelectItem key={user._id} value={user._id}>
+                          {user.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
 
-              {formErrors.siteIncharge && (
-                <p className="text-sm text-red-500">
-                  {formErrors.siteIncharge}
-                </p>
-              )}
-            </div>
+                {formErrors.siteIncharge && (
+                  <p className="text-sm text-red-500">
+                    {formErrors.siteIncharge}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium">Project Description</label>

@@ -35,6 +35,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VerificationTask } from "@/utils/contractor/ContractorConfig";
 import { getImageUrl } from "@/lib/image";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRBAC } from "@/config/RBAC";
 
 const priorityColors: Record<string, string> = {
   high: "bg-red-100 text-red-800",
@@ -69,6 +71,10 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
     null,
   );
   const [isUploading, setIsUploading] = useState(false);
+  const { user } = useAuth();
+  const { userCanAddUser, userCanEditUser, userCanViewUser } = useRBAC({
+    roleSubmodule: "Task Verifications",
+  });
 
   const queryClient = useQueryClient();
 
@@ -234,24 +240,26 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTask(task);
-                          setVerificationStatus(
-                            task?.verificationDecision || "approved",
-                          );
-                          setQuality(task?.qualityAssessment || "good");
-                          setNotes(task?.noteBySiteIncharge || "");
-                          setVerificationDialogOpen(true);
-                        }}
-                      >
-                        <Camera className="h-4 w-4 mr-1" />
-                        {task?.status === "pending_verification"
-                          ? "Verify"
-                          : "View"}
-                      </Button>
+                      {userCanViewUser && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setVerificationStatus(
+                              task?.verificationDecision || "approved",
+                            );
+                            setQuality(task?.qualityAssessment || "good");
+                            setNotes(task?.noteBySiteIncharge || "");
+                            setVerificationDialogOpen(true);
+                          }}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          {task?.status === "pending_verification"
+                            ? "Verify"
+                            : "View"}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -325,20 +333,22 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Upload New Verification Photos</Label>
-                  <Input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) =>
-                      setPhotos((prev) => [
-                        ...prev,
-                        ...Array.from(e.target.files || []),
-                      ])
-                    }
-                  />
-                </div>
+                {user?.role !== "admin" && (
+                  <div className="space-y-2">
+                    <Label>Upload New Verification Photos</Label>
+                    <Input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) =>
+                        setPhotos((prev) => [
+                          ...prev,
+                          ...Array.from(e.target.files || []),
+                        ])
+                      }
+                    />
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
 
@@ -405,12 +415,14 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={mutation.isPending || isUploading}
-              >
-                {mutation.isPending ? "Updating..." : "Submit Verification"}
-              </Button>
+              {user?.role !== "admin" && (
+                <Button
+                  type="submit"
+                  disabled={mutation.isPending || isUploading}
+                >
+                  {mutation.isPending ? "Updating..." : "Submit Verification"}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>

@@ -24,9 +24,10 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, User } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
+  usefetchAccountantDropDown,
   usefetchContractorDropDown,
   usefetchProjectsForDropdown,
 } from "@/utils/project/ProjectConfig";
@@ -68,7 +69,7 @@ const defaultFormValues: FormValues = {
   accountNumber: "",
   ifscCode: "",
   branchName: "",
-  projectsAssigned: [],
+  // projectsAssigned: [],
   paymentDetails: [],
 };
 
@@ -81,7 +82,7 @@ const AddContractorDialog = ({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  // const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [billCopy, setBillCopy] = useState<File | null>(null);
 
   const {
@@ -96,9 +97,9 @@ const AddContractorDialog = ({
     resolver: zodResolver(contractorSchema),
     defaultValues: defaultFormValues,
   });
-  useEffect(() => {
-    register("projectsAssigned");
-  }, [register]);
+  // useEffect(() => {
+  //   register("projectsAssigned");
+  // }, [register]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -113,16 +114,17 @@ const AddContractorDialog = ({
   }, [amount, advancePaid, setValue]);
 
   const { data: contractorDropDown = [] } = usefetchContractorDropDown();
+  const { data: accountantDropDown = [] } = usefetchAccountantDropDown();
   const { data: allProjects = [] } = usefetchProjectsForDropdown();
 
   useEffect(() => {
     if (!openDialog) return;
 
     if (mode === "edit" && contractor) {
-      const projects =
-        contractor.projectsAssigned?.map((p: any) =>
-          typeof p === "string" ? p : p._id,
-        ) || [];
+      // const projects =
+      //   contractor.projectsAssigned?.map((p: any) =>
+      //     typeof p === "string" ? p : p._id,
+      //   ) || [];
 
       const payments =
         contractor.paymentDetails?.map((p: any) => ({
@@ -172,11 +174,11 @@ const AddContractorDialog = ({
         accountNumber: contractor.accountNumber || "",
         ifscCode: contractor.ifscCode || "",
         branchName: contractor.branchName || "",
-        projectsAssigned: projects,
+        // projectsAssigned: projects,
         paymentDetails: payments,
       });
 
-      setSelectedProjects(projects);
+      // setSelectedProjects(projects);
 
       // ✅ IMPORTANT: show existing image
       if (contractor.billCopy) {
@@ -194,7 +196,7 @@ const AddContractorDialog = ({
       }
     } else {
       reset(defaultFormValues);
-      setSelectedProjects([]);
+      // setSelectedProjects([]);
       setImagePreview(null);
     }
 
@@ -220,6 +222,7 @@ const AddContractorDialog = ({
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
+      queryClient.invalidateQueries({ queryKey: ["contractor-list-dropdown"] });
       setOpenConDialog(false);
       toast.success(data?.message ?? "Contractor added successfully");
     },
@@ -258,19 +261,19 @@ const AddContractorDialog = ({
   const isPending =
     addContractorMutation.isPending || updateContractorMutation.isPending;
 
-  const handleAddProject = (value: string) => {
-    if (value && !selectedProjects.includes(value)) {
-      const newProjects = [...selectedProjects, value];
-      setSelectedProjects(newProjects);
-      setValue("projectsAssigned", newProjects);
-    }
-  };
+  // const handleAddProject = (value: string) => {
+  //   if (value && !selectedProjects.includes(value)) {
+  //     const newProjects = [...selectedProjects, value];
+  //     setSelectedProjects(newProjects);
+  //     setValue("projectsAssigned", newProjects);
+  //   }
+  // };
 
-  const handleRemoveProject = (id: string) => {
-    const newProjects = selectedProjects.filter((p) => p !== id);
-    setSelectedProjects(newProjects);
-    setValue("projectsAssigned", newProjects);
-  };
+  // const handleRemoveProject = (id: string) => {
+  //   const newProjects = selectedProjects.filter((p) => p !== id);
+  //   setSelectedProjects(newProjects);
+  //   setValue("projectsAssigned", newProjects);
+  // };
 
   const onSubmit = (data: FormValues) => {
     if (mode === "add" && !data.userId) {
@@ -278,10 +281,10 @@ const AddContractorDialog = ({
       return;
     }
 
-    if (!data.projectsAssigned?.length) {
-      toast.error("Please select at least one project");
-      return;
-    }
+    // if (!data.projectsAssigned?.length) {
+    //   toast.error("Please select at least one project");
+    //   return;
+    // }
 
     const formData = new FormData();
 
@@ -320,9 +323,9 @@ const AddContractorDialog = ({
     formData.append("ifscCode", data.ifscCode ?? "");
     formData.append("branchName", data.branchName ?? "");
 
-    data.projectsAssigned.forEach((id, index) => {
-      formData.append(`projectsAssigned[${index}]`, id);
-    });
+    // data.projectsAssigned.forEach((id, index) => {
+    //   formData.append(`projectsAssigned[${index}]`, id);
+    // });
 
     data.paymentDetails.forEach((rec, index) => {
       formData.append(
@@ -382,9 +385,12 @@ const AddContractorDialog = ({
                           <SelectValue placeholder="Select a contractor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {contractorDropDown?.data?.map((u: any) => (
-                            <SelectItem key={u._id} value={u._id}>
-                              {u.name}
+                          {contractorDropDown?.data?.map((u: any, idx) => (
+                            <SelectItem
+                              key={u._id || idx}
+                              value={u?._id || idx}
+                            >
+                              {u?.name} {u?.email}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -399,7 +405,7 @@ const AddContractorDialog = ({
                 </div>
               )}
 
-              <div className="col-span-full space-y-2">
+              {/* <div className="col-span-full space-y-2">
                 <Label>Add Project</Label>
                 <Select onValueChange={handleAddProject}>
                   <SelectTrigger className="w-full">
@@ -417,9 +423,9 @@ const AddContractorDialog = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
-              <div className="col-span-full space-y-2">
+              {/* <div className="col-span-full space-y-2">
                 <Label>Selected Projects</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {selectedProjects.map((id) => {
@@ -456,7 +462,7 @@ const AddContractorDialog = ({
                 <p className="text-sm font-medium text-destructive">
                   {errors.projectsAssigned.message}
                 </p>
-              )}
+              )} */}
 
               <div className="space-y-2">
                 <Label>Company Name</Label>
@@ -543,9 +549,9 @@ const AddContractorDialog = ({
                       </SelectTrigger>
 
                       <SelectContent>
-                        {contractorDropDown?.data?.map((user: any) => (
+                        {accountantDropDown?.data?.map((user: User) => (
                           <SelectItem key={user._id} value={user._id}>
-                            {user.name} ({user.employeeId})
+                            {user?.name} ({user?.email})
                           </SelectItem>
                         ))}
                       </SelectContent>

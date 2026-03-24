@@ -512,7 +512,7 @@ export const contractorSchema = z.object({
 
   branchName: z.string().min(1, { message: "Branch Name is required" }),
 
-  projectsAssigned: z.array(z.string()),
+  // projectsAssigned: z.array(z.string()),
 
   paymentDetails: z
     .array(
