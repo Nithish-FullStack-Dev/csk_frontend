@@ -32,8 +32,9 @@ import { fetchLeads, Lead } from "@/utils/leads/LeadConfig";
 import { useAuth } from "@/contexts/AuthContext";
 // import  from "../agent/SiteVisits";
 import Loader from "@/components/Loader";
-import { SiteVisitData } from "../agent/SiteVisits";
+// import { SiteVisitData } from "../agent/SiteVisits";
 import MainLayout from "@/components/layout/MainLayout";
+import { SiteVisitData } from "@/utils/site-visit/SiteVisitConfig";
 
 const AgentDashboard = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -43,7 +44,7 @@ const AgentDashboard = () => {
   const fetchSiteVisitsOfAgent = async () => {
     const { data } = await axios.get(
       `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitById/${user?._id}`,
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   };
@@ -62,7 +63,7 @@ const AgentDashboard = () => {
   });
 
   const { data: leads = [] } = useQuery<Lead[]>({
-   queryKey: ["dashboard-leads", user?._id, user?.role],
+    queryKey: ["dashboard-leads", user?._id, user?.role],
 
     queryFn: fetchLeads,
   });
@@ -100,7 +101,7 @@ const AgentDashboard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3  gap-4">
           {[
             {
               label: "Lead Management",
@@ -120,18 +121,12 @@ const AgentDashboard = () => {
               icon: <Car className="mr-2 h-5 w-5 text-estate-gold" />,
               link: "/visits",
             },
-            {
-              label: "Documents",
-              description: "Client records",
-              icon: <FileText className="mr-2 h-5 w-5 text-estate-navy" />,
-              link: "/documents",
-            },
-            {
-              label: "My Commission",
-              description: "Earnings report",
-              icon: <CreditCard className="mr-2 h-5 w-5 text-estate-success" />,
-              link: "/commissions",
-            },
+            // {
+            //   label: "My Commission",
+            //   description: "Earnings report",
+            //   icon: <CreditCard className="mr-2 h-5 w-5 text-estate-success" />,
+            //   link: "/commissions",
+            // },
           ].map((item, idx) => (
             <Link to={item.link} key={idx}>
               <Button
@@ -150,7 +145,7 @@ const AgentDashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
             title="Active Leads"
             value={leads.length.toString()}
@@ -205,7 +200,7 @@ const AgentDashboard = () => {
                               <AvatarImage
                                 src={`https://ui-avatars.com/api/?name=${lead.name?.replace(
                                   " ",
-                                  "+"
+                                  "+",
                                 )}&background=1A365D&color=fff`}
                               />
                               <AvatarFallback>
@@ -226,7 +221,28 @@ const AgentDashboard = () => {
                           </Badge>
                         </td>
                         <td>
-                          {lead?.property?.basicInfo?.projectName || "NA"}
+                          {lead?.isPropertyLead &&
+                          typeof lead?.property === "object"
+                            ? `${lead?.property.projectName} - ${
+                                typeof lead?.floorUnit === "object"
+                                  ? lead?.floorUnit?.floorNumber
+                                  : "-"
+                              } - ${
+                                typeof lead?.unit === "object"
+                                  ? lead?.unit?.plotNo
+                                  : "-"
+                              }`
+                            : lead?.isPlotLead &&
+                                typeof lead?.openPlot === "object"
+                              ? `${lead?.openPlot.projectName} - Plot ${
+                                  typeof lead?.innerPlot === "object"
+                                    ? lead?.innerPlot?.plotNo
+                                    : "-"
+                                }`
+                              : lead?.isLandLead &&
+                                  typeof lead?.openLand === "object"
+                                ? `${lead?.openLand.projectName} - ${lead?.openLand.location} (${lead?.openLand.landType})`
+                                : "Property not assigned"}
                         </td>
                         <td>
                           {lead.lastContact
@@ -236,7 +252,7 @@ const AgentDashboard = () => {
                                   day: "2-digit",
                                   year: "numeric",
                                   month: "short",
-                                }
+                                },
                               )
                             : "N/A"}
                         </td>
@@ -276,7 +292,7 @@ const AgentDashboard = () => {
                         <AvatarImage
                           src={`https://ui-avatars.com/api/?name=${lead.name?.replace(
                             " ",
-                            "+"
+                            "+",
                           )}&background=1A365D&color=fff`}
                         />
                         <AvatarFallback>{lead.name?.charAt(0)}</AvatarFallback>
@@ -299,7 +315,28 @@ const AgentDashboard = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Property:</span>
                       <span className="text-sm">
-                        {lead?.property?.basicInfo?.projectName || "NA"}
+                        {lead?.isPropertyLead &&
+                        typeof lead?.property === "object"
+                          ? `${lead?.property.projectName} - ${
+                              typeof lead?.floorUnit === "object"
+                                ? lead?.floorUnit?.floorNumber
+                                : "-"
+                            } - ${
+                              typeof lead?.unit === "object"
+                                ? lead?.unit?.plotNo
+                                : "-"
+                            }`
+                          : lead?.isPlotLead &&
+                              typeof lead?.openPlot === "object"
+                            ? `${lead?.openPlot.projectName} - Plot ${
+                                typeof lead?.innerPlot === "object"
+                                  ? lead?.innerPlot?.plotNo
+                                  : "-"
+                              }`
+                            : lead?.isLandLead &&
+                                typeof lead?.openLand === "object"
+                              ? `${lead?.openLand.projectName} - ${lead?.openLand.location} (${lead?.openLand.landType})`
+                              : "Property not assigned"}
                       </span>
                     </div>
 
@@ -313,7 +350,7 @@ const AgentDashboard = () => {
                                 day: "2-digit",
                                 year: "numeric",
                                 month: "short",
-                              }
+                              },
                             )
                           : "N/A"}
                       </span>

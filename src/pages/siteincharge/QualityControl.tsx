@@ -63,6 +63,8 @@ import {
   Project,
   QualityIssue,
   useQualityIssues,
+  usefetchProjectsForDropdownForIssue,
+  usefetchContractorDropDownForIssue,
 } from "@/utils/project/ProjectConfig";
 import { useAuth, User } from "@/contexts/AuthContext";
 
@@ -124,13 +126,14 @@ const QualityControl = () => {
     isLoading: projectLoading,
     isError: projectError,
     error: projectErr,
-  } = usefetchProjectsForDropdown();
+  } = usefetchProjectsForDropdownForIssue();
+
   const {
     data: contractors = [],
     isLoading: contractorLoading,
     isError: contractorError,
     error: contractorErr,
-  } = usefetchContractorDropDown();
+  } = usefetchContractorDropDownForIssue();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
