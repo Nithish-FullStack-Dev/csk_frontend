@@ -581,7 +581,7 @@ const App = () => {
                   <Route
                     path="/trash-buildings"
                     element={
-                      <ProtectedRoute roleSubmodule={"Trash Buildings"}>
+                      <ProtectedRoute roleSubmodule={"Trash – Buildings"}>
                         <TrashBuildingsPage />
                       </ProtectedRoute>
                     }

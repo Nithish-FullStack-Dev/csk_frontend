@@ -73,7 +73,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
   const { userCanAddUser, userCanEditUser, userCanViewUser } = useRBAC({
-    roleSubmodule: "Task Verifications",
+    roleSubmodule: "Project Task Verifications",
   });
 
   const queryClient = useQueryClient();

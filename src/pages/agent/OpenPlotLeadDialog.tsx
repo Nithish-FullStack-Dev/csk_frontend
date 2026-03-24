@@ -28,6 +28,7 @@ import {
   useUpdateOpenPlotLead,
 } from "@/utils/leads/LeadConfig";
 import { Lead } from "@/utils/leads/LeadConfig";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   open: boolean;
@@ -50,15 +51,21 @@ export default function OpenPlotLeadDialog({
   const [source, setSource] = useState("");
   const [status, setStatus] = useState<"hot" | "warm" | "cold" | "">("");
   const [notes, setNotes] = useState("");
+  const { user } = useAuth();
 
   const [openPlotId, setOpenPlotId] = useState("");
   const [innerPlotId, setInnerPlotId] = useState("");
+  const [propertyStatus, setPropertyStatus] = useState<
+    Lead["propertyStatus"] | ""
+  >("");
 
   const { data: openPlots = [] } = useOpenPlotDropdown(open);
   const { data: innerPlots = [] } = useInnerPlotDropdown(openPlotId);
 
   const { mutate: createLead, isPending: creating } = useSaveOpenPlotLead();
   const { mutate: updateLead, isPending: updating } = useUpdateOpenPlotLead();
+
+  const isSalesManager = user.role === "sales_manager";
 
   /* ---------- PREFILL FOR EDIT ---------- */
   useEffect(() => {
@@ -79,6 +86,7 @@ export default function OpenPlotLeadDialog({
           ? lead.innerPlot._id
           : lead.innerPlot || "",
       );
+      setPropertyStatus(lead.propertyStatus || "");
     } else {
       resetForm();
     }
@@ -121,6 +129,7 @@ export default function OpenPlotLeadDialog({
       isPlotLead: true,
       isPropertyLead: false,
       isLandLead: false,
+      propertyStatus,
     } as const;
 
     if (mode === "create") {
@@ -197,6 +206,40 @@ export default function OpenPlotLeadDialog({
               { value: "cold", label: "Cold" },
             ]}
           />
+
+          {isSalesManager && (
+            <div className="space-y-2">
+              <label
+                htmlFor="editPropertyStatus"
+                className="text-sm font-medium"
+              >
+                Property Status
+              </label>
+              <p className="text-sm text-muted-foreground">
+                When this lead is <span className="font-medium">closed</span> —
+                no further status updates allowed.
+              </p>
+              <Select
+                disabled={lead?.propertyStatus === "Closed"}
+                value={propertyStatus}
+                onValueChange={(value: Lead["propertyStatus"]) =>
+                  setPropertyStatus(value)
+                }
+              >
+                <SelectTrigger id="editPropertyStatus">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Assigned">Assigned</SelectItem>
+                  <SelectItem value="Follow up">Follow up</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <InputField label="Notes" value={notes} onChange={setNotes} />
         </div>
