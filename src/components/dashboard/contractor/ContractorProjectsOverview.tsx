@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRBAC } from "@/config/RBAC";
+import ViewProjectDialog from "./ViewProjectDialog";
 
 interface ContractorProjectsOverviewProps {
   projects?: Project[];
@@ -39,8 +40,8 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
 }) => {
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [selectedTabs, setSelectedTabs] = useState<Record<string, string>>({});
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [viewProject, setViewProject] = useState<Project | null>(null);
+
   const { userCanEditUser } = useRBAC({
     roleSubmodule: "Projects Overview",
   });
@@ -122,6 +123,10 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                       Edit Project
                     </DropdownMenuItem>
 
+                    <DropdownMenuItem onClick={() => setViewProject(project)}>
+                      View Details
+                    </DropdownMenuItem>
+
                     {/* <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem
@@ -165,10 +170,8 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               {/* Header */}
               <div className="flex items-center justify-between pr-10">
                 <h2 className="text-xl font-semibold">
-                  {typeof project.projectId === "object"
-                    ? `${project.projectId?.projectName || "Untitled Project"} 
-       - Floor ${typeof project.floorUnit === "object" ? (project.floorUnit?.floorNumber ?? "N/A") : (project.floorUnit ?? "N/A")} 
-       - Unit ${typeof project.unit === "object" ? (project.unit?.plotNo ?? "N/A") : (project.unit ?? "N/A")}`
+                  {project.projectId && typeof project.projectId === "object"
+                    ? project.projectId.projectName
                     : "Untitled Project"}
                 </h2>
 
@@ -177,11 +180,49 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                   className={`text-sm ${
                     statusColors[
                       (project.status || "not started").toLowerCase()
-                    ]
+                    ] || statusColors["not started"]
                   }`}
                 >
                   {project?.status || "Status Unknown"}
                 </Badge>
+              </div>
+
+              <p className="text-sm text-muted-foreground mt-1">
+                {typeof project.projectId === "object" &&
+                  project.projectId?.location}
+              </p>
+
+              <p className="text-sm text-muted-foreground">
+                {project.floorUnit &&
+                  `Floor ${
+                    typeof project.floorUnit === "object" &&
+                    project.floorUnit.floorNumber
+                  }, ${
+                    typeof project.floorUnit === "object" &&
+                    project.floorUnit.unitType
+                  }`}
+                {project.unit &&
+                  ` • Plot ${
+                    typeof project.unit === "object" && project.unit.plotNo
+                  }`}
+              </p>
+
+              <div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Site Incharge Assigned:{" "}
+                  {typeof project?.siteIncharge === "object"
+                    ? project?.siteIncharge?.name
+                    : "N/A"}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Client: {project.clientName || "N/A"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Estimated Budget: ₹
+                  {project.estimatedBudget
+                    ? project.estimatedBudget.toLocaleString("en-IN")
+                    : "N/A"}
+                </p>
               </div>
 
               {/* Progress */}
@@ -286,6 +327,13 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
           project={editProject}
           open={!!editProject}
           onOpenChange={(open) => !open && setEditProject(null)}
+        />
+      )}
+      {viewProject && (
+        <ViewProjectDialog
+          project={viewProject}
+          open={!!viewProject}
+          onOpenChange={(open) => !open && setViewProject(null)}
         />
       )}
     </>

@@ -357,7 +357,7 @@ const NewProperties = () => {
               </p>
             </div>
 
-            {canEdit && (
+            {userCanAddUser && (
               <div className="flex gap-3 sm:flex-row flex-col">
                 <Button
                   className=""
@@ -469,11 +469,11 @@ const NewProperties = () => {
                         <h3 className="font-semibold text-lg">
                           {b.projectName}
                         </h3>
-                        {canEdit && (
-                          <div
-                            className="flex gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                        <div
+                          className="flex gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {canEdit && (
                             <Button
                               size="icon"
                               variant="ghost"
@@ -481,6 +481,8 @@ const NewProperties = () => {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
+                          )}
+                          {userCanDeleteUser && (
                             <Button
                               size="icon"
                               variant="ghost"
@@ -490,8 +492,8 @@ const NewProperties = () => {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center text-sm text-muted-foreground mb-3">
@@ -646,11 +648,11 @@ const NewProperties = () => {
                               {plot.projectName} — {plot.openPlotNo}
                             </h3>
 
-                            {canEdit && (
-                              <div
-                                className="flex gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                            <div
+                              className="flex gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {canEdit && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -658,6 +660,8 @@ const NewProperties = () => {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
+                              )}
+                              {userCanDeleteUser && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -667,8 +671,8 @@ const NewProperties = () => {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
 
                           {/* ---------- LOCATION ---------- */}
@@ -806,11 +810,12 @@ const NewProperties = () => {
                             <h3 className="font-semibold text-lg">
                               {land?.projectName} — {land?.surveyNumber}
                             </h3>
-                            {canEdit && (
-                              <div
-                                className="flex gap-1"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+
+                            <div
+                              className="flex gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {canEdit && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -818,6 +823,8 @@ const NewProperties = () => {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
+                              )}
+                              {userCanDeleteUser && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -827,8 +834,8 @@ const NewProperties = () => {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex items-center text-sm text-muted-foreground mb-3">

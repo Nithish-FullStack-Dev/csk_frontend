@@ -177,6 +177,16 @@ export const fetchContractorProjects = async () => {
   return data;
 };
 
+export const fetchAccountantProjects = async () => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_URL}/api/project/accountantDropdown`,
+    {
+      withCredentials: true,
+    },
+  );
+  return data;
+};
+
 export const fetchContractorListProjects = async () => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/contractor/getContractorsForDropDown`,
@@ -279,6 +289,13 @@ export const usefetchContractorDropDown = () => {
   return useQuery({
     queryKey: ["ContractorProjects"],
     queryFn: fetchContractorProjects,
+  });
+};
+
+export const usefetchAccountantDropDown = () => {
+  return useQuery({
+    queryKey: ["AccountantProjects"],
+    queryFn: fetchAccountantProjects,
   });
 };
 

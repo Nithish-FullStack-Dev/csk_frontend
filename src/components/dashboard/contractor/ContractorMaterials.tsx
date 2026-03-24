@@ -56,6 +56,7 @@ import {
   usefetchProjectsForDropdown,
 } from "@/utils/project/ProjectConfig";
 import { Building } from "@/types/building";
+import { useRBAC } from "@/config/RBAC";
 
 // Material interface
 interface Material {
@@ -105,6 +106,10 @@ const ContractorMaterials = () => {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Materials",
+  });
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
@@ -374,9 +379,11 @@ const ContractorMaterials = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Material
-        </Button>
+        {user?.role !== "admin" && userCanAddUser && (
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Material
+          </Button>
+        )}
       </div>
 
       {/* --- */}

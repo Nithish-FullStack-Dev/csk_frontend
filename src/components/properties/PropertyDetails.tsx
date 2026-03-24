@@ -48,6 +48,7 @@ import {
   useUnitProgress,
 } from "@/utils/leads/LeadConfig";
 import axios from "axios";
+import { useRBAC } from "@/config/RBAC";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -132,6 +133,10 @@ export function PropertyDetails({
     error: unitProgressErr,
   } = useUnitProgress(buildingId, floorId, property?._id);
 
+  const { userCanAddUser, userCanDeleteUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Properties",
+  });
+
   // CREATE UNIT
   const createUnitMutation = useMutation({
     mutationFn: createUnit,
@@ -209,7 +214,6 @@ export function PropertyDetails({
     },
   });
 
-  const canEdit = user && ["owner", "admin"].includes(user.role);
   const formatDate = (dateString: string) => {
     if (!dateString) return "Not specified";
     const date = new Date(dateString);
@@ -267,14 +271,16 @@ export function PropertyDetails({
             <ChevronLeft className="mr-2 h-4 w-4" /> Back to Building
           </Button>
 
-          {canEdit && (
-            <div className="flex md:flex-row flex-col gap-3">
+          <div className="flex md:flex-row flex-col gap-3">
+            {userCanEditUser && (
               <Button
                 size="sm"
                 onClick={(e) => handleEditApartment(property, e)}
               >
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </Button>
+            )}
+            {userCanDeleteUser && (
               <Button
                 size="sm"
                 variant="destructive"
@@ -282,8 +288,8 @@ export function PropertyDetails({
               >
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <Card>

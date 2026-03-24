@@ -57,6 +57,7 @@ import {
 } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import CircleLoader from "@/components/CircleLoader";
+import { useRBAC } from "@/config/RBAC";
 
 // Form schema
 const laborTeamSchema = z.object({
@@ -92,6 +93,10 @@ const ContractorLabor = () => {
     (r) =>
       r.date && new Date(r.date).toISOString().split("T")[0] === attendanceDate,
   );
+
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Labor Management",
+  });
 
   const {
     data: projects = [],
@@ -300,9 +305,11 @@ const ContractorLabor = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Labor Team
-        </Button>
+        {user?.role !== "admin" && userCanAddUser && (
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Labor Team
+          </Button>
+        )}
       </div>
 
       {/* Table - Desktop */}
@@ -937,68 +944,70 @@ const ContractorLabor = () => {
               </div>
 
               {/* Record Attendance Form */}
-              <div className="space-y-4 pt-2 border-t">
-                <h3 className="text-base font-medium">
-                  Record Attendance for Today
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="attendance-date">Date</Label>
-                    <Input
-                      id="attendance-date"
-                      type="date"
-                      value={attendanceDate}
-                      max={new Date().toISOString().split("T")[0]}
-                      onChange={(e) => setAttendanceDate(e.target.value)}
-                    />
+              {user?.role !== "admin" && userCanAddUser && (
+                <div className="space-y-4 pt-2 border-t">
+                  <h3 className="text-base font-medium">
+                    Record Attendance for Today
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="attendance-date">Date</Label>
+                      <Input
+                        id="attendance-date"
+                        type="date"
+                        value={attendanceDate}
+                        max={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => setAttendanceDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="attendance-present">Present</Label>
+                      <Input
+                        id="attendance-present"
+                        type="number"
+                        value={present}
+                        min="0"
+                        max={selectedTeam.members}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+
+                          if (!selectedTeam) return;
+
+                          const clamped = Math.min(
+                            Math.max(value, 0),
+                            selectedTeam.members,
+                          );
+
+                          setPresent(clamped);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="attendance-absent">Absent</Label>
+                      <Input
+                        id="attendance-absent"
+                        type="number"
+                        value={absent}
+                        readOnly
+                        className="bg-gray-50"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="attendance-present">Present</Label>
-                    <Input
-                      id="attendance-present"
-                      type="number"
-                      value={present}
-                      min="0"
-                      max={selectedTeam.members}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
 
-                        if (!selectedTeam) return;
-
-                        const clamped = Math.min(
-                          Math.max(value, 0),
-                          selectedTeam.members,
-                        );
-
-                        setPresent(clamped);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="attendance-absent">Absent</Label>
-                    <Input
-                      id="attendance-absent"
-                      type="number"
-                      value={absent}
-                      readOnly
-                      className="bg-gray-50"
-                    />
+                  <div className="flex justify-end space-x-2 mt-2">
+                    <Button
+                      onClick={handleSaveAttendance}
+                      disabled={createdAttendance.isPending || attendanceExists}
+                    >
+                      {attendanceExists
+                        ? "Attendance Already Recorded"
+                        : createdAttendance.isPending
+                          ? "Saving..."
+                          : "Save Attendance"}
+                    </Button>
                   </div>
                 </div>
-
-                <div className="flex justify-end space-x-2 mt-2">
-                  <Button
-                    onClick={handleSaveAttendance}
-                    disabled={createdAttendance.isPending || attendanceExists}
-                  >
-                    {attendanceExists
-                      ? "Attendance Already Recorded"
-                      : createdAttendance.isPending
-                        ? "Saving..."
-                        : "Save Attendance"}
-                  </Button>
-                </div>
-              </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

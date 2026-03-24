@@ -59,6 +59,9 @@ import {
   Task,
   useTasks,
 } from "@/utils/contractor/ContractorConfig";
+import { getImageUrl } from "@/lib/image";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRBAC } from "@/config/RBAC";
 
 const formatDate = (date?: string) => {
   if (!date) return "-";
@@ -92,6 +95,10 @@ const ContractorTaskList = () => {
   const [isSelectingFiles, setIsSelectingFiles] = useState(false);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
+  const { user } = useAuth();
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Task Management",
+  });
 
   const {
     data: tasks,
@@ -307,10 +314,12 @@ const ContractorTaskList = () => {
 
         <Dialog open={addTaskOpen} onOpenChange={setAddTaskOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
+            {user?.role !== "admin" && userCanAddUser && (
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </Button>
+            )}
           </DialogTrigger>
           <AddTaskDialog
             onOpenChange={setAddTaskOpen}
@@ -408,22 +417,24 @@ const ContractorTaskList = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setProgress(task.progress);
-                            //setStatus(task.status);
-                            handleUploadEvidence(task);
-                          }}
-                          className={
-                            task.hasEvidence
-                              ? "text-blue-600 hover:text-blue-800"
-                              : ""
-                          }
-                        >
-                          <Camera className="h-4 w-4" />
-                        </Button>
+                        {user?.role !== "admin" && userCanAddUser && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setProgress(task.progress);
+                              //setStatus(task.status);
+                              handleUploadEvidence(task);
+                            }}
+                            className={
+                              task.hasEvidence
+                                ? "text-blue-600 hover:text-blue-800"
+                                : ""
+                            }
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        )}
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -444,37 +455,36 @@ const ContractorTaskList = () => {
                             >
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedTask(task);
-                                setProgress(task.progress);
-                                setSelectedPhase(task.phase);
-                                setEditTaskOpen(true);
-                              }}
-                            >
-                              Edit Task
-                            </DropdownMenuItem>
-                            {task.status === "pending" && (
+                            {user?.role !== "admin" && userCanEditUser && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setProgress(task.progress);
+                                  setSelectedPhase(task.phase);
+                                  setEditTaskOpen(true);
+                                }}
+                              >
+                                Edit Task
+                              </DropdownMenuItem>
+                            )}
+                            {/*  */}
+                            {/* {task.status === "pending" && (
                               <DropdownMenuItem>
                                 Mark as In Progress
                               </DropdownMenuItem>
                             )}
-                            {(task.status === "pending" ||
-                              task.status === "in_progress") && (
-                              <DropdownMenuItem>
-                                Mark as Completed
-                              </DropdownMenuItem>
-                            )}
                             {task.status === "rejected" && (
                               <DropdownMenuItem>Resume Work</DropdownMenuItem>
+                            )} */}
+                            {user?.role !== "admin" && userCanEditUser && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  handleUploadEvidence(task);
+                                }}
+                              >
+                                Upload Photos
+                              </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                handleUploadEvidence(task);
-                              }}
-                            >
-                              Upload Photos
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -578,10 +588,6 @@ const ContractorTaskList = () => {
                     </DropdownMenuItem>
                     {task.status === "pending" && (
                       <DropdownMenuItem>Mark as In Progress</DropdownMenuItem>
-                    )}
-                    {(task.status === "pending" ||
-                      task.status === "in_progress") && (
-                      <DropdownMenuItem>Mark as Completed</DropdownMenuItem>
                     )}
                     {task.status === "rejected" && (
                       <DropdownMenuItem>Resume Work</DropdownMenuItem>
@@ -723,7 +729,7 @@ const ContractorTaskList = () => {
                     className="relative rounded-md overflow-hidden border h-32 group"
                   >
                     <img
-                      src={`${import.meta.env.VITE_IMAGE_URL}${url}`}
+                      src={getImageUrl(url)}
                       alt={`Uploaded ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -753,7 +759,7 @@ const ContractorTaskList = () => {
                     className="relative rounded-md overflow-hidden border h-32 group"
                   >
                     <img
-                      src={previewUrl}
+                      src={getImageUrl(previewUrl)}
                       alt={`New ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

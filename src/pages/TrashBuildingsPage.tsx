@@ -77,7 +77,9 @@ export default function TrashBuildingsPage() {
   };
 
   const handleConfirm = () => {
+    console.log("first");
     if (!selectedId || !actionType) return;
+    console.log("first1");
     actionType === "restore"
       ? restoreMutation.mutate(selectedId)
       : deleteMutation.mutate(selectedId);
