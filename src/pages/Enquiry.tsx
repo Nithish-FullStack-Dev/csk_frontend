@@ -48,7 +48,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
+import { getCsrfToken, useAuth, User } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layout/MainLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { useRBAC } from "@/config/RBAC";
@@ -77,7 +77,7 @@ interface Enquiry {
   createdAt: string;
   lastContactDate?: string; // Date string (ISO)
   nextFollowUpDate?: string; // Date string (ISO)
-  timeline?: { timestamp: string; note: string }[]; // Array of notes with timestamps
+  timeline?: { timestamp: string; note: string; addedBy: User | null }[]; // Array of notes with timestamps
   currentNotes?: string; // Temp field for new notes in dialog
 }
 
@@ -121,6 +121,7 @@ const EnquiryManagement = () => {
     | "Closed"
     | "Rejected";
   const [currentStatus, setCurrentStatus] = useState<Status>("New");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // --- Role-based permissions ---
   const isAdminOrOwner = user && ["admin", "owner"].includes(user.role);
@@ -306,6 +307,7 @@ const EnquiryManagement = () => {
   // Sales Manager only
   const handleManageEnquiryClick = (enquiry: Enquiry) => {
     setSelectedEnquiry(enquiry);
+    setCurrentStatus(enquiry.status);
     setCurrentLastContactDate(
       enquiry.lastContactDate ? new Date(enquiry.lastContactDate) : undefined,
     );
@@ -321,22 +323,22 @@ const EnquiryManagement = () => {
     setIsSaving(true);
     try {
       const csrfToken = await getCsrfToken();
-      const updatedTimeline = selectedEnquiry.timeline
-        ? [...selectedEnquiry.timeline]
-        : [];
+      // const updatedTimeline = selectedEnquiry.timeline
+      //   ? [...selectedEnquiry.timeline]
+      //   : [];
 
-      if (newNote.trim()) {
-        updatedTimeline.push({
-          timestamp: new Date().toISOString(),
-          note: newNote.trim(),
-        });
-      }
+      // if (newNote.trim()) {
+      //   updatedTimeline.push({
+      //     timestamp: new Date().toISOString(),
+      //     note: newNote.trim(),
+      //   });
+      // }
 
       const payload = {
-        lastContactDate: currentLastContactDate?.toISOString(),
-        nextFollowUpDate: currentNextFollowUpDate?.toISOString(),
-        timeline: updatedTimeline,
-        status: currentStatus, // Sales Manager can now update status
+        lastContactDate: currentLastContactDate,
+        nextFollowUpDate: currentNextFollowUpDate,
+        status: currentStatus,
+        note: newNote,
       };
 
       const { data } = await axios.patch(
@@ -623,17 +625,29 @@ const EnquiryManagement = () => {
                           </TableCell>
                           <TableCell>
                             {isSalesManager && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-estate-navy/75 hover:bg-estate-navy/90"
-                                onClick={() => {
-                                  setSelectedEnquiry(enquiry);
-                                  setDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" /> Edit
-                              </Button>
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={() =>
+                                    handleManageEnquiryClick(enquiry)
+                                  }
+                                >
+                                  <Edit className="h-4 w-4" /> Manage
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="bg-estate-navy/75 hover:bg-estate-navy/90"
+                                  onClick={() => {
+                                    setSelectedEnquiry(enquiry);
+                                    setDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" /> Edit
+                                </Button>
+                              </>
                             )}
                           </TableCell>
                         </TableRow>
@@ -914,7 +928,8 @@ const EnquiryManagement = () => {
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(entry?.timestamp), "PPP pp")}
                         </p>
-                        <p>{entry?.note}</p>
+                        {entry?.note}
+                        <small>{entry?.addedBy?.name}</small>
                       </div>
                     ))
                   ) : (
@@ -1021,32 +1036,22 @@ const EnquiryManagement = () => {
                   <Label htmlFor="lastContact" className="text-right">
                     Last Contact
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "col-span-3 justify-start text-left font-normal",
-                          !currentLastContactDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {currentLastContactDate ? (
-                          format(currentLastContactDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={currentLastContactDate}
-                        onSelect={setCurrentLastContactDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input
+                    type="date"
+                    className="col-span-3"
+                    value={
+                      currentLastContactDate
+                        ? new Date(currentLastContactDate)
+                            .toISOString()
+                            .split("T")[0]
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setCurrentLastContactDate(
+                        e.target.value ? new Date(e.target.value) : undefined,
+                      )
+                    }
+                  />
                 </div>
 
                 {/* Next Follow-up Date */}
@@ -1054,32 +1059,22 @@ const EnquiryManagement = () => {
                   <Label htmlFor="nextFollowUp" className="text-right">
                     Next Follow-up
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "col-span-3 justify-start text-left font-normal",
-                          !currentNextFollowUpDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {currentNextFollowUpDate ? (
-                          format(currentNextFollowUpDate, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={currentNextFollowUpDate}
-                        onSelect={setCurrentNextFollowUpDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Input
+                    type="date"
+                    className="col-span-3"
+                    value={
+                      currentNextFollowUpDate
+                        ? new Date(currentNextFollowUpDate)
+                            .toISOString()
+                            .split("T")[0]
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setCurrentNextFollowUpDate(
+                        e.target.value ? new Date(e.target.value) : undefined,
+                      )
+                    }
+                  />
                 </div>
 
                 {/* New Note */}
@@ -1095,6 +1090,24 @@ const EnquiryManagement = () => {
                     className="col-span-3"
                   />
                 </div>
+
+                <Select
+                  value={currentStatus}
+                  onValueChange={(val) => setCurrentStatus(val as Status)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Assigned">Assigned</SelectItem>
+                    <SelectItem value="Follow up">Follow up</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Closed">Closed</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {/* Current Timeline (Read-only in manage dialog) */}
                 <div className="grid grid-cols-4 items-start gap-4">
