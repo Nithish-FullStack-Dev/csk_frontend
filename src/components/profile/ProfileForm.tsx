@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { User, Edit, Save, X, Camera, Edit2 } from "lucide-react";
 import axios from "axios";
+import { getImageUrl } from "@/lib/image";
 
 const ProfileForm = () => {
   const { user, setUser } = useAuth();
@@ -16,7 +17,7 @@ const ProfileForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    user?.avatar || null
+    user?.avatar || null,
   );
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
@@ -44,7 +45,7 @@ const ProfileForm = () => {
           formDataUpload,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         avatarUrl = res.data.url;
       }
@@ -58,7 +59,7 @@ const ProfileForm = () => {
         `${import.meta.env.VITE_URL}/api/user/updateUser`,
         {
           updatedUser,
-        }
+        },
       );
       setUser(data.user);
       toast.success("Profile updated successfully");
@@ -155,7 +156,7 @@ const ProfileForm = () => {
               onClick={handleAvatarClick}
             >
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                <AvatarImage src={avatarPreview} />
+                <AvatarImage src={getImageUrl(avatarPreview)} />
                 <AvatarFallback className="text-lg sm:text-xl">
                   {user.name
                     .split(" ")
@@ -183,7 +184,7 @@ const ProfileForm = () => {
                 </h2>
                 <Badge
                   className={`${getRoleColor(
-                    user.role
+                    user.role,
                   )} text-white font-sans w-fit`}
                 >
                   {user.role.replace("_", " ").toUpperCase()}

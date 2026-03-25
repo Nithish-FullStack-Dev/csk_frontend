@@ -71,6 +71,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Enquiry",
       "My Commissions",
       "Sales Overview",
+      "My Schedule",
     ],
   },
   {
@@ -107,7 +108,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: "website",
     label: "Website",
     icon: Globe,
-    modules: ["CMS", "Content Management"],
+    modules: ["CMS", "Content Management", "Profile"],
   },
   {
     key: "task_tracker",

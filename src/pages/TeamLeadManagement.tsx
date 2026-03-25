@@ -423,7 +423,7 @@ const TeamLeadManagement = () => {
             </p>
           </div>
           <div className="flex md:items-center space-x-2 mt-4 md:mt-0 md:flex-row flex-col items-start gap-5">
-            <Select value={sortBy} onValueChange={setSortBy}>
+            {/* <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -433,7 +433,7 @@ const TeamLeadManagement = () => {
                 <SelectItem value="deals">Deals Closed</SelectItem>
                 <SelectItem value="name">Name</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Status" />

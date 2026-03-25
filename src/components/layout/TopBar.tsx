@@ -19,6 +19,7 @@ import { get, onValue, ref } from "firebase/database";
 import { db } from "@/config/firebaseConfig";
 import { useSocket } from "@/contexts/SocketContext";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/image";
 
 const TopBar = () => {
   const { user, logout } = useAuth();
@@ -48,7 +49,7 @@ const TopBar = () => {
   const fetchUnreadNotificationCount = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread-count`
+        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread-count`,
       );
       setUnreadNotificationCount(res.data.unreadCount || 0);
     } catch (err) {
@@ -59,7 +60,7 @@ const TopBar = () => {
   const fetchUnreadNotifications = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread`
+        `${import.meta.env.VITE_URL}/api/notifications/${userId}/unread`,
       );
       setNotifications(res.data.notifications || []);
     } catch (err) {
@@ -103,7 +104,7 @@ const TopBar = () => {
             newAggregatedUnreads[otherUserId] = count;
             totalUnreads += count;
           }
-        }
+        },
       );
       currentUnreadCounts = newAggregatedUnreads; // Update local unread counts
       setTotalUnreadMessageCount(totalUnreads);
@@ -121,12 +122,12 @@ const TopBar = () => {
                 currentUnreadCounts,
                 allUsers,
                 userId,
-                setAggregatedLatestMessages
+                setAggregatedLatestMessages,
               );
             }
           })
           .catch((err) =>
-            console.error("Error re-processing chats for unreads:", err)
+            console.error("Error re-processing chats for unreads:", err),
           );
       }
     });
@@ -136,7 +137,7 @@ const TopBar = () => {
       unreadCountsMap: Record<string, number>,
       usersList: any[],
       currentUserId: string,
-      setLatestFn: React.Dispatch<React.SetStateAction<Record<string, any>>>
+      setLatestFn: React.Dispatch<React.SetStateAction<Record<string, any>>>,
     ) => {
       const newAggregatedLatestMessages: Record<string, any> = {};
 
@@ -158,10 +159,10 @@ const TopBar = () => {
                 // Convert Firebase ServerTimestamp object to a number (milliseconds)
                 timestamp:
                   typeof msgVal.timestamp === "object" &&
-                    msgVal.timestamp !== null &&
-                    "seconds" in msgVal.timestamp
+                  msgVal.timestamp !== null &&
+                  "seconds" in msgVal.timestamp
                     ? msgVal.timestamp.seconds * 1000 +
-                    (msgVal.timestamp.nanoseconds || 0) / 1000000
+                      (msgVal.timestamp.nanoseconds || 0) / 1000000
                     : msgVal.timestamp,
               }))
               .sort((a, b) => a.timestamp - b.timestamp); // Sort to get the actual latest
@@ -186,7 +187,7 @@ const TopBar = () => {
               }
             }
           }
-        }
+        },
       );
       setLatestFn(newAggregatedLatestMessages);
     };
@@ -199,7 +200,7 @@ const TopBar = () => {
         currentUnreadCounts,
         allUsers,
         userId,
-        setAggregatedLatestMessages
+        setAggregatedLatestMessages,
       );
     });
 
@@ -257,7 +258,7 @@ const TopBar = () => {
     const messageDay = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
 
     if (messageDay.getTime() === today.getTime()) {
@@ -276,7 +277,7 @@ const TopBar = () => {
   const sortedRecentChats = Object.values(aggregatedLatestMessages).sort(
     (a: any, b: any) => {
       return b.timestamp - a.timestamp; // Descending order
-    }
+    },
   );
 
   return (
@@ -357,7 +358,7 @@ const TopBar = () => {
                 ) : (
                   sortedRecentChats.map(
                     (
-                      msgSummary: any // Iterate over sorted data
+                      msgSummary: any, // Iterate over sorted data
                     ) => (
                       <DropdownMenuItem
                         key={msgSummary.otherUserId} // Key by the other user's ID
@@ -407,7 +408,7 @@ const TopBar = () => {
                           </p>
                         </div>
                       </DropdownMenuItem>
-                    )
+                    ),
                   )
                 )}
               </div>
@@ -429,7 +430,10 @@ const TopBar = () => {
                 className="flex items-center gap-2 pl-2 pr-4 hover:bg-muted"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage
+                    src={getImageUrl(user?.avatar)}
+                    alt={user.name}
+                  />
                   <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start text-sm">

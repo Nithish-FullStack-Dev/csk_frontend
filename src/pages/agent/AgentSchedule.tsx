@@ -28,8 +28,6 @@ import {
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RescheduleDialog } from "./RescheduleDialog";
-import { DetailsDialog } from "./DetailsDialog";
 
 import {
   Select,
@@ -38,13 +36,14 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { fetchAllLeads, fetchLeads, Lead } from "@/utils/leads/LeadConfig";
+import { fetchLeads, Lead } from "@/utils/leads/LeadConfig";
 import { RescheduleDialogAgent } from "./RescheduleDialogAgent";
 import { useAuth } from "@/contexts/AuthContext";
 import AgentDetailsDialog from "./AgentDetailsDialog";
 import { useQuery } from "@tanstack/react-query";
 import Loader from "@/components/Loader";
 import { toast } from "sonner";
+import { useRBAC } from "@/config/RBAC";
 
 const formatUTCTime = (date: Date) => {
   const hours = date.getUTCHours();
@@ -68,6 +67,10 @@ const AgentSchedule = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, handleSubmit, setValue, reset } = useForm();
+
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "My Schedule",
+  });
 
   const {
     data: leads,
@@ -186,10 +189,12 @@ const AgentSchedule = () => {
           {/* New Appointment Dialog */}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Appointment
-              </Button>
+              {userCanAddUser && (
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Appointment
+                </Button>
+              )}
             </DialogTrigger>
             <DialogContent className="md:w-[600px] w-[90vw] max-h-[85vh] overflow-y-auto rounded-xl">
               <DialogHeader>
@@ -397,16 +402,18 @@ const AgentSchedule = () => {
                           </Badge>
                           <div className="flex-1"></div>
                           <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedSchedule(appointment);
-                                setRescheduleOpen(true);
-                              }}
-                            >
-                              Reschedule
-                            </Button>
+                            {userCanEditUser && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedSchedule(appointment);
+                                  setRescheduleOpen(true);
+                                }}
+                              >
+                                Reschedule
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
