@@ -97,7 +97,7 @@ const ContractorTaskList = () => {
   const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
   const { user } = useAuth();
   const { userCanAddUser, userCanEditUser } = useRBAC({
-    roleSubmodule: "Task Management",
+    roleSubmodule: "Project Task Management",
   });
 
   const {
@@ -369,7 +369,7 @@ const ContractorTaskList = () => {
               <TableHead>Status</TableHead>
               <TableHead>Deadline</TableHead>
               <TableHead>Progress</TableHead>
-              <TableHead>Priority</TableHead>
+              <TableHead>Verification</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -409,10 +409,16 @@ const ContractorTaskList = () => {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={priorityColors[task.priority]}
+                        className={
+                          siteStatusColors[task.verificationDecision] ||
+                          "bg-gray-100 text-gray-800"
+                        }
                       >
-                        {task.priority.charAt(0).toUpperCase() +
-                          task.priority.slice(1)}
+                        {task.verificationDecision
+                          ? task.verificationDecision
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (c) => c.toUpperCase())
+                          : "-"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -519,17 +525,24 @@ const ContractorTaskList = () => {
                 {task?.project || "-"} / {task?.unit || "-"}
               </p>
 
-              {/* Phase & Priority */}
+              {/* Phase & Verification */}
               <div className="flex justify-between mt-2">
                 <span className="text-sm text-gray-600">
                   {task?.phase || "-"}
                 </span>
+
                 <Badge
                   variant="outline"
-                  className={priorityColors[task?.priority]}
+                  className={
+                    siteStatusColors[task?.verificationDecision] ||
+                    "bg-gray-100 text-gray-800"
+                  }
                 >
-                  {task?.priority?.charAt(0).toUpperCase() +
-                    task?.priority?.slice(1)}
+                  {task?.verificationDecision
+                    ? task.verificationDecision
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "-"}
                 </Badge>
               </div>
 

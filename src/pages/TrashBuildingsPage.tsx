@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Building } from "@/types/building";
 import MainLayout from "@/components/layout/MainLayout";
 import Loader from "@/components/Loader";
+import { useRBAC } from "@/config/RBAC";
 
 export default function TrashBuildingsPage() {
   const queryClient = useQueryClient();
@@ -28,6 +29,10 @@ export default function TrashBuildingsPage() {
   const [actionType, setActionType] = useState<"restore" | "delete" | null>(
     null,
   );
+
+  const { userCanAddUser, userCanDeleteUser } = useRBAC({
+    roleSubmodule: "Trash – Buildings",
+  });
 
   /* ---------------- FETCH TRASH ---------------- */
   const { data, isLoading } = useQuery({
@@ -108,29 +113,33 @@ export default function TrashBuildingsPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedId(building._id);
-                      setActionType("restore");
-                    }}
-                  >
-                    <RotateCcw className="w-4 h-4 mr-1" />
-                    Restore
-                  </Button>
+                  {userCanAddUser && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedId(building._id);
+                        setActionType("restore");
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Restore
+                    </Button>
+                  )}
 
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedId(building._id);
-                      setActionType("delete");
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
-                  </Button>
+                  {userCanDeleteUser && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedId(building._id);
+                        setActionType("delete");
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

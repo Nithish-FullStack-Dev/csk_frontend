@@ -67,6 +67,7 @@ import {
   usefetchContractorDropDownForIssue,
 } from "@/utils/project/ProjectConfig";
 import { useAuth, User } from "@/contexts/AuthContext";
+import { useRBAC } from "@/config/RBAC";
 
 const severityColors: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
@@ -112,6 +113,10 @@ const QualityControl = () => {
     severity: "",
     description: "",
     status: "",
+  });
+
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Quality Control",
   });
 
   const {
@@ -467,10 +472,12 @@ const QualityControl = () => {
 
             <Dialog open={isDialog} onOpenChange={setIsDialog}>
               <DialogTrigger asChild>
-                <Button onClick={() => setIsDialog(true)}>
-                  <AlertOctagon className="h-4 w-4 mr-2" />
-                  Report New Issue
-                </Button>
+                {userCanAddUser && (
+                  <Button onClick={() => setIsDialog(true)}>
+                    <AlertOctagon className="h-4 w-4 mr-2" />
+                    Report New Issue
+                  </Button>
+                )}
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] sm:max-w-[600px] w-full overflow-y-auto p-6 rounded-xl">
                 <DialogHeader>
@@ -806,11 +813,13 @@ const QualityControl = () => {
                                   View Details
                                 </DropdownMenuItem>
 
-                                <DropdownMenuItem
-                                  onClick={() => handleUpdateStatus(issue)}
-                                >
-                                  Update Status
-                                </DropdownMenuItem>
+                                {userCanEditUser && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleUpdateStatus(issue)}
+                                  >
+                                    Update Status
+                                  </DropdownMenuItem>
+                                )}
 
                                 <DropdownMenuItem
                                   onClick={() => {
@@ -878,11 +887,13 @@ const QualityControl = () => {
                             >
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateStatus(issue)}
-                            >
-                              Update Status
-                            </DropdownMenuItem>
+                            {userCanEditUser && (
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateStatus(issue)}
+                              >
+                                Update Status
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedIssue(issue);

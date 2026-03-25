@@ -697,7 +697,7 @@ const LeadManagement = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            {!isAdmin && (
+            {userCanAddUser && !isAdmin && (
               <>
                 <Button onClick={() => setIsOpenPlotLead(true)}>
                   <LandPlot /> Add Open Plot Lead

@@ -314,7 +314,11 @@ export const moduleToNavItem: Record<string, any> = {
   //   icon: Camera,
   //   label: "Photo Evidence",
   // },
-  Trash: { to: "/trash-buildings", icon: Trash, label: "Trash – Buildings" },
+  "Trash – Buildings": {
+    to: "/trash-buildings",
+    icon: Trash,
+    label: "Trash – Buildings",
+  },
 
   Secure: {
     to: "/secure/dashboard",

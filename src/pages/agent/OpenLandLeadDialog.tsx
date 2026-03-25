@@ -49,6 +49,9 @@ export default function OpenLandLeadDialog({
   const [status, setStatus] = useState<"hot" | "warm" | "cold" | "">("");
   const [notes, setNotes] = useState("");
   const [openLandId, setOpenLandId] = useState("");
+  const [propertyStatus, setPropertyStatus] = useState<
+    Lead["propertyStatus"] | ""
+  >("");
 
   const { data: openLands = [] } = useOpenLandDropdown(open);
 
@@ -69,6 +72,7 @@ export default function OpenLandLeadDialog({
           ? lead.openLand._id
           : lead.openLand || "",
       );
+      setPropertyStatus(lead.propertyStatus || "");
     }
 
     if (mode === "create") {
@@ -104,6 +108,7 @@ export default function OpenLandLeadDialog({
       isLandLead: true,
       isPlotLead: false,
       isPropertyLead: false,
+      propertyStatus,
     } as const;
 
     if (mode === "create") {
@@ -166,6 +171,20 @@ export default function OpenLandLeadDialog({
               { value: "hot", label: "Hot" },
               { value: "warm", label: "Warm" },
               { value: "cold", label: "Cold" },
+            ]}
+          />
+
+          <SelectField
+            label="Property Status"
+            value={propertyStatus}
+            onChange={setPropertyStatus}
+            options={[
+              { value: "New", label: "New" },
+              { value: "Assigned", label: "Assigned" },
+              { value: "Follow up", label: "Follow up" },
+              { value: "In Progress", label: "In Progress" },
+              { value: "Closed", label: "Closed" },
+              { value: "Rejected", label: "Rejected" },
             ]}
           />
 
