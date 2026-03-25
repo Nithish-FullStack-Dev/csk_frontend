@@ -304,6 +304,9 @@ const LeadManagement = () => {
         queryClient.invalidateQueries({
           queryKey: ["commissions"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["sitevisit-leads"],
+        });
         setIsAddLeadDialogOpen(false);
         setName("");
         setEmail("");
