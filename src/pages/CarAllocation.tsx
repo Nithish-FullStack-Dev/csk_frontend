@@ -145,6 +145,18 @@ const CarAllocation = () => {
     [],
   );
 
+  const resetForm = () => {
+    setModel("");
+    setLicensePlate("");
+    setMileage("");
+    setFuelLevel("");
+    setType("" as Vehicle["type"]);
+    setCapacity("" as Vehicle["capacity"]);
+    setStatus("available");
+    setLastService(undefined);
+    setLocation("");
+  };
+
   const fetchMyTeam = async () => {
     const { data } = await axios.get(
       `${import.meta.env.VITE_URL}/api/team/getAllTeam`,
@@ -503,7 +515,13 @@ const CarAllocation = () => {
                 <SelectItem value="maintenance">Maintenance</SelectItem>
               </SelectContent>
             </Select>
-            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <Dialog
+              open={addDialogOpen}
+              onOpenChange={(open) => {
+                setAddDialogOpen(open);
+                if (open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 {userCanAddUser && (
                   <Button>
@@ -612,7 +630,7 @@ const CarAllocation = () => {
                         <SelectItem value="available">Available</SelectItem>
                         <SelectItem value="assigned">Assigned</SelectItem>
                         <SelectItem value="maintenance">Maintenance</SelectItem>
-                        <SelectItem value="booked">Booked</SelectItem>
+                        {/* <SelectItem value="booked">Booked</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>
@@ -758,7 +776,7 @@ const CarAllocation = () => {
                       <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="assigned">Assigned</SelectItem>
                       <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="booked">Booked</SelectItem>
+                      {/* <SelectItem value="booked">Booked</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>

@@ -63,7 +63,7 @@ export function RescheduleDialogAgent({
           schedule._id
         }`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast({ title: "Success", description: "Appointment rescheduled." });
@@ -92,6 +92,7 @@ export function RescheduleDialogAgent({
 
           {/* Lead / Client Selection */}
           <Controller
+            disabled
             name="clientId"
             control={control}
             render={({ field }) => (

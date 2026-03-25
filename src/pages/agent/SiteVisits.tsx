@@ -159,9 +159,11 @@ const SiteVisits = () => {
     },
   });
 
-  const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
-    roleSubmodule: "Site Visits",
-  });
+  const { isRolePermissionsLoading, userCanAddUser, userCanEditUser } = useRBAC(
+    {
+      roleSubmodule: "Site Visits",
+    },
+  );
 
   if (
     clientLoading ||
@@ -311,6 +313,7 @@ const SiteVisits = () => {
                     <VisitCard
                       key={visit._id}
                       visit={visit}
+                      userCanEditUser={userCanEditUser}
                       buttonText="View Details"
                       buttonVariant="outline"
                       onEditStatus={(v) => {
@@ -332,6 +335,7 @@ const SiteVisits = () => {
                     <VisitCard
                       key={visit._id}
                       visit={visit}
+                      userCanEditUser={userCanEditUser}
                       buttonText="View Details"
                       buttonVariant="outline"
                       showNotes
@@ -352,6 +356,7 @@ const SiteVisits = () => {
                 {cancelledVisits.length > 0 ? (
                   cancelledVisits.map((visit) => (
                     <VisitCard
+                      userCanEditUser={userCanEditUser}
                       key={visit._id}
                       visit={visit}
                       onViewDetails={setSelectedVisit}
@@ -1033,6 +1038,7 @@ const VisitCard = ({
   buttonText = "View",
   buttonVariant = "default",
   showNotes = false,
+  userCanEditUser,
   onViewDetails,
   onEditStatus,
 }: VisitCardProps) => {
@@ -1160,7 +1166,8 @@ const VisitCard = ({
                 View Details
               </DropdownMenuItem>
 
-              {visit.visitStatus !== "completed" &&
+              {userCanEditUser &&
+                visit.visitStatus !== "completed" &&
                 visit.visitStatus !== "cancelled" && (
                   <DropdownMenuItem onClick={() => onEditStatus?.(visit)}>
                     Edit Status

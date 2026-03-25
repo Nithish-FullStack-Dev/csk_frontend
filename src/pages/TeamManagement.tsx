@@ -393,7 +393,11 @@ const TeamManagement = () => {
             )}
           </TabsList>
           <TabsContent value="add">
-            <TeamManagementTable />
+            <TeamManagementTable
+              userCanAddUser={userCanAddUser}
+              userCanDeleteUser={userCanDeleteUser}
+              userCanEditUser={userCanEditUser}
+            />
           </TabsContent>
           <TabsContent value="team">
             <div className="flex flex-col gap-5">

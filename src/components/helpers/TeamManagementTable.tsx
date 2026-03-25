@@ -59,7 +59,11 @@ const formatDate = (isoString: string) => {
   return d.toISOString().split("T")[0];
 };
 
-const TeamManagementTable = () => {
+const TeamManagementTable = ({
+  userCanAddUser,
+  userCanEditUser,
+  userCanDeleteUser,
+}) => {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<AgentList>({
     agentId: "",
@@ -420,15 +424,17 @@ const TeamManagementTable = () => {
 
       <div className="flex flex-col gap-2">
         <div className="flex md:justify-end justify-normal">
-          <Button
-            onClick={() => {
-              resetFormState();
-              setOpenDialog(true);
-            }}
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            {mode === "add" ? "Add Agent" : "Edit Agent"}
-          </Button>
+          {userCanAddUser && (
+            <Button
+              onClick={() => {
+                resetFormState();
+                setOpenDialog(true);
+              }}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              {mode === "add" ? "Add Agent" : "Edit Agent"}
+            </Button>
+          )}
         </div>
         <div>
           {!isLoading && !isError && response?.data?.length === 0 && (
@@ -524,26 +530,30 @@ const TeamManagementTable = () => {
                                 View Details
                               </DropdownMenuItem>
 
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setMode("edit");
-                                  handleEditAgent(agent);
-                                }}
-                              >
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Edit Agent
-                              </DropdownMenuItem>
+                              {userCanEditUser && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setMode("edit");
+                                    handleEditAgent(agent);
+                                  }}
+                                >
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Edit Agent
+                                </DropdownMenuItem>
+                              )}
 
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-700"
-                                onClick={() => {
-                                  setDeleteId(agent._id ?? null);
-                                  setDeleteDialogOpen(true);
-                                }}
-                              >
-                                <AlertTriangle className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
+                              {userCanDeleteUser && (
+                                <DropdownMenuItem
+                                  className="text-red-600 focus:text-red-700"
+                                  onClick={() => {
+                                    setDeleteId(agent._id ?? null);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <AlertTriangle className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
