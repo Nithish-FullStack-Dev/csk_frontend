@@ -294,7 +294,7 @@ const ContractorProjects = () => {
               Manage and track your construction projects
             </p>
           </div>
-          {userCanAddUser && (
+          {userCanAddUser && user?.role !== "admin" && (
             <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Add New Project

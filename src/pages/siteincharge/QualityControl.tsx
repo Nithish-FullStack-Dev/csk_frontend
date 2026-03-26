@@ -472,7 +472,7 @@ const QualityControl = () => {
 
             <Dialog open={isDialog} onOpenChange={setIsDialog}>
               <DialogTrigger asChild>
-                {userCanAddUser && (
+                {userCanAddUser && user?.role !== "admin" && (
                   <Button onClick={() => setIsDialog(true)}>
                     <AlertOctagon className="h-4 w-4 mr-2" />
                     Report New Issue
@@ -813,7 +813,7 @@ const QualityControl = () => {
                                   View Details
                                 </DropdownMenuItem>
 
-                                {userCanEditUser && (
+                                {userCanEditUser && user?.role !== "admin" && (
                                   <DropdownMenuItem
                                     onClick={() => handleUpdateStatus(issue)}
                                   >
@@ -821,14 +821,16 @@ const QualityControl = () => {
                                   </DropdownMenuItem>
                                 )}
 
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedIssue(issue);
-                                    setAssignDialog(true);
-                                  }}
-                                >
-                                  Assign Contractor
-                                </DropdownMenuItem>
+                                {user?.role !== "admin" && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedIssue(issue);
+                                      setAssignDialog(true);
+                                    }}
+                                  >
+                                    Assign Contractor
+                                  </DropdownMenuItem>
+                                )}
 
                                 <DropdownMenuItem
                                   onClick={() => {
@@ -887,21 +889,23 @@ const QualityControl = () => {
                             >
                               View Details
                             </DropdownMenuItem>
-                            {userCanEditUser && (
+                            {userCanEditUser && user?.role !== "admin" && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(issue)}
                               >
                                 Update Status
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedIssue(issue);
-                                setAssignDialog(true);
-                              }}
-                            >
-                              Assign Contractor
-                            </DropdownMenuItem>
+                            {user?.role !== "admin" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedIssue(issue);
+                                  setAssignDialog(true);
+                                }}
+                              >
+                                Assign Contractor
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedIssue(issue);

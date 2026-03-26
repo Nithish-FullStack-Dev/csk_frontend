@@ -175,6 +175,17 @@ const CompletedProjectsPage = () => {
                   Retry
                 </button>
               </div>
+            ) : !completedProjects?.data?.length ? (
+              // ✅ EMPTY STATE
+              <div className="text-center py-16">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                  No Completed Projects
+                </h2>
+
+                <p className="text-gray-500">
+                  There are no completed projects available at the moment.
+                </p>
+              </div>
             ) : (
               <div className="px-4 sm:px-6 lg:px-8">
                 <motion.div

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useRBAC } from "@/config/RBAC";
 import ViewProjectDialog from "./ViewProjectDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ContractorProjectsOverviewProps {
   projects?: Project[];
@@ -41,6 +42,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [selectedTabs, setSelectedTabs] = useState<Record<string, string>>({});
   const [viewProject, setViewProject] = useState<Project | null>(null);
+  const { user } = useAuth();
 
   const { userCanEditUser } = useRBAC({
     roleSubmodule: "Projects Overview",
@@ -109,19 +111,19 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               {/* Menu */}
               <div className="absolute top-4 right-4">
                 <DropdownMenu>
-                  {userCanEditUser && (
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  )}
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem onClick={() => setEditProject(project)}>
-                      <Edit2 className="mr-2 h-4 w-4" />
-                      Edit Project
-                    </DropdownMenuItem>
+                    {userCanEditUser && user?.role !== "admin" && (
+                      <DropdownMenuItem onClick={() => setEditProject(project)}>
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Edit Project
+                      </DropdownMenuItem>
+                    )}
 
                     <DropdownMenuItem onClick={() => setViewProject(project)}>
                       View Details

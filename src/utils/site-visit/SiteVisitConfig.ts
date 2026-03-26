@@ -90,6 +90,7 @@ export interface VisitCardProps {
   buttonVariant?: "default" | "outline";
   showNotes?: boolean;
   userCanEditUser?: boolean;
+  user: User;
   onEditStatus?: (visit: SiteVisitData) => void;
   onViewDetails?: (visit: SiteVisitData) => void; // Added for detail view
 }

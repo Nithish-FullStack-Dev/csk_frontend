@@ -157,7 +157,7 @@ const ProjectDetailsPage = () => {
   const handleDownload = async (
     e: React.MouseEvent,
     url?: string | null,
-    projectName?: string | null
+    projectName?: string | null,
   ) => {
     e.stopPropagation();
     if (!url) {
@@ -168,7 +168,7 @@ const ProjectDetailsPage = () => {
     try {
       const API_BASE = import.meta.env.VITE_URL;
       const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url
+        url,
       )}&filename=${encodeURIComponent(projectName || "brochure")}`;
 
       // Open in a new tab so the backend redirects to a signed Cloudinary URL and browser downloads
@@ -201,8 +201,8 @@ const ProjectDetailsPage = () => {
                   status === "ongoing"
                     ? "bg-green-500 hover:bg-green-600"
                     : status === "completed"
-                    ? "bg-gold-500 hover:bg-gold-600 text-navy-900"
-                    : "bg-orange-500 hover:bg-orange-600"
+                      ? "bg-gold-500 hover:bg-gold-600 text-navy-900"
+                      : "bg-orange-500 hover:bg-orange-600"
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -258,7 +258,7 @@ const ProjectDetailsPage = () => {
                   {property?.amenities && property.amenities.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {property.amenities.map((amenity) =>
-                        renderAmenity(amenity)
+                        renderAmenity(amenity),
                       )}
                     </div>
                   ) : (
@@ -323,7 +323,7 @@ const ProjectDetailsPage = () => {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
-                          }
+                          },
                         )}
                       </p>
                     </div>
@@ -337,7 +337,7 @@ const ProjectDetailsPage = () => {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
-                          }
+                          },
                         )}
                       </p>
                     </div>
@@ -479,7 +479,7 @@ const ProjectDetailsPage = () => {
                         handleDownload(
                           e,
                           property?.brochureUrl ?? null,
-                          property?.projectName
+                          property?.projectName,
                         )
                       }
                     >
@@ -505,8 +505,8 @@ const ProjectDetailsPage = () => {
                         status === "ongoing"
                           ? "bg-green-500"
                           : status === "completed"
-                          ? "bg-gold-500 text-navy-900"
-                          : "bg-orange-500"
+                            ? "bg-gold-500 text-navy-900"
+                            : "bg-orange-500"
                       }`}
                     >
                       {property?.constructionStatus}
@@ -524,7 +524,7 @@ const ProjectDetailsPage = () => {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
-                        }
+                        },
                       )}
                     </span>
                   </div>

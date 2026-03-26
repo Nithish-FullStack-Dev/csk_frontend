@@ -7,6 +7,7 @@ import { Edit, Save, Upload, Plus, Trash2 } from "lucide-react";
 import axios from "axios";
 import { useRBAC } from "@/config/RBAC";
 import Loader from "../Loader";
+import { getImageUrl } from "@/lib/image";
 
 interface GalleryItem {
   _id?: string;
@@ -27,7 +28,7 @@ const GalleryCms = () => {
   const fetchGalleryInfo = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`,
       );
       setAboutId(data._id || "");
       setGalleryTitle(data.galleryTitle || "");
@@ -40,8 +41,8 @@ const GalleryCms = () => {
               item._id ||
               `fetched-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             uploading: false,
-          })
-        )
+          }),
+        ),
       );
     } catch (error) {
       console.error("Failed to fetch gallery data:", error);
@@ -65,8 +66,8 @@ const GalleryCms = () => {
   const handleImageUpload = async (key: string, file: File) => {
     setGallery((prev) =>
       prev.map((item) =>
-        item.key === key ? { ...item, uploading: true } : item
-      )
+        item.key === key ? { ...item, uploading: true } : item,
+      ),
     );
 
     const formData = new FormData();
@@ -76,7 +77,7 @@ const GalleryCms = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/uploads/upload`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
 
       const uploadedUrl = res.data?.url;
@@ -90,16 +91,16 @@ const GalleryCms = () => {
                   image: `${uploadedUrl}?v=${Date.now()}`,
                   uploading: false,
                 }
-              : item
-          )
+              : item,
+          ),
         );
       }
     } catch (err) {
       console.error("Upload failed:", err);
       setGallery((prev) =>
         prev.map((item) =>
-          item.key === key ? { ...item, uploading: false } : item
-        )
+          item.key === key ? { ...item, uploading: false } : item,
+        ),
       );
     }
   };
@@ -108,8 +109,8 @@ const GalleryCms = () => {
   const updateGalleryItem = (key: string, field: string, value: any) => {
     setGallery(
       gallery.map((item) =>
-        item.key === key ? { ...item, [field]: value } : item
-      )
+        item.key === key ? { ...item, [field]: value } : item,
+      ),
     );
   };
 
@@ -136,7 +137,7 @@ const GalleryCms = () => {
     setIsEditing(false);
     try {
       const galleryPayload = gallery.map(
-        ({ uploading, key, _id, ...rest }) => rest
+        ({ uploading, key, _id, ...rest }) => rest,
       );
 
       const payload = {
@@ -149,7 +150,7 @@ const GalleryCms = () => {
         `${
           import.meta.env.VITE_URL
         }/api/aboutSection/updateAboutSec/${aboutId}`,
-        payload
+        payload,
       );
 
       await fetchGalleryInfo();
@@ -224,7 +225,7 @@ const GalleryCms = () => {
                         ) : (
                           item.image && (
                             <img
-                              src={item.image}
+                              src={getImageUrl(item.image)}
                               alt={item.title}
                               className="w-full h-full object-cover"
                             />
@@ -281,7 +282,7 @@ const GalleryCms = () => {
                     <div className="w-40 h-40 mx-auto rounded overflow-hidden bg-gray-200">
                       {item.image && (
                         <img
-                          src={item.image}
+                          src={getImageUrl(item.image)}
                           alt={item.title}
                           className="w-full h-full object-cover"
                         />

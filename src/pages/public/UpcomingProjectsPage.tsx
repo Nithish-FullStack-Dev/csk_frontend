@@ -191,6 +191,17 @@ const UpcomingProjectsPage = () => {
                   Retry
                 </button>
               </div>
+            ) : !upcomingProjects?.data?.length ? (
+              // ✅ EMPTY STATE
+              <div className="text-center py-16">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                  No Upcoming Projects
+                </h2>
+
+                <p className="text-gray-500">
+                  There are no upcoming projects available at the moment.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                 {upcomingProjects?.data?.map((project: Building, idx) => (

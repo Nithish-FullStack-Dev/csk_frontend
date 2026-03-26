@@ -9,6 +9,7 @@ import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRBAC } from "@/config/RBAC";
 import Loader from "../Loader";
+import { getImageUrl } from "@/lib/image";
 
 export interface AboutContent {
   _id: string;
@@ -69,7 +70,7 @@ const AboutSectionCMS = () => {
   const fetchAboutInfo = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`,
       );
       setAboutContent({
         _id: data._id || "",
@@ -92,8 +93,8 @@ const AboutSectionCMS = () => {
               member._id ||
               `fetched-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             uploading: false,
-          })
-        )
+          }),
+        ),
       );
     } catch (error) {
       console.error("Failed to fetch about section:", error);
@@ -117,7 +118,7 @@ const AboutSectionCMS = () => {
 
   // About section image upload
   const handleAboutImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -130,7 +131,7 @@ const AboutSectionCMS = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/uploads/upload`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
       const uploadedUrl = res.data?.url;
       if (uploadedUrl) {
@@ -149,7 +150,7 @@ const AboutSectionCMS = () => {
 
   // Thumbnail image upload
   const handleThumbnailUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -162,7 +163,7 @@ const AboutSectionCMS = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/uploads/upload`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
       const uploadedUrl = res.data?.url;
       if (uploadedUrl) {
@@ -183,8 +184,8 @@ const AboutSectionCMS = () => {
   const handleTeamImageUpload = async (key: string, file: File) => {
     setTeam((prev) =>
       prev.map((member) =>
-        member.key === key ? { ...member, uploading: true } : member
-      )
+        member.key === key ? { ...member, uploading: true } : member,
+      ),
     );
 
     const formData = new FormData();
@@ -194,7 +195,7 @@ const AboutSectionCMS = () => {
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/uploads/upload`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
 
       const uploadedUrl = res.data?.url;
@@ -204,16 +205,16 @@ const AboutSectionCMS = () => {
           prev.map((member) =>
             member.key === key
               ? { ...member, image: uploadedUrl, uploading: false }
-              : member
-          )
+              : member,
+          ),
         );
       }
     } catch (err) {
       console.error("Upload failed:", err);
       setTeam((prev) =>
         prev.map((member) =>
-          member.key === key ? { ...member, uploading: false } : member
-        )
+          member.key === key ? { ...member, uploading: false } : member,
+        ),
       );
     }
   };
@@ -227,15 +228,15 @@ const AboutSectionCMS = () => {
 
   const updateValue = (id: string, field: string, value: any) => {
     setValues(
-      values.map((val) => (val._id === id ? { ...val, [field]: value } : val))
+      values.map((val) => (val._id === id ? { ...val, [field]: value } : val)),
     );
   };
 
   const updateTeamMember = (key: string, field: string, value: any) => {
     setTeam(
       team.map((member) =>
-        member.key === key ? { ...member, [field]: value } : member
-      )
+        member.key === key ? { ...member, [field]: value } : member,
+      ),
     );
   };
 
@@ -281,7 +282,7 @@ const AboutSectionCMS = () => {
         `${import.meta.env.VITE_URL}/api/aboutSection/updateAboutSec/${
           aboutContent._id
         }`,
-        payload
+        payload,
       );
 
       await fetchAboutInfo();
@@ -372,7 +373,7 @@ const AboutSectionCMS = () => {
                     <p className="text-sm text-gray-500 mt-4">Uploading...</p>
                   ) : (
                     <img
-                      src={aboutContent.image}
+                      src={getImageUrl(aboutContent.image)}
                       alt="About Preview"
                       className="w-full sm:w-40 h-auto rounded border shadow object-cover"
                     />
@@ -397,13 +398,13 @@ const AboutSectionCMS = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="thumbnail">Thumbnail Image</Label>
+                <Label htmlFor="thumbnail">Video Thumbnail Image</Label>
                 <div className="flex flex-col sm:flex-row items-start gap-4 mt-2">
                   {thumbnailUploading ? (
                     <p className="text-sm text-gray-500 mt-4">Uploading...</p>
                   ) : (
                     <img
-                      src={aboutContent.thumbnail}
+                      src={getImageUrl(aboutContent.thumbnail)}
                       alt="Thumbnail Preview"
                       className="w-full sm:w-40 h-auto rounded border shadow object-cover"
                     />
@@ -450,14 +451,14 @@ const AboutSectionCMS = () => {
               <p className="text-muted-foreground">{aboutContent.paragraph2}</p>
               <div className="w-full sm:w-48 h-40 bg-gray-200 rounded overflow-hidden">
                 <img
-                  src={aboutContent.image}
+                  src={getImageUrl(aboutContent.image)}
                   alt="About us"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="w-full sm:w-48 h-40 bg-gray-200 rounded overflow-hidden">
                 <img
-                  src={aboutContent.thumbnail}
+                  src={getImageUrl(aboutContent.thumbnail)}
                   alt="Thumbnail"
                   className="w-full h-full object-cover"
                 />
@@ -618,7 +619,7 @@ const AboutSectionCMS = () => {
                         ) : (
                           member.image && (
                             <img
-                              src={member.image}
+                              src={getImageUrl(member.image)}
                               alt={member.name}
                               className="w-full h-full object-cover"
                             />
@@ -701,7 +702,7 @@ const AboutSectionCMS = () => {
                     <div className="w-24 h-24 mx-auto rounded-full overflow-hidden bg-gray-200">
                       {member.image && (
                         <img
-                          src={member.image}
+                          src={getImageUrl(member.image)}
                           alt={member.name}
                           className="w-full h-full object-cover"
                         />

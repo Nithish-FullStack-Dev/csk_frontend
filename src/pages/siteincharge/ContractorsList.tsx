@@ -1628,7 +1628,7 @@ const ContractorsList = () => {
         </Card>
 
         <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-          <DialogContent className="max-h-[90vh] flex flex-col rounded-md">
+          <DialogContent className="max-h-[90vh] flex flex-col max-w-[90%] rounded-md">
             <DialogHeader>
               <DialogTitle>View Contractor Details</DialogTitle>
               <DialogDescription>

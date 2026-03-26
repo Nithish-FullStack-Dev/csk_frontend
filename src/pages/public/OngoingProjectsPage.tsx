@@ -179,6 +179,17 @@ const OngoingProjectsPage = () => {
                   retry
                 </button>
               </div>
+            ) : !ongoingProperties?.data?.length ? (
+              // ✅ EMPTY STATE
+              <div className="text-center py-16">
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+                  No Ongoing Projects
+                </h2>
+
+                <p className="text-gray-500">
+                  There are no ongoing projects available at the moment.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10">
                 {ongoingProperties?.data?.map((project: Building, idx) => (
@@ -268,14 +279,14 @@ const OngoingProjectsPage = () => {
                           </CardItem>
                         </Link>
 
-                        <CardItem
+                        {/* <CardItem
                           translateZ={40}
                           as="button"
                           className="w-full px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-estate-navy text-white hover:bg-estate-navy/90 transition-colors flex items-center justify-center"
                         >
                           Schedule Site Visit
                           <Calendar className="ml-2 h-4 w-4" />
-                        </CardItem>
+                        </CardItem> */}
                       </div>
                     </CardBody>
                   </CardContainer>

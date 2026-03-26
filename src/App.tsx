@@ -16,7 +16,7 @@ import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SocketProvider } from "./contexts/SocketContext";
-import Payments from "./pages/Payments";
+// import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import AuthRedirect from "./config/AuthRedirect";
@@ -30,6 +30,7 @@ const UserManagement = lazy(() => import("./pages/UserManagement"));
 const SalesOverview = lazy(() => import("./pages/SalesOverview"));
 const OperationsWorkflow = lazy(() => import("./pages/OperationsWorkflow"));
 const Finances = lazy(() => import("./pages/Finances"));
+const Payments = lazy(() => import("./pages/Payments"));
 
 // Sales Manager specific pages
 const TeamManagement = lazy(() => import("./pages/TeamManagement"));
@@ -785,11 +786,11 @@ const App = () => {
 
                   {/* Accountant Routes */}
                   <Route
-                    path="/payments"
+                    path="/secure/payments"
                     element={
-                      <ProtectedRoute roleSubmodule={"Payments"}>
+                      <SecureRoute requireToken>
                         <Payments />
-                      </ProtectedRoute>
+                      </SecureRoute>
                     }
                   />
                   <Route

@@ -241,11 +241,11 @@ export const moduleToNavItem: Record<string, any> = {
     icon: FileText,
     label: "Invoice Management",
   },
-  "Payment Processing": {
-    to: "/payments",
-    icon: IndianRupee,
-    label: "Payment Processing",
-  },
+  // "Payment Processing": {
+  //   to: "/payments",
+  //   icon: IndianRupee,
+  //   label: "Payment Processing",
+  // },
   "Budget Management": {
     to: "/budget",
     icon: FileText,
@@ -288,7 +288,6 @@ export const moduleToNavItem: Record<string, any> = {
     icon: CheckCircle,
     label: "Project Task Verifications",
   },
-  Payments: { to: "/payments", icon: IndianRupee, label: "Payments" },
   "Business Analytics": {
     to: "/analytics",
     icon: BarChart3,
@@ -319,6 +318,7 @@ export const moduleToNavItem: Record<string, any> = {
     icon: Trash,
     label: "Trash – Buildings",
   },
+  Payments: { to: "/secure/payments", icon: IndianRupee, label: "Payments" },
 
   Secure: {
     to: "/secure/dashboard",
@@ -382,6 +382,7 @@ export const buildNavigationForRole = (
     ) {
       middle.push(moduleToNavItem["Secure"]);
       middle.push(moduleToNavItem["Customer Purchased"]);
+      middle.push(moduleToNavItem["Payments"]);
     }
   }
 

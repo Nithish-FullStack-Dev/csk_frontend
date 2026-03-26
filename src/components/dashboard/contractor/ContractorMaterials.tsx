@@ -564,7 +564,15 @@ const ContractorMaterials = () => {
                 <div className="text-sm text-gray-600 truncate">
                   <span className="font-medium">Project:</span>{" "}
                   {typeof material.project?.projectId === "object" &&
-                    material.project?.projectId?.projectName}
+                    `${material.project?.projectId?.projectName} - ${
+                      typeof material?.project?.floorUnit === "object"
+                        ? material?.project?.floorUnit?.floorNumber
+                        : "-"
+                    } - ${
+                      typeof material?.project?.unit === "object"
+                        ? material?.project?.unit?.plotNo
+                        : "-"
+                    }`}
                 </div>
                 <div>
                   <Badge

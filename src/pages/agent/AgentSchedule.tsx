@@ -189,7 +189,7 @@ const AgentSchedule = () => {
           {/* New Appointment Dialog */}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              {userCanAddUser && (
+              {userCanAddUser && user?.role !== "admin" && (
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   New Appointment
@@ -402,7 +402,7 @@ const AgentSchedule = () => {
                           </Badge>
                           <div className="flex-1"></div>
                           <div className="flex gap-2">
-                            {userCanEditUser && (
+                            {userCanEditUser && user?.role !== "admin" && (
                               <Button
                                 variant="outline"
                                 size="sm"

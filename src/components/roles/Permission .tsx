@@ -70,7 +70,7 @@ const moduleConfig: Record<string, string[]> = {
   ],
   "Finance Modules": [
     "Invoices",
-    "Payments",
+    // "Payments",
     // "Budget Tracking",
     "Tax Documents",
     "Reports",

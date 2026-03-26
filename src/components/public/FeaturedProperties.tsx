@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { MapPin, ArrowRight, Home, Building, Flag } from "lucide-react";
+import {
+  MapPin,
+  Home,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { easeOut, motion } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
@@ -11,20 +17,22 @@ const FeaturedProperties = () => {
   const [loading, setLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [carouselData, setCarouselData] = useState([]);
-  const [galleryTitle, setGalleryTitle] = useState<string>("");
-  const [galleryDes, setGalleryDes] = useState<string>("");
+  const [galleryTitle, setGalleryTitle] = useState("");
+  const [galleryDes, setGalleryDes] = useState("");
+
+  const cardsContainerRef = useRef(null);
 
   const fetchProperties = async () => {
     if (loading) return;
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/cms/getAllCms`
+        `${import.meta.env.VITE_URL}/api/cms/getAllCms`,
       );
-      setProperties(data.banners.slice(0, 3).reverse());
+      setProperties(data.banners.reverse());
       setIsError(false);
     } catch (error) {
-      console.error("Failed to fetch properties:", error);
+      console.error(error);
       setIsError(true);
     } finally {
       setLoading(false);
@@ -34,20 +42,20 @@ const FeaturedProperties = () => {
   const fetchCarouselData = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`
+        `${import.meta.env.VITE_URL}/api/aboutSection/getAboutSec`,
       );
       setCarouselData(data.gallery || []);
       setGalleryTitle(data.galleryTitle || "Featured Properties");
       setGalleryDes(
         data.galleryDes ||
-          "Discover our handpicked selection of premium properties designed for modern living"
+          "Discover our handpicked selection of premium properties designed for modern living",
       );
     } catch (error) {
-      console.error("Failed to fetch carousel data:", error);
+      console.error(error);
       setCarouselData([]);
       setGalleryTitle("Featured Properties");
       setGalleryDes(
-        "Discover our handpicked selection of premium properties designed for modern living"
+        "Discover our handpicked selection of premium properties designed for modern living",
       );
     }
   };
@@ -57,7 +65,6 @@ const FeaturedProperties = () => {
     fetchCarouselData();
   }, []);
 
-  // Duplicate carousel data for infinite scroll effect
   const infiniteCarouselData = [...carouselData, ...carouselData];
 
   const [isHovered, setIsHovered] = useState(false);
@@ -67,7 +74,7 @@ const FeaturedProperties = () => {
   useEffect(() => {
     let animationFrameId;
     let start = null;
-    const speed = 0.7; // Controls the scroll speed in pixels per frame
+    const speed = 0.7;
 
     const animate = (timestamp) => {
       if (!start) start = timestamp;
@@ -77,7 +84,7 @@ const FeaturedProperties = () => {
         const currentTranslateX = parseFloat(
           carouselTrackRef.current.style.transform
             ?.replace("translateX(", "")
-            .replace("px)", "") || "0"
+            .replace("px)", "") || "0",
         );
         const newTranslateX = currentTranslateX - speed;
 
@@ -102,6 +109,16 @@ const FeaturedProperties = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [isHovered]);
 
+  const scrollCards = (direction) => {
+    if (cardsContainerRef.current) {
+      const scrollAmount = window.innerWidth > 768 ? 400 : 250;
+      cardsContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const fadeInUp = {
     hidden: { opacity: 0, y: 50 },
     visible: {
@@ -116,6 +133,11 @@ const FeaturedProperties = () => {
 
   return (
     <section className="py-5 bg-[#F9FAF1]">
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <motion.div
         className="container mx-auto px-4"
         initial="hidden"
@@ -123,7 +145,6 @@ const FeaturedProperties = () => {
         viewport={{ once: true, amount: 0.3 }}
         variants={fadeInUp}
       >
-        {/* Section Heading */}
         <div className="text-center mb-12">
           <h2 className="text-2xl font-md mb-4 text-black-300">
             {galleryTitle}
@@ -133,7 +154,6 @@ const FeaturedProperties = () => {
           </p>
         </div>
 
-        {/* Carousel Section */}
         <div
           ref={carouselContainerRef}
           className="relative w-full overflow-hidden mb-7"
@@ -155,7 +175,6 @@ const FeaturedProperties = () => {
                   className="flex-shrink-0 w-[70vw] sm:w-[60vw] md:w-[50vw] lg:w-[40vw]"
                 >
                   <div className="w-full">
-                    {/* Image container with responsive aspect ratio */}
                     <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg shadow-lg">
                       <img
                         src={item.image}
@@ -163,8 +182,6 @@ const FeaturedProperties = () => {
                         className="absolute inset-0 w-full h-full object-cover rounded-lg"
                       />
                     </div>
-
-                    {/* Text below the image aligned to the left */}
                     <div className="mt-2 ml-1">
                       <p className="text-left text-sm text-black font-vidaloka">
                         {item.title || `Project ${index + 1}`}
@@ -174,7 +191,7 @@ const FeaturedProperties = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-12 w-full">
                 <p className="text-lg text-gray-500">
                   No carousel data available
                 </p>
@@ -183,7 +200,6 @@ const FeaturedProperties = () => {
           </div>
         </div>
 
-        {/* Cards Grid */}
         {loading ? (
           <div className="text-center py-12 animate-pulse">
             <h1 className="text-lg text-gray-500">
@@ -229,51 +245,76 @@ const FeaturedProperties = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-16">
-            {properties.map((property) => (
-              <motion.div
-                key={property._id}
-                className="group text-center space-y-4"
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.5 }}
-                variants={fadeInUp}
+          <div className="relative group mb-16">
+            {properties.length > 3 && (
+              <button
+                onClick={() => scrollCards("left")}
+                className="absolute left-0 top-1/3 -translate-y-1/2 -translate-x-4 z-10 bg-white/90 p-3 rounded-full shadow-lg border border-gray-100 hidden md:group-hover:flex items-center justify-center hover:bg-gray-50 transition-colors"
+                aria-label="Scroll left"
               >
-                <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow">
-                  <Link
-                    to={`/public/project/${property._id}`}
-                    className="block shine-container"
-                  >
-                    <img
-                      src={property?.image}
-                      alt={property.title}
-                      className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <span className="shine-overlay"></span>
-                  </Link>
-                </div>
-                <h3 className="text-lg font-semibold font-vidaloka text-gray-800">
-                  {property.title}
-                </h3>
-                <p className="text-sm text-gray-600">{property.subtitle}</p>
-                <Link
-                  to={`/public/project/${property._id}`}
-                  className="btn mt-2 inline-block"
+                <ChevronLeft className="h-6 w-6 text-gray-800" />
+              </button>
+            )}
+
+            <div
+              ref={cardsContainerRef}
+              className="flex overflow-x-auto gap-10 pb-6 snap-x snap-mandatory hide-scrollbar scroll-smooth"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {properties.map((property) => (
+                <motion.div
+                  key={property._id}
+                  className="group/card text-center space-y-4 flex-none w-[85vw] sm:w-[calc(50%-20px)] lg:w-[calc(33.333%-27px)] snap-start"
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.5 }}
+                  variants={fadeInUp}
                 >
-                  <div className="btn_m">
-                    <div className="btn_c">
-                      <div className="btn_t1">View Details</div>
-                      <div className="btn_t2">View Details</div>
+                  <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow w-full">
+                    <div
+                      // to={`/public/project/${property._id}`}
+                      className="block shine-container"
+                    >
+                      <img
+                        src={property?.image}
+                        alt={property.title}
+                        className="w-full h-64 object-cover transition-transform duration-500 group-hover/card:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="shine-overlay"></span>
                     </div>
                   </div>
-                </Link>
-              </motion.div>
-            ))}
+                  <h3 className="text-lg font-semibold font-vidaloka text-gray-800">
+                    {property.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">{property.subtitle}</p>
+                  {/* <Link
+                    to={`/public/project/${property._id}`}
+                    className="btn mt-2 inline-block"
+                  >
+                    <div className="btn_m">
+                      <div className="btn_c">
+                        <div className="btn_t1">View Details</div>
+                        <div className="btn_t2">View Details</div>
+                      </div>
+                    </div>
+                  </Link> */}
+                </motion.div>
+              ))}
+            </div>
+
+            {properties.length > 3 && (
+              <button
+                onClick={() => scrollCards("right")}
+                className="absolute right-0 top-1/3 -translate-y-1/2 translate-x-4 z-10 bg-white/90 p-3 rounded-full shadow-lg border border-gray-100 hidden md:group-hover:flex items-center justify-center hover:bg-gray-50 transition-colors"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="h-6 w-6 text-gray-800" />
+              </button>
+            )}
           </div>
         )}
 
-        {/* Quick Links to Categories */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
           initial="hidden"

@@ -59,6 +59,7 @@ import {
 import { MoreVertical } from "lucide-react";
 
 const SiteVisits = () => {
+  const { user } = useAuth();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [bookingStep, setBookingStep] = useState(1);
@@ -68,8 +69,7 @@ const SiteVisits = () => {
   const [visitTime, setVisitTime] = useState("");
   const [visitPeriod, setVisitPeriod] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
-  const [priority, setPriority] = useState(""); // Default priority
-  const { user } = useAuth();
+  const [priority, setPriority] = useState("");
   const bookSiteVisitMutation = useBookSiteVisit();
   const isTeamLead = user && user.role === "team_lead";
   const isAgent = user && user.role === "agent";
@@ -313,6 +313,7 @@ const SiteVisits = () => {
                     <VisitCard
                       key={visit._id}
                       visit={visit}
+                      user={user}
                       userCanEditUser={userCanEditUser}
                       buttonText="View Details"
                       buttonVariant="outline"
@@ -335,6 +336,7 @@ const SiteVisits = () => {
                     <VisitCard
                       key={visit._id}
                       visit={visit}
+                      user={user}
                       userCanEditUser={userCanEditUser}
                       buttonText="View Details"
                       buttonVariant="outline"
@@ -358,6 +360,7 @@ const SiteVisits = () => {
                     <VisitCard
                       userCanEditUser={userCanEditUser}
                       key={visit._id}
+                      user={user}
                       visit={visit}
                       onViewDetails={setSelectedVisit}
                       onEditStatus={(v) => {
@@ -1039,6 +1042,7 @@ const VisitCard = ({
   buttonVariant = "default",
   showNotes = false,
   userCanEditUser,
+  user,
   onViewDetails,
   onEditStatus,
 }: VisitCardProps) => {
@@ -1167,6 +1171,7 @@ const VisitCard = ({
               </DropdownMenuItem>
 
               {userCanEditUser &&
+                user?.role !== "admin" &&
                 visit.visitStatus !== "completed" &&
                 visit.visitStatus !== "cancelled" && (
                   <DropdownMenuItem onClick={() => onEditStatus?.(visit)}>
