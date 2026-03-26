@@ -13,6 +13,7 @@ import { Permission } from "@/types/permission";
 import { toast } from "sonner";
 import Loader from "../Loader";
 import { fetchRolePermissions } from "@/utils/units/Methods";
+import { getImageUrl } from "@/lib/image";
 
 const HeroSectionCMS = () => {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ const HeroSectionCMS = () => {
   const fetchSlides = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/cms/getAllCms`
+        `${import.meta.env.VITE_URL}/api/cms/getAllCms`,
       );
       setSlides(res.data.banners);
     } catch (error) {
@@ -51,7 +52,7 @@ const HeroSectionCMS = () => {
         {
           slides: slideList,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
     } catch (error) {
       console.log("Save error", error);
@@ -73,13 +74,13 @@ const HeroSectionCMS = () => {
   }
 
   const canUserAdd = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.write
+    (per) => per.submodule === "Content Management" && per.actions.write,
   );
   const canUserEdit = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.edit
+    (per) => per.submodule === "Content Management" && per.actions.edit,
   );
   const canUserDelete = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.delete
+    (per) => per.submodule === "Content Management" && per.actions.delete,
   );
 
   const handleSave = async () => {
@@ -99,7 +100,7 @@ const HeroSectionCMS = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/cms/addCms`,
         newSlide,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       const savedSlide = response.data.banner;
       setSlides([...slides, savedSlide]);
@@ -111,7 +112,7 @@ const HeroSectionCMS = () => {
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    slideId: string
+    slideId: string,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -127,7 +128,7 @@ const HeroSectionCMS = () => {
         {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
-        }
+        },
       );
 
       const uploadedUrl = res.data?.url;
@@ -135,7 +136,7 @@ const HeroSectionCMS = () => {
         const updatedSlides = slides.map((slide) =>
           slide._id === slideId
             ? { ...slide, image: `${uploadedUrl}?v=${Date.now()}` }
-            : slide
+            : slide,
         );
         setSlides(updatedSlides);
         await saveSlides(updatedSlides);
@@ -152,7 +153,7 @@ const HeroSectionCMS = () => {
     try {
       await axios.delete(
         `${import.meta.env.VITE_URL}/api/cms/deleteCms/${id}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       setSlides((prevSlides) => prevSlides.filter((slide) => slide._id !== id));
     } catch (error) {
@@ -163,8 +164,8 @@ const HeroSectionCMS = () => {
   const updateSlide = (id, field, value) => {
     setSlides((prevSlides) =>
       prevSlides.map((slide) =>
-        slide._id === id ? { ...slide, [field]: value } : slide
-      )
+        slide._id === id ? { ...slide, [field]: value } : slide,
+      ),
     );
   };
 
@@ -220,7 +221,7 @@ const HeroSectionCMS = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full md:w-32 h-40 md:h-20 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                   <img
-                    src={slide.image}
+                    src={getImageUrl(slide.image)}
                     alt={slide.title}
                     className="w-full h-full object-cover"
                   />

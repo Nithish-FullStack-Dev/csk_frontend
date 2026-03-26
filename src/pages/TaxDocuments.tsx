@@ -48,8 +48,10 @@ import axios from "axios";
 import { toast } from "sonner";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { Switch } from "@radix-ui/react-switch";
+import { useAuth } from "@/contexts/AuthContext";
 
 const TaxDocuments = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("gst");
   const [newTaxDoc, setNewTaxDoc] = useState<any>({
     type: "",
@@ -365,10 +367,12 @@ const TaxDocuments = () => {
           </div>
           <Dialog open={openAddDoc} onOpenChange={setOpenAddDoc}>
             <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Tax Document
-              </Button>
+              {user?.role !== "admin" && (
+                <Button>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Tax Document
+                </Button>
+              )}
             </DialogTrigger>
             <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
               <DialogHeader>
@@ -731,17 +735,19 @@ const TaxDocuments = () => {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedDoc(gstReturn);
-                                        setNewStatus(gstReturn?.status || "");
-                                        setStatusDialogOpen(true);
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
+                                    {user?.role !== "admin" && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedDoc(gstReturn);
+                                          setNewStatus(gstReturn?.status || "");
+                                          setStatusDialogOpen(true);
+                                        }}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    )}
                                     <Button
                                       variant="ghost"
                                       size="sm"

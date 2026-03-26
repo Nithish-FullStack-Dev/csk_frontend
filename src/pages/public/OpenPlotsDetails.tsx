@@ -33,6 +33,7 @@ import Autoplay from "embla-carousel-autoplay";
 import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
 import { OpenPlot } from "@/components/public/OpenPlotInterface";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/image";
 
 interface Amenity {
   name: string;
@@ -172,15 +173,15 @@ const OpenPlotsDetails = () => {
       : "N/A";
   const description =
     openPlot?.remarks || "No description available for this property.";
-  const price = openPlot?.totalAmount
-    ? openPlot.totalAmount.toLocaleString("en-IN", {
-        style: "currency",
-        currency: "INR",
-      })
-    : "Price Not Available";
-  const completionDate = openPlot?.listedDate
-    ? new Date(openPlot.listedDate).toLocaleDateString()
-    : "N/A";
+  // const price = openPlot?.totalAmount
+  //   ? openPlot.totalAmount.toLocaleString("en-IN", {
+  //       style: "currency",
+  //       currency: "INR",
+  //     })
+  //   : "Price Not Available";
+  // const completionDate = openPlot?.
+  //   ? new Date(openPlot.listedDate).toLocaleDateString()
+  //   : "N/A";
   const totalArea =
     openPlot?.totalArea && openPlot?.areaUnit
       ? `${openPlot.totalArea} ${openPlot.areaUnit}`
@@ -247,7 +248,7 @@ const OpenPlotsDetails = () => {
       <section className="relative h-96 md:h-[500px] overflow-hidden">
         <img
           src={
-            openPlot?.thumbnailUrl ||
+            getImageUrl(openPlot?.thumbnailUrl) ||
             "https://via.placeholder.com/1500x800/2C3E50/E8B923?text=Luxury+Property"
           }
           alt={title}
@@ -396,7 +397,7 @@ const OpenPlotsDetails = () => {
                               <div className="embla__slide" key={index}>
                                 <AspectRatio ratio={16 / 9}>
                                   <img
-                                    src={image}
+                                    src={getImageUrl(image)}
                                     alt={`${title} ${index + 1}`}
                                     className="w-full h-full object-cover rounded-lg cursor-pointer shadow-md"
                                     onClick={() => openLightbox(image)}
@@ -424,7 +425,7 @@ const OpenPlotsDetails = () => {
                         {galleryImages.map((image, index) => (
                           <AspectRatio key={index} ratio={16 / 9}>
                             <img
-                              src={image}
+                              src={getImageUrl(image)}
                               alt={`${title} ${index + 1}`}
                               className="w-full h-full object-cover rounded-lg cursor-pointer transform hover:scale-105 transition-transform duration-300 shadow-md"
                               onClick={() => openLightbox(image)}
@@ -480,12 +481,12 @@ const OpenPlotsDetails = () => {
                     {price}
                   </div> */}
                   <div className="space-y-3">
-                    <Button
+                    {/* <Button
                       className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
                       onClick={() => setSiteVisitOpen(true)}
                     >
                       Schedule Site Visit
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
@@ -539,9 +540,9 @@ const OpenPlotsDetails = () => {
                     <span className="text-navy-700 font-medium">
                       Completion:
                     </span>
-                    <span className="text-navy-800 font-semibold">
+                    {/* <span className="text-navy-800 font-semibold">
                       {completionDate}
-                    </span>
+                    </span> */}
                   </div>
                   <div className="flex justify-between items-center py-2 border-b last:border-b-0 border-navy-100">
                     <span className="text-navy-700 font-medium">Type:</span>
@@ -554,7 +555,7 @@ const OpenPlotsDetails = () => {
                       Units Available:
                     </span>
                     <span className="text-green-600 font-bold">
-                      {openPlot?.availabilityStatus === "Available"
+                      {openPlot?.status === "Available"
                         ? "Available"
                         : "Limited/Sold Out"}
                     </span>
@@ -601,7 +602,7 @@ const OpenPlotsDetails = () => {
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-screen-xl h-[90vh] p-0 flex items-center justify-center bg-black/80">
           <img
-            src={currentImage}
+            src={getImageUrl(currentImage)}
             alt="Full view"
             className="max-h-full max-w-full object-contain"
           />

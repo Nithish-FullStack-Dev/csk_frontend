@@ -656,7 +656,11 @@ const AdminTeamAgent = () => {
 
                   <div className="flex md:flex-row flex-col gap-2 w-full">
                     <a href={`tel:${user.phone}`}>
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 w-full"
+                      >
                         <Phone className="mr-2 h-3 w-3" />
                         Call
                       </Button>
@@ -725,7 +729,7 @@ const AdminTeamAgent = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <h4 className="font-medium">Recent Activities</h4>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>• Emily closed 2 deals yesterday</p>
@@ -763,7 +767,7 @@ const AdminTeamAgent = () => {
                     Set Team Goals
                   </Button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>

@@ -577,7 +577,7 @@ const ContractorInvoices = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        {userCanAddUser && (
+        {userCanAddUser && user?.role !== "admin" && (
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Create Invoice
           </Button>
@@ -821,7 +821,8 @@ const ContractorInvoices = () => {
                     </Button>
 
                     {invoice.status !== "paid" &&
-                      user?.role !== "contractor" && (
+                      user?.role !== "contractor" &&
+                      user?.role !== "admin" && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -840,7 +841,7 @@ const ContractorInvoices = () => {
                         </Button>
                       )}
 
-                    {user?.role !== "contractor" && (
+                    {/* {user?.role !== "contractor" && (
                       <Select
                         value={invoice.status}
                         disabled={updateStatusMutation.isPending}
@@ -865,7 +866,7 @@ const ContractorInvoices = () => {
                           <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>
                       </Select>
-                    )}
+                    )} */}
                   </div>
                 </TableCell>
               </div>

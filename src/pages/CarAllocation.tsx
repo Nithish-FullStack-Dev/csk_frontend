@@ -523,7 +523,7 @@ const CarAllocation = () => {
               }}
             >
               <DialogTrigger asChild>
-                {userCanAddUser && (
+                {userCanAddUser && user?.role !== "admin" && (
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Vehicle
@@ -916,7 +916,7 @@ const CarAllocation = () => {
                           </Badge>
                         </div>
                       </div>
-                      {userCanEditUser && (
+                      {userCanEditUser && user?.role !== "admin" && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -1005,12 +1005,14 @@ const CarAllocation = () => {
                       {vehicle.status === "available" && (
                         <Dialog>
                           <DialogTrigger asChild>
-                            {userCanAddUser && userCanEditUser && (
-                              <Button size="sm" className="flex-1">
-                                <Users className="mr-2 h-3 w-3" />
-                                Assign
-                              </Button>
-                            )}
+                            {userCanAddUser &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <Button size="sm" className="flex-1">
+                                  <Users className="mr-2 h-3 w-3" />
+                                  Assign
+                                </Button>
+                              )}
                           </DialogTrigger>
                           <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
                             <DialogHeader>
@@ -1071,17 +1073,18 @@ const CarAllocation = () => {
                           </DialogContent>
                         </Dialog>
                       )}
-                      {vehicle.status === "assigned" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => handleUnassign(vehicle)}
-                        >
-                          <Key className="mr-2 h-3 w-3" />
-                          Unassign
-                        </Button>
-                      )}
+                      {vehicle.status === "assigned" &&
+                        user?.role !== "admin" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => handleUnassign(vehicle)}
+                          >
+                            <Key className="mr-2 h-3 w-3" />
+                            Unassign
+                          </Button>
+                        )}
                     </div>
                   </CardContent>
                 </Card>

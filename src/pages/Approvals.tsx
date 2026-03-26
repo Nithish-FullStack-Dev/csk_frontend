@@ -34,6 +34,7 @@ import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRBAC } from "@/config/RBAC";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define an interface for the site visit request data for better type safety
 interface SiteVisitRequest {
@@ -76,7 +77,9 @@ const Approvals = () => {
     useState<SiteVisitRequest | null>(null);
   const [approvalNotes, setApprovalNotes] = useState("");
   const queryClient = useQueryClient();
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control dialog open/close
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { user } = useAuth();
 
   const {
     data: allSiteVisits = [],
@@ -451,35 +454,40 @@ const Approvals = () => {
                                   </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                  <Label htmlFor="approval-notes">
-                                    Approval Notes (Optional)
-                                  </Label>
-                                  <Textarea
-                                    id="approval-notes"
-                                    placeholder="Add any notes or conditions..."
-                                    onChange={(e) =>
-                                      setApprovalNotes(e.target.value)
-                                    }
-                                    value={approvalNotes}
-                                  />
-                                </div>
+                                {user?.role !== "admin" && (
+                                  <div className="space-y-2">
+                                    <Label htmlFor="approval-notes">
+                                      Approval Notes (Optional)
+                                    </Label>
+                                    <Textarea
+                                      id="approval-notes"
+                                      placeholder="Add any notes or conditions..."
+                                      onChange={(e) =>
+                                        setApprovalNotes(e.target.value)
+                                      }
+                                      value={approvalNotes}
+                                    />
+                                  </div>
+                                )}
 
                                 <div className="flex space-x-2">
-                                  {userCanDeleteUser && (
-                                    <Button
-                                      variant="outline"
-                                      className="flex-1 text-red-600 border-red-200"
-                                      onClick={() =>
-                                        handleAction(request!._id, "rejected")
-                                      }
-                                      disabled={updateSiteVisitStatus.isPending}
-                                    >
-                                      <X className="mr-2 h-4 w-4" />
-                                      Reject
-                                    </Button>
-                                  )}
-                                  {userCanAddUser && (
+                                  {userCanDeleteUser &&
+                                    user?.role !== "admin" && (
+                                      <Button
+                                        variant="outline"
+                                        className="flex-1 text-red-600 border-red-200"
+                                        onClick={() =>
+                                          handleAction(request!._id, "rejected")
+                                        }
+                                        disabled={
+                                          updateSiteVisitStatus.isPending
+                                        }
+                                      >
+                                        <X className="mr-2 h-4 w-4" />
+                                        Reject
+                                      </Button>
+                                    )}
+                                  {userCanAddUser && user?.role !== "admin" && (
                                     <Button
                                       className="flex-1 bg-green-600 hover:bg-green-700"
                                       onClick={() =>
@@ -499,7 +507,7 @@ const Approvals = () => {
                             </DialogContent>
                           )}
                         </Dialog>
-                        {userCanDeleteUser && (
+                        {userCanDeleteUser && user?.role !== "admin" && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -513,7 +521,7 @@ const Approvals = () => {
                             Reject
                           </Button>
                         )}
-                        {userCanAddUser && (
+                        {userCanAddUser && user?.role !== "admin" && (
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"

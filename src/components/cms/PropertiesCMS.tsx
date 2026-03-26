@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/image";
 
 const PropertiesCMS = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -81,7 +82,7 @@ const PropertiesCMS = () => {
   const fetchSlides = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/getAllCms`
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/getAllCms`,
       );
       setProperties(res.data.cmsProperties);
     } catch (error) {
@@ -96,7 +97,7 @@ const PropertiesCMS = () => {
         `${import.meta.env.VITE_URL}/api/cms/cmsProperty/addAllCms`,
         {
           properties,
-        }
+        },
       );
     } catch (error) {
       console.log("Save error", error);
@@ -131,7 +132,7 @@ const PropertiesCMS = () => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/cms/cmsProperty/addPropCms`,
-        newProperty
+        newProperty,
       );
       const savedSlide = response.data.property;
       setProperties([...properties, newProperty]);
@@ -144,7 +145,7 @@ const PropertiesCMS = () => {
   const removeProperty = async (id) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/deletePropCms/${id}`
+        `${import.meta.env.VITE_URL}/api/cms/cmsProperty/deletePropCms/${id}`,
       );
       setProperties(properties.filter((property) => property._id !== id));
       toast.success("Property deleted successfully");
@@ -157,8 +158,8 @@ const PropertiesCMS = () => {
   const updateProperty = (id, field, value) => {
     setProperties(
       properties.map((property) =>
-        property.id === id ? { ...property, [field]: value } : property
-      )
+        property.id === id ? { ...property, [field]: value } : property,
+      ),
     );
   };
 
@@ -167,8 +168,8 @@ const PropertiesCMS = () => {
       properties.map((property) =>
         property.id === id
           ? { ...property, features: features.split(",").map((f) => f.trim()) }
-          : property
-      )
+          : property,
+      ),
     );
   };
 
@@ -253,7 +254,7 @@ const PropertiesCMS = () => {
               <div className="flex gap-4">
                 <div className="w-32 h-24 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                   <img
-                    src={property.image}
+                    src={getImageUrl(property.image)}
                     alt={property.title}
                     className="w-full h-full object-cover"
                   />
@@ -311,7 +312,7 @@ const PropertiesCMS = () => {
                             updateProperty(
                               property.id,
                               "location",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                         />
@@ -348,7 +349,7 @@ const PropertiesCMS = () => {
                             updateProperty(
                               property.id,
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           rows={2}
@@ -378,7 +379,7 @@ const PropertiesCMS = () => {
                               updateProperty(
                                 property.id,
                                 "image",
-                                e.target.value
+                                e.target.value,
                               )
                             }
                           />

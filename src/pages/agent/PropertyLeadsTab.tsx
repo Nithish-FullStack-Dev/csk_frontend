@@ -67,6 +67,7 @@ export default function PropertyLeadsTab({
   userCanDeleteUser,
 }: Props) {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <Card>
@@ -335,6 +336,7 @@ function MobileLeadCard({
   onDelete,
   onVisit,
 }: any) {
+  const { user } = useAuth();
   const statusColors = {
     hot: "bg-estate-error/20 text-estate-error",
     warm: "bg-estate-gold/20 text-estate-gold",
@@ -430,7 +432,7 @@ function MobileLeadCard({
               </DropdownMenuItem>
             </a>
 
-            {!isSalesManager && (
+            {!isSalesManager && user?.role !== "admin" && (
               <DropdownMenuItem onClick={onVisit}>
                 <Calendar className="mr-2 h-4 w-4" /> Schedule Visit
               </DropdownMenuItem>
@@ -438,13 +440,13 @@ function MobileLeadCard({
 
             <DropdownMenuSeparator />
 
-            {userCanEditUser && (
+            {userCanEditUser && user?.role !== "admin" && (
               <DropdownMenuItem onClick={onEdit}>
                 <FileText className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
             )}
 
-            {userCanDeleteUser && (
+            {userCanDeleteUser && user?.role !== "admin" && (
               <DropdownMenuItem onClick={onDelete}>
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>
