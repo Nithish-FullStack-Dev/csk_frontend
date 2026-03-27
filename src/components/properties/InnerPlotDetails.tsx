@@ -146,7 +146,7 @@ export function InnerPlotDetails() {
             {plot.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={`${import.meta.env.VITE_URL}/api${plot?.thumbnailUrl}`}
+                  src={getImageUrl(plot?.thumbnailUrl)}
                   alt={`Plot ${plot.plotNo}`}
                   className="h-64 w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                 />
@@ -314,7 +314,7 @@ export function InnerPlotDetails() {
                       }`}
                     >
                       <img
-                        src={`${import.meta.env.VITE_URL}/api${img}`}
+                        src={getImageUrl(img)}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </div>

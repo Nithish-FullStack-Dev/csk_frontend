@@ -22,6 +22,7 @@ import {
   Trash2,
   Download,
   X,
+  Loader2,
 } from "lucide-react";
 import { Building } from "@/types/building";
 import { BuildingDialog } from "@/components/properties/BuildingDialog";
@@ -55,6 +56,7 @@ const NewProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -297,6 +299,7 @@ const NewProperties = () => {
     e: React.MouseEvent,
     url: string,
     name?: string,
+    id?: string,
   ) => {
     e.stopPropagation();
 
@@ -306,6 +309,7 @@ const NewProperties = () => {
     }
 
     try {
+      setDownloadingId(id || null);
       const fixedUrl = url.replace("http://", "https://");
 
       const response = await fetch(fixedUrl);
@@ -327,6 +331,8 @@ const NewProperties = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to download brochure");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -571,11 +577,17 @@ const NewProperties = () => {
                                   e,
                                   b?.brochureUrl!,
                                   b?.projectName,
+                                  b._id,
                                 )
                               }
+                              disabled={downloadingId === b._id}
                               title="Download Brochure"
                             >
-                              <Download className="h-4 w-4" />
+                              {downloadingId === b._id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
                             </Button>
                             {/* <Button
                                 variant="outline"
@@ -745,11 +757,17 @@ const NewProperties = () => {
                                       e,
                                       plot?.brochureUrl!,
                                       plot?.projectName,
+                                      plot?._id,
                                     )
                                   }
+                                  disabled={downloadingId === plot?._id}
                                   title="Download Brochure"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  {downloadingId === plot?._id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             )}
@@ -787,7 +805,7 @@ const NewProperties = () => {
                       <Card
                         key={land?._id}
                         onClick={() =>
-                          navigate(`/properties/openland/${land._id}`)
+                          navigate(`/properties/openland/${land?._id}`)
                         }
                         className="overflow-hidden hover:shadow-lg transition cursor-pointer"
                       >
@@ -839,19 +857,8 @@ const NewProperties = () => {
                           </div>
 
                           <div className="flex items-center text-sm text-muted-foreground mb-3">
-                            <MapPin className="h-4 w-4 mr-1" />{" "}
-                            {land?.googleMapsLocation ? (
-                              <a
-                                className="underline"
-                                href={land?.googleMapsLocation}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View on map
-                              </a>
-                            ) : (
-                              land?.projectName
-                            )}
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {land?.location || "Location not specified"}
                           </div>
 
                           <div className="space-y-2 mb-4 text-sm">
@@ -909,11 +916,17 @@ const NewProperties = () => {
                                       e,
                                       land?.brochureUrl!,
                                       land?.projectName,
+                                      land?._id,
                                     )
                                   }
+                                  disabled={downloadingId === land?._id}
                                   title="Download Brochure"
                                 >
-                                  <Download className="h-4 w-4" />
+                                  {downloadingId === land._id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
                                 </Button>
                                 {/* <Button
                                     variant="outline"

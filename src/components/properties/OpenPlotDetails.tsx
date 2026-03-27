@@ -179,7 +179,7 @@ export function OpenPlotDetails({
             {openPlotData?.thumbnailUrl && (
               <div className="md:w-1/3">
                 <img
-                  src={openPlotData?.thumbnailUrl}
+                  src={getImageUrl(openPlotData?.thumbnailUrl)}
                   alt={openPlotData?.projectName}
                   className="h-64 w-full object-cover"
                 />
@@ -279,7 +279,7 @@ export function OpenPlotDetails({
                     {/* Thumbnail */}
                     {inner.thumbnailUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_URL}/api${inner.thumbnailUrl}`}
+                        src={getImageUrl(inner.thumbnailUrl)}
                         alt={inner.plotNo}
                         className="h-40 w-full object-cover"
                       />
@@ -437,7 +437,7 @@ export function OpenPlotDetails({
                     onClick={() => openLightbox(image)}
                   >
                     <img
-                      src={image}
+                      src={getImageUrl(image)}
                       alt={`Plot image ${index + 1}`}
                       className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                     />
@@ -533,7 +533,7 @@ export function OpenPlotDetails({
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
             <img
-              src={currentImage}
+              src={getImageUrl(currentImage)}
               alt="Full view of plot"
               className="w-full h-full object-contain"
             />

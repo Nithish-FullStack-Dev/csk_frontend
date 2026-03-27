@@ -28,8 +28,9 @@ const SecureRoute = ({ children, requireToken = true }: SecureRouteProps) => {
 
   if (requireToken) {
     const token = getCookie("secure_access");
-    if (!token) {
-      return <Navigate to="/" />;
+
+    if (!token || token === "undefined" || token === "null") {
+      return <Navigate to="/" replace />;
     }
   }
 
