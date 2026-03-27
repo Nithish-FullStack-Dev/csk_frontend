@@ -57,7 +57,7 @@ const moduleConfig: Record<string, string[]> = {
     "Contractors",
     // "Inspection Schedule",
     "Project Task Verifications",
-    "Construction Progress",
+    // "Construction Progress",
   ],
   // Contractor: ["Project Tasks",],
   Contractor: [

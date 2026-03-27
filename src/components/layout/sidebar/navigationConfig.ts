@@ -219,17 +219,17 @@ export const moduleToNavItem: Record<string, any> = {
     icon: Calendar,
     label: "Inspection Schedule",
   },
-  "My Commissions": {
-    to: "/commissions",
-    icon: IndianRupee,
-    label: "My Commissions",
-  },
+  // "My Commissions": {
+  //   to: "/commissions",
+  //   icon: IndianRupee,
+  //   label: "My Commissions",
+  // },
   // "My Documents": { to: "/documents", icon: FileText, label: "My Documents" },
-  "Construction Progress": {
-    to: "/progress",
-    icon: Gauge,
-    label: "Construction Progress",
-  },
+  // "Construction Progress": {
+  //   to: "/progress",
+  //   icon: Gauge,
+  //   label: "Construction Progress",
+  // },
   // "My Projects": { to: "/projects", icon: Briefcase, label: "My Projects" },
   "Project Task Management": {
     to: "/tasks",
@@ -258,7 +258,7 @@ export const moduleToNavItem: Record<string, any> = {
     label: "Financial Reports",
   },
   "Lead Management": { to: "/leads", icon: Users, label: "Lead Management" },
-  Commissions: { to: "/commissions", icon: IndianRupee, label: "Commissions" },
+  // Commissions: { to: "/commissions", icon: IndianRupee, label: "Commissions" },
   "Projects Overview": {
     to: "/projects",
     icon: Building,
