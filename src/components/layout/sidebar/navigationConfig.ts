@@ -224,7 +224,7 @@ export const moduleToNavItem: Record<string, any> = {
     icon: IndianRupee,
     label: "My Commissions",
   },
-  "My Documents": { to: "/documents", icon: FileText, label: "My Documents" },
+  // "My Documents": { to: "/documents", icon: FileText, label: "My Documents" },
   "Construction Progress": {
     to: "/progress",
     icon: Gauge,

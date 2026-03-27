@@ -49,6 +49,7 @@ import { toast } from "sonner";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { Switch } from "@radix-ui/react-switch";
 import { useAuth } from "@/contexts/AuthContext";
+import { getImageUrl } from "@/lib/image";
 
 const TaxDocuments = () => {
   const { user } = useAuth();
@@ -349,11 +350,11 @@ const TaxDocuments = () => {
     }
   }, [gstDocs, itrDocs]);
 
-  const buildFileUrl = (url) => {
-    if (!url) return "#";
-    if (url.startsWith("http")) return url;
-    return `${import.meta.env.VITE_IMAGE_URL}${url}`;
-  };
+  // const getImageUrl = (url) => {
+  //   if (!url) return "#";
+  //   if (url.startsWith("http")) return url;
+  //   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
+  // };
 
   return (
     <MainLayout>
@@ -871,7 +872,7 @@ const TaxDocuments = () => {
                                   size="sm"
                                   onClick={() => {
                                     const link = document.createElement("a");
-                                    link.href = buildFileUrl(
+                                    link.href = getImageUrl(
                                       gstReturn.documentUrl,
                                     );
                                     link.download = "";
@@ -976,7 +977,7 @@ const TaxDocuments = () => {
                                     size="sm"
                                     onClick={() => {
                                       const link = document.createElement("a");
-                                      link.href = buildFileUrl(
+                                      link.href = getImageUrl(
                                         record.documentUrl,
                                       );
                                       link.download = "";
@@ -1066,7 +1067,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = buildFileUrl(record.documentUrl);
+                                link.href = getImageUrl(record.documentUrl);
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1176,7 +1177,7 @@ const TaxDocuments = () => {
                                         onClick={() => {
                                           const link =
                                             document.createElement("a");
-                                          link.href = buildFileUrl(
+                                          link.href = getImageUrl(
                                             doc.documentUrl,
                                           );
                                           link.download = "";
@@ -1265,7 +1266,7 @@ const TaxDocuments = () => {
                               size="sm"
                               onClick={() => {
                                 const link = document.createElement("a");
-                                link.href = buildFileUrl(doc.documentUrl);
+                                link.href = getImageUrl(doc.documentUrl);
                                 link.download = "";
                                 document.body.appendChild(link);
                                 link.click();
@@ -1513,7 +1514,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Uploaded Document</Label>
                     <a
-                      href={buildFileUrl(selectedGstDoc.documentUrl)}
+                      href={getImageUrl(selectedGstDoc.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1567,7 +1568,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Supporting Document</Label>
                     <a
-                      href={buildFileUrl(selectedTdsRecord.documentUrl)}
+                      href={getImageUrl(selectedTdsRecord.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600 hover:text-blue-800"
@@ -1618,7 +1619,7 @@ const TaxDocuments = () => {
                   <div className="space-y-2">
                     <Label>Uploaded Document</Label>
                     <a
-                      href={buildFileUrl(selectedItrDoc.documentUrl)}
+                      href={getImageUrl(selectedItrDoc.documentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline text-blue-600"
