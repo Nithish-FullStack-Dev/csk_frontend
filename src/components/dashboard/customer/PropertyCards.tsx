@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 
 const fetchMyPurchases = async (page: number) => {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/customer/my-purchases?page=${page}&limit=4`,
+    `${import.meta.env.VITE_URL}/api/customer/my-purchase?page=${page}&limit=4`,
     { withCredentials: true },
   );
   return data?.data;

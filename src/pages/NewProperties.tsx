@@ -48,6 +48,7 @@ import { OpenLand } from "@/types/OpenLand";
 import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
 import { useRBAC } from "@/config/RBAC";
 import { getImageUrl } from "@/lib/image";
+import { useAuth } from "@/contexts/AuthContext";
 const fixImageUrl = (url?: string) => {
   if (!url) return "";
   return url.replace("/uploads/", "/api/uploads/");
@@ -55,6 +56,7 @@ const fixImageUrl = (url?: string) => {
 const NewProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [filteredBuildings, setFilteredBuildings] = useState<Building[]>([]);
@@ -350,7 +352,7 @@ const NewProperties = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <>
+        <section>
           {/* Header */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -446,150 +448,181 @@ const NewProperties = () => {
                   </Button>
                 )}
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {filteredBuildings.map((b, idx) => (
-                  <Card
-                    key={b._id || idx}
-                    className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                  >
-                    <div className="relative">
-                      {b.thumbnailUrl ? (
-                        <img
-                          src={getImageUrl(b.thumbnailUrl)}
-                          alt={b.projectName}
-                          className="h-48 w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-48 bg-muted flex items-center justify-center">
-                          <Building2 className="h-10 w-10 opacity-20" />
-                        </div>
-                      )}
-                      <div className="absolute top-3 right-3">
-                        {getStatusBadge(b.constructionStatus)}
-                      </div>
-                    </div>
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">Property</h2>
+              <div />
+            </div>
 
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-semibold text-lg">
-                          {b.projectName}
-                        </h3>
-                        <div
-                          className="flex gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {canEdit && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={(e) => handleEditBuilding(b, e)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {userCanDeleteUser && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={(e) =>
-                                openDeleteDialog("building", b._id!, e)
-                              }
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center text-sm text-muted-foreground mb-3">
-                        <MapPin className="h-4 w-4 mr-1" /> {b.location}
-                      </div>
-
-                      <div className="space-y-2 mb-4 text-sm">
-                        <div className="flex justify-between">
-                          <span>Total Units</span>
-                          <span>{b.totalUnits}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Available</span>
-                          <span className="text-green-600">
-                            {b.availableUnits}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Sold</span>
-                          <span className="text-blue-600">{b.soldUnits}</span>
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-3 text-sm space-y-2">
-                        <div className="flex justify-between">
-                          <span className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" /> Completion
-                          </span>
-                          <span>
-                            {new Date(b.completionDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Municipal</span>
-                          {b.municipalPermission ? (
-                            <Check className="h-4 w-4 text-green-500" />
+            <Card>
+              <CardContent className="p-6">
+                {filteredBuildings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <h3 className="text-lg font-semibold mb-2">
+                      No Property found
+                    </h3>
+                    {user?.role === "customer_purchased" ? (
+                      <p className="text-muted-foreground">
+                        No properties found for your account.
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        No properties available. Please add a new property using
+                        the button above.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredBuildings.map((b, idx) => (
+                      <Card
+                        key={b._id || idx}
+                        className="overflow-hidden hover:shadow-lg transition cursor-pointer"
+                      >
+                        <div className="relative">
+                          {b.thumbnailUrl ? (
+                            <img
+                              src={getImageUrl(b.thumbnailUrl)}
+                              alt={b.projectName}
+                              className="h-48 w-full object-cover"
+                            />
                           ) : (
-                            <X className="h-4 w-4 text-red-500" />
+                            <div className="h-48 bg-muted flex items-center justify-center">
+                              <Building2 className="h-10 w-10 opacity-20" />
+                            </div>
                           )}
+                          <div className="absolute top-3 right-3">
+                            {getStatusBadge(b.constructionStatus)}
+                          </div>
                         </div>
 
-                        {/* RERA Status */}
-                        <div className="flex justify-between mt-2">
-                          <span>RERA Approved</span>
-                          {b.reraApproved ? (
-                            <div className="flex items-center space-x-2">
-                              <Check className="h-4 w-4 text-green-500" />
-                              <span className="text-sm font-medium">
-                                {b.reraNumber || "N/A"}
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className="font-semibold text-lg">
+                              {b.projectName}
+                            </h3>
+                            <div
+                              className="flex gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {canEdit && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) => handleEditBuilding(b, e)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {userCanDeleteUser && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={(e) =>
+                                    openDeleteDialog("building", b._id!, e)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center text-sm text-muted-foreground mb-3">
+                            <MapPin className="h-4 w-4 mr-1" /> {b.location}
+                          </div>
+
+                          <div className="space-y-2 mb-4 text-sm">
+                            <div className="flex justify-between">
+                              <span>Total Units</span>
+                              <span>{b.totalUnits}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Available</span>
+                              <span className="text-green-600">
+                                {b.availableUnits}
                               </span>
                             </div>
-                          ) : (
-                            <X className="h-4 w-4 text-red-500" />
-                          )}
-                        </div>
-                      </div>
+                            <div className="flex justify-between">
+                              <span>Sold</span>
+                              <span className="text-blue-600">
+                                {b.soldUnits}
+                              </span>
+                            </div>
+                          </div>
 
-                      <div className="flex gap-2 mt-4">
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() =>
-                            navigate(`/properties/building/${b?._id}`)
-                          }
-                        >
-                          View More
-                        </Button>
-                        {b?.brochureUrl && (
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={(e) =>
-                                handleDownload(
-                                  e,
-                                  b?.brochureUrl!,
-                                  b?.projectName,
-                                  b._id,
-                                )
-                              }
-                              disabled={downloadingId === b._id}
-                              title="Download Brochure"
-                            >
-                              {downloadingId === b._id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                          <div className="border-t pt-3 text-sm space-y-2">
+                            <div className="flex justify-between">
+                              <span className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-1" /> Completion
+                              </span>
+                              <span>
+                                {new Date(
+                                  b.completionDate,
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Municipal</span>
+                              {b.municipalPermission ? (
+                                <Check className="h-4 w-4 text-green-500" />
                               ) : (
-                                <Download className="h-4 w-4" />
+                                <X className="h-4 w-4 text-red-500" />
                               )}
+                            </div>
+
+                            {/* RERA Status */}
+                            <div className="flex justify-between mt-2">
+                              <span>RERA Approved</span>
+                              {b.reraApproved ? (
+                                <div className="flex items-center space-x-2">
+                                  <Check className="h-4 w-4 text-green-500" />
+                                  <span className="text-sm font-medium">
+                                    {b.reraNumber || "N/A"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <X className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() =>
+                                navigate(`/properties/building/${b?._id}`)
+                              }
+                            >
+                              View More
                             </Button>
-                            {/* <Button
+                            {b?.brochureUrl && (
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={(e) =>
+                                    handleDownload(
+                                      e,
+                                      b?.brochureUrl!,
+                                      b?.projectName,
+                                      b._id,
+                                    )
+                                  }
+                                  disabled={downloadingId === b._id}
+                                  title="Download Brochure"
+                                >
+                                  {downloadingId === b._id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                {/* <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={(e) =>
@@ -599,15 +632,17 @@ const NewProperties = () => {
                               >
                                 <Share2 className="h-4 w-4" />
                               </Button> */}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
 
           {/* ---------- Open Plots Section ---------- */}
 
@@ -624,9 +659,16 @@ const NewProperties = () => {
                     <h3 className="text-lg font-semibold mb-2">
                       No open plots found
                     </h3>
-                    <p className="text-muted-foreground">
-                      Add open plots using the button above.
-                    </p>
+                    {user?.role === "customer_purchased" ? (
+                      <p className="text-muted-foreground">
+                        No open plot found for your account.
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        No open plot available. Please add a new open plot using
+                        the button above.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -795,9 +837,16 @@ const NewProperties = () => {
                     <h3 className="text-lg font-semibold mb-2">
                       No open Land found
                     </h3>
-                    <p className="text-muted-foreground">
-                      Add open Land using the button above.
-                    </p>
+                    {user?.role === "customer_purchased" ? (
+                      <p className="text-muted-foreground">
+                        No Open Land found for your account.
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        No Open Land available. Please add a new open land using
+                        the button above.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -953,7 +1002,7 @@ const NewProperties = () => {
               </CardContent>
             </Card>
           </section>
-        </>
+        </section>
       </div>
 
       {/* Dialogs */}
