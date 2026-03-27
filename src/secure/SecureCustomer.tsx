@@ -60,6 +60,7 @@ import {
   deleteCustomerPayment,
   fetchCustomerPayments,
 } from "@/utils/accountant/CustomerPaymentConfig";
+import { getImageUrl } from "@/lib/image";
 
 const SecureCustomer = () => {
   const { user } = useAuth();
@@ -86,13 +87,6 @@ const SecureCustomer = () => {
   const [deletePaymentDialogOpen, setDeletePaymentDialogOpen] = useState(false);
 
   const [paymentToDelete, setPaymentToDelete] = useState<any | null>(null);
-
-  const {
-    isRolePermissionsLoading,
-    userCanAddUser,
-    userCanDeleteUser,
-    userCanEditUser,
-  } = useRBAC({ roleSubmodule: "Customer Management" });
 
   const {
     data: customersResponse,
@@ -408,7 +402,7 @@ const SecureCustomer = () => {
           </TabsList>
           <TabsContent value="add">
             <>
-              {userCanAddUser && (
+              {
                 <div className="flex md:justify-end justify-normal w-full mb-5 md:gap-5 gap-2 md:flex-row flex-col">
                   <Button
                     variant="outline"
@@ -434,7 +428,7 @@ const SecureCustomer = () => {
                     Add New Customer
                   </Button>
                 </div>
-              )}
+              }
               <div className="rounded-lg border border-gray-200 shadow-sm p-4 bg-white">
                 {isLoadingCustomers ? (
                   <div className="flex justify-center items-center gap-2 text-gray-600 py-8">
@@ -630,13 +624,13 @@ const SecureCustomer = () => {
                                       >
                                         View Details
                                       </DropdownMenuItem>
-                                      {userCanEditUser && (
+                                      {
                                         <DropdownMenuItem
                                           onClick={() => handleEdit(customer)}
                                         >
                                           Edit
                                         </DropdownMenuItem>
-                                      )}
+                                      }
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedCustomer(customer);
@@ -655,7 +649,7 @@ const SecureCustomer = () => {
                                         Add Payment
                                       </DropdownMenuItem>
 
-                                      {userCanDeleteUser && (
+                                      {
                                         <DropdownMenuItem
                                           className="text-red-600"
                                           onClick={() =>
@@ -664,7 +658,7 @@ const SecureCustomer = () => {
                                         >
                                           Delete
                                         </DropdownMenuItem>
-                                      )}
+                                      }
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>
@@ -1020,9 +1014,8 @@ const SecureCustomer = () => {
                       {selectedCustomer?.images?.map((doc, idx) => {
                         const clean = doc?.split?.("?")?.[0];
                         const name = clean?.split?.("/")?.pop?.() || "Document";
-                        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(
-                          clean,
-                        );
+                        const isImage =
+                          /\.(jpg|jpeg|png|gif|webp|svg|avif)$/i.test(clean);
 
                         return (
                           <div
@@ -1031,7 +1024,7 @@ const SecureCustomer = () => {
                           >
                             {isImage ? (
                               <img
-                                src={doc}
+                                src={getImageUrl(doc)}
                                 alt={name}
                                 className="w-full h-32 object-cover"
                               />
@@ -1055,7 +1048,7 @@ const SecureCustomer = () => {
                           <SectionTitle title="PDF Document" />
 
                           <a
-                            href={selectedCustomer?.pdfDocument}
+                            href={getImageUrl(selectedCustomer?.pdfDocument)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-blue-600 hover:underline"

@@ -72,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
       "My Commissions",
       "Sales Overview",
       "My Schedule",
+      "Team Management",
     ],
   },
   {
@@ -86,7 +87,6 @@ const NAV_GROUPS: NavGroup[] = [
       "Contractors",
       "Materials",
       "Labor Management",
-      "Team Management",
     ],
   },
   {

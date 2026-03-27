@@ -28,6 +28,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import React, { useEffect, useState } from "react";
+import { getImageUrl } from "@/lib/image";
 
 function CashExpenseDialog({ open, onClose, editData }: any) {
   const isEdit = Boolean(editData);
@@ -184,7 +185,7 @@ function CashExpenseDialog({ open, onClose, editData }: any) {
                       <SelectItem key={v} value={v}>
                         {v}
                       </SelectItem>
-                    )
+                    ),
                   )}
                 </SelectContent>
               </Select>
@@ -271,13 +272,13 @@ function CashExpenseDialog({ open, onClose, editData }: any) {
               <div className="mt-2 border rounded-md p-2">
                 {previewUrl.endsWith(".pdf") ? (
                   <iframe
-                    src={previewUrl}
+                    src={getImageUrl(previewUrl)}
                     className="w-full h-64"
                     title="PDF Preview"
                   />
                 ) : (
                   <img
-                    src={previewUrl}
+                    src={getImageUrl(previewUrl)}
                     alt="Proof Preview"
                     className="max-h-64 object-contain rounded"
                   />
@@ -295,8 +296,8 @@ function CashExpenseDialog({ open, onClose, editData }: any) {
                     ? "Updating..."
                     : "Update"
                   : createMutation.isPending
-                  ? "Saving..."
-                  : "Save"}
+                    ? "Saving..."
+                    : "Save"}
               </Button>
             </DialogFooter>
           </div>

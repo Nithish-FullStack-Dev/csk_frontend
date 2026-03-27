@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import * as XLSX from "xlsx";
 import DetailItem from "../helpers/DetailItem";
+import { getImageUrl } from "@/lib/image";
 
 export default function CashExpensesPage() {
   const qc = useQueryClient();
@@ -311,7 +312,7 @@ export default function CashExpensesPage() {
                   </div>
 
                   <a
-                    href={viewData.proofBillUrl}
+                    href={getImageUrl(viewData.proofBillUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 font-medium hover:underline"
