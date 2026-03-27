@@ -267,7 +267,7 @@ const App = () => {
                   {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                   <Route path="/public/contact" element={<ContactPage />} />
                   {/* <Route path="/kanban" element={<Kanban />} /> */}
-                  <Route path="/department" element={<Department />} />
+                  {/* <Route path="/department" element={<Department />} /> */}
                 </Route>
 
                 {/* Admin Routes */}
