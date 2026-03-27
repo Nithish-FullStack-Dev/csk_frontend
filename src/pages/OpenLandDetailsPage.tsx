@@ -4,11 +4,17 @@ import { toast } from "sonner";
 import Loader from "@/components/Loader";
 import OpenLandDetails from "@/components/properties/OpenLandDetails";
 import { OpenLand } from "@/types/OpenLand";
+import { useState } from "react";
+import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
+import { OpenLandDialog } from "@/components/properties/OpenLandDialog";
+import axios from "axios";
 
 const OpenLandDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // 🔥 read already fetched lands from React Query cache
   const lands = queryClient.getQueryData<OpenLand[]>(["openLand"]);
@@ -24,13 +30,50 @@ const OpenLandDetailsPage = () => {
   }
 
   return (
-    <OpenLandDetails
-      land={land}
-      onBack={() => navigate("/properties")}
-      onEdit={() => navigate(`/properties?editLand=${land._id}`)}
-      onDelete={() => navigate("/properties")}
-      onRefresh={() => {}}
-    />
+    <>
+      <OpenLandDetails
+        land={land}
+        onBack={() => navigate("/properties")}
+        onEdit={() => setEditOpen(true)}
+        onDelete={() => setDeleteOpen(true)}
+        onRefresh={() => {}}
+      />
+
+      <OpenLandDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        openLand={land}
+        onSubmit={(updated) => {
+          queryClient.setQueryData(["openLand"], (old: any[]) =>
+            old.map((l) => (l._id === updated._id ? updated : l)),
+          );
+          setEditOpen(false);
+        }}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Open Land"
+        description="Are you sure you want to delete this land?"
+        onConfirm={async () => {
+          try {
+            await axios.delete(
+              `${import.meta.env.VITE_URL}/api/openLand/deleteOpenLand/${land._id}`,
+              { withCredentials: true },
+            );
+
+            toast.success("Deleted");
+
+            queryClient.invalidateQueries({ queryKey: ["openLand"] });
+
+            navigate("/properties");
+          } catch (err) {
+            toast.error("Delete failed");
+          }
+        }}
+      />
+    </>
   );
 };
 

@@ -97,7 +97,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Invoices",
       "Invoice Management",
       // "Payments",
-      "Payment Processing",
+      // "Payment Processing",
       "Budget Management",
       "Financial Reports",
       "Reports",
@@ -132,7 +132,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: "secure",
     label: "Secure",
     icon: Shield,
-    modules: ["Secure", "Customer Purchased", "Payments"],
+    modules: ["Secure", "Payments", "Customer Purchased"],
   },
 ];
 
