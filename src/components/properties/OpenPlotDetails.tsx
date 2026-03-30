@@ -29,7 +29,7 @@ import axios from "axios";
 import { InnerPlotDialog } from "./InnerPlotDialog";
 import { useNavigate } from "react-router-dom";
 // import { getAllInnerPlot } from "@/api/inneropenPlotData?.api";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import BulkInnerPlotGenerator from "./BulkInnerPlotGenerator";
 import CsvInnerPlotUploader from "./CsvInnerPlotUploader";
 import { toast } from "sonner";
@@ -113,6 +113,33 @@ export function OpenPlotDetails({
     queryKey: ["inner-plots", openPlotData?._id],
     queryFn: () => getAllInnerPlot(openPlotData?._id),
     enabled: !!openPlotData?._id,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return await axios.delete(
+        `${import.meta.env.VITE_URL}/api/openPlot/deleteOpenPlot/${openPlotData?._id}`,
+        { withCredentials: true },
+      );
+    },
+
+    onSuccess: () => {
+      toast.success("Open plot deleted successfully");
+
+      // 🔥 VERY IMPORTANT (same like NewProperties)
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+
+      // also remove single cache
+      queryClient.removeQueries({
+        queryKey: ["open-plot", openPlotData?._id],
+      });
+
+      navigate("/properties");
+    },
+
+    onError: () => {
+      toast.error("Failed to delete open plot");
+    },
   });
 
   const galleryImages = useMemo(() => {
@@ -503,11 +530,11 @@ export function OpenPlotDetails({
               <Button
                 variant="destructive"
                 onClick={() => {
-                  onDelete();
+                  deleteMutation.mutate();
                   setDeleteDialogOpen(false);
                 }}
               >
-                Delete Plot
+                {deleteMutation.isPending ? "Deleting..." : "Delete Plot"}
               </Button>
             </div>
           </DialogContent>

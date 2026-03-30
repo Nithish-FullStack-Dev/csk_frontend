@@ -58,8 +58,6 @@ const TeamManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
-  const isAdmin = user.role === "admin";
-
   const [status, setStatus] = useState<"active" | "training" | "on-leave">(
     "active",
   );
@@ -77,9 +75,9 @@ const TeamManagement = () => {
 
   useEffect(() => {
     if (editingMember) {
-      setAgentId(editingMember.agentId._id);
-      setStatus(editingMember.status as "active" | "training" | "on-leave");
-      setPerformance(editingMember.performance);
+      setAgentId(editingMember?.agentId?._id);
+      setStatus(editingMember?.status as "active" | "training" | "on-leave");
+      setPerformance(editingMember?.performance);
     } else {
       // Reset form when not editing or dialog is closed
       setAgentId("");
@@ -297,8 +295,10 @@ const TeamManagement = () => {
   };
 
   const totalTeamSales =
-    teamMembers?.reduce((sum, member) => sum + member.performance.sales, 0) ||
-    0;
+    teamMembers?.reduce(
+      (sum, member) => sum + member?.performance?.sales || 0,
+      0,
+    ) || 0;
   const totalTeamTarget =
     teamMembers?.reduce((sum, member) => sum + member.performance.target, 0) ||
     0;
@@ -388,7 +388,7 @@ const TeamManagement = () => {
         <Tabs defaultValue="add">
           <TabsList>
             <TabsTrigger value="add">Add Agents</TabsTrigger>
-            {user.role !== "accountant" && (
+            {user?.role !== "accountant" && (
               <TabsTrigger value="team">Team Management</TabsTrigger>
             )}
           </TabsList>
@@ -505,9 +505,8 @@ const TeamManagement = () => {
                   {sortedAndFilteredTeamMembers?.map((member) => {
                     const performancePercentage =
                       member.performance.target > 0
-                        ? (member.performance.sales /
-                            member.performance.target) *
-                          100
+                        ? (member?.performance?.sales ||
+                            0 / member?.performance?.target) * 100
                         : 0;
                     const performanceLevel = getPerformanceLevel(
                       performancePercentage,
@@ -561,7 +560,7 @@ const TeamManagement = () => {
                               <p className="text-muted-foreground">Sales</p>
                               <p className="font-semibold">
                                 ₹
-                                {member.performance.sales.toLocaleString(
+                                {member?.performance?.sales?.toLocaleString(
                                   "en-IN",
                                   {
                                     maximumFractionDigits: 0,
@@ -573,7 +572,7 @@ const TeamManagement = () => {
                               <p className="text-muted-foreground">Target</p>
                               <p className="font-semibold">
                                 ₹
-                                {member.performance.target.toLocaleString(
+                                {member?.performance?.target?.toLocaleString(
                                   "en-IN",
                                   {
                                     maximumFractionDigits: 0,
@@ -584,7 +583,7 @@ const TeamManagement = () => {
                             <div>
                               <p className="text-muted-foreground">Deals</p>
                               <p className="font-semibold">
-                                {member.performance.deals}
+                                {member?.performance?.deals}
                               </p>
                             </div>
                             <div>
@@ -592,7 +591,7 @@ const TeamManagement = () => {
                                 Conversion
                               </p>
                               <p className="font-semibold">
-                                {member.performance.conversionRate}%
+                                {member?.performance?.conversionRate}%
                               </p>
                             </div>
                           </div>
@@ -600,8 +599,8 @@ const TeamManagement = () => {
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Target Achievement</span>
-                              <span className={performanceLevel.color}>
-                                {performanceLevel.level}
+                              <span className={performanceLevel?.color}>
+                                {performanceLevel?.level}
                               </span>
                             </div>
                             <Progress
@@ -609,7 +608,7 @@ const TeamManagement = () => {
                               className="h-2"
                             />
                             <p className="text-xs text-muted-foreground text-right">
-                              {performancePercentage.toFixed(1)}% of target
+                              {performancePercentage?.toFixed(1)}% of target
                             </p>
                           </div>
 
@@ -617,16 +616,16 @@ const TeamManagement = () => {
                             <span>
                               Last activity:{" "}
                               {new Date(
-                                member.performance.lastActivity,
+                                member?.performance?.lastActivity,
                               ).toLocaleDateString()}{" "}
                               {new Date(
-                                member.performance.lastActivity,
+                                member?.performance?.lastActivity,
                               ).toLocaleTimeString()}
                             </span>
                           </div>
 
                           <div className="flex space-x-2">
-                            <a href={`tel:${member.agentId.phone || ""}`}>
+                            <a href={`tel:${member?.agentId?.phone || ""}`}>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -638,7 +637,7 @@ const TeamManagement = () => {
                             </a>
                             <a
                               href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                member.agentId.email,
+                                member?.agentId?.email,
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -697,11 +696,14 @@ const TeamManagement = () => {
                     ) : (
                       response?.data?.map(
                         (item: AgentDropdownItem, idx: number) => {
-                          const user = item.agentId;
+                          const user = item?.agentId;
 
                           return (
-                            <SelectItem key={user._id || idx} value={user._id}>
-                              {user.name} ({user.email})
+                            <SelectItem
+                              key={user?._id || idx}
+                              value={user?._id}
+                            >
+                              {user?.name} ({user?.email})
                             </SelectItem>
                           );
                         },
@@ -740,7 +742,7 @@ const TeamManagement = () => {
                 { key: "target", label: "Target Price" },
                 { key: "deals", label: "Closed Deals" },
                 { key: "leads", label: "Interested Leads" },
-              ].map(({ key, label }) => (
+              ]?.map(({ key, label }) => (
                 <div className="grid grid-cols-4 items-center gap-4" key={key}>
                   <Label htmlFor={key} className="text-right">
                     {label}
@@ -769,7 +771,7 @@ const TeamManagement = () => {
                   id="conversionRate"
                   className="col-span-3"
                   type="number"
-                  value={performance.conversionRate}
+                  value={performance?.conversionRate}
                   readOnly
                 />
               </div>
@@ -780,7 +782,7 @@ const TeamManagement = () => {
                 <Input
                   type="datetime-local"
                   id="lastActivity"
-                  value={performance.lastActivity.slice(0, 16)} // Ensure format for datetime-local
+                  value={performance?.lastActivity?.slice(0, 16)} // Ensure format for datetime-local
                   onChange={(e) =>
                     handlePerformanceChange("lastActivity", e.target.value)
                   }
