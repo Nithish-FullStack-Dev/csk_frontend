@@ -197,13 +197,21 @@ const LeadManagement = () => {
 
     // 🔑 CRITICAL PART
     setProperty(propertyId);
-    setSelectedProject(propertyId); // ✅ triggers floorUnits fetch
+    setSelectedProject(propertyId);
 
-    setFloorUnit(floorUnitId);
-    setSelectedFloorUnit(floorUnitId); // ✅ triggers units fetch
+    setFloorUnit("");
+    setSelectedFloorUnit("");
 
-    setUnit(unitId);
-  }, [propertyLeadToEdit]);
+    setTimeout(() => {
+      setFloorUnit(floorUnitId);
+      setSelectedFloorUnit(floorUnitId);
+
+      setUnit("");
+      setTimeout(() => {
+        setUnit(unitId);
+      }, 100);
+    }, 100);
+  }, [propertyLeadToEdit, projects]);
 
   if (isError) {
     toast.error("Failed to fetch leads");
@@ -1050,7 +1058,13 @@ const LeadManagement = () => {
                   <Label htmlFor="project">Project *</Label>
                   <Select
                     value={property}
-                    onValueChange={setProperty}
+                    onValueChange={(val) => {
+                      setProperty(val);
+                      setSelectedProject(val);
+                      setFloorUnit("");
+                      setSelectedFloorUnit("");
+                      setUnit("");
+                    }}
                     disabled={projectLoading}
                   >
                     <SelectTrigger>
@@ -1085,7 +1099,11 @@ const LeadManagement = () => {
                   <Label htmlFor="floorUnit">Floor Units *</Label>
                   <Select
                     value={floorUnit}
-                    onValueChange={setFloorUnit}
+                    onValueChange={(val) => {
+                      setFloorUnit(val);
+                      setSelectedFloorUnit(val);
+                      setUnit("");
+                    }}
                     disabled={!selectedProject || floorUnitsLoading}
                   >
                     <SelectTrigger>
@@ -1123,7 +1141,10 @@ const LeadManagement = () => {
                   <Label htmlFor="unit">Units *</Label>
                   <Select
                     value={unit}
-                    onValueChange={setUnit}
+                    onValueChange={(val) => {
+                      setUnit(val);
+                      setSelectedUnit(val);
+                    }}
                     disabled={!selectedFloorUnit || unitsByFloorLoading}
                   >
                     <SelectTrigger>

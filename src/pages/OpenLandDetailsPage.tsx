@@ -63,7 +63,7 @@ const OpenLandDetailsPage = () => {
               { withCredentials: true },
             );
 
-            toast.success("Deleted");
+            toast.success("Open land Deleted");
 
             queryClient.invalidateQueries({ queryKey: ["openLand"] });
 

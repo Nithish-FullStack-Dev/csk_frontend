@@ -196,6 +196,7 @@ const BuildingDetails = () => {
     },
 
     onError: (err: any) => {
+      console.log(err);
       const msg =
         err?.response?.data?.message || err?.message || "Failed to add floor";
 

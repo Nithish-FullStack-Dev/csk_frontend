@@ -42,7 +42,7 @@ export const openLandFormSchema = z
       "Commercial Land",
       "Industrial Land",
       "Farm Land",
-      "Plotting Land",
+      // "Plotting Land",
       "Other",
     ]),
 
@@ -164,7 +164,7 @@ export default function OpenLandForm({
               ? openLand.landArea
               : undefined,
           areaUnit: openLand.areaUnit || "Acre",
-          landSize: openLand.landSize || "",
+          // landSize: openLand.landSize || "",
           availableDate: openLand.availableDate
             ? new Date(openLand.availableDate).toISOString().slice(0, 10)
             : "",
@@ -178,9 +178,9 @@ export default function OpenLandForm({
           fencingAvailable: !!openLand.fencingAvailable,
           waterFacility: !!openLand.waterFacility,
           electricity: !!openLand.electricity,
-          thumbnailUrl: openLand.thumbnailUrl || "",
-          images: openLand.images || [],
-          brochureUrl: openLand.brochureUrl || "",
+          //  thumbnailUrl : openLand.thumbnailUrl || "",
+          //   images: openLand.images || [],
+          //   brochureUrl: openLand.brochureUrl || "",
           ownerName: openLand.ownerName || "",
           LandApproval: openLand.LandApproval || "NA",
 
@@ -197,7 +197,7 @@ export default function OpenLandForm({
           landStatus: "Available",
           landArea: undefined,
           areaUnit: "Acre",
-          landSize: "",
+          // landSize: "",
           availableDate: "",
           description: "",
           municipalPermission: false,
@@ -209,9 +209,9 @@ export default function OpenLandForm({
           fencingAvailable: false,
           waterFacility: false,
           electricity: false,
-          thumbnailUrl: "",
-          images: [],
-          brochureUrl: "",
+          // thumbnailUrl: "",
+          // images: [],
+          // brochureUrl: "",
           ownerName: "",
           LandApproval: "NA",
           pricePerUnit: undefined,
@@ -361,9 +361,9 @@ export default function OpenLandForm({
         formData.append("brochureRemoved", "true");
       }
       // auto landSize build
-      if (data?.landArea && data?.areaUnit && !data?.landSize) {
-        formData.append("landSize", `${data.landArea} ${data.areaUnit}`);
-      }
+      // if (data?.landArea && data?.areaUnit && !data?.landSize) {
+      //   formData.append("landSize", `${data.landArea} ${data.areaUnit}`);
+      // }
       if (!isEditing && !thumbnailFile) {
         toast.error("Thumbnail image is required");
         return;
@@ -398,7 +398,7 @@ export default function OpenLandForm({
             formData,
             config,
           );
-          
+
       const saved = res.data?.data || res.data;
 
       toast.success(
@@ -487,7 +487,7 @@ export default function OpenLandForm({
                       "Commercial Land",
                       "Industrial Land",
                       "Farm Land",
-                      "Plotting Land",
+                      // "Plotting Land",
                       "Other",
                     ].map((t) => (
                       <SelectItem key={t} value={t}>

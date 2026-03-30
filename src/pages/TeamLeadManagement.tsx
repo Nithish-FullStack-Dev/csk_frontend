@@ -173,12 +173,10 @@ const TeamLeadManagement = () => {
 
   const addTeamMemberMutation = useMutation({
     mutationFn: async ({
-      salesId, // This is the ID of the agent being added to the team
       status,
       performance,
       teamLeadId, // This is the ID of the current logged-in user (the team lead)
     }: {
-      salesId: string;
       status: "active" | "training" | "on-leave";
       performance: {
         sales: number;
@@ -192,7 +190,7 @@ const TeamLeadManagement = () => {
     }) => {
       const { data } = await axios.post(
         `${import.meta.env.VITE_URL}/api/teamLead/addTeamLead`,
-        { salesId, teamLeadId, performance, status },
+        { teamLeadId, performance, status },
         { withCredentials: true },
       );
       return data;
