@@ -49,6 +49,7 @@ import {
 } from "@/utils/leads/LeadConfig";
 import axios from "axios";
 import { useRBAC } from "@/config/RBAC";
+import { getImageUrl } from "@/lib/image";
 
 function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -194,6 +195,26 @@ export function PropertyDetails({
 
       queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["lead-management"],
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inspections"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["fetchProjects"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["invoice"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules"],
       });
 
       queryClient.refetchQueries({
@@ -722,7 +743,7 @@ export function PropertyDetails({
                               (url: string, i: number) => (
                                 <img
                                   key={i}
-                                  src={url}
+                                  src={getImageUrl(url)}
                                   alt={`task-proof-${i}`}
                                   className="h-20 w-full object-cover rounded-md shadow-sm cursor-pointer hover:opacity-80 transition"
                                   onClick={() => setPreviewImage(url)}
@@ -752,7 +773,7 @@ export function PropertyDetails({
           <DialogContent className="max-w-3xl p-0" aria-describedby={undefined}>
             <DialogTitle className="sr-only">Image Preview</DialogTitle>
             <img
-              src={previewImage!}
+              src={getImageUrl(previewImage)}
               alt="Preview"
               className="w-full rounded-lg object-cover"
             />
@@ -877,7 +898,7 @@ export function PropertyDetails({
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         title="Delete Unit"
-        description="Are you sure you want to delete this unit? This action cannot be undone."
+        description="Deleting this unit will permanently remove all related data including projects, leads, invoices, and inspections. This action cannot be undone. Do you want to continue?"
       />
     </>
   );

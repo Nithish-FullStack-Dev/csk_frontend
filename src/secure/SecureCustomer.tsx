@@ -168,7 +168,7 @@ const SecureCustomer = () => {
         queryKey: ["customers"],
       });
 
-      setDeletePaymentDialogOpen(true);
+      setDeletePaymentDialogOpen(false);
       setPaymentToDelete(null);
     },
   });

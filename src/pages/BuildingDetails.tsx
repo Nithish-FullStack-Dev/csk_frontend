@@ -234,6 +234,25 @@ const BuildingDetails = () => {
       toast.success(data.message || "Floor/Unit deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
       queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
+      queryClient.invalidateQueries({
+        queryKey: ["lead-management"],
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inspections"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["fetchProjects"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["invoice"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules"],
+      });
     },
 
     onError: (err: any) => {
@@ -924,7 +943,7 @@ const BuildingDetails = () => {
         description={
           deleteTarget?.type === "building"
             ? "Are you sure you want to delete this building? This action cannot be undone."
-            : "Are you sure you want to delete this floor/unit? The Related units will also be deleted. Instead you can edit"
+            : "Deleting this floor/unit will permanently remove all related units and associated data (projects, leads, invoices, etc.). This action cannot be undone. Do you want to continue?"
         }
       />
     </MainLayout>

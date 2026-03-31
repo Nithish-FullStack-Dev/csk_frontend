@@ -465,7 +465,7 @@ const EnquiryManagement = () => {
                         </>
                       )}
                       <TableHead className=" min-w-[120px]">Actions</TableHead>
-                      {isSalesManager && <TableHead>Status</TableHead>}
+                      {/* {isSalesManager && <TableHead>Status</TableHead>} */}
                       {isSalesManager && <TableHead>Edit</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -589,7 +589,7 @@ const EnquiryManagement = () => {
                               </Button>
                             )}
                           </TableCell>
-                          <TableCell>
+                          {/* <TableCell>
                             {isSalesManager && (
                               <Select
                                 value={enquiry?.status}
@@ -601,7 +601,6 @@ const EnquiryManagement = () => {
                                   <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {/* Only allow relevant status updates from Sales Manager context */}
                                   <SelectItem value="New">New</SelectItem>
                                   <SelectItem value="Enquiry">
                                     Enquiry
@@ -622,11 +621,11 @@ const EnquiryManagement = () => {
                                 </SelectContent>
                               </Select>
                             )}
-                          </TableCell>
+                          </TableCell> */}
                           <TableCell>
                             {isSalesManager && (
                               <>
-                                <Button
+                                {/* <Button
                                   variant="default"
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
@@ -635,7 +634,7 @@ const EnquiryManagement = () => {
                                   }
                                 >
                                   <Edit className="h-4 w-4" /> Manage
-                                </Button>
+                                </Button> */}
                                 <Button
                                   variant="default"
                                   size="sm"
@@ -1091,23 +1090,28 @@ const EnquiryManagement = () => {
                   />
                 </div>
 
-                <Select
-                  value={currentStatus}
-                  onValueChange={(val) => setCurrentStatus(val as Status)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="newNote" className="text-right pt-1">
+                    Status
+                  </Label>
+                  <Select
+                    value={currentStatus}
+                    onValueChange={(val) => setCurrentStatus(val as Status)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
 
-                  <SelectContent>
-                    <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Assigned">Assigned</SelectItem>
-                    <SelectItem value="Follow up">Follow up</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Closed">Closed</SelectItem>
-                    <SelectItem value="Rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      <SelectItem value="New">New</SelectItem>
+                      <SelectItem value="Assigned">Assigned</SelectItem>
+                      <SelectItem value="Follow up">Follow up</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Current Timeline (Read-only in manage dialog) */}
                 <div className="grid grid-cols-4 items-start gap-4">

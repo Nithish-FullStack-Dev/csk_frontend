@@ -39,6 +39,7 @@ import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton.tsx";
 import { toast } from "sonner";
 import CircleLoader from "@/components/CircleLoader.tsx";
 import { usePropertyById } from "@/utils/public/Config.ts";
+import { getImageUrl } from "@/lib/image.ts";
 
 // --- Horizontal line for better separation ---
 
@@ -167,12 +168,10 @@ const ProjectDetailsPage = () => {
 
     try {
       const API_BASE = import.meta.env.VITE_URL;
-      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url,
-      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
+      const proxyUrl = getImageUrl(url);
 
       // Open in a new tab so the backend redirects to a signed Cloudinary URL and browser downloads
-      window.open(proxyUrl, "_blank", "noopener,noreferrer");
+      window.open(url, "_blank", "noopener,noreferrer");
       toast.success("Download starting...");
     } catch (err) {
       console.error("Download error:", err);
@@ -459,22 +458,24 @@ const ProjectDetailsPage = () => {
                     {property?.priceRange?.min}
                   </div> */}
                   <div className="space-y-3">
-                    <Button
-                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
+                    {/* <Button
+                      className=""
                       onClick={() => setSiteVisitOpen(true)}
                     >
                       Schedule Site Visit
-                    </Button>
+                    </Button> */}
+                    <a href={`tel:9244567890`}>
+                      <Button
+                        variant="outline"
+                        className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      >
+                        <Phone className="mr-3 h-5 w-5" />
+                        Call Now
+                      </Button>
+                    </a>
                     <Button
                       variant="outline"
-                      className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
-                    >
-                      <Phone className="mr-3 h-5 w-5" />
-                      Call Now
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md"
                       onClick={(e) =>
                         handleDownload(
                           e,

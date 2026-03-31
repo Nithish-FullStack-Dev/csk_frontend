@@ -525,6 +525,7 @@ const ContractorLabor = () => {
                             "Flooring",
                             "Welding",
                             "General Labor",
+                            "Other",
                           ].map((type) => (
                             <SelectItem key={type} value={type}>
                               {type}

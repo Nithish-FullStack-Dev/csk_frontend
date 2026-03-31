@@ -14,9 +14,9 @@ const ContractorInvoicesPage = () => {
         </div>
 
         <Card>
-          <CardHeader>
+          {/* <CardHeader>
             <CardTitle>Invoice Management</CardTitle>
-          </CardHeader>
+          </CardHeader> */}
           <CardContent>
             <ContractorInvoices />
           </CardContent>

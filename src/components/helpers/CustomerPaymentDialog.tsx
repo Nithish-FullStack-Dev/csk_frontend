@@ -59,7 +59,7 @@ export default function CustomerPaymentDialog({
       }),
 
     onSuccess: (data) => {
-      toast.success(data.message||"Payment added");
+      toast.success(data.message || "Payment added");
 
       queryClient.invalidateQueries({
         queryKey: ["customerPayments", customerId],
@@ -69,11 +69,21 @@ export default function CustomerPaymentDialog({
         queryKey: ["customers"],
       });
 
+      setAmount("");
+      setDate("");
+      setMode("");
+      setRef("");
+      setRemarks("");
+      setType("PAYMENT");
+
       onOpenChange(false);
-    },onError:(err)=>{
-        toast.error(axios.isAxiosError(err)?err.response.data.message:err.message)
-        console.log("error",err)
-    }
+    },
+    onError: (err) => {
+      toast.error(
+        axios.isAxiosError(err) ? err.response.data.message : err.message,
+      );
+      console.log("error", err);
+    },
   });
 
   return (
@@ -85,63 +95,95 @@ export default function CustomerPaymentDialog({
 
         <div className="space-y-3">
           {/* amount */}
-          <Input
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+          <div>
+            <label className="text-sm font-medium">Amount *</label>
+            <Input
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
 
           {/* date */}
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
+          <div>
+            <label className="text-sm font-medium">Date *</label>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
 
           {/* type enum */}
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger>
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
+          <div>
+            <label className="text-sm font-medium">Type *</label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
 
-            <SelectContent>
-              <SelectItem value="PAYMENT">Payment</SelectItem>
-              <SelectItem value="ADVANCE">Advance</SelectItem>
-              <SelectItem value="ADJUSTMENT">Adjustment</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="PAYMENT">Payment</SelectItem>
+                <SelectItem value="ADVANCE">Advance</SelectItem>
+                <SelectItem value="ADJUSTMENT">Adjustment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* payment mode */}
-          <Select value={mode} onValueChange={setMode}>
-            <SelectTrigger>
-              <SelectValue placeholder="Payment Mode" />
-            </SelectTrigger>
+          <div>
+            <label className="text-sm font-medium">Payment Mode *</label>
+            <Select value={mode} onValueChange={setMode}>
+              <SelectTrigger>
+                <SelectValue placeholder="Payment Mode" />
+              </SelectTrigger>
 
-            <SelectContent>
-              <SelectItem value="CASH">Cash</SelectItem>
-              <SelectItem value="BANK">Bank</SelectItem>
-              <SelectItem value="UPI">UPI</SelectItem>
-              <SelectItem value="CHEQUE">Cheque</SelectItem>
-              <SelectItem value="ONLINE">Online</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectContent>
+                <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="BANK">Bank</SelectItem>
+                <SelectItem value="UPI">UPI</SelectItem>
+                <SelectItem value="CHEQUE">Cheque</SelectItem>
+                <SelectItem value="ONLINE">Online</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Input
-            placeholder="Reference Number"
-            value={ref}
-            onChange={(e) => setRef(e.target.value)}
-          />
+          <div>
+            <label className="text-sm font-medium">Reference Number</label>
+            <Input
+              placeholder="Reference Number"
+              value={ref}
+              onChange={(e) => setRef(e.target.value)}
+            />
+          </div>
 
-          <Input
-            placeholder="Remarks"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-          />
+          <div>
+            <label className="text-sm font-medium">Remarks</label>
+            <Input
+              placeholder="Remarks"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+            />
+          </div>
         </div>
 
         <DialogFooter>
           <Button
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              if (!amount || Number(amount) <= 0) {
+                return toast.error("Enter valid amount");
+              }
+
+              if (!date) {
+                return toast.error("Select payment date");
+              }
+
+              if (!mode) {
+                return toast.error("Select payment mode");
+              }
+
+              mutation.mutate();
+            }}
             disabled={mutation.isPending}
           >
             {mutation.isPending ? "Adding Payment..." : "Add Payment"}

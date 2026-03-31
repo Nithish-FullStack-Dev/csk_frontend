@@ -131,6 +131,7 @@ const ContractorsList = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchContractors"] });
       toast.success(data?.message ?? "Contractor deleted successfully");
       setDeletecontractorId(null);
       setDeleteDialogOpen(false);
@@ -461,7 +462,7 @@ const ContractorsList = () => {
                           All Statuses
                         </SelectItem>
                         <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
+                        {/* <SelectItem value="suspended">Suspended</SelectItem> */}
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>
