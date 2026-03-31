@@ -177,11 +177,7 @@ const OpenLandDetails: React.FC = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_URL || "";
-      const proxyUrl = `${API_BASE}/api/download-proxy?url=${encodeURIComponent(
-        url,
-      )}&filename=${encodeURIComponent(projectName || "brochure")}`;
-      window.open(proxyUrl, "_blank", "noopener,noreferrer");
+      window.open(url, "_blank", "noopener,noreferrer");
       toast.success("Download starting...");
     } catch (err) {
       console.error("Download error:", err);
@@ -492,7 +488,7 @@ const OpenLandDetails: React.FC = () => {
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
                       asChild
                     >
-                      <a href="tel:+919876543212">
+                      <a href="tel:9244567890">
                         <Phone className="mr-3 h-5 w-5" />
                         Call Now
                       </a>
@@ -500,7 +496,7 @@ const OpenLandDetails: React.FC = () => {
 
                     <Button
                       variant="outline"
-                      className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
+                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md"
                       onClick={(e) =>
                         handleDownload(
                           e,

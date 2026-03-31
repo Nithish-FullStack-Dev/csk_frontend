@@ -144,7 +144,7 @@ const ContractorInvoices = () => {
   } = useQuery({
     queryKey: ["completeTask"],
     queryFn: fetchCompletedTasks,
-    staleTime: 2 * 60 * 1000,
+    // staleTime: 2 * 60 * 1000,
   });
 
   const {
@@ -373,7 +373,7 @@ const ContractorInvoices = () => {
     // Prevent default form submission
     const base = data.quantity * data.rate;
     const taxAmount = base * (data.taxRate / 100);
-    const amount = base + taxAmount;
+    const amount = base;
 
     const newItem: InvoiceItem = {
       description: data.description,
@@ -500,7 +500,6 @@ const ContractorInvoices = () => {
     toast.error(dropdownError.message);
     return null;
   }
-
   if (invoiceLoading || completedTasksLoading) return <CircleLoader />;
 
   return (
@@ -578,7 +577,35 @@ const ContractorInvoices = () => {
           />
         </div>
         {userCanAddUser && user?.role !== "admin" && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
+          <Button
+            onClick={() => {
+              setIsEditMode(false);
+              setSelectedInvoice(null);
+
+              form.reset({
+                project: "",
+                issueDate: new Date().toISOString().split("T")[0],
+                dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split("T")[0],
+                sgst: 9,
+                cgst: 9,
+                status: "pending",
+                floorUnit: "",
+                unit: "",
+                task: undefined,
+                notes: "",
+              });
+
+              setInvoiceItems([]);
+              setSelectedProject("");
+              setSelectedFloorUnit("");
+              setSelectedUnit("");
+              setRelatedToTask(false);
+
+              setCreateDialogOpen(true);
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" /> Create Invoice
           </Button>
         )}
@@ -1246,9 +1273,9 @@ const ContractorInvoices = () => {
                               No completed tasks
                             </SelectItem>
                           ) : (
-                            completedTasks.map((task) => (
+                            completedTasks?.map((task) => (
                               <SelectItem key={task.taskId} value={task.taskId}>
-                                {`${task.title} - ${task.projectName} / ${task.unit}`}
+                                {`${task?.title} - ${task?.projectName} / ${task?.floorNumber} / ${task?.unitType}`}
                               </SelectItem>
                             ))
                           )}
@@ -1287,7 +1314,7 @@ const ContractorInvoices = () => {
                           <TableHead>Qty</TableHead>
                           <TableHead>Unit</TableHead>
                           <TableHead>Rate / Unit (₹)</TableHead>
-                          <TableHead>Tax %</TableHead>
+                          {/* <TableHead>Tax %</TableHead> */}
                           <TableHead>Amount (₹)</TableHead>
                           <TableHead></TableHead>
                         </TableRow>
@@ -1299,7 +1326,7 @@ const ContractorInvoices = () => {
                             <TableCell>{item.quantity}</TableCell>
                             <TableCell>{item.unit}</TableCell>
                             <TableCell>₹{item.rate.toLocaleString()}</TableCell>
-                            <TableCell>{item.taxRate}%</TableCell>
+                            {/* <TableCell>{item.taxRate}%</TableCell> */}
                             <TableCell>
                               ₹{item.amount.toLocaleString()}
                             </TableCell>

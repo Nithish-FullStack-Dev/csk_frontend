@@ -419,6 +419,10 @@ const LeadManagement = () => {
           queryKey: ["lead-management"],
           refetchType: "active",
         });
+        queryClient.invalidateQueries({
+          queryKey: ["siteVisits"],
+          refetchType: "active",
+        });
         setDeleteDialogOpen(false);
         setLeadToDelete("");
       },

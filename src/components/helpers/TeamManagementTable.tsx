@@ -906,8 +906,8 @@ const TeamManagementTable = ({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteAgent}
-        title="Delete Unit"
-        description="Are you sure you want to delete this unit? This action cannot be undone."
+        title="Delete Agent"
+        description="Are you sure you want to delete this agent? This action cannot be undone."
       />
     </section>
   );

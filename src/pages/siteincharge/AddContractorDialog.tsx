@@ -223,6 +223,7 @@ const AddContractorDialog = ({
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
       queryClient.invalidateQueries({ queryKey: ["contractor-list-dropdown"] });
+      queryClient.invalidateQueries({ queryKey: ["ContractorProjects"] });
       setOpenConDialog(false);
       toast.success(data?.message ?? "Contractor added successfully");
     },
