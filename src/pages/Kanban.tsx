@@ -900,6 +900,7 @@ export const SidePanel: React.FC<{
         <div className="flex-1 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
         <div className="w-[600px] h-full bg-white dark:bg-[#0a0a0a] shadow-2xl overflow-y-auto">
+          <div className="h-[5%] bg-amber-600"/>
           <div className="sticky top-0 z-10 border-b px-6 py-4 border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -1169,9 +1170,9 @@ export const SidePanel: React.FC<{
                         rel="noopener noreferrer"
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-sm px-3 py-1 rounded-md"
                       >
-                        <Eye className="hover:text-blue-400" size={20} />
+                        <Download className="hover:text-green-600" size={20} />
                       </a>
-                      <button
+                      {/* <button
                         onClick={async () => {
                           const res = await fetch(file.url);
                           const blob = await res.blob();
@@ -1187,7 +1188,7 @@ export const SidePanel: React.FC<{
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-sm py-1 rounded-md"
                       >
                         <Download className="hover:text-green-300" size={20} />
-                      </button>
+                      </button> */}
                     </div>
                   ))}
                 </div>
@@ -2048,7 +2049,7 @@ const KanbanBoard: React.FC = () => {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_URL}http://localhost:3000/api/kanban/comment`,
+        `${import.meta.env.VITE_URL}/api/kanban/comment`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -2795,24 +2796,24 @@ const KanbanBoard: React.FC = () => {
     settaskemployee(userId);
   }, [selectedEmployee, selectedRole, selectedProjectId, currentUser]);
 
-const selectedDept = departments.find(
-  (d) => d._id === selectedDepartmentId
-);
+  const selectedDept = departments.find(
+    (d) => d._id === selectedDepartmentId
+  );
 
-const normalize = (str: string) =>
-  str?.toLowerCase().replace(/[_\s]+/g, "");
+  const normalize = (str: string) =>
+    str?.toLowerCase().replace(/[_\s]+/g, "");
 
-const employeesToShow =
-  selectedDept?.name?.toUpperCase() === "PURCHASED CUSTOMER" &&
-  selectedLabel?.toUpperCase() === "CUSTOMERS"
-    ? employees.filter(
+  const employeesToShow =
+    selectedDept?.name?.toUpperCase() === "PURCHASED CUSTOMER" &&
+      selectedLabel?.toUpperCase() === "CUSTOMERS"
+      ? employees.filter(
         (emp: any) => normalize(emp.role) === "customerpurchased"
       )
-    : availableEmployees;
+      : availableEmployees;
 
-    console.log("Dept:", selectedDept?.name);
-console.log("Label:", selectedLabel);
-console.log("EmployeesToShow:", employeesToShow);
+  console.log("Dept:", selectedDept?.name);
+  console.log("Label:", selectedLabel);
+  console.log("EmployeesToShow:", employeesToShow);
 
   return (
     <MainLayout>
@@ -2983,33 +2984,33 @@ console.log("EmployeesToShow:", employeesToShow);
   ))}
 </select> */}
 
-<select
-  value={selectedEmployee}
-  onChange={(e) => setSelectedEmployee(e.target.value)}
-  disabled={!selectedLabel}
-  className="w-full sm:w-auto px-4 py-2 rounded-lg border
+                  <select
+                    value={selectedEmployee}
+                    onChange={(e) => setSelectedEmployee(e.target.value)}
+                    disabled={!selectedLabel}
+                    className="w-full sm:w-auto px-4 py-2 rounded-lg border
   bg-white dark:bg-gray-800
   border-gray-300 dark:border-gray-700
   text-gray-900 dark:text-white
   focus:outline-none focus:ring-2 focus:ring-blue-500
   disabled:opacity-50 disabled:cursor-not-allowed"
->
-  <option value="">Choose…</option>
+                  >
+                    <option value="">Choose…</option>
 
-  {employeesToShow.map((emp: any) => {
-    const id = emp._id || emp.userId;
-    const role =
-      emp.role
-        ?.replace(/_/g, " ")
-        .replace(/\b\w/g, (c: string) => c.toUpperCase()) || "";
+                    {employeesToShow.map((emp: any) => {
+                      const id = emp._id || emp.userId;
+                      const role =
+                        emp.role
+                          ?.replace(/_/g, " ")
+                          .replace(/\b\w/g, (c: string) => c.toUpperCase()) || "";
 
-    return (
-      <option key={id} value={id}>
-        {emp.name} — {role}
-      </option>
-    );
-  })}
-</select>
+                      return (
+                        <option key={id} value={id}>
+                          {emp.name} — {role}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 {/* SEARCH */}
@@ -3159,7 +3160,10 @@ console.log("EmployeesToShow:", employeesToShow);
 
         <SidePanel
           selectedTask={selectedTask}
-          onClose={() => setSelectedTask(null)}
+          onClose={() => {
+            setSelectedTask(null);
+            setSelectedTaskId("");
+          }}
           onEditTask={handleEditTask}
           onDeleteTask={handleDeleteTask}
           commentText={commentText}

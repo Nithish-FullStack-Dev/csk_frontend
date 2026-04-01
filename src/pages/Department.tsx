@@ -133,6 +133,8 @@ const Department = () => {
   const [selectedDepartment, setSelectedDepartment] =
     useState<DepartmentType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<DepartmentType | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [departments, setDepartments] = useState<DepartmentType[]>([]);
 
@@ -161,6 +163,7 @@ const Department = () => {
 
     setEmployees(data.users);
   };
+
   //   const onSubmit = async (data: ProjectFormValues) => {
   //     console.log("called");
 
@@ -222,30 +225,56 @@ const Department = () => {
   //   }
   // };
 
-  const handleDeleteDepartment = async (departmentId: string) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this department?",
-    );
-
+  const handleDeleteDepartment = async () => {
     if (!confirmDelete) return;
+
+    setDeleting(true);
 
     try {
       await axios.delete(`${import.meta.env.VITE_URL}/api/departments`, {
-        data: { id: departmentId }, // 🔥 important for DELETE body
+        data: { id: confirmDelete._id },
         withCredentials: true,
       });
 
       toast.success("Department deleted successfully");
 
-      // Remove from state instantly
       setDepartments((prev) =>
-        prev.filter((dept) => dept._id !== departmentId),
+        prev.filter((dept) => dept._id !== confirmDelete._id)
       );
+
+      setConfirmDelete(null);
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete department");
+    } finally {
+      setDeleting(false);
     }
   };
+
+  // const handleDeleteDepartment = async (departmentId: string) => {
+  //   const confirmDelete = window.confirm(
+  //     "Are you sure you want to delete this department?",
+  //   );
+
+  //   if (!confirmDelete) return;
+
+  //   try {
+  //     await axios.delete(`${import.meta.env.VITE_URL}/api/departments`, {
+  //       data: { id: departmentId }, // 🔥 important for DELETE body
+  //       withCredentials: true,
+  //     });
+
+  //     toast.success("Department deleted successfully");
+
+  //     // Remove from state instantly
+  //     setDepartments((prev) =>
+  //       prev.filter((dept) => dept._id !== departmentId),
+  //     );
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to delete department");
+  //   }
+  // };
 
   const onSubmit = async (data: ProjectFormValues) => {
     try {
@@ -293,10 +322,6 @@ const Department = () => {
     fetchDepartments();
     fetchEmployees();
   }, []);
-
-  useEffect(() => {
-    console.log(departments, "hete");
-  }, [departments]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -391,7 +416,7 @@ const Department = () => {
                     {department.name}
                   </CardTitle>
 
-                  {department.name !== "PURCHASED CUSTOMER" && department.labels[0].name !== "CUSTOMERS" && (
+                  {department.name !== "PURCHASED CUSTOMER" && department.labels?.[0]?.name !== "CUSTOMERS" && (
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -410,7 +435,7 @@ const Department = () => {
                       <button
                         type="button"
                         className="p-2 rounded-md hover:bg-muted transition"
-                        onClick={() => handleDeleteDepartment(department._id)}
+                        onClick={() => setConfirmDelete(department)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700 transition" />
                       </button>
@@ -687,6 +712,45 @@ const Department = () => {
             </Form>
           </DialogContent>
         </Dialog>
+
+        {confirmDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white dark:bg-[#111] rounded-xl p-6 w-full max-w-sm shadow-xl">
+
+              <h3 className="text-lg font-bold text-red-600 mb-2">
+                Delete Department
+              </h3>
+
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-5">
+                Are you sure you want to delete
+                <span className="font-semibold">
+                  {" "}
+                  “{confirmDelete.name}”
+                </span>
+                ?
+                <br />
+                This action cannot be undone.
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  disabled={deleting}
+                  onClick={handleDeleteDepartment}
+                  className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
