@@ -2828,7 +2828,7 @@ const KanbanBoard: React.FC = () => {
                 Task Tracker
               </h1>
 
-              <div className="flex flex-col gap-3 w-full lg:flex-row lg:items-center lg:w-auto">
+              <div className="flex flex-col gap-3 w-full lg:flex-row lg:flex-wrap lg:items-center lg:w-auto">
                 {userRole === "ADMIN" && (
                   // <div className="flex flex-col gap-3 w-full sm:flex-row sm:w-auto">
                   //   {/* DEPARTMENT SELECT */}
@@ -3014,7 +3014,7 @@ const KanbanBoard: React.FC = () => {
                 </div>
 
                 {/* SEARCH */}
-                <div className="relative w-full sm:w-80">
+                <div className="relative w-full md:w-64 lg:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
@@ -3045,7 +3045,7 @@ const KanbanBoard: React.FC = () => {
                       }));
                     }
                   }}
-                  className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium
+                  className={`w-full sm:w-auto max-w-[200px] px-4 py-2 rounded-lg font-medium
     flex items-center justify-center gap-2 text-white transition-colors
     ${isTaskSelectionReady
                       ? "bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-700"
