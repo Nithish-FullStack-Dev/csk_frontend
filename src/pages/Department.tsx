@@ -159,7 +159,7 @@ const Department = () => {
       credentials: "include",
     });
     const data = await res.json();
-    console.log(data.users);
+    // console.log(data.users);
 
     setEmployees(data.users);
   };

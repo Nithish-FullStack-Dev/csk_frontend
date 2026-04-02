@@ -35,14 +35,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
 
         newSocket.on("connect", () => {
-            console.log("✅ Socket connected:", newSocket.id);
+            // console.log("✅ Socket connected:", newSocket.id);
             setIsConnected(true);
             // Register user with the backend
             newSocket.emit("register", user._id);
         });
 
         newSocket.on("disconnect", () => {
-            console.log("❌ Socket disconnected");
+            // console.log("❌ Socket disconnected");
             setIsConnected(false);
         });
 

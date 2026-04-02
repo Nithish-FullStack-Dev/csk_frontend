@@ -218,8 +218,8 @@ export const NewTaskModal: React.FC<{
           });
 
           const data = await res.json();
-          console.log("Field:", field);
-          console.log("Text:", data.text);
+          // console.log("Field:", field);
+          // console.log("Text:", data.text);
 
           if (data.text) {
 
@@ -1629,7 +1629,7 @@ const KanbanBoard: React.FC = () => {
   };
 
   const fetchTasks = async (userId?: string) => {
-    console.log("calledd");
+    // console.log("calledd");
 
     try {
       setTasksLoading(true);
@@ -1653,7 +1653,7 @@ const KanbanBoard: React.FC = () => {
       if (!res.ok) {
         throw new Error(data.error || "Failed to fetch tasks");
       }
-      console.log(data.tasks, "tasks");
+      // console.log(data.tasks, "tasks");
 
       setTasks(data.tasks);
     } catch (err) {
@@ -2318,7 +2318,7 @@ const KanbanBoard: React.FC = () => {
         );
 
         const data = await res.json();
-        console.log(data.task, "created task data");
+        // console.log(data.task, "created task data");
         if (!res.ok) {
           throw new Error(data.error || "Failed to create task");
         }
@@ -2811,9 +2811,9 @@ const KanbanBoard: React.FC = () => {
       )
       : availableEmployees;
 
-  console.log("Dept:", selectedDept?.name);
-  console.log("Label:", selectedLabel);
-  console.log("EmployeesToShow:", employeesToShow);
+  // console.log("Dept:", selectedDept?.name);
+  // console.log("Label:", selectedLabel);
+  // console.log("EmployeesToShow:", employeesToShow);
 
   return (
     <MainLayout>

@@ -243,7 +243,7 @@ const TopBar = () => {
 
     const handleNewNotification = (data: { notification: any }) => {
       const { notification } = data;
-      console.log("📩 New real-time notification:", notification);
+      // console.log("📩 New real-time notification:", notification);
 
       // 1. Update unread count
       setUnreadNotificationCount((prev) => prev + 1);
