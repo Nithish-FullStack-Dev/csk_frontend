@@ -54,7 +54,7 @@ const AboutSection = () => {
       ([entry]) => {
         if (entry.isIntersecting) controls.start("visible");
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => {
@@ -94,6 +94,35 @@ const AboutSection = () => {
     </>
   );
 
+  const getYouTubeEmbedUrl = (url?: string) => {
+    if (!url) return null;
+
+    try {
+      const parsed = new URL(url);
+
+      // Case 1: youtu.be short link
+      if (parsed.hostname.includes("youtu.be")) {
+        const videoId = parsed.pathname.split("/")[1];
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+      }
+
+      // Case 2: youtube.com/watch?v=
+      if (parsed.searchParams.get("v")) {
+        const videoId = parsed.searchParams.get("v");
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+      }
+
+      // Case 3: already embed
+      if (parsed.pathname.includes("/embed/")) {
+        return url;
+      }
+
+      return null;
+    } catch (err) {
+      return null;
+    }
+  };
+
   if (isError)
     return (
       <div className="text-center py-16">
@@ -112,6 +141,10 @@ const AboutSection = () => {
 
   const youtubeVideoId = "c-goZSYW6qE";
   const youtubeThumbnailUrl = `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`;
+
+  const finalVideoUrl =
+    getYouTubeEmbedUrl(aboutContent?.videoUrl) ||
+    `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`;
 
   return (
     <section className="py-16 md:py-20 bg-gray-50 relative overflow-hidden">
@@ -224,16 +257,14 @@ const AboutSection = () => {
                 className="w-full h-full"
               >
                 <iframe
-                  src={
-                    aboutContent?.videoUrl ||
-                    `https://www.youtube.com/embed/${youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`
-                  }
+                  key={finalVideoUrl} // IMPORTANT (forces reload)
+                  src={finalVideoUrl}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   className="w-full h-full rounded-xl"
-                ></iframe>
+                />
               </motion.div>
             )}
           </div>

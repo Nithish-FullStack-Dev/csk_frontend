@@ -82,7 +82,7 @@ const TeamLeadManagement = () => {
     "active",
   );
   const [selectedTeam, setSelectedTeam] = useState<TeamMember | null>(null);
-  const [selectedTeamLeadId, setSelectedAgentId] = useState("");
+  const [selectedTeamLeadId, setSelectedTeamLeadId] = useState("");
   const [performance, setPerformance] = useState({
     sales: 0,
     target: 0,
@@ -119,7 +119,7 @@ const TeamLeadManagement = () => {
 
   useEffect(() => {
     if (selectedTeam) {
-      setSelectedAgentId(selectedTeam.salesId._id);
+      setSelectedTeamLeadId(selectedTeam.teamLeadId._id);
       setStatus(selectedTeam.status);
       setPerformance({
         sales: selectedTeam.performance?.sales || 0,
@@ -135,7 +135,7 @@ const TeamLeadManagement = () => {
       });
     } else {
       // Reset form when dialog opens for adding a new member
-      setSelectedAgentId("");
+      setSelectedTeamLeadId("");
       setStatus("active");
       setPerformance({
         sales: 0,
@@ -200,7 +200,7 @@ const TeamLeadManagement = () => {
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["unassignedAgents"] });
       setDialogOpen(false);
-      setSelectedAgentId("");
+      setSelectedTeamLeadId("");
       setStatus("active");
       setPerformance({
         sales: 0,
@@ -354,7 +354,7 @@ const TeamLeadManagement = () => {
     }
 
     const payload = {
-      salesId: user?._id || "",
+      // salesId: user?._id || "",
       status,
       performance,
       teamLeadId: selectedTeamLeadId,
@@ -524,144 +524,156 @@ const TeamLeadManagement = () => {
             </CardContent>
           </Card>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {sortedAndFilteredTeamMembers?.map((member) => {
-            const performancePercentage =
-              (member.performance.sales / member.performance.target) * 100;
-            const performanceLevel = getPerformanceLevel(performancePercentage);
 
-            return (
-              <Card key={member._id}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={member?.teamLeadId?.avatar}
-                          alt={member?.teamLeadId?.name}
-                        />
-                        <AvatarFallback>
-                          {member?.teamLeadId?.name
-                            ? member.teamLeadId.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                            : "UN"}
-                        </AvatarFallback>
-                      </Avatar>
+        {sortedAndFilteredTeamMembers.length === 0 ? (
+          <Card>
+            <CardHeader className="pb-4 text-center text-muted-foreground">
+              No team members found.
+            </CardHeader>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {sortedAndFilteredTeamMembers?.map((member) => {
+              const performancePercentage =
+                (member.performance.sales / member.performance.target) * 100;
+              const performanceLevel = getPerformanceLevel(
+                performancePercentage,
+              );
+
+              return (
+                <Card key={member._id}>
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage
+                            src={member?.teamLeadId?.avatar}
+                            alt={member?.teamLeadId?.name}
+                          />
+                          <AvatarFallback>
+                            {member?.teamLeadId?.name
+                              ? member.teamLeadId.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                              : "UN"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">
+                            {member?.teamLeadId?.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {member?.teamLeadId?.role}
+                          </p>
+                          <Badge className={getStatusColor(member?.status)}>
+                            {member?.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      {userCanEditUser && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedTeam(member);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <h3 className="font-semibold">
-                          {member?.teamLeadId?.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {member?.teamLeadId?.role}
+                        <p className="text-muted-foreground">Sales</p>
+                        <p className="font-semibold">
+                          ₹
+                          {member.performance.sales.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
                         </p>
-                        <Badge className={getStatusColor(member?.status)}>
-                          {member?.status}
-                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Target</p>
+                        <p className="font-semibold">
+                          ₹
+                          {member.performance.target.toLocaleString("en-IN", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Deals</p>
+                        <p className="font-semibold">
+                          {member.performance.deals}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Conversion</p>
+                        <p className="font-semibold">
+                          {member.performance.conversionRate}%
+                        </p>
                       </div>
                     </div>
-                    {userCanEditUser && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedTeam(member);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Sales</p>
-                      <p className="font-semibold">
-                        ₹
-                        {member.performance.sales.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Target</p>
-                      <p className="font-semibold">
-                        ₹
-                        {member.performance.target.toLocaleString("en-IN", {
-                          maximumFractionDigits: 0,
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Deals</p>
-                      <p className="font-semibold">
-                        {member.performance.deals}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Conversion</p>
-                      <p className="font-semibold">
-                        {member.performance.conversionRate}%
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Target Achievement</span>
-                      <span className={performanceLevel.color}>
-                        {performanceLevel.level}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Target Achievement</span>
+                        <span className={performanceLevel.color}>
+                          {performanceLevel.level}
+                        </span>
+                      </div>
+                      <Progress value={performancePercentage} className="h-2" />
+                      <p className="text-xs text-muted-foreground text-right">
+                        {performancePercentage.toFixed(1)}% of target
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        Last activity:{" "}
+                        {new Date(
+                          member.performance.lastActivity,
+                        ).toLocaleDateString()}{" "}
+                        {new Date(
+                          member.performance.lastActivity,
+                        ).toLocaleTimeString()}
                       </span>
                     </div>
-                    <Progress value={performancePercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground text-right">
-                      {performancePercentage.toFixed(1)}% of target
-                    </p>
-                  </div>
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      Last activity:{" "}
-                      {new Date(
-                        member.performance.lastActivity,
-                      ).toLocaleDateString()}{" "}
-                      {new Date(
-                        member.performance.lastActivity,
-                      ).toLocaleTimeString()}
-                    </span>
-                  </div>
-
-                  <div className="flex md:flex-row flex-col gap-2 w-full">
-                    <Button size="sm" variant="outline" className="flex-1">
-                      <Phone className="mr-2 h-3 w-3" /> Call
-                    </Button>
-                    <a
-                      href={`mailto:${member?.teamLeadId?.email}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button size="sm" variant="outline" className="w-full">
-                        <Mail className="mr-2 h-3 w-3" />
-                        Email
+                    <div className="flex md:flex-row flex-col gap-2 w-full">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        <Phone className="mr-2 h-3 w-3" /> Call
                       </Button>
-                    </a>
-                    {/* <div className="flex-1">
+                      <a
+                        href={`mailto:${member?.teamLeadId?.email}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1"
+                      >
+                        <Button size="sm" variant="outline" className="w-full">
+                          <Mail className="mr-2 h-3 w-3" />
+                          Email
+                        </Button>
+                      </a>
+                      {/* <div className="flex-1">
                       <Button size="sm" variant="outline" className="w-full">
                         <BarChart3 className="mr-2 h-3 w-3" />
                         Report
                       </Button>
                     </div> */}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-        <Card>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
@@ -712,7 +724,7 @@ const TeamLeadManagement = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[425px] max-w-[90vw] max-h-[90vh] rounded-xl overflow-auto">
@@ -732,7 +744,7 @@ const TeamLeadManagement = () => {
                   Team Lead
                 </Label>
                 <Select
-                  onValueChange={setSelectedAgentId}
+                  onValueChange={setSelectedTeamLeadId}
                   value={selectedTeamLeadId}
                   disabled={!!selectedTeam}
                 >

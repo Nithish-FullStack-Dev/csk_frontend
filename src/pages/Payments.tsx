@@ -693,7 +693,7 @@ const Payments = () => {
                       <div>
                         <p className="font-semibold">Payment Method</p>
                         <p>
-                          {selectedPayment?.invoice?.paymentMethod?.[0] || "-"}
+                          {selectedPayment?.paymentMethod?.toUpperCase() || "-"}
                         </p>
                       </div>
                       <div>
@@ -1001,11 +1001,17 @@ const Payments = () => {
                     </SelectTrigger>
 
                     <SelectContent>
-                      {invoices.map((invoice) => (
-                        <SelectItem key={invoice._id} value={invoice._id}>
-                          {invoice.invoiceNumber}
+                      {invoices?.length === 0 ? (
+                        <SelectItem disabled value="no-data">
+                          No invoices available
                         </SelectItem>
-                      ))}
+                      ) : (
+                        invoices?.map((invoice) => (
+                          <SelectItem key={invoice._id} value={invoice._id}>
+                            {invoice.invoiceNumber}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

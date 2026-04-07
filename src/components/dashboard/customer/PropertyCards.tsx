@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { getImageUrl } from "@/lib/image";
 
 const fetchMyPurchases = async (page: number) => {
   const { data } = await axios.get(
@@ -48,28 +49,41 @@ const PropertyCards = () => {
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {data.purchases.map((item: any) => {
-          const projectName = item.property?.projectName ?? "Project";
-          const location = item.property?.location ?? "-";
-          const unit = item.unit?.plotNo ?? "-";
-          const bookingDate = item.bookingDate
-            ? new Date(item.bookingDate).toLocaleDateString()
-            : "-";
+          const projectName =
+            item.property?.projectName ||
+            item.openPlot?.projectName ||
+            item.openLand?.projectName ||
+            "Project";
+
+          const location =
+            item.property?.location ||
+            item.openPlot?.location ||
+            item.openLand?.location ||
+            "-";
+
+          const unit =
+            item.unit?.unitNo ||
+            item.innerPlot?.plotNo ||
+            item.openPlot?.openPlotNo ||
+            "-";
 
           const image =
             item.property?.thumbnailUrl ||
+            item.openPlot?.thumbnailUrl ||
+            item.openLand?.thumbnailUrl ||
+            item.images?.[0] ||
             "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80";
 
-          const progress =
-            typeof item.constructionStage === "string"
-              ? parseInt(item.constructionStage) || 0
-              : 0;
+          const bookingDate = item.bookingDate
+            ? new Date(item.bookingDate).toLocaleDateString()
+            : "-";
 
           return (
             <Card key={item._id}>
               <CardContent className="p-0">
                 <div className="aspect-video w-full">
                   <img
-                    src={image}
+                    src={getImageUrl(image)}
                     alt={projectName}
                     className="w-full h-full object-cover"
                   />
@@ -101,7 +115,7 @@ const PropertyCards = () => {
                     </div>
                   </div>
 
-                  {progress > 0 && (
+                  {/* {progress > 0 && (
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between text-sm">
                         <span>Construction Progress</span>
@@ -109,7 +123,7 @@ const PropertyCards = () => {
                       </div>
                       <Progress value={progress} />
                     </div>
-                  )}
+                  )} */}
 
                   <Button
                     onClick={() => navigate("/properties")}

@@ -170,7 +170,8 @@ import Form from "./secure/Form";
 import SecureDashboard from "./secure/SecureDashboard";
 import SecureRoute from "./config/SecureRoute";
 import SecureCustomer from "./secure/SecureCustomer";
-const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
+import OpenLandDetailsPage from "./pages/OpenLandDetailsPage";
+// const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

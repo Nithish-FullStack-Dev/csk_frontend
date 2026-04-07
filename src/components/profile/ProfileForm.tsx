@@ -82,6 +82,8 @@ const ProfileForm = () => {
       avatar: user?.avatar || "",
       specialization: user?.specialization || "",
     });
+    setAvatarPreview(user?.avatar || null);
+    setAvatarFile(null);
     setIsEditing(false);
   };
 
@@ -156,7 +158,13 @@ const ProfileForm = () => {
               onClick={handleAvatarClick}
             >
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
-                <AvatarImage src={getImageUrl(avatarPreview)} />
+                <AvatarImage
+                  src={
+                    avatarPreview?.startsWith("data:")
+                      ? avatarPreview
+                      : getImageUrl(avatarPreview)
+                  }
+                />
                 <AvatarFallback className="text-lg sm:text-xl">
                   {user.name
                     .split(" ")

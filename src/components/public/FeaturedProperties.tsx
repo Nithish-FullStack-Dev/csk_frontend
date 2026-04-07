@@ -11,6 +11,7 @@ import { easeOut, motion } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import "../../shine.css";
 import axios from "axios";
+import { getImageUrl } from "@/lib/image";
 
 const FeaturedProperties = () => {
   const [properties, setProperties] = useState([]);
@@ -177,7 +178,7 @@ const FeaturedProperties = () => {
                   <div className="w-full">
                     <div className="relative w-full aspect-[16/9] overflow-hidden rounded-lg shadow-lg">
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.title || `Project ${index + 1}`}
                         className="absolute inset-0 w-full h-full object-cover rounded-lg"
                       />
@@ -276,7 +277,7 @@ const FeaturedProperties = () => {
                       className="block shine-container"
                     >
                       <img
-                        src={property?.image}
+                        src={getImageUrl(property?.image)}
                         alt={property.title}
                         className="w-full h-64 object-cover transition-transform duration-500 group-hover/card:scale-105"
                         loading="lazy"

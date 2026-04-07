@@ -473,7 +473,7 @@ const EnquiryManagement = () => {
                     {enquiries.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={isAdminOrOwner ? 9 : 7}
+                          colSpan={isAdminOrOwner ? 9 : 10}
                           className="text-center py-8 text-muted-foreground"
                         >
                           {isSalesManager

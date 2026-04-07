@@ -257,47 +257,55 @@ const SalesManagerDashboard = () => {
 
           <CardContent>
             <div className="space-y-6">
-              {teamPerformance.map((member) => (
-                <div key={member.id} className="space-y-1">
-                  <div className="flex justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          member.avatar ||
-                          "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                        }
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <div>
-                        <p className="font-medium">{member.name}</p>
+              {teamPerformance?.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  No team performance data available for the selected timeframe.
+                </p>
+              ) : (
+                teamPerformance.map((member) => (
+                  <div key={member.id} className="space-y-1">
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={
+                            member.avatar ||
+                            "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                          }
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div>
+                          <p className="font-medium">{member.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Team Lead
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-medium">
+                          ₹ {member.sales / 100000}L
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          Team Lead
+                          {member.target
+                            ? ((member.sales / member.target) * 100).toFixed(0)
+                            : 0}
+                          % of target
                         </p>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <p className="font-medium">₹ {member.sales / 100000}L</p>
-                      <p className="text-sm text-muted-foreground">
-                        {member.target
-                          ? ((member.sales / member.target) * 100).toFixed(0)
-                          : 0}
-                        % of target
-                      </p>
-                    </div>
+                    <Progress
+                      value={
+                        member.target ? (member.sales / member.target) * 100 : 0
+                      }
+                    />
+
+                    <p className="text-xs text-muted-foreground text-right">
+                      {member.deals} deals closed
+                    </p>
                   </div>
-
-                  <Progress
-                    value={
-                      member.target ? (member.sales / member.target) * 100 : 0
-                    }
-                  />
-
-                  <p className="text-xs text-muted-foreground text-right">
-                    {member.deals} deals closed
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

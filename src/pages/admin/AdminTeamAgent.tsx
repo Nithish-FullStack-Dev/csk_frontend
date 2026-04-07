@@ -685,7 +685,7 @@ const AdminTeamAgent = () => {
           })}
         </div>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="mr-2 h-5 w-5 text-estate-navy" />
@@ -712,7 +712,7 @@ const AdminTeamAgent = () => {
                         <span>
                           {index + 1}. {member.agentId?.name}
                           {/* show team lead name next to top performer */}
-                          <span className="text-muted-foreground ml-2 text-xs">
+        {/* <span className="text-muted-foreground ml-2 text-xs">
                             ({member.teamLeadId?.name ?? "No lead"})
                           </span>
                         </span>
@@ -727,9 +727,9 @@ const AdminTeamAgent = () => {
                       </div>
                     ))}
                 </div>
-              </div>
+              </div> */}
 
-              {/* <div className="space-y-2">
+        {/* <div className="space-y-2">
                 <h4 className="font-medium">Recent Activities</h4>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>• Emily closed 2 deals yesterday</p>
@@ -768,9 +768,9 @@ const AdminTeamAgent = () => {
                   </Button>
                 </div>
               </div> */}
-            </div>
+        {/* </div>
           </CardContent>
-        </Card>
+        </Card>  */}
       </div>
     </MainLayout>
   );
