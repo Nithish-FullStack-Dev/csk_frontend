@@ -1,6 +1,5 @@
 import MainLayout from "@/components/layout/MainLayout";
 import ProfileForm from "@/components/profile/ProfileForm";
-import RoleSpecificStats from "@/components/profile/RoleSpecificStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +25,7 @@ const Profile = () => {
       sales_manager: [
         "Team Management",
         "Sales Reports",
-        "Commission Management",
+        "Enquiry Management",
         "Lead Assignment",
       ],
       team_lead: [
@@ -39,7 +38,7 @@ const Profile = () => {
         "Lead Management",
         "Client Communication",
         "Site Visits",
-        "Commission Tracking",
+        // "Commission Tracking",
       ],
       site_incharge: [
         "Site Monitoring",

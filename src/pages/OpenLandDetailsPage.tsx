@@ -43,10 +43,8 @@ const OpenLandDetailsPage = () => {
         open={editOpen}
         onOpenChange={setEditOpen}
         openLand={land}
-        onSubmit={(updated) => {
-          queryClient.setQueryData(["openLand"], (old: any[]) =>
-            old.map((l) => (l._id === updated._id ? updated : l)),
-          );
+        onSubmit={() => {
+          queryClient.invalidateQueries({ queryKey: ["openLand"] });
           setEditOpen(false);
         }}
       />

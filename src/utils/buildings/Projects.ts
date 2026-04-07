@@ -113,6 +113,34 @@ export const useLeadbyOpenPlotId = (openPlotId: string) => {
   });
 };
 
+export const useCustomersByinnerPlotId = (innerPlotId: string) => {
+  return useQuery({
+    queryKey: ["customersByInnerPlotId", innerPlotId],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/innerPlot/getCustomerUnits/${innerPlotId}`,
+        { withCredentials: true },
+      );
+      return data?.data || [];
+    },
+    enabled: !!innerPlotId,
+  });
+};
+
+export const useCustomerByOpenLandId = (openLandId: string) => {
+  return useQuery({
+    queryKey: ["customersByOpenLandId", openLandId],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/openLand/getOpenLandForCustomer/${openLandId}`,
+        { withCredentials: true },
+      );
+      return data?.data || [];
+    },
+    enabled: !!openLandId,
+  });
+};
+
 //! FLOORS AND UNITS FOR DROPDOWN
 export const fetchFloorUnitsForDropDownByBuildingId = async (
   buildingId: string,

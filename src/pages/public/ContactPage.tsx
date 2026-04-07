@@ -70,7 +70,7 @@ const ContactPage: React.FC = () => {
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/contact/contactInfo`
+        `${import.meta.env.VITE_URL}/api/contact/contactInfo`,
       );
       setContact(data);
     } catch (error) {
@@ -140,7 +140,7 @@ const ContactPage: React.FC = () => {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setDetails((preVal) => ({ ...preVal, [name]: value }));
@@ -152,7 +152,7 @@ const ContactPage: React.FC = () => {
     try {
       await axios.post(
         `${import.meta.env.VITE_URL}/api/contact/send-email`,
-        details
+        details,
       );
       toast("Your message has been sent!");
       setDetails({ name: "", email: "", subject: "", message: "" });
@@ -449,7 +449,7 @@ const ContactPage: React.FC = () => {
                       backgroundColor: palette.backgroundLight,
                       color: palette.textDark,
                     }}
-                    placeholder="John Doe"
+                    placeholder="sunny"
                     onChange={handleChange}
                     value={details.name}
                   />
@@ -472,7 +472,7 @@ const ContactPage: React.FC = () => {
                       backgroundColor: palette.backgroundLight,
                       color: palette.textDark,
                     }}
-                    placeholder="john.doe@example.com"
+                    placeholder="sunny@example.com"
                     onChange={handleChange}
                     value={details.email}
                   />

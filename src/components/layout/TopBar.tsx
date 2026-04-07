@@ -26,6 +26,7 @@ const TopBar = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const { socket } = useSocket();
 
   const handleLogout = async () => {
@@ -65,6 +66,24 @@ const TopBar = () => {
       setNotifications(res.data.notifications || []);
     } catch (err) {
       console.error("Error fetching unread notifications:", err);
+    }
+  };
+
+  const handleClearNotifications = async () => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_URL}/api/notifications/clear/${user._id}`,
+        { withCredentials: true }
+      );
+
+      // clear UI
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+
+      toast.success("Notifications cleared");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to clear notifications");
     }
   };
 
@@ -159,10 +178,10 @@ const TopBar = () => {
                 // Convert Firebase ServerTimestamp object to a number (milliseconds)
                 timestamp:
                   typeof msgVal.timestamp === "object" &&
-                  msgVal.timestamp !== null &&
-                  "seconds" in msgVal.timestamp
+                    msgVal.timestamp !== null &&
+                    "seconds" in msgVal.timestamp
                     ? msgVal.timestamp.seconds * 1000 +
-                      (msgVal.timestamp.nanoseconds || 0) / 1000000
+                    (msgVal.timestamp.nanoseconds || 0) / 1000000
                     : msgVal.timestamp,
               }))
               .sort((a, b) => a.timestamp - b.timestamp); // Sort to get the actual latest
@@ -224,7 +243,7 @@ const TopBar = () => {
 
     const handleNewNotification = (data: { notification: any }) => {
       const { notification } = data;
-      console.log("📩 New real-time notification:", notification);
+      // console.log("📩 New real-time notification:", notification);
 
       // 1. Update unread count
       setUnreadNotificationCount((prev) => prev + 1);
@@ -301,7 +320,7 @@ const TopBar = () => {
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <div className="max-h-80 overflow-auto">
+              <div className={`${showAllNotifications ? "max-h-[80vh]" : "max-h-80"} overflow-auto transition-all`}>
                 {notifications.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No new notifications
@@ -328,9 +347,25 @@ const TopBar = () => {
                 )}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer justify-center text-estate-navy">
-                View all notifications
-              </DropdownMenuItem>
+              <div className="flex justify-between">
+
+                <DropdownMenuItem
+                  disabled={notifications.length === 0}
+                  onSelect={(e) => {
+                    e.preventDefault(); // 🔥 prevents dropdown from closing
+                    setShowAllNotifications((prev) => !prev);
+                  }}
+                  className="cursor-pointer justify-center text-estate-navy">
+                  {showAllNotifications ? "Close notifications" : "View notifications"}
+                </DropdownMenuItem>
+
+                <button
+                  disabled={notifications.length === 0}
+                  onClick={handleClearNotifications}
+                  className="text-sm text-red-600 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed">
+                  Clear Notification
+                </button>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 

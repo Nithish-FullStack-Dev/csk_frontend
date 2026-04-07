@@ -35,6 +35,7 @@ import {
   Compass,
   Hash,
   User,
+  Mail,
 } from "lucide-react";
 
 import {
@@ -57,7 +58,10 @@ import { format } from "date-fns";
 import { fetchAgents } from "@/utils/buildings/CustomerConfig";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllLeads } from "@/utils/leads/LeadConfig";
-import { useLeadbyOpenLandId } from "@/utils/buildings/Projects";
+import {
+  useCustomerByOpenLandId,
+  useLeadbyOpenLandId,
+} from "@/utils/buildings/Projects";
 import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
 import MainLayout from "../layout/MainLayout";
 import { getImageUrl } from "@/lib/image";
@@ -143,11 +147,12 @@ export default function OpenLandDetails({
     queryFn: fetchAgents,
   });
 
-  /* -------------------- Fetch Leads -------------------- */
-  const { data: leadsResponse } = useQuery({
-    queryKey: ["leads"],
-    queryFn: fetchAllLeads,
-  });
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+    isError: customersError,
+    error: customersErr,
+  } = useCustomerByOpenLandId(land._id);
 
   // const leads = leadsResponse ?? [];
   const {
@@ -238,137 +243,194 @@ export default function OpenLandDetails({
         </Card>
 
         {/* ---------------- DETAILS + INTERESTED LEADS ---------------- */}
-        <div className="grid md:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           {/* OWNER & DETAILS */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <UserIcon className="h-5 w-5 text-primary" />
-                Owner & Land Details
-              </CardTitle>
-            </CardHeader>
+          <div className="md:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                  Owner & Land Details
+                </CardTitle>
+              </CardHeader>
 
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <Info
-                  label="Owner"
-                  value={land.ownerName}
-                  icon={<UserIcon className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Land Status"
-                  value={getStatusBadge(land.landStatus)}
-                  icon={<Check className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Available Date"
-                  value={
-                    land.availableDate
-                      ? format(new Date(land.availableDate), "dd MMM yyyy")
-                      : "—"
-                  }
-                  icon={<Calendar className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Land Approval"
-                  value={land.LandApproval}
-                  icon={<Check className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="RERA Approved"
-                  value={
-                    land.reraApproved ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <X className="h-4 w-4 text-red-600" />
-                    )
-                  }
-                  icon={<FileText className="h-4 w-4 mt-1" />}
-                />
-
-                {land.reraNumber && (
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <Info
-                    label="RERA Number"
-                    value={land.reraNumber}
-                    icon={<Hash className="h-4 w-4 mt-1" />}
+                    label="Owner"
+                    value={land.ownerName}
+                    icon={<UserIcon className="h-4 w-4 mt-1" />}
                   />
-                )}
 
-                <Info
-                  label="Municipal Permission"
-                  value={
-                    land.municipalPermission ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <X className="h-4 w-4 text-red-600" />
-                    )
-                  }
-                  icon={<Building className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Land Area"
-                  value={`${land.landArea} ${land.areaUnit}`}
-                  icon={<LayoutGrid className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Facing"
-                  value={land.facing}
-                  icon={<Compass className="h-4 w-4 mt-1" />}
-                />
-
-                <Info
-                  label="Location"
-                  value={land.location}
-                  icon={<MapPin className="h-4 w-4 mt-1" />}
-                  full
-                />
-
-                {land.description && (
                   <Info
-                    label="Description"
-                    value={land.description}
+                    label="Land Status"
+                    value={getStatusBadge(land.landStatus)}
+                    icon={<Check className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="Available Date"
+                    value={
+                      land.availableDate
+                        ? format(new Date(land.availableDate), "dd MMM yyyy")
+                        : "—"
+                    }
+                    icon={<Calendar className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="Land Approval"
+                    value={land.LandApproval}
+                    icon={<Check className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="RERA Approved"
+                    value={
+                      land.reraApproved ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-600" />
+                      )
+                    }
                     icon={<FileText className="h-4 w-4 mt-1" />}
+                  />
+
+                  {land.reraNumber && (
+                    <Info
+                      label="RERA Number"
+                      value={land.reraNumber}
+                      icon={<Hash className="h-4 w-4 mt-1" />}
+                    />
+                  )}
+
+                  <Info
+                    label="Municipal Permission"
+                    value={
+                      land.municipalPermission ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-600" />
+                      )
+                    }
+                    icon={<Building className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="Land Area"
+                    value={`${land.landArea} ${land.areaUnit}`}
+                    icon={<LayoutGrid className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="Facing"
+                    value={land.facing}
+                    icon={<Compass className="h-4 w-4 mt-1" />}
+                  />
+
+                  <Info
+                    label="Location"
+                    value={land.location}
+                    icon={<MapPin className="h-4 w-4 mt-1" />}
                     full
                   />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+
+                  {land.description && (
+                    <Info
+                      label="Description"
+                      value={land.description}
+                      icon={<FileText className="h-4 w-4 mt-1" />}
+                      full
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* INTERESTED LEADS */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <User className="mr-2 h-5 w-5" /> Interested Clients
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
-              {leadsLoading && <p>Loading leads...</p>}
-              {leadsError && <p className="text-red-500">{leadErr?.message}</p>}
-              {!leadsLoading &&
-                !leadsError &&
-                (!leads || leads.length === 0) && (
-                  <p className="text-gray-500 italic">
-                    No interested clients found.
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center">
+                  <User className="mr-2 h-5 w-5" /> Interested Clients
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-[300px] overflow-y-auto">
+                {leadsLoading && <p>Loading leads...</p>}
+                {leadsError && (
+                  <p className="text-red-500">{leadErr?.message}</p>
+                )}
+                {!leadsLoading &&
+                  !leadsError &&
+                  (!leads || leads.length === 0) && (
+                    <p className="text-gray-500 italic">
+                      No interested clients found.
+                    </p>
+                  )}
+                {!leadsLoading && !leadsError && leads.length > 0 && (
+                  <ul className="list-disc list-inside">
+                    {leads?.map((lead: Lead, idx: number) => (
+                      <li key={lead?._id || idx}>
+                        {lead?.name} - {lead?.phone} - {lead?.email}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center">
+                  <User className="mr-2 h-5 w-5" /> Customer Information
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {customersLoading && <p>Loading customer details...</p>}
+                {customersError && (
+                  <p className="text-red-500">
+                    {customersErr?.message ||
+                      "Error while fetching customer details"}
                   </p>
                 )}
-              {!leadsLoading && !leadsError && leads.length > 0 && (
-                <ul className="list-disc list-inside">
-                  {leads?.map((lead: Lead, idx: number) => (
-                    <li key={lead?._id || idx}>
-                      {lead?.name} - {lead?.phone} - {lead?.email}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
+                {!customersLoading && !customersError && (
+                  <>
+                    {/* Purchased Customer */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Purchased Customers
+                      </p>
+
+                      {customers && customers?.length > 0 ? (
+                        <ul className="space-y-3">
+                          {customers?.map((customer, idx) => (
+                            <li
+                              key={customer?._id || idx}
+                              className="p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white"
+                            >
+                              <p className="font-semibold text-base">
+                                {customer?.customerId?.name || "N/A"}
+                              </p>
+                              <div className="text-sm text-muted-foreground flex items-center mt-1">
+                                <Mail className="mr-2 h-4 w-4" />
+                                {customer?.customerId?.email || "N/A"}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          No customers found.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* ---------------- GALLERY ---------------- */}

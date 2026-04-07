@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Image as ImageIcon,
   User,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { InnerPlot } from "@/types/InnerPlot";
@@ -33,7 +34,10 @@ import { InnerPlotForm } from "./InnerPlotForm";
 import { EditInnerPlotForm } from "./EditInnerPlotForm";
 import Loader from "../Loader";
 import { Lead, useLeadbyUnitId } from "@/utils/leads/LeadConfig";
-import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
+import {
+  useCustomersByinnerPlotId,
+  useLeadbyOpenPlotId,
+} from "@/utils/buildings/Projects";
 import { getImageUrl } from "@/lib/image";
 
 /* ---------- STATUS BADGE ---------- */
@@ -90,6 +94,13 @@ export function InnerPlotDetails() {
     isError: leadsError,
     error: leadsErr,
   } = useLeadbyOpenPlotId(plot?._id);
+
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+    isError: customersError,
+    error: customersErr,
+  } = useCustomersByinnerPlotId(_id!);
 
   /* ---------- DELETE ---------- */
   const deleteMutation = useMutation({
@@ -206,7 +217,46 @@ export function InnerPlotDetails() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div>This is in Development Stage</div>
+              {customersLoading && <p>Loading customer details...</p>}
+              {customersError && (
+                <p className="text-red-500">
+                  {customersErr?.message ||
+                    "Error while fetching customer details"}
+                </p>
+              )}
+              {!customersLoading && !customersError && (
+                <>
+                  {/* Purchased Customer */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Purchased Customers
+                    </p>
+
+                    {customers && customers?.length > 0 ? (
+                      <ul className="space-y-3">
+                        {customers?.map((customer, idx) => (
+                          <li
+                            key={customer?._id || idx}
+                            className="p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all bg-white"
+                          >
+                            <p className="font-semibold text-base">
+                              {customer?.customerId?.name || "N/A"}
+                            </p>
+                            <div className="text-sm text-muted-foreground flex items-center mt-1">
+                              <Mail className="mr-2 h-4 w-4" />
+                              {customer?.customerId?.email || "N/A"}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        No customers found.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
