@@ -127,6 +127,15 @@ const Approvals = () => {
       queryClient.invalidateQueries({
         queryKey: ["siteVisitOfAgent"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["pendingSiteVisits"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["approvedSiteVisits"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["rejectedSiteVisits"],
+      });
       setApprovalNotes("");
       setSelectedRequest(null);
       setIsDialogOpen(false);
@@ -134,6 +143,39 @@ const Approvals = () => {
     onError: (error) => {
       toast.error("Failed to update request");
       console.error("Update site visit error:", error);
+    },
+  });
+
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ["pendingSiteVisits"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/siteVisit/getPendingSiteVisitsForAgent`,
+        { withCredentials: true },
+      );
+      return data?.data || [];
+    },
+  });
+
+  const { data: approvedRequests = [] } = useQuery({
+    queryKey: ["approvedSiteVisits"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/siteVisit/getApprovedSiteVisitsForAgent`,
+        { withCredentials: true },
+      );
+      return data?.data || [];
+    },
+  });
+
+  const { data: rejectedRequests = [] } = useQuery({
+    queryKey: ["rejectedSiteVisits"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/siteVisit/getRejectedSiteVisitsForAgent`,
+        { withCredentials: true },
+      );
+      return data?.data || [];
     },
   });
 
@@ -156,18 +198,6 @@ const Approvals = () => {
       </MainLayout>
     );
   }
-
-  const pendingRequests = allSiteVisits.filter(
-    (r) => r.approvalStatus === "pending",
-  );
-
-  const approvedRequests = allSiteVisits.filter(
-    (r) => r.approvalStatus === "approved",
-  );
-
-  const rejectedRequests = allSiteVisits.filter(
-    (r) => r.approvalStatus === "rejected",
-  );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
