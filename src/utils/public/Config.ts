@@ -6,7 +6,7 @@ import axios from "axios";
 export async function fetchPropertyById(id: string) {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getBuildingById/${id}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   console.log("fetchPropertyById response:", data);
   return data.data;
@@ -15,37 +15,37 @@ export async function fetchPropertyById(id: string) {
 export async function fetchUpcomingProperties() {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getUpcomingBuilding`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 }
 export async function fetchOngoingProperties() {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getOngoingBuilding`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 }
 export async function fetchCompletedProperties() {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getCompletedBuilding`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 }
 
 export async function fetchOpenPlots() {
   const res = await axios.get(
-    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlot`,
-    { withCredentials: true }
+    `${import.meta.env.VITE_URL}/api/openPlot/getAllOpenPlotForPublic`,
+    { withCredentials: true },
   );
 
   return res.data.data;
 }
 export async function fetchOpenLand() {
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLand`,
-    { withCredentials: true }
+    `${import.meta.env.VITE_URL}/api/openLand/getAllOpenLandForPublic`,
+    { withCredentials: true },
   );
   return data.data;
 }
@@ -53,7 +53,7 @@ export async function fetchOpenLand() {
 export const getBuildingById = async (buildingId: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/building/getBuildingById/${buildingId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data as Building;
 };
@@ -61,7 +61,7 @@ export const getBuildingById = async (buildingId: string) => {
 export const getFloorsByBuildingId = async (buildingId: string) => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/floor/getAllFloorsByBuildingId/${buildingId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data as FloorUnit[];
 };
@@ -72,7 +72,7 @@ export const createFloor = async (payload: FormData) => {
     payload,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -84,7 +84,7 @@ export const updateFloor = async (floorId: string, payload: FormData) => {
     payload,
     {
       withCredentials: true,
-    }
+    },
   );
   return data;
 };
@@ -92,7 +92,7 @@ export const updateFloor = async (floorId: string, payload: FormData) => {
 export const deleteFloor = async (floorId: string) => {
   const { data } = await axios.delete(
     `${import.meta.env.VITE_URL}/api/floor/deleteFloorById/${floorId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };
@@ -108,7 +108,7 @@ export const usePropertyById = (id: string) => {
 export const fetchOpenLandById = async (id: string) => {
   const res = await axios.get(
     `${import.meta.env.VITE_URL}/api/openLand/getOpenLandById/${id}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
 
   return res.data.data;
@@ -122,7 +122,6 @@ export const useOpenLandById = (id: string) => {
     staleTime: Infinity,
   });
 };
-
 
 export const useUpcomingProperties = () => {
   return useQuery({
