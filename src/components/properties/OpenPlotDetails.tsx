@@ -38,6 +38,7 @@ import MainLayout from "../layout/MainLayout";
 import { OpenPlotDialog } from "./OpenPlotsDialog";
 import { get } from "http";
 import { getImageUrl } from "@/lib/image";
+import { useRBAC } from "@/config/RBAC";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -94,6 +95,13 @@ export function OpenPlotDetails({
   const [editOpen, setEditOpen] = useState(false);
   const canEdit = user && ["owner", "admin"].includes(user.role);
   const queryClient = useQueryClient();
+
+  const {
+    isRolePermissionsLoading,
+    userCanAddUser,
+    userCanDeleteUser,
+    userCanEditUser,
+  } = useRBAC({ roleSubmodule: "Properties" });
 
   const { data: openPlotData, isLoading: plotLoading } = useQuery({
     queryKey: ["open-plot", plot?._id],
@@ -265,22 +273,30 @@ export function OpenPlotDetails({
               Inner Plots
             </CardTitle>
 
-            <div className="flex gap-2">
-              <Button variant="default" onClick={() => setBulkManualOpen(true)}>
-                Plots Generate
-              </Button>
+            {userCanAddUser && (
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  onClick={() => setBulkManualOpen(true)}
+                >
+                  Plots Generate
+                </Button>
 
-              <Button variant="default" onClick={() => setCsvUploadOpen(true)}>
-                Upload CSV
-              </Button>
+                <Button
+                  variant="default"
+                  onClick={() => setCsvUploadOpen(true)}
+                >
+                  Upload CSV
+                </Button>
 
-              <Button
-                variant="destructive"
-                onClick={() => setInnerPlotDialogOpen(true)}
-              >
-                Add Plot
-              </Button>
-            </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setInnerPlotDialogOpen(true)}
+                >
+                  Add Plot
+                </Button>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent>
