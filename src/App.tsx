@@ -267,6 +267,11 @@ const App = () => {
                   {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
                   {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
                   <Route path="/public/contact" element={<ContactPage />} />
+
+                  <Route
+                    path="/public/project/:id"
+                    element={<ProjectDetailsPage />}
+                  />
                   {/* <Route path="/kanban" element={<Kanban />} /> */}
                   {/* <Route path="/department" element={<Department />} /> */}
                 </Route>
@@ -283,10 +288,6 @@ const App = () => {
                         <ChatInterface />
                       </ProtectedRoute>
                     }
-                  />
-                  <Route
-                    path="/public/project/:id"
-                    element={<ProjectDetailsPage />}
                   />
 
                   {/* Secured */}
