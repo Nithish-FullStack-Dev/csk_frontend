@@ -1,5 +1,5 @@
 import { User } from "@/contexts/AuthContext";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Lead } from "../leads/LeadConfig";
 
@@ -21,8 +21,15 @@ export const fetchAllSiteVisits = async () => {
 };
 
 export const useBookSiteVisit = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createSiteVisit,
+    onSuccess: () => {
+      // Invalidate and refetch site visits after successful booking
+      queryClient.invalidateQueries({
+        queryKey: ["pendingSiteVisits"],
+      });
+    },
   });
 };
 

@@ -124,7 +124,6 @@ const SiteVisits = () => {
   } = useQuery<SiteVisitData[]>({
     queryKey: ["siteVisits"],
     queryFn: fetchAllSiteVisits,
-    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const {
@@ -137,7 +136,6 @@ const SiteVisits = () => {
     queryKey: ["siteVisitOfAgent", user?._id],
     queryFn: fetchSiteVisitsOfAgent,
     enabled: !!user?._id && isAgent,
-    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const updateStatusMutation = useMutation({

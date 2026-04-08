@@ -56,7 +56,9 @@ const TeamLeadDashboard = () => {
       { withCredentials: true },
     );
 
-    return res.data.filter((v: any) => v.status === "pending");
+    const visits = Array.isArray(res.data) ? res.data : [];
+
+    return visits.filter((v: any) => v.approvalStatus === "pending");
   };
 
   const {
@@ -67,7 +69,7 @@ const TeamLeadDashboard = () => {
   } = useQuery({
     queryKey: ["siteVisitsOfAgents"],
     queryFn: fetchPendingSiteVisits,
-    enabled: !!user,
+    enabled: !!user._id,
   });
 
   useEffect(() => {

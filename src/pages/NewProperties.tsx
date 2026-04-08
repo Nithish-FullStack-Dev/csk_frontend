@@ -80,6 +80,9 @@ const NewProperties = () => {
     undefined,
   );
 
+  const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
+  const [filteredOpenLand, setFilteredOpenLand] = useState<OpenLand[]>([]);
+
   const [openLandDialog, setopenLandDialog] = useState(false);
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
     undefined,
@@ -199,6 +202,56 @@ const NewProperties = () => {
       results = results.filter((b) => b.constructionStatus === statusFilter);
     setFilteredBuildings(results);
   }, [searchTerm, typeFilter, statusFilter, buildings]);
+
+  useEffect(() => {
+    const lower = searchTerm.toLowerCase();
+
+    let plotResults = (openPlots || []).slice();
+
+    if (searchTerm) {
+      plotResults = plotResults.filter(
+        (p) =>
+          (p.projectName || "").toLowerCase().includes(lower) ||
+          (p.location || "").toLowerCase().includes(lower) ||
+          (p.openPlotNo || "").toLowerCase().includes(lower),
+      );
+    }
+
+    if (statusFilter !== "all") {
+      plotResults = plotResults.filter((p) => p.status === statusFilter);
+    }
+
+    if (typeFilter !== "all") {
+      if (typeFilter !== "Plot Development" && typeFilter !== "Open Plot") {
+        plotResults = [];
+      }
+    }
+
+    setFilteredOpenPlots(plotResults);
+
+    let landResults = (openLandData || []).slice();
+
+    if (searchTerm) {
+      landResults = landResults.filter(
+        (l) =>
+          (l.projectName || "").toLowerCase().includes(lower) ||
+          (l.location || "").toLowerCase().includes(lower) ||
+          (l.surveyNumber || "").toLowerCase().includes(lower),
+      );
+    }
+
+    if (statusFilter !== "all") {
+      landResults = landResults.filter((l) => l.landStatus === statusFilter);
+    }
+
+    if (typeFilter !== "all") {
+      if (typeFilter !== "Land Parcel") {
+        landResults = [];
+      }
+    }
+
+    setFilteredOpenLand(landResults);
+  }, [searchTerm, typeFilter, statusFilter, openPlots, openLandData]);
 
   if (openPlotsError) {
     toast.error((openPlotsErr as any)?.message || "Failed to fetch open plots");
@@ -418,9 +471,9 @@ const NewProperties = () => {
                       Apartment Complex
                     </SelectItem>
                     <SelectItem value="Villa Complex">Villa Complex</SelectItem>
-                    <SelectItem value="Plot Development">
+                    {/* <SelectItem value="Plot Development">
                       Plot Development
-                    </SelectItem>
+                    </SelectItem> */}
                     <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                     <SelectItem value="Open Plot">Open Plot</SelectItem>
                   </SelectContent>
@@ -654,7 +707,7 @@ const NewProperties = () => {
 
             <Card>
               <CardContent className="p-6">
-                {openPlots.length === 0 ? (
+                {filteredOpenPlots.length === 0 ? (
                   <div className="text-center py-12">
                     <h3 className="text-lg font-semibold mb-2">
                       No open plots found
@@ -672,7 +725,7 @@ const NewProperties = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {openPlots.map((plot) => (
+                    {filteredOpenPlots.map((plot) => (
                       <Card
                         key={plot._id}
                         onClick={() =>
@@ -832,7 +885,7 @@ const NewProperties = () => {
 
             <Card>
               <CardContent className="p-6">
-                {openLandData?.length === 0 ? (
+                {filteredOpenLand?.length === 0 ? (
                   <div className="text-center py-12">
                     <h3 className="text-lg font-semibold mb-2">
                       No open Land found
@@ -850,7 +903,7 @@ const NewProperties = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {openLandData?.map((land) => (
+                    {filteredOpenLand?.map((land) => (
                       <Card
                         key={land?._id}
                         onClick={() =>
