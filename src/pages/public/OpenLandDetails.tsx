@@ -33,6 +33,8 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useOpenLandById } from "@/utils/public/Config";
 import { OpenLand } from "@/types/OpenLand";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
 const OpenLandDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +49,28 @@ const OpenLandDetails: React.FC = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 3500, stopOnInteraction: false }),
   ]);
+
+  const scheduleVisitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/schedule-visit/addScheduleVisit`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Visit scheduled successfully");
+      setSiteVisitOpen(false);
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || "Failed to schedule visit"
+          : "Failed to schedule visit",
+      );
+    },
+  });
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -159,6 +183,20 @@ const OpenLandDetails: React.FC = () => {
     land?.areaUnit,
     land?.landType,
   ]);
+
+  const handleSiteVisitSubmit = (data: any) => {
+    scheduleVisitMutation.mutate({
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      preferredDate: data.date,
+      time: data.time,
+      visitors: data.visitors,
+      requirements: data.requirements,
+      propertyType: data.propertyType,
+      propertyId: data.propertyId,
+    });
+  };
 
   const openLightbox = (src: string) => {
     setCurrentImage(src);
@@ -484,6 +522,12 @@ const OpenLandDetails: React.FC = () => {
                 <CardContent className="p-6 text-center space-y-5">
                   <div className="space-y-3">
                     <Button
+                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
+                      onClick={() => setSiteVisitOpen(true)}
+                    >
+                      Schedule Site Visit
+                    </Button>
+                    <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
                       asChild
@@ -496,7 +540,7 @@ const OpenLandDetails: React.FC = () => {
 
                     <Button
                       variant="outline"
-                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md"
+                      className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
                       onClick={(e) =>
                         handleDownload(
                           e,
@@ -567,8 +611,15 @@ const OpenLandDetails: React.FC = () => {
       <SiteVisitDialog
         open={siteVisitOpen}
         onOpenChange={setSiteVisitOpen}
-        onSubmit={() => setSiteVisitOpen(false)}
+        onSubmit={(data) =>
+          handleSiteVisitSubmit({
+            ...data,
+            propertyType: "land",
+            propertyId: land._id,
+          })
+        }
         projectName={land.projectName}
+        isLoading={scheduleVisitMutation.isPending}
       />
 
       {/* Lightbox */}

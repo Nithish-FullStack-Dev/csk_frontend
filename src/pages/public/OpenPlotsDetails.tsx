@@ -34,6 +34,7 @@ import PropertyDetailsSkeleton from "./PropertyDetailsSkeleton";
 import { OpenPlot } from "@/components/public/OpenPlotInterface";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/image";
+import { useMutation } from "@tanstack/react-query";
 
 interface Amenity {
   name: string;
@@ -53,12 +54,15 @@ const OpenPlotsDetails = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 3000, stopOnInteraction: false }),
   ]);
+
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
   }, [emblaApi]);
+
   const scrollNext = useCallback(() => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
+
   const amenityIcons: { [key: string]: React.ElementType } = {
     Parking: Car,
     Garden: Trees,
@@ -66,6 +70,28 @@ const OpenPlotsDetails = () => {
     Gym: Dumbbell,
     "Swimming Pool": Bath,
   };
+
+  const scheduleVisitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/schedule-visit/addScheduleVisit`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Visit scheduled successfully");
+      setSiteVisitOpen(false);
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || "Failed to schedule visit"
+          : "Failed to schedule visit",
+      );
+    },
+  });
 
   const fetchOpenPlotById = async () => {
     setLoading(true);
@@ -88,6 +114,7 @@ const OpenPlotsDetails = () => {
       setLoading(false);
     }
   };
+
   const fetchInnerPlots = async () => {
     try {
       const res = await axios.get(
@@ -101,6 +128,7 @@ const OpenPlotsDetails = () => {
       console.error("Failed to fetch inner plots", error);
     }
   };
+
   useEffect(() => {
     fetchOpenPlotById();
     fetchInnerPlots();
@@ -108,7 +136,17 @@ const OpenPlotsDetails = () => {
   }, [id]);
 
   const handleSiteVisitSubmit = (data: any) => {
-    setSiteVisitOpen(false);
+    scheduleVisitMutation.mutate({
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      preferredDate: data.date,
+      time: data.time,
+      visitors: data.visitors,
+      requirements: data.requirements,
+      propertyType: data.propertyType,
+      propertyId: data.propertyId,
+    });
   };
 
   const openLightbox = (imageSrc: string) => {
@@ -481,12 +519,12 @@ const OpenPlotsDetails = () => {
                     {price}
                   </div> */}
                   <div className="space-y-3">
-                    {/* <Button
+                    <Button
                       className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md "
                       onClick={() => setSiteVisitOpen(true)}
                     >
                       Schedule Site Visit
-                    </Button> */}
+                    </Button>
                     <Button
                       variant="outline"
                       className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
@@ -594,8 +632,15 @@ const OpenPlotsDetails = () => {
       <SiteVisitDialog
         open={siteVisitOpen}
         onOpenChange={setSiteVisitOpen}
-        onSubmit={handleSiteVisitSubmit}
+        onSubmit={(data) =>
+          handleSiteVisitSubmit({
+            ...data,
+            propertyType: "plot",
+            propertyId: openPlot._id,
+          })
+        }
         projectName={title}
+        isLoading={scheduleVisitMutation.isPending}
       />
 
       {/* Lightbox for image gallery */}
