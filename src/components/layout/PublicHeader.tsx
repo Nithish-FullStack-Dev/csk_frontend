@@ -23,6 +23,7 @@ const navigation = [
     ],
   },
   { name: "Contact Us", href: "/public/contact" },
+  // { name: "Careers", href: "/public/careers" },
 ];
 
 const PublicHeader = () => {
@@ -64,7 +65,7 @@ const PublicHeader = () => {
     });
     if (parentItem && parentItem.dropdown) {
       return parentItem.dropdown.some(
-        (subItem) => location.pathname === subItem.href
+        (subItem) => location.pathname === subItem.href,
       );
     }
     return false;
@@ -77,7 +78,7 @@ const PublicHeader = () => {
           "w-full z-50 transition-all duration-500 ease-in-out",
           isSticky
             ? "fixed top-0 bg-white/95 backdrop-blur-lg shadow-xl py-3"
-            : "absolute top-0 bg-transparent py-4"
+            : "absolute top-0 bg-transparent py-4",
         )}
       >
         <div className="container mx-auto px-6 lg:px-8">
@@ -101,7 +102,7 @@ const PublicHeader = () => {
                     onMouseEnter={() => setActiveDropdown(item.name)}
                     onMouseLeave={() =>
                       setActiveDropdown((cur) =>
-                        cur === item.name ? null : cur
+                        cur === item.name ? null : cur,
                       )
                     }
                   >
@@ -111,8 +112,8 @@ const PublicHeader = () => {
                         isActive(item.href)
                           ? "text-estate-gold border-b-2 border-estate-gold"
                           : isSticky
-                          ? "text-gray-800 hover:text-estate-gold"
-                          : "text-white hover:text-estate-gold"
+                            ? "text-gray-800 hover:text-estate-gold"
+                            : "text-white hover:text-estate-gold",
                       )}
                     >
                       {item.name}
@@ -175,20 +176,20 @@ const PublicHeader = () => {
                       isActive(item.href)
                         ? "text-estate-gold border-b-2 border-estate-gold"
                         : isSticky
-                        ? "text-gray-800 hover:text-estate-gold"
-                        : "text-white hover:text-estate-gold"
+                          ? "text-gray-800 hover:text-estate-gold"
+                          : "text-white hover:text-estate-gold",
                     )}
                   >
                     {item.name}
                   </Link>
-                )
+                ),
               )}
             </nav>
 
             <button
               className={clsx(
                 "lg:hidden transition-colors duration-300 p-2 rounded-md",
-                isMenuOpen || isSticky ? "text-gray-800" : "text-white"
+                isMenuOpen || isSticky ? "text-gray-800" : "text-white",
               )}
               onClick={() => setIsMenuOpen((s) => !s)}
               aria-label="Toggle mobile menu"
@@ -236,7 +237,7 @@ const PublicHeader = () => {
                         className="flex items-center justify-between text-xl font-semibold w-full text-gray-800 py-2"
                         onClick={() =>
                           setActiveMobileDropdown((cur) =>
-                            cur === item.name ? null : item.name
+                            cur === item.name ? null : item.name,
                           )
                         }
                       >
@@ -294,7 +295,7 @@ const PublicHeader = () => {
                     >
                       {item.name}
                     </Link>
-                  )
+                  ),
                 )}
               </nav>
             </motion.div>

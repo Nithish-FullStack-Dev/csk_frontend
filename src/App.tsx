@@ -171,6 +171,7 @@ import SecureDashboard from "./secure/SecureDashboard";
 import SecureRoute from "./config/SecureRoute";
 import SecureCustomer from "./secure/SecureCustomer";
 import OpenLandDetailsPage from "./pages/OpenLandDetailsPage";
+import Careers from "./pages/Careers";
 // const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -255,6 +256,7 @@ const App = () => {
                     path="/public/open-lands"
                     element={<OpenLandsPage />}
                   />
+                  <Route path="/public/careers" element={<Careers />} />
                   {/* ✅ ADD THIS HERE */}
                   <Route
                     path="/public/openLand/:id"

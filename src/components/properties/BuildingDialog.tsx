@@ -81,26 +81,12 @@ export const BuildingDialog = ({
     };
 
     if (building) {
-      setFormData({
-        projectName: building.projectName || "",
-        location: building.location || "",
-        propertyType: building.propertyType || "Apartment Complex",
-        totalUnits: building.totalUnits || 0,
-        availableUnits: building.availableUnits || 0,
-        soldUnits: building.soldUnits || 0,
-        constructionStatus: building.constructionStatus || "Planned",
+      setFormData((prev) => ({
+        ...prev,
+        ...building,
+        propertyType: building.propertyType || prev.propertyType,
         completionDate: safeDate(building?.completionDate),
-        description: building.description || "",
-        municipalPermission: building.municipalPermission || false,
-        reraApproved: building.reraApproved || false,
-        reraNumber: building.reraNumber || "",
-        thumbnailUrl: building.thumbnailUrl || "",
-        brochureUrl: building.brochureUrl || null,
-        googleMapsLocation: building.googleMapsLocation || "",
-        images: building.images || [],
-        brochureFileId: building.brochureFileId || null,
-        amenities: building.amenities || [],
-      });
+      }));
 
       setThumbnailPreview(building.thumbnailUrl || "");
       setBrochurePreview(building.brochureUrl || null);
@@ -455,7 +441,7 @@ export const BuildingDialog = ({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <Label>Property Type *</Label>
               <Select
                 value={formData.propertyType}
@@ -477,7 +463,7 @@ export const BuildingDialog = ({
                   <SelectItem value="Commercial">Commercial</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div>
               <Label>Construction Status</Label>
