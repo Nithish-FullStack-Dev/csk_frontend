@@ -272,8 +272,11 @@ const NewProperties = () => {
     setStatusFilter("all");
   };
 
-  const handleAddBuilding = () => {
-    setSelectedBuilding(null);
+  const handleAddBuildingWithType = (type: string) => {
+    setSelectedBuilding({
+      propertyType: type,
+    } as Building);
+
     setDialogMode("add");
     setBuildingDialogOpen(true);
   };
@@ -419,7 +422,7 @@ const NewProperties = () => {
             </div>
 
             {userCanAddUser && (
-              <div className="flex gap-3 sm:flex-row flex-col">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3 w-full lg:w-auto">
                 <Button
                   className=""
                   onClick={() => {
@@ -427,7 +430,7 @@ const NewProperties = () => {
                     setopenLandDialog(true);
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add Open Land
+                  <Plus className="mr-2 h-4 w-4" /> Add Land
                 </Button>
 
                 <Button
@@ -437,11 +440,23 @@ const NewProperties = () => {
                     setDialogOpenPlot(true);
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add Open Plot
+                  <Plus className="mr-2 h-4 w-4" /> Add Plot
                 </Button>
 
-                <Button onClick={handleAddBuilding}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Property
+                <Button
+                  onClick={() => handleAddBuildingWithType("Villa Complex")}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Villa
+                </Button>
+
+                <Button
+                  onClick={() => handleAddBuildingWithType("Apartment Complex")}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Apartment
+                </Button>
+
+                <Button onClick={() => handleAddBuildingWithType("Commercial")}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Commercial
                 </Button>
               </div>
             )}
@@ -1060,8 +1075,17 @@ const NewProperties = () => {
 
       {/* Dialogs */}
       <BuildingDialog
+        key={
+          selectedBuilding?._id || dialogMode + selectedBuilding?.propertyType
+        }
         open={buildingDialogOpen}
-        onOpenChange={setBuildingDialogOpen}
+        onOpenChange={(val) => {
+          setBuildingDialogOpen(val);
+
+          if (!val) {
+            setSelectedBuilding(null);
+          }
+        }}
         building={selectedBuilding || undefined}
         mode={dialogMode}
         onSuccessfulSave={handleSuccessfulSave}

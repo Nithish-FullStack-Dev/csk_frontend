@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import CircleLoader from "@/components/CircleLoader.tsx";
 import { usePropertyById } from "@/utils/public/Config.ts";
 import { getImageUrl } from "@/lib/image.ts";
+import { useMutation } from "@tanstack/react-query";
 
 // --- Horizontal line for better separation ---
 
@@ -68,15 +69,27 @@ const ProjectDetailsPage = () => {
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // Define a mapping of amenity names to icons for dynamic rendering
-  const amenityIcons: { [key: string]: React.ElementType } = {
-    Parking: Car,
-    Garden: Trees,
-    "Wi-Fi": Wifi,
-    Gym: Dumbbell,
-    "Swimming Pool": Bath, // Reusing Bath icon for pool, or you can add a new one
-    // Add more mappings as needed based on your amenities data
-  };
+  const scheduleVisitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/schedule-visit/addScheduleVisit`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Visit scheduled successfully");
+      setSiteVisitOpen(false);
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || "Failed to schedule visit"
+          : "Failed to schedule visit",
+      );
+    },
+  });
 
   const {
     data: property,
@@ -90,7 +103,17 @@ const ProjectDetailsPage = () => {
   }
 
   const handleSiteVisitSubmit = (data: any) => {
-    setSiteVisitOpen(false);
+    scheduleVisitMutation.mutate({
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      preferredDate: data.date,
+      time: data.time,
+      visitors: data.visitors,
+      requirements: data.requirements,
+      propertyType: data.propertyType,
+      propertyId: data.propertyId,
+    });
   };
 
   const openLightbox = (imageSrc: string) => {
@@ -458,12 +481,12 @@ const ProjectDetailsPage = () => {
                     {property?.priceRange?.min}
                   </div> */}
                   <div className="space-y-3">
-                    {/* <Button
-                      className=""
+                    <Button
+                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md mb-3"
                       onClick={() => setSiteVisitOpen(true)}
                     >
                       Schedule Site Visit
-                    </Button> */}
+                    </Button>
                     <a href={`tel:9244567890`}>
                       <Button
                         variant="outline"
@@ -475,7 +498,7 @@ const ProjectDetailsPage = () => {
                     </a>
                     <Button
                       variant="outline"
-                      className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 text-lg rounded-lg shadow-md transition-colors font-md"
+                      className="w-full border-gold-600 text-gold-600 hover:bg-gold-50 hover:text-gold-700 py-3 text-lg rounded-lg transition-colors flex items-center justify-center font-semibold"
                       onClick={(e) =>
                         handleDownload(
                           e,
@@ -579,8 +602,15 @@ const ProjectDetailsPage = () => {
       <SiteVisitDialog
         open={siteVisitOpen}
         onOpenChange={setSiteVisitOpen}
-        onSubmit={handleSiteVisitSubmit}
+        onSubmit={(data) =>
+          handleSiteVisitSubmit({
+            ...data,
+            propertyType: "building",
+            propertyId: property._id,
+          })
+        }
         projectName={property?.projectName}
+        isLoading={scheduleVisitMutation.isPending}
       />
 
       {/* Lightbox for image gallery */}

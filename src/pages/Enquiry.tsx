@@ -53,6 +53,10 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { useRBAC } from "@/config/RBAC";
 import Loader from "@/components/Loader";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+import { TabsTrigger } from "@radix-ui/react-tabs";
+import { useQuery } from "@tanstack/react-query";
+import ScheduleVisits from "./ScheduleVisits";
 
 // --- Interfaces ---
 interface Enquiry {
@@ -182,12 +186,24 @@ const EnquiryManagement = () => {
     }
   }, [user, isAdminOrOwner, isSalesManager]);
 
-  const {
-    isRolePermissionsLoading,
-    userCanAddUser,
-    userCanDeleteUser,
-    userCanEditUser,
-  } = useRBAC({ roleSubmodule: "Enquiry" });
+  const { isRolePermissionsLoading, userCanEditUser } = useRBAC({
+    roleSubmodule: "Enquiry",
+  });
+
+  const { data: schedules = [], isLoading: isScheduleVisitsLoading } = useQuery(
+    {
+      queryKey: ["schedules-visit"],
+      queryFn: async () => {
+        const { data } = await axios.get(
+          `${import.meta.env.VITE_URL}/api/schedule-visit/getAllScheduleVisits`,
+          {
+            withCredentials: true,
+          },
+        );
+        return data?.data || [];
+      },
+    },
+  );
 
   if (isRolePermissionsLoading) return <Loader />;
 
@@ -409,187 +425,231 @@ const EnquiryManagement = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <div>
-            <h1 className="text-3xl font-md font-vidaloka">
-              {isAdminOrOwner ? "Enquiry Management" : "My Assigned Enquiries"}
-            </h1>
-            <p className="text-muted-foreground font-sans">
-              {isAdminOrOwner
-                ? "Track customer enquiries and manage their responses"
-                : "Manage and update progress on your assigned customer enquiries"}
-            </p>
-          </div>
-          {isAdminOrOwner && ( // Only Admin/Owner can add new enquiries (if you have that functionality) or assign
-            <div className="flex gap-2">
-              {/* If you have 'Add New Enquiry' button, place it here for admin/owner */}
+        <Tabs defaultValue="enquiries" className="w-full">
+          {/* Tabs Header */}
+          <TabsList className="bg-muted p-1 rounded-lg w-fit mb-4">
+            <TabsTrigger
+              value="enquiries"
+              className="
+        px-4 py-2 rounded-md text-sm font-medium
+        data-[state=active]:bg-white
+        data-[state=active]:shadow-sm
+        data-[state=active]:text-black
+        text-muted-foreground
+        transition-all
+      "
+            >
+              Enquiries
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="schedules"
+              className="
+        px-4 py-2 rounded-md text-sm font-medium
+        data-[state=active]:bg-white
+        data-[state=active]:shadow-sm
+        data-[state=active]:text-black
+        text-muted-foreground
+        transition-all
+      "
+            >
+              Schedules
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="enquiries">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div>
+                <h1 className="text-3xl font-md font-vidaloka">
+                  {isAdminOrOwner
+                    ? "Enquiry Management"
+                    : "My Assigned Enquiries"}
+                </h1>
+                <p className="text-muted-foreground font-sans">
+                  {isAdminOrOwner
+                    ? "Track customer enquiries and manage their responses"
+                    : "Manage and update progress on your assigned customer enquiries"}
+                </p>
+              </div>
+              {isAdminOrOwner && ( // Only Admin/Owner can add new enquiries (if you have that functionality) or assign
+                <div className="flex gap-2">
+                  {/* If you have 'Add New Enquiry' button, place it here for admin/owner */}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div className="rounded-md border overflow-x-auto hidden md:block">
-          <Card>
-            <CardContent>
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[120px]">Name</TableHead>
-                      {/* <TableHead className="min-w-[150px]">Email</TableHead> */}
-                      <TableHead className="min-w-[120px]">Project</TableHead>
-                      <TableHead className="min-w-[120px]">
-                        Property type
-                      </TableHead>
-                      <TableHead className="min-w-[100px]">Budget</TableHead>
-                      <TableHead className="min-w-[100px]">Address</TableHead>
-                      {isAdminOrOwner && ( // Only Admin/Owner sees these columns
-                        <>
-                          <TableHead className="min-w-[150px]">
-                            Assigned To
+            <div className="rounded-md border overflow-x-auto hidden md:block">
+              <Card>
+                <CardContent>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[120px]">Name</TableHead>
+                          {/* <TableHead className="min-w-[150px]">Email</TableHead> */}
+                          <TableHead className="min-w-[120px]">
+                            Project
                           </TableHead>
                           <TableHead className="min-w-[120px]">
-                            Status
+                            Property type
                           </TableHead>
-                        </>
-                      )}
-                      <TableHead className="min-w-[100px]">
-                        Received At
-                      </TableHead>
-                      {isSalesManager && ( // Sales Manager sees last contact/follow up
-                        <>
-                          <TableHead className="min-w-[120px]">
-                            Last Contact
+                          <TableHead className="min-w-[100px]">
+                            Budget
                           </TableHead>
-                          <TableHead className="min-w-[120px]">
-                            Next Follow-up
+                          <TableHead className="min-w-[100px]">
+                            Address
                           </TableHead>
-                        </>
-                      )}
-                      <TableHead className=" min-w-[120px]">Actions</TableHead>
-                      {/* {isSalesManager && <TableHead>Status</TableHead>} */}
-                      {isSalesManager && <TableHead>Edit</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {enquiries.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={isAdminOrOwner ? 9 : 10}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          {isSalesManager
-                            ? "No enquiries assigned to you."
-                            : "No enquiries found."}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      (enquiries || [])?.map((enquiry, idx) => (
-                        <TableRow key={enquiry._id || idx}>
-                          <TableCell className="font-medium">
-                            {enquiry?.name || "N/A"}
-                          </TableCell>
-                          {/* <TableCell>{enquiry.email}</TableCell> */}
-                          <TableCell>
-                            {enquiry?.propertyType || "N/A"}
-                          </TableCell>
-                          <TableCell>{enquiry?.project || "N/A"}</TableCell>
-                          <TableCell>{enquiry?.budget || "N/A"}</TableCell>
-                          <TableCell>{enquiry?.address || "N/A"}</TableCell>
-                          {isAdminOrOwner && (
+                          {isAdminOrOwner && ( // Only Admin/Owner sees these columns
                             <>
-                              <TableCell>
-                                {enquiry?.assignedTo
-                                  ? salespersons?.find(
-                                      (sp) => sp._id === enquiry?.assignedTo,
-                                    )?.name || "Unknown"
-                                  : "Unassigned"}
-                              </TableCell>
-                              <TableCell>
-                                <span
-                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    enquiry?.status === "New"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : enquiry.status === "Assigned"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : enquiry.status === "Enquiry"
-                                          ? "bg-green-100 text-green-800"
-                                          : enquiry.status === "Follow up"
-                                            ? "bg-purple-100 text-purple-800"
-                                            : enquiry.status === "In Progress"
-                                              ? "bg-orange-100 text-orange-800"
-                                              : enquiry.status === "Rejected"
-                                                ? "bg-red-100 text-red-800"
-                                                : "bg-gray-100 text-gray-800"
-                                  }`}
-                                >
-                                  {enquiry?.status || "N/A"}
-                                </span>
-                              </TableCell>
+                              <TableHead className="min-w-[150px]">
+                                Assigned To
+                              </TableHead>
+                              <TableHead className="min-w-[120px]">
+                                Status
+                              </TableHead>
                             </>
                           )}
-                          <TableCell>
-                            {new Date(enquiry?.createdAt).toLocaleDateString(
-                              "en-IN",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                          </TableCell>
-                          {isSalesManager && (
+                          <TableHead className="min-w-[100px]">
+                            Received At
+                          </TableHead>
+                          {isSalesManager && ( // Sales Manager sees last contact/follow up
                             <>
-                              <TableCell>
-                                {enquiry?.lastContactDate
-                                  ? format(
-                                      new Date(enquiry?.lastContactDate),
-                                      "PPP",
-                                    )
-                                  : "N/A"}
-                              </TableCell>
-                              <TableCell>
-                                {enquiry?.nextFollowUpDate
-                                  ? format(
-                                      new Date(enquiry?.nextFollowUpDate),
-                                      "PPP",
-                                    )
-                                  : "N/A"}
-                              </TableCell>
+                              <TableHead className="min-w-[120px]">
+                                Last Contact
+                              </TableHead>
+                              <TableHead className="min-w-[120px]">
+                                Next Follow-up
+                              </TableHead>
                             </>
                           )}
-                          <TableCell className="text-right flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewEnquiry(enquiry)}
+                          <TableHead className=" min-w-[120px]">
+                            Actions
+                          </TableHead>
+                          {/* {isSalesManager && <TableHead>Status</TableHead>} */}
+                          {isSalesManager && <TableHead>Edit</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {enquiries.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={isAdminOrOwner ? 9 : 10}
+                              className="text-center py-8 text-muted-foreground"
                             >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {isAdminOrOwner && !enquiry.assignedTo && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-estate-navy hover:bg-estate-navy/90"
-                                onClick={() =>
-                                  handleAssignEnquiryClick(enquiry)
-                                }
-                              >
-                                <UserPlus className="h-4 w-4" /> Assign
-                              </Button>
-                            )}
-                            {userCanEditUser && isSalesManager && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700"
-                                onClick={() =>
-                                  handleManageEnquiryClick(enquiry)
-                                }
-                              >
-                                <Edit className="h-4 w-4" /> Manage
-                              </Button>
-                            )}
-                          </TableCell>
-                          {/* <TableCell>
+                              {isSalesManager
+                                ? "No enquiries assigned to you."
+                                : "No enquiries found."}
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          (enquiries || [])?.map((enquiry, idx) => (
+                            <TableRow key={enquiry._id || idx}>
+                              <TableCell className="font-medium">
+                                {enquiry?.name || "N/A"}
+                              </TableCell>
+                              {/* <TableCell>{enquiry.email}</TableCell> */}
+                              <TableCell>
+                                {enquiry?.propertyType || "N/A"}
+                              </TableCell>
+                              <TableCell>{enquiry?.project || "N/A"}</TableCell>
+                              <TableCell>{enquiry?.budget || "N/A"}</TableCell>
+                              <TableCell>{enquiry?.address || "N/A"}</TableCell>
+                              {isAdminOrOwner && (
+                                <>
+                                  <TableCell>
+                                    {enquiry?.assignedTo
+                                      ? salespersons?.find(
+                                          (sp) =>
+                                            sp._id === enquiry?.assignedTo,
+                                        )?.name || "Unknown"
+                                      : "Unassigned"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                        enquiry?.status === "New"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : enquiry.status === "Assigned"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : enquiry.status === "Enquiry"
+                                              ? "bg-green-100 text-green-800"
+                                              : enquiry.status === "Follow up"
+                                                ? "bg-purple-100 text-purple-800"
+                                                : enquiry.status ===
+                                                    "In Progress"
+                                                  ? "bg-orange-100 text-orange-800"
+                                                  : enquiry.status ===
+                                                      "Rejected"
+                                                    ? "bg-red-100 text-red-800"
+                                                    : "bg-gray-100 text-gray-800"
+                                      }`}
+                                    >
+                                      {enquiry?.status || "N/A"}
+                                    </span>
+                                  </TableCell>
+                                </>
+                              )}
+                              <TableCell>
+                                {new Date(
+                                  enquiry?.createdAt,
+                                ).toLocaleDateString("en-IN", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </TableCell>
+                              {isSalesManager && (
+                                <>
+                                  <TableCell>
+                                    {enquiry?.lastContactDate
+                                      ? format(
+                                          new Date(enquiry?.lastContactDate),
+                                          "PPP",
+                                        )
+                                      : "N/A"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {enquiry?.nextFollowUpDate
+                                      ? format(
+                                          new Date(enquiry?.nextFollowUpDate),
+                                          "PPP",
+                                        )
+                                      : "N/A"}
+                                  </TableCell>
+                                </>
+                              )}
+                              <TableCell className="text-right flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewEnquiry(enquiry)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {isAdminOrOwner && !enquiry.assignedTo && (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="bg-estate-navy hover:bg-estate-navy/90"
+                                    onClick={() =>
+                                      handleAssignEnquiryClick(enquiry)
+                                    }
+                                  >
+                                    <UserPlus className="h-4 w-4" /> Assign
+                                  </Button>
+                                )}
+                                {userCanEditUser && isSalesManager && (
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() =>
+                                      handleManageEnquiryClick(enquiry)
+                                    }
+                                  >
+                                    <Edit className="h-4 w-4" /> Manage
+                                  </Button>
+                                )}
+                              </TableCell>
+                              {/* <TableCell>
                             {isSalesManager && (
                               <Select
                                 value={enquiry?.status}
@@ -622,10 +682,10 @@ const EnquiryManagement = () => {
                               </Select>
                             )}
                           </TableCell> */}
-                          <TableCell>
-                            {isSalesManager && (
-                              <>
-                                {/* <Button
+                              <TableCell>
+                                {isSalesManager && (
+                                  <>
+                                    {/* <Button
                                   variant="default"
                                   size="sm"
                                   className="bg-green-600 hover:bg-green-700"
@@ -635,147 +695,243 @@ const EnquiryManagement = () => {
                                 >
                                   <Edit className="h-4 w-4" /> Manage
                                 </Button> */}
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="bg-estate-navy/75 hover:bg-estate-navy/90"
-                                  onClick={() => {
-                                    setSelectedEnquiry(enquiry);
-                                    setDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" /> Edit
-                                </Button>
-                              </>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      className="bg-estate-navy/75 hover:bg-estate-navy/90"
+                                      onClick={() => {
+                                        setSelectedEnquiry(enquiry);
+                                        setDialogOpen(true);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" /> Edit
+                                    </Button>
+                                  </>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            {/* Mobile Cards */}
+            <div className="space-y-4 md:hidden">
+              {enquiries.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  {isSalesManager
+                    ? "No enquiries assigned to you."
+                    : "No enquiries found."}
+                </p>
+              ) : (
+                (enquiries || [])?.map((enquiry, idx) => (
+                  <div
+                    key={enquiry?._id || idx}
+                    className="border rounded-lg p-4 shadow-sm bg-white"
+                  >
+                    <p className="font-semibold text-lg">
+                      {enquiry?.name || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {enquiry?.email || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Project:</span>{" "}
+                      {enquiry?.project || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Property Type:</span>{" "}
+                      {enquiry?.propertyType || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Budget:</span>{" "}
+                      {enquiry?.budget || "N/A"}
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium">Address:</span>{" "}
+                      {enquiry?.address || "N/A"}
+                    </p>
+
+                    {isAdminOrOwner && (
+                      <p className="text-sm">
+                        <span className="font-medium">Assigned To:</span>{" "}
+                        {enquiry?.assignedTo
+                          ? salespersons.find(
+                              (sp) => sp._id === enquiry?.assignedTo,
+                            )?.name || "Unknown"
+                          : "Unassigned"}
+                      </p>
                     )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        {/* Mobile Cards */}
-        <div className="space-y-4 md:hidden">
-          {enquiries.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">
-              {isSalesManager
-                ? "No enquiries assigned to you."
-                : "No enquiries found."}
-            </p>
-          ) : (
-            (enquiries || [])?.map((enquiry, idx) => (
-              <div
-                key={enquiry?._id || idx}
-                className="border rounded-lg p-4 shadow-sm bg-white"
-              >
-                <p className="font-semibold text-lg">
-                  {enquiry?.name || "N/A"}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {enquiry?.email || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Project:</span>{" "}
-                  {enquiry?.project || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Property Type:</span>{" "}
-                  {enquiry?.propertyType || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Budget:</span>{" "}
-                  {enquiry?.budget || "N/A"}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Address:</span>{" "}
-                  {enquiry?.address || "N/A"}
-                </p>
 
-                {isAdminOrOwner && (
-                  <p className="text-sm">
-                    <span className="font-medium">Assigned To:</span>{" "}
-                    {enquiry?.assignedTo
-                      ? salespersons.find(
-                          (sp) => sp._id === enquiry?.assignedTo,
-                        )?.name || "Unknown"
-                      : "Unassigned"}
-                  </p>
-                )}
-
-                {/* Status badge */}
-                <div className="mt-2">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      enquiry.status === "New"
-                        ? "bg-blue-100 text-blue-800"
-                        : enquiry.status === "Assigned"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : enquiry.status === "Enquiry"
-                            ? "bg-green-100 text-green-800"
-                            : enquiry.status === "Follow up"
-                              ? "bg-purple-100 text-purple-800"
-                              : enquiry.status === "In Progress"
-                                ? "bg-orange-100 text-orange-800"
-                                : enquiry.status === "Rejected"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {enquiry?.status || "N/A"}
-                  </span>
-                </div>
-
-                {/* Actions */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewEnquiry(enquiry)}
-                  >
-                    <Eye className="h-4 w-4" /> View
-                  </Button>
-                  {isAdminOrOwner && !enquiry?.assignedTo && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="bg-estate-navy hover:bg-estate-navy/90"
-                      onClick={() => handleAssignEnquiryClick(enquiry)}
-                    >
-                      <UserPlus className="h-4 w-4" /> Assign
-                    </Button>
-                  )}
-                  {isSalesManager && (
-                    <>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={() => handleManageEnquiryClick(enquiry)}
+                    {/* Status badge */}
+                    <div className="mt-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          enquiry.status === "New"
+                            ? "bg-blue-100 text-blue-800"
+                            : enquiry.status === "Assigned"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : enquiry.status === "Enquiry"
+                                ? "bg-green-100 text-green-800"
+                                : enquiry.status === "Follow up"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : enquiry.status === "In Progress"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : enquiry.status === "Rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                        }`}
                       >
-                        <Edit className="h-4 w-4" /> Manage
-                      </Button>
+                        {enquiry?.status || "N/A"}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <Button
-                        variant="default"
+                        variant="outline"
                         size="sm"
-                        className="bg-estate-navy/75 hover:bg-estate-navy/90"
-                        onClick={() => {
-                          setSelectedEnquiry(enquiry);
-                          setDialogOpen(true);
-                        }}
+                        onClick={() => handleViewEnquiry(enquiry)}
                       >
-                        <Edit className="h-4 w-4" /> Edit
+                        <Eye className="h-4 w-4" /> View
                       </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                      {isAdminOrOwner && !enquiry?.assignedTo && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-estate-navy hover:bg-estate-navy/90"
+                          onClick={() => handleAssignEnquiryClick(enquiry)}
+                        >
+                          <UserPlus className="h-4 w-4" /> Assign
+                        </Button>
+                      )}
+                      {isSalesManager && (
+                        <>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleManageEnquiryClick(enquiry)}
+                          >
+                            <Edit className="h-4 w-4" /> Manage
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-estate-navy/75 hover:bg-estate-navy/90"
+                            onClick={() => {
+                              setSelectedEnquiry(enquiry);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" /> Edit
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="schedules">
+            <div className="rounded-md border overflow-x-auto hidden md:block">
+              <Card>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Property</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Visitors</TableHead>
+                        <TableHead>Property Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      <ScheduleVisits />
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Mobile View */}
+            <div className="space-y-4 md:hidden">
+              {schedules?.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground">
+                  No schedules available.
+                </p>
+              ) : (
+                schedules.map((schedule: any) => (
+                  <div
+                    key={schedule._id}
+                    className="border rounded-lg p-4 shadow-sm bg-white"
+                  >
+                    <p className="font-semibold text-lg">{schedule.name}</p>
+
+                    <p className="text-sm text-gray-600">{schedule.phone}</p>
+
+                    <p className="text-sm">
+                      <span className="font-medium">Property:</span>{" "}
+                      {schedule.building?.location ||
+                        schedule.plot?.projectName ||
+                        schedule.land?.projectName ||
+                        "N/A"}
+                    </p>
+
+                    <p className="text-sm">
+                      <span className="font-medium">Date:</span>{" "}
+                      {schedule.preferredDate
+                        ? new Date(schedule.preferredDate).toLocaleDateString(
+                            "en-IN",
+                          )
+                        : "N/A"}
+                    </p>
+
+                    <p className="text-sm">
+                      <span className="font-medium">Time:</span>{" "}
+                      {schedule.timeSlot}
+                    </p>
+
+                    <p className="text-sm">
+                      <span className="font-medium">Visitors:</span>{" "}
+                      {schedule.visitors}
+                    </p>
+
+                    <div className="mt-2">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          schedule.status === "requested"
+                            ? "bg-blue-100 text-blue-800"
+                            : schedule.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : schedule.status === "scheduled"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : schedule.status === "completed"
+                                  ? "bg-gray-100 text-gray-800"
+                                  : schedule.status === "cancelled"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {schedule.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* --- Dialogs --- */}

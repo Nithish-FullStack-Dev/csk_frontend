@@ -32,6 +32,7 @@ interface SiteVisitDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => void;
   projectName: string;
+  isLoading?: boolean;
 }
 
 export function SiteVisitDialog({
@@ -39,21 +40,31 @@ export function SiteVisitDialog({
   onOpenChange,
   onSubmit,
   projectName,
+  isLoading = false,
 }: SiteVisitDialogProps) {
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const form = useForm();
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      date: "",
+      time: "",
+      visitors: "1",
+      requirements: "",
+    },
+  });
 
   const handleSubmit = (data: any) => {
     const siteVisitData = {
       ...data,
-      date,
+      visitors: Number(data.visitors),
       projectName,
       status: "requested",
       createdAt: new Date().toISOString(),
     };
+
     onSubmit(siteVisitData);
     form.reset();
-    setDate(undefined);
   };
 
   return (
@@ -135,13 +146,27 @@ export function SiteVisitDialog({
               )}
             />
 
-            <div>
-              <label className="text-sm font-medium flex items-center mb-2">
-                <Calendar className="mr-2 h-4 w-4" />
-                Preferred Date
-              </label>
-              <DatePicker date={date} setDate={setDate} />
-            </div>
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Preferred Date
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      min={new Date().toISOString().split("T")[0]}
+                      required
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -152,10 +177,7 @@ export function SiteVisitDialog({
                     <Clock className="mr-2 h-4 w-4" />
                     Preferred Time
                   </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select time slot" />
@@ -166,10 +188,10 @@ export function SiteVisitDialog({
                       <SelectItem value="10:00">10:00 AM</SelectItem>
                       <SelectItem value="11:00">11:00 AM</SelectItem>
                       <SelectItem value="12:00">12:00 PM</SelectItem>
-                      <SelectItem value="14:00">2:00 PM</SelectItem>
-                      <SelectItem value="15:00">3:00 PM</SelectItem>
-                      <SelectItem value="16:00">4:00 PM</SelectItem>
-                      <SelectItem value="17:00">5:00 PM</SelectItem>
+                      <SelectItem value="2:00">2:00 PM</SelectItem>
+                      <SelectItem value="3:00">3:00 PM</SelectItem>
+                      <SelectItem value="4:00">4:00 PM</SelectItem>
+                      <SelectItem value="5:00">5:00 PM</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -183,7 +205,7 @@ export function SiteVisitDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Number of Visitors</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue="1">
+                  <Select onValueChange={field.onChange} value="1">
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select number of visitors" />
@@ -194,7 +216,7 @@ export function SiteVisitDialog({
                       <SelectItem value="2">2 People</SelectItem>
                       <SelectItem value="3">3 People</SelectItem>
                       <SelectItem value="4">4 People</SelectItem>
-                      <SelectItem value="5">5+ People</SelectItem>
+                      <SelectItem value="5">5 People</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -231,8 +253,12 @@ export function SiteVisitDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Schedule Visit
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? "Scheduling..." : "Schedule Visit"}
               </Button>
             </div>
           </form>
