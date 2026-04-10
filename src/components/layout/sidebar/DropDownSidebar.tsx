@@ -55,7 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Properties",
       "Projects Overview",
       "Construction Timeline",
-      "Trash – Buildings",
+      // "Trash – Buildings",
       "Approvals",
     ],
   },

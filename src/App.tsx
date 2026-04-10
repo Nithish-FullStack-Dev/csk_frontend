@@ -583,14 +583,14 @@ const App = () => {
                     }
                   />
 
-                  <Route
+                  {/* <Route
                     path="/trash-buildings"
                     element={
                       <ProtectedRoute roleSubmodule={"Trash – Buildings"}>
                         <TrashBuildingsPage />
                       </ProtectedRoute>
                     }
-                  />
+                  /> */}
 
                   {/* Sales Manager Routes */}
                   <Route
