@@ -331,6 +331,12 @@ export const moduleToNavItem: Record<string, any> = {
     icon: BarChart3,
     label: "Customer Purchased",
   },
+
+  "Careers Management": {
+    to: "/job-posts",
+    icon: Briefcase,
+    label: "Careers Management",
+  },
 };
 
 // Build dynamic navigation based on role + permissions

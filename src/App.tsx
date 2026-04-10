@@ -172,6 +172,8 @@ import SecureRoute from "./config/SecureRoute";
 import SecureCustomer from "./secure/SecureCustomer";
 import OpenLandDetailsPage from "./pages/OpenLandDetailsPage";
 import Careers from "./pages/Careers";
+import CreateJobPost from "./pages/dashboards/JobPostsPage";
+import JobPostsPage from "./pages/dashboards/JobPostsPage";
 // const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -591,6 +593,15 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   /> */}
+
+                  <Route
+                    path="/job-posts"
+                    element={
+                      <ProtectedRoute roleSubmodule={"Careers Management"}>
+                        <JobPostsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Sales Manager Routes */}
                   <Route

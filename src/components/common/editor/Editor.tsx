@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent } from "@tiptap/react";
 import Toolbar from "./Toolbar";
 import { extensions } from "./extensions";
 import { useEffect } from "react";
@@ -46,10 +46,20 @@ const editorClassName = [
   "dark:prose-code:bg-gray-800",
   "prose-code:px-1",
   "prose-code:rounded",
+
+  "prose-ul:list-disc",
+  "prose-ul:pl-6",
+  "prose-ol:list-decimal",
+  "prose-ol:pl-6",
+  "prose-li:my-1",
+  "marker:text-foreground",
 ].join(" ");
 
-export default function RichTextEditor({ isBigEditor = false, content, onChange }: Props) {
-  
+export default function RichTextEditor({
+  isBigEditor = false,
+  content,
+  onChange,
+}: Props) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
@@ -65,29 +75,29 @@ export default function RichTextEditor({ isBigEditor = false, content, onChange 
   });
 
   useEffect(() => {
-  if (!editor) return;
+    if (!editor) return;
 
-  // Only update if external content changed
-  if (content !== editor.getHTML()) {
-    editor.commands.setContent(content || "", false);
-  }
-}, [content, editor]);
+    // Only update if external content changed
+    if (content !== editor.getHTML()) {
+      editor.commands.setContent(content || "");
+    }
+  }, [content, editor]);
 
   if (!editor) return null;
 
-  return (
-    isBigEditor ? (
-      <div className="relative  w-full">
+  return isBigEditor ? (
+    <div className="relative  w-full">
       <Toolbar editor={editor} isBigEditor={true} />
       <div className="mt-4 rounded-xl min-h-[73vh] h-auto border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 shadow-sm">
-      <EditorContent editor={editor} />
+        <EditorContent editor={editor} />
       </div>
-      </div>
-    ) : (
-      <div className={`w-full rounded-xl min-h-[220px] h-auto border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0d0d0d] shadow-sm`}>
+    </div>
+  ) : (
+    <div
+      className={`w-full rounded-xl min-h-[220px] h-auto border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0d0d0d] shadow-sm`}
+    >
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
-      </div>
-    )
+    </div>
   );
 }
