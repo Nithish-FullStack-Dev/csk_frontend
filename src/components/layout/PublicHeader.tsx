@@ -23,7 +23,7 @@ const navigation = [
     ],
   },
   { name: "Contact Us", href: "/public/contact" },
-  // { name: "Careers", href: "/public/careers" },
+  { name: "Careers", href: "/public/careers" },
 ];
 
 const PublicHeader = () => {

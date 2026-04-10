@@ -313,11 +313,11 @@ export const moduleToNavItem: Record<string, any> = {
   //   icon: Camera,
   //   label: "Photo Evidence",
   // },
-  "Trash – Buildings": {
-    to: "/trash-buildings",
-    icon: Trash,
-    label: "Trash – Buildings",
-  },
+  // "Trash – Buildings": {
+  //   to: "/trash-buildings",
+  //   icon: Trash,
+  //   label: "Trash – Buildings",
+  // },
   Payments: { to: "/secure/payments", icon: IndianRupee, label: "Payments" },
 
   Secure: {

@@ -129,19 +129,18 @@ const ModernEnquiryForm: React.FC = () => {
 
       let url = "";
       let source: FormData["propertySource"] = "";
-
-      if (type === "villa" || type === "apartment" || type === "Commercial") {
-        url = "/api/building/getAllBuildings";
+      if (type === "villa" || type === "apartment" || type === "commercial") {
+        url = "/api/building/getAllBuildingsForPublic";
         source = "building";
       }
 
       if (type === "plot") {
-        url = "/api/openPlot/getAllOpenPlot";
+        url = "/api/openPlot/getAllOpenPlotForPublic";
         source = "openplot";
       }
 
       if (type === "land") {
-        url = "/api/openLand/getAllOpenLand";
+        url = "/api/openLand/getAllOpenLandForPublic";
         source = "openland";
       }
 
@@ -163,11 +162,11 @@ const ModernEnquiryForm: React.FC = () => {
           );
         }
 
-        // if (type === "Commercial") {
-        //   normalized = normalized.filter(
-        //     (b: any) => b.propertyType === "Commercial",
-        //   );
-        // }
+        if (type === "commercial") {
+          normalized = normalized.filter(
+            (b: any) => b.propertyType === "Commercial",
+          );
+        }
       }
 
       setProjects(normalized);
@@ -458,6 +457,7 @@ const ModernEnquiryForm: React.FC = () => {
             <SelectContent>
               <SelectItem value="villa">Villa</SelectItem>
               <SelectItem value="apartment">Apartment</SelectItem>
+              <SelectItem value="commercial">Commercial</SelectItem>
               <SelectItem value="plot">Plot</SelectItem>
               <SelectItem value="land">Land</SelectItem>
             </SelectContent>

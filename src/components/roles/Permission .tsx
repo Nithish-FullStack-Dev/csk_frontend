@@ -31,7 +31,7 @@ const moduleConfig: Record<string, string[]> = {
   "Admin Modules": [
     "User Management",
     "Content Management",
-    "Trash – Buildings",
+    // "Trash – Buildings",
     // "System Settings"
   ],
   "Sales Modules": [

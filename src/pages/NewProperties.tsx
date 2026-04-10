@@ -197,7 +197,11 @@ const NewProperties = () => {
       );
     }
     if (typeFilter !== "all")
-      results = results.filter((b) => b.propertyType === typeFilter);
+      results = results.filter(
+        (b) =>
+          (b.propertyType || "").toLowerCase().trim() ===
+          typeFilter.toLowerCase().trim(),
+      );
     if (statusFilter !== "all")
       results = results.filter((b) => b.constructionStatus === statusFilter);
     setFilteredBuildings(results);
@@ -486,9 +490,7 @@ const NewProperties = () => {
                       Apartment Complex
                     </SelectItem>
                     <SelectItem value="Villa Complex">Villa Complex</SelectItem>
-                    {/* <SelectItem value="Plot Development">
-                      Plot Development
-                    </SelectItem> */}
+                    <SelectItem value="Commercial">Commercial</SelectItem>
                     <SelectItem value="Land Parcel">Land Parcel</SelectItem>
                     <SelectItem value="Open Plot">Open Plot</SelectItem>
                   </SelectContent>
