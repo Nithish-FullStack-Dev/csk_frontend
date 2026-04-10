@@ -318,8 +318,9 @@ const ModernEnquiryForm: React.FC = () => {
       console.error("Failed to verify OTP", error);
       toast({
         title: "Verification Error",
-        description:
-          "Something went wrong during OTP verification. Please try again.",
+        description: axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : "An unexpected error occurred.",
         variant: "destructive",
       });
       setIsOtpVerified(false);
@@ -584,9 +585,9 @@ const ModernEnquiryForm: React.FC = () => {
               onClick={handleSendOtp}
               type="button"
               disabled={
-                !formData.email || // Email must be present
-                (otpSent && formData.email === verifiedEmail) || // Already sent for this verified email
-                isSubmitting || // Prevent sending during form submission
+                !formData.email ||
+                otpSent || // 🔥 THIS is the key fix
+                isSubmitting ||
                 otpLoading
               }
               className="whitespace-nowrap"

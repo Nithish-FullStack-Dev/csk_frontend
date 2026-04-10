@@ -31,6 +31,7 @@ const moduleConfig: Record<string, string[]> = {
   "Admin Modules": [
     "User Management",
     "Content Management",
+    "Careers Management",
     // "Trash – Buildings",
     // "System Settings"
   ],
@@ -237,7 +238,7 @@ export default function Permission() {
                 </SelectTrigger>
                 <SelectContent>
                   {roles
-                    // ?.filter((role) => role.name !== "admin")
+                    ?.filter((role) => role.name !== "admin")
                     .map((role) => (
                       <SelectItem key={role._id} value={role.name}>
                         {role.name

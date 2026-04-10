@@ -108,7 +108,13 @@ const NAV_GROUPS: NavGroup[] = [
     key: "website",
     label: "Website",
     icon: Globe,
-    modules: ["CMS", "Content Management", "Profile", "Communications"],
+    modules: [
+      "CMS",
+      "Content Management",
+      "Profile",
+      "Communications",
+      "Careers Management",
+    ],
   },
   {
     key: "task_tracker",
