@@ -47,6 +47,8 @@ const formSchema = z.object({
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
   benefits: z.string().optional(),
+  openings: z.coerce.number().min(1),
+  expiresAt: z.string().optional(),
 });
 
 const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
@@ -70,6 +72,8 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
       responsibilities: "",
       requirements: "",
       benefits: "",
+      openings: 1,
+      expiresAt: "",
     },
   });
 
@@ -91,6 +95,11 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
           responsibilities: job.responsibilities || "",
           requirements: job.requirements || "",
           benefits: job.benefits || "",
+          openings: job.openings || 1,
+          expiresAt:
+            job.expiresAt && !isNaN(new Date(job.expiresAt).getTime())
+              ? new Date(job.expiresAt).toISOString().split("T")[0]
+              : "",
         });
       }
     } else {
@@ -109,6 +118,8 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
         responsibilities: "",
         requirements: "",
         benefits: "",
+        openings: 1,
+        expiresAt: "",
       });
     }
   }, [job, open]);
@@ -134,6 +145,8 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
         responsibilities: values.responsibilities,
         requirements: values.requirements,
         benefits: values.benefits,
+        openings: values.openings,
+        expiresAt: values.expiresAt ? new Date(values.expiresAt) : null,
       };
 
       if (isEdit) {
@@ -158,7 +171,7 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
         data?.message ||
           `Job post ${isEdit ? "updated" : "created"} successfully`,
       );
-      onSuccess();
+      onSuccess?.();
       onOpenChange(false);
     },
     onError: (error: any) => {
@@ -356,6 +369,35 @@ const JobPostFormDialog = ({ open, onOpenChange, job, onSuccess }: any) => {
                       <FormLabel>Max Salary</FormLabel>
                       <FormControl>
                         <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="openings"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Number of Openings</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="expiresAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expiry Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

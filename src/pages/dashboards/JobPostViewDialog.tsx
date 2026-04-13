@@ -23,16 +23,16 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
               </DialogTitle>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Building className="h-4 w-4" /> {job.department}
+                  <Building className="h-4 w-4" /> {job.department || "N/A"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" /> {job.location}
+                  <MapPin className="h-4 w-4" /> {job.location || "N/A"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Briefcase className="h-4 w-4" /> {job.jobType}
+                  <Briefcase className="h-4 w-4" /> {job.jobType || "N/A"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" /> {job.workMode}
+                  <Clock className="h-4 w-4" /> {job.workMode || "N/A"}
                 </span>
               </div>
             </div>
@@ -41,12 +41,12 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
                 variant={job.status === "published" ? "default" : "secondary"}
                 className="capitalize"
               >
-                {job.status}
+                {job.status || "N/A"}
               </Badge>
               {job.salaryRange && (
                 <span className="flex items-center gap-1 font-semibold text-primary">
                   <IndianRupee className="h-4 w-4" />
-                  {job.salaryRange.min} - {job.salaryRange.max}
+                  {job.salaryRange.min || 0} - {job.salaryRange.max || 0}
                 </span>
               )}
             </div>
@@ -57,14 +57,14 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
           <div className="space-y-8">
             <section className="space-y-3">
               <h3 className="text-lg font-semibold border-b pb-2">Overview</h3>
-              <RenderRichText html={job.description} />
+              <RenderRichText html={job.description || ""} />
             </section>
 
             <section className="space-y-3">
               <h3 className="text-lg font-semibold border-b pb-2">
                 Description
               </h3>
-              <RenderRichText html={job.description} />
+              <RenderRichText html={job.description || ""} />
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -73,7 +73,7 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
                   <h3 className="text-lg font-semibold border-b pb-2">
                     Responsibilities
                   </h3>
-                  <RenderRichText html={job.responsibilities} />
+                  <RenderRichText html={job.responsibilities || ""} />
                 </section>
               )}
 
@@ -82,7 +82,7 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
                   <h3 className="text-lg font-semibold border-b pb-2">
                     Requirements
                   </h3>
-                  <RenderRichText html={job.requirements} />
+                  <RenderRichText html={job.requirements || ""} />
                 </section>
               )}
             </div>
@@ -92,7 +92,7 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
                 <h3 className="text-lg font-semibold border-b pb-2">
                   Benefits
                 </h3>
-                <RenderRichText html={job.benefits} />
+                <RenderRichText html={job.benefits || ""} />
               </section>
             )}
 
@@ -102,19 +102,19 @@ const JobPostViewDialog = ({ open, onOpenChange, job }: any) => {
                   Experience Required
                 </p>
                 <p className="text-sm font-medium">
-                  {job.experience?.min} - {job.experience?.max} Years
+                  {job.experience?.min || 0} - {job.experience?.max || 0} Years
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Openings</p>
-                <p className="text-sm font-medium">{job.openings}</p>
+                <p className="text-sm font-medium">{job.openings || 0}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
                   Application Type
                 </p>
                 <p className="text-sm font-medium capitalize">
-                  {job.applicationType}
+                  {job.applicationType || "N/A"}
                 </p>
               </div>
               <div className="space-y-1">

@@ -103,6 +103,23 @@ export default function Careers() {
 
   const jobOpenings = data?.data || [];
 
+  const getExpiryText = (expiresAt: string) => {
+    if (!expiresAt) return "No expiry";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiry = new Date(expiresAt);
+    expiry.setHours(0, 0, 0, 0);
+
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "Expired";
+    if (diffDays === 0) return "Expires Today";
+    return `Expires in ${diffDays} day${diffDays > 1 ? "s" : ""}`;
+  };
+
   return (
     <PublicLayout>
       <div className="min-h-screen bg-gray-50">
@@ -205,6 +222,17 @@ export default function Careers() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Briefcase className="h-4 w-4" /> {job.department}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs mb-3">
+                        <span
+                          className={`px-2 py-1 rounded-full font-medium ${
+                            getExpiryText(job.expiresAt) === "Expired"
+                              ? "bg-red-100 text-red-600"
+                              : "bg-green-100 text-green-600"
+                          }`}
+                        >
+                          {getExpiryText(job.expiresAt)}
                         </span>
                       </div>
                       <div className="text-gray-600 mb-6 text-sm line-clamp-2">
