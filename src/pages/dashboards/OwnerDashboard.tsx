@@ -81,7 +81,7 @@ const OwnerDashboard = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [chartType, setChartType] = useState<
     "sales" | "leads" | "visits" | "properties"
-  >("sales");
+  >("leads");
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [openPlots, setOpenPlots] = useState<OpenPlot[]>([]);
   const [openLands, setOpenLands] = useState<OpenLand[]>([]);
@@ -403,7 +403,7 @@ const OwnerDashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link to="/analytics" className="block">
             <StatCard
               title="Total Properties"
@@ -466,15 +466,15 @@ const OwnerDashboard = () => {
                 </div>
 
                 {/* Filter Buttons */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
                   {[
-                    {
-                      key: "sales",
-                      label: "Revenue",
-                      value: `₹${totalSales.toLocaleString()}`,
-                      icon: DollarSign,
-                      color: "text-blue-600",
-                    },
+                    // {
+                    //   key: "sales",
+                    //   label: "Revenue",
+                    //   value: `₹${totalSales.toLocaleString()}`,
+                    //   icon: DollarSign,
+                    //   color: "text-blue-600",
+                    // },
                     {
                       key: "leads",
                       label: "Leads",
