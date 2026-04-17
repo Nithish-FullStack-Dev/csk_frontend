@@ -39,11 +39,11 @@ const SidebarHeader = ({ collapsed, toggleCollapsed }: SidebarHeaderProps) => {
         <Link
           to="/"
           className="flex items-center gap-2 transition-all duration-300 hover:opacity-90"
-          onMouseDown={handleMouseDown}
-          onMouseUp={clearTimer}
-          onMouseLeave={clearTimer}
         >
           <img
+            onMouseDown={handleMouseDown}
+            onMouseUp={clearTimer}
+            onMouseLeave={clearTimer}
             src="/assets/images/logo.png"
             alt="CSK Realtors Logo"
             className="h-10 w-auto transition-all duration-300"
