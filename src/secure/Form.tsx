@@ -21,7 +21,7 @@ const Form = () => {
   const sendOtpMutation = useMutation({
     mutationFn: async () => {
       const res = await axios.post(
-        `${import.meta.env.VITE_URL}/api/auth/send-otp`,
+        `${import.meta.env.VITE_URL}/api/auth/secure/send-otp`,
         {
           email,
         },
