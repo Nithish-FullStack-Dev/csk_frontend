@@ -69,25 +69,50 @@ export default function OpenPlotLeadsTable({
           <TableHead>Status</TableHead>
           <TableHead>Open Plot</TableHead>
           <TableHead>Inner Plot</TableHead>
+          <TableHead>Property Status</TableHead>
           <TableHead>Last Contact</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
 
       <TableBody>
-        {data.map((lead) => (
+        {data.map((lead) => {
+          const propertyStatusColors: Record<string, string> = {
+                  New: "bg-blue-100 text-blue-800",
+                  Enquiry: "bg-yellow-100 text-yellow-800",
+                  Assigned: "bg-purple-100 text-purple-800",
+                  "Follow up": "bg-orange-100 text-orange-800",
+                  "In Progress": "bg-indigo-100 text-indigo-800",
+                  Closed: "bg-green-100 text-green-800",
+                  Rejected: "bg-red-100 text-red-800",
+                };
+          return(
           <TableRow key={lead._id}>
-            <TableCell className="font-medium">{lead.name}</TableCell>
+            <TableCell className="font-medium">{lead?.name || "N/A"}</TableCell>
 
             <TableCell>
-              <Badge className={statusColors[lead.status] || ""}>
-                {lead.status}
+              <Badge className={statusColors[lead?.status] || ""}>
+                {lead?.status || "N/A"}
               </Badge>
             </TableCell>
 
-            <TableCell>{(lead.openPlot as OpenPlot)?.projectName}</TableCell>
+            <TableCell>
+              {(lead.openPlot as OpenPlot)?.projectName || "N/A"}
+            </TableCell>
 
-            <TableCell>Plot {(lead.innerPlot as InnerPlot)?.plotNo}</TableCell>
+            <TableCell>
+              Plot {(lead.innerPlot as InnerPlot)?.plotNo || "N/A"}
+            </TableCell>
+
+            <TableCell><Badge
+                        className={
+                          propertyStatusColors[
+                            lead.propertyStatus as keyof typeof propertyStatusColors
+                          ]
+                        }
+                      >
+                        {lead?.propertyStatus||"N/A"}
+                      </Badge></TableCell>
 
             <TableCell>
               {lead.lastContact
@@ -162,7 +187,7 @@ export default function OpenPlotLeadsTable({
               </div>
             </TableCell>
           </TableRow>
-        ))}
+        )})}
       </TableBody>
     </Table>
   );

@@ -70,100 +70,124 @@ export default function OpenLandLeadsTable({
           <TableHead>Status</TableHead>
           <TableHead>Open Land</TableHead>
           <TableHead>Land Type</TableHead>
+          <TableHead>Property Status</TableHead>
           <TableHead>Last Contact</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
 
       <TableBody>
-        {data.map((lead) => (
-          <TableRow key={lead._id}>
-            <TableCell className="font-medium">{lead.name}</TableCell>
+        {data.map((lead) => {
+          const propertyStatusColors: Record<string, string> = {
+            New: "bg-blue-100 text-blue-800",
+            Enquiry: "bg-yellow-100 text-yellow-800",
+            Assigned: "bg-purple-100 text-purple-800",
+            "Follow up": "bg-orange-100 text-orange-800",
+            "In Progress": "bg-indigo-100 text-indigo-800",
+            Closed: "bg-green-100 text-green-800",
+            Rejected: "bg-red-100 text-red-800",
+          };
+          return (
+            <TableRow key={lead._id}>
+              <TableCell className="font-medium">{lead.name}</TableCell>
 
-            <TableCell>
-              <Badge className={statusColors[lead.status] || ""}>
-                {lead.status}
-              </Badge>
-            </TableCell>
+              <TableCell>
+                <Badge className={statusColors[lead.status] || ""}>
+                  {lead.status}
+                </Badge>
+              </TableCell>
 
-            <TableCell>{(lead.openLand as OpenLand)?.projectName}</TableCell>
+              <TableCell>{(lead.openLand as OpenLand)?.projectName}</TableCell>
 
-            <TableCell>{(lead.openLand as OpenLand)?.landType}</TableCell>
+              <TableCell>{(lead.openLand as OpenLand)?.landType}</TableCell>
 
-            <TableCell>
-              {lead.lastContact
-                ? formatDistanceToNow(new Date(lead.lastContact), {
-                    addSuffix: true,
-                  })
-                : "N/A"}
-            </TableCell>
+              <TableCell>
+                <Badge
+                  className={
+                    propertyStatusColors[
+                      lead.propertyStatus as keyof typeof propertyStatusColors
+                    ]
+                  }
+                >
+                  {lead?.propertyStatus || "N/A"}
+                </Badge>
+              </TableCell>
 
-            {/* ACTIONS */}
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                {setSelectedLead && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedLead(lead)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                )}
+              <TableCell>
+                {lead.lastContact
+                  ? formatDistanceToNow(new Date(lead.lastContact), {
+                      addSuffix: true,
+                    })
+                  : "N/A"}
+              </TableCell>
 
-                {!isAdmin && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
+              {/* ACTIONS */}
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {setSelectedLead && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedLead(lead)}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
 
-                    <DropdownMenuContent align="end">
-                      <a href={`tel:${lead.phone}`}>
-                        <DropdownMenuItem>
-                          <PhoneCall className="mr-2 h-4 w-4" />
-                          Call
-                        </DropdownMenuItem>
-                      </a>
+                  {!isAdmin && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                      <a
-                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                          lead.email,
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <DropdownMenuItem>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Email
-                        </DropdownMenuItem>
-                      </a>
+                      <DropdownMenuContent align="end">
+                        <a href={`tel:${lead.phone}`}>
+                          <DropdownMenuItem>
+                            <PhoneCall className="mr-2 h-4 w-4" />
+                            Call
+                          </DropdownMenuItem>
+                        </a>
 
-                      <DropdownMenuSeparator />
-
-                      {userCanEditUser && onEdit && (
-                        <DropdownMenuItem onClick={() => onEdit(lead)}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                      )}
-
-                      {userCanDeleteUser && handleDeleteLead && (
-                        <DropdownMenuItem
-                          onClick={(e) => handleDeleteLead(lead._id, e)}
+                        <a
+                          href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                            lead.email,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+                          <DropdownMenuItem>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Email
+                          </DropdownMenuItem>
+                        </a>
+
+                        <DropdownMenuSeparator />
+
+                        {userCanEditUser && onEdit && (
+                          <DropdownMenuItem onClick={() => onEdit(lead)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        )}
+
+                        {userCanDeleteUser && handleDeleteLead && (
+                          <DropdownMenuItem
+                            onClick={(e) => handleDeleteLead(lead._id, e)}
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

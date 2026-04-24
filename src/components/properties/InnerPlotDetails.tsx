@@ -39,6 +39,8 @@ import {
   useLeadbyOpenPlotId,
 } from "@/utils/buildings/Projects";
 import { getImageUrl } from "@/lib/image";
+import { toast } from "sonner";
+import axios from "axios";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -105,11 +107,31 @@ export function InnerPlotDetails() {
   /* ---------- DELETE ---------- */
   const deleteMutation = useMutation({
     mutationFn: deleteInnerPlot,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["inner-plots", plot?.openPlotId],
+    onSuccess: async () => {
+      // queryClient.removeQueries({
+      //   queryKey: ["inner-plot", _id],
+      // });
+
+      // refresh inner plot list
+      await queryClient.invalidateQueries({
+        queryKey: ["inner-plots"],
+        exact: false,
+      });
+
+      // refresh open plot page
+      await queryClient.invalidateQueries({
+        queryKey: ["open-plot"],
+        exact: false,
       });
       navigate(-1);
+    },
+    onError: (error) => {
+      console.error("Error deleting inner plot:", error);
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message || "Failed to delete inner plot"
+          : error?.message || "Failed to delete inner plot",
+      );
     },
   });
 

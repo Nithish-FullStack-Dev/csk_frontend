@@ -158,7 +158,7 @@ export default function PropertyLeadsTab({
                           ]
                         }
                       >
-                        {lead.propertyStatus}
+                        {lead?.propertyStatus||"N/A"}
                       </Badge>
                     </TableCell>
 
