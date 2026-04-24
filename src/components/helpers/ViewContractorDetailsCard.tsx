@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { getImageUrl } from "@/lib/image";
 
 type Props = {
   contractor: any;
@@ -208,7 +209,7 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
             </div>
             {contractor?.billCopy && (
               <Button variant="outline" size="sm" asChild>
-                <a href={contractor.billCopy} target="_blank">
+                <a href={getImageUrl(contractor.billCopy)} target="_blank">
                   View Bill Copy
                 </a>
               </Button>

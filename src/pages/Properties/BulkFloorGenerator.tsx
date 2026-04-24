@@ -220,6 +220,7 @@ export default function BulkFloorGenerator({
       toast.success("Floors & Units generated successfully");
       queryClient.invalidateQueries({ queryKey: ["floors"] });
       queryClient.invalidateQueries({ queryKey: ["units"] });
+      queryClient.invalidateQueries({ queryKey: ["all-units"] });
       onOpenChange(false);
     },
 
@@ -294,10 +295,10 @@ export default function BulkFloorGenerator({
               }}
             />
           </div>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <Switch checked={sameMix} onCheckedChange={setSameMix} />
             <Label>Same unit mix for all floors</Label>
-          </div>
+          </div> */}
 
           <Card>
             <CardContent className="p-4 space-y-4">
