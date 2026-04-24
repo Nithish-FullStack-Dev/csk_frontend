@@ -52,7 +52,7 @@ const ViewProjectDialog: React.FC<Props> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[90%] rounded-md">
+      <DialogContent className="rounded-md">
         <DialogHeader>
           <DialogTitle>Project Details</DialogTitle>
         </DialogHeader>

@@ -988,10 +988,12 @@ const SiteInspections = () => {
                 {selectedInspection && (
                   <div className="space-y-4 text-sm">
                     <p>
-                      <strong>Title:</strong> {selectedInspection.title}
+                      <strong>Title:</strong>{" "}
+                      {selectedInspection?.title || "N/A"}
                     </p>
                     <p>
-                      <strong>Location:</strong> {selectedInspection.location}
+                      <strong>Location:</strong>{" "}
+                      {selectedInspection?.locations || "N/A"}
                     </p>
                     <p>
                       <strong>Project: </strong>{" "}
@@ -999,20 +1001,24 @@ const SiteInspections = () => {
                     </p>
                     <p>
                       <strong>Floor Unit: </strong>{" "}
-                      {selectedInspection.floorUnit?.floorNumber}
+                      {selectedInspection.floorUnit?.floorNumber || "N/A"}
                     </p>
                     <p>
-                      <strong>Unit: </strong> {selectedInspection.unit?.plotNo}
+                      <strong>Unit: </strong>{" "}
+                      {selectedInspection.unit?.plotNo || "N/A"}
                     </p>
                     <p>
-                      <strong>Type:</strong> {selectedInspection.type}
+                      <strong>Type:</strong> {selectedInspection?.type || "N/A"}
                     </p>
                     <p>
-                      <strong>Status:</strong> {selectedInspection.status}
+                      <strong>Status:</strong>{" "}
+                      {selectedInspection?.status || "N/A"}
                     </p>
                     <p>
                       <strong>Date:</strong>{" "}
-                      {new Date(selectedInspection.date).toLocaleDateString()}
+                      {selectedInspection.date
+                        ? new Date(selectedInspection.date).toLocaleDateString()
+                        : "N/A"}
                     </p>
                     <div>
                       <strong>Photos:</strong>

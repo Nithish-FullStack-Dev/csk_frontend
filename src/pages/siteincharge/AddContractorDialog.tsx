@@ -38,6 +38,7 @@ import {
   contractorSchema,
   FormValues,
 } from "@/utils/contractor/ContractorConfig";
+import { getImageUrl } from "@/lib/image";
 
 type Props = {
   openDialog: boolean;
@@ -186,11 +187,7 @@ const AddContractorDialog = ({
           contractor.billCopy.startsWith("http") ||
           contractor.billCopy.startsWith("blob:");
 
-        setImagePreview(
-          isAbsolute
-            ? contractor.billCopy
-            : `${import.meta.env.VITE_URL}/${contractor.billCopy}`,
-        );
+        setImagePreview(contractor.billCopy);
       } else {
         setImagePreview(null);
       }
@@ -866,7 +863,7 @@ const AddContractorDialog = ({
                   <div className="mb-4 rounded-lg border bg-muted p-3">
                     <Label className="mb-2 block">Bill Copy Preview</Label>
                     <img
-                      src={imagePreview}
+                      src={getImageUrl(imagePreview)}
                       alt="Bill Copy Preview"
                       className="w-full max-h-64 object-contain rounded-md bg-white"
                     />

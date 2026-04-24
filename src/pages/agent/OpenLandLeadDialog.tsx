@@ -26,6 +26,7 @@ import {
   useSaveOpenLandLead,
   useUpdateOpenLandLead,
 } from "@/utils/leads/LeadConfig";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   open: boolean;
@@ -42,6 +43,7 @@ export default function OpenLandLeadDialog({
   onClose,
   onSuccess,
 }: Props) {
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -174,19 +176,21 @@ export default function OpenLandLeadDialog({
             ]}
           />
 
-          <SelectField
-            label="Property Status"
-            value={propertyStatus}
-            onChange={setPropertyStatus}
-            options={[
-              { value: "New", label: "New" },
-              { value: "Assigned", label: "Assigned" },
-              { value: "Follow up", label: "Follow up" },
-              { value: "In Progress", label: "In Progress" },
-              { value: "Closed", label: "Closed" },
-              { value: "Rejected", label: "Rejected" },
-            ]}
-          />
+          {user?.role === "sales_manager" && (
+            <SelectField
+              label="Property Status"
+              value={propertyStatus}
+              onChange={setPropertyStatus}
+              options={[
+                { value: "New", label: "New" },
+                { value: "Assigned", label: "Assigned" },
+                { value: "Follow up", label: "Follow up" },
+                { value: "In Progress", label: "In Progress" },
+                { value: "Closed", label: "Closed" },
+                { value: "Rejected", label: "Rejected" },
+              ]}
+            />
+          )}
 
           <InputField label="Notes" value={notes} onChange={setNotes} />
         </div>
