@@ -11,7 +11,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import GalleryCms from "@/components/cms/GalleryCms";
 
 const tabItems = [
-  { value: "hero", label: "Hero Section", icon: Home },
+  { value: "hero", label: "Feature Section", icon: Home },
   { value: "about", label: "About Section", icon: Users },
   { value: "gallery", label: "Gallery", icon: Image },
   { value: "contact", label: "Contact Info", icon: MapPin },
