@@ -362,11 +362,12 @@ const TeamManagementTable = ({
     resetFormState();
     setMode("edit");
     setEditId(agent._id ?? null);
+
     const getId = (field: any): string => {
-      if (!field) return null;
+      if (!field) return "";
       if (typeof field === "string") return field;
-      if (typeof field === "object" && field._id) return field._id;
-      return null;
+      if (typeof field === "object" && field?._id) return field._id;
+      return "";
     };
 
     setForm({
@@ -388,12 +389,8 @@ const TeamManagementTable = ({
       approvedBy: getId(agent.approvedBy),
     });
 
-    setSelectedAgent(
-      typeof agent.agentId === "object" ? agent.agentId._id : "",
-    );
-    setSelectedProject(
-      typeof agent.project === "object" ? agent.project._id : "",
-    );
+    setSelectedAgent(getId(agent.agentId));
+    setSelectedProject(getId(agent.project));
 
     setOpenDialog(true);
   };
