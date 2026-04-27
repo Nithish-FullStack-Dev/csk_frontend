@@ -3,40 +3,25 @@ import { Button } from "@/components/ui/button"; // Assuming Shadcn UI Button
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"; // Icons for CTAs and navigation
 import { Link } from "react-router-dom"; // For internal routing
 import { motion, AnimatePresence, spring } from "framer-motion"; // For animations
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import Loader from "../Loader";
+import CircleLoader from "../CircleLoader";
+import { getImageUrl } from "@/lib/image";
 
 const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null); // Ref to store the timer ID
+  const autoSlideTimerRef = useRef(null); // Ref to store the timer ID
 
-  const slides = [
-    {
-      image:
-        "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      title: "Your Grand Dream Home Awaits",
-      subtitle:
-        "Step into a world of bespoke luxury and unparalleled comfort in our exclusive residential developments.",
-      cta: "Explore Residences",
-      link: "/public", // Added explicit link for CTA
+  const { data: slides, isLoading } = useQuery({
+    queryKey: ["hero-cms"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/hero-cms/all`,
+      );
+      return data?.data || [];
     },
-    {
-      image:
-        "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      title: "Strategic Plot Investments",
-      subtitle:
-        "Secure your future with meticulously planned and strategically located residential plots, primed for growth.",
-      cta: "Discover Plots",
-      link: "/public", // Example link for plots
-    },
-    {
-      image:
-        "https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      title: "Building Beyond Expectations",
-      subtitle:
-        "Our commitment to superior craftsmanship and architectural integrity ensures enduring quality in every structure.",
-      cta: "View Our Expertise",
-      link: "/public", // Example link for projects
-    },
-  ];
+  });
 
   // Framer Motion variants for content animation
   const contentVariants = {
@@ -72,12 +57,13 @@ const HeroSection = () => {
 
   // Autoplay functionality
   useEffect(() => {
+    if (!slides?.length) return;
     const startTimer = () => {
       if (autoSlideTimerRef.current) {
         clearInterval(autoSlideTimerRef.current);
       }
       autoSlideTimerRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
+        setCurrentSlide((prev) => (prev + 1) % slides?.length);
       }, 7000); // Increased interval to 7 seconds for better readability
     };
 
@@ -88,7 +74,7 @@ const HeroSection = () => {
         clearInterval(autoSlideTimerRef.current); // Clear on unmount
       }
     };
-  }, [slides.length]);
+  }, [slides?.length]);
 
   /* useEffect(() => {
     window.scrollTo(0, 0);
@@ -118,27 +104,31 @@ const HeroSection = () => {
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background Image Carousel */}
       <AnimatePresence initial={false}>
-        {slides.map(
-          (slide, index) =>
-            index === currentSlide && (
-              <motion.div
-                initial={{ opacity: 0, scale: 1.05 }} // Start slightly zoomed in
-                animate={{ opacity: 1, scale: 1 }} // Zoom out slightly to create subtle motion
-                exit={{ opacity: 0, scale: 0.95 }} // Zoom in slightly on exit
-                transition={{ duration: 1.5, ease: "easeInOut" }} // Longer, smoother transition
-                className="absolute inset-0 z-0"
-                key={index}
-              >
-                <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover object-center" // Ensure image covers well
-                />
-                {/* Enhanced Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-                <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
-              </motion.div>
-            )
+        {isLoading ? (
+          <CircleLoader />
+        ) : (
+          (Array.isArray(slides) ? slides : []).map(
+            (slide, index) =>
+              index === currentSlide && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 1.05 }} // Start slightly zoomed in
+                  animate={{ opacity: 1, scale: 1 }} // Zoom out slightly to create subtle motion
+                  exit={{ opacity: 0, scale: 0.95 }} // Zoom in slightly on exit
+                  transition={{ duration: 1.5, ease: "easeInOut" }} // Longer, smoother transition
+                  className="absolute inset-0 z-0"
+                  key={index}
+                >
+                  <img
+                    src={getImageUrl(slide?.image || "")}
+                    alt={slide?.title || "N/A"}
+                    className="w-full h-full object-cover object-center" // Ensure image covers well
+                  />
+                  {/* Enhanced Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-black bg-opacity-50 z-0" />
+                </motion.div>
+              ),
+          )
         )}
       </AnimatePresence>
 
@@ -158,14 +148,14 @@ const HeroSection = () => {
               variants={childVariants}
               className="text-5xl sm:text-6xl md:text-7xl font-md font-vidaloka leading-tight mb-5 tracking-tight drop-shadow-2xl" // Bolder, larger, tighter tracking, stronger shadow
             >
-              {slides[currentSlide].title}
+              {slides?.[currentSlide]?.title || "Title"}
             </motion.h1>
 
             <motion.p
               variants={childVariants}
               className="text-lg sm:text-xl md:text-2xl mb-10 opacity-90 leading-relaxed max-w-2xl mx-auto" // Increased line height, slightly softer text
             >
-              {slides[currentSlide].subtitle}
+              {slides?.[currentSlide]?.subtitle || "Sub Title"}
             </motion.p>
 
             <motion.div
@@ -181,9 +171,12 @@ const HeroSection = () => {
                 "
                 asChild
               >
-                <Link to={slides[currentSlide].link}>
-                  {slides[currentSlide].cta}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Link
+                  to={
+                    slides?.[currentSlide]?.link || "/public/upcoming-projects"
+                  }
+                >
+                  {slides?.[currentSlide]?.cta || "Explore Residences"}
                 </Link>
               </Button>
               <Button
@@ -240,7 +233,7 @@ const HeroSection = () => {
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex gap-3">
         {" "}
         {/* Increased gap */}
-        {slides.map((_, index) => (
+        {(Array.isArray(slides) ? slides : []).map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
