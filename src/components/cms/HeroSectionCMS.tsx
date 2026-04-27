@@ -173,7 +173,9 @@ const HeroSectionCMS = () => {
     <Card>
       <CardHeader className="flex md:flex-row items-center justify-between flex-col gap-3 text-center md:text-left">
         <div>
-          <CardTitle className="mb-2">Hero Section Management</CardTitle>
+          <CardTitle className="mb-2">
+            Home Page-Below Featured Property
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
             Manage the main hero slider on your homepage
           </p>
@@ -197,7 +199,7 @@ const HeroSectionCMS = () => {
       <CardContent className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <h3 className="text-lg font-semibold">
-            Hero Slides ({slides.length})
+            Featured Properties ({slides.length})
             <p className="text-sm text-muted-foreground text-red-500">
               Please Don't switch tabs while uploading or saving
             </p>
@@ -253,7 +255,7 @@ const HeroSectionCMS = () => {
                           }
                         />
                       </div>
-                      <div>
+                      {/* <div>
                         <Label htmlFor={`cta-${slide._id}`}>
                           Call to Action
                         </Label>
@@ -264,7 +266,7 @@ const HeroSectionCMS = () => {
                             updateSlide(slide._id, "cta", e.target.value)
                           }
                         />
-                      </div>
+                      </div> */}
                       <div className="col-span-1 md:col-span-2">
                         <Label htmlFor={`subtitle-${slide._id}`}>
                           Subtitle
@@ -311,9 +313,9 @@ const HeroSectionCMS = () => {
                       <p className="text-sm text-muted-foreground">
                         {slide.subtitle}
                       </p>
-                      <Badge variant="outline" className="mt-2">
+                      {/* <Badge variant="outline" className="mt-2">
                         {slide.cta}
-                      </Badge>
+                      </Badge> */}
                     </div>
                   )}
                 </div>
