@@ -30,7 +30,7 @@ const PublicFooter = () => {
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/contact/contactInfo`
+        `${import.meta.env.VITE_URL}/api/contact/contactInfo`,
       );
       setContact(data.socialMedia);
     } catch (error) {
@@ -212,7 +212,7 @@ const PublicFooter = () => {
         {/* Footer Bottom */}
         <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400 text-sm">
           <p>
-            © {new Date().getFullYear()} EstateCorp. All rights reserved. |{" "}
+            © {new Date().getFullYear()} CSK Realtors. All rights reserved. |{" "}
             <Link
               to="/public/privacy-policy"
               className="hover:text-estate-gold transition-colors duration-300"

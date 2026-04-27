@@ -9,9 +9,11 @@ import AboutSectionCMS from "@/components/cms/AboutSectionCMS";
 import ContactCMS from "@/components/cms/ContactCMS";
 import MainLayout from "@/components/layout/MainLayout";
 import GalleryCms from "@/components/cms/GalleryCms";
+import FeatureCMS from "@/components/cms/FeatureCMS";
 
 const tabItems = [
-  { value: "hero", label: "Feature Section", icon: Home },
+  { value: "hero", label: "Hero Section", icon: Home },
+  { value: "feat", label: "Feature Section", icon: Home },
   { value: "about", label: "About Section", icon: Users },
   { value: "gallery", label: "Gallery", icon: Image },
   { value: "contact", label: "Contact Info", icon: MapPin },
@@ -64,7 +66,7 @@ const ContentManagement = () => {
           <div className="relative">
             <TabsList
               className="
-                flex md:grid w-full md:grid-cols-4 
+                flex md:grid w-full md:grid-cols-5 
                 overflow-x-auto md:overflow-hidden
                 scrollbar-hide gap-2 md:gap-0
                 bg-estate-indigo/20 rounded-md p-1
@@ -106,6 +108,10 @@ const ContentManagement = () => {
           {/* Tab content */}
           <TabsContent value="hero">
             <HeroSectionCMS />
+          </TabsContent>
+
+          <TabsContent value="feat">
+            <FeatureCMS />
           </TabsContent>
 
           <TabsContent value="about">

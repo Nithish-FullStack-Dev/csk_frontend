@@ -15,52 +15,48 @@ import Loader from "../Loader";
 import { fetchRolePermissions } from "@/utils/units/Methods";
 import { getImageUrl } from "@/lib/image";
 
-interface HeroSlide {
-  _id: string;
-  title: string;
-  subtitle: string;
-  image: string;
-  cta?: string;
-  link?: string;
-}
-
-const HeroSectionCMS = () => {
+const FeatureCMS = () => {
   const { user } = useAuth();
-
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [slides, setSlides] = useState([]);
+  const [editingSlide, setEditingSlide] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const {
     data: rolePermissions,
     isLoading: isRolePermissionsLoading,
-    isError,
+    error: rolePermissionsError,
+    isError: isRolePermissionsError,
   } = useQuery<Permission>({
     queryKey: ["rolePermissions", user?.role],
     queryFn: () => fetchRolePermissions(user?.role as string),
     enabled: !!user?.role,
   });
 
-  const canUserAdd = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.write,
-  );
-
-  const canUserEdit = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.edit,
-  );
-
-  const canUserDelete = rolePermissions?.permissions.some(
-    (per) => per.submodule === "Content Management" && per.actions.delete,
-  );
-
   const fetchSlides = async () => {
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_URL}/api/hero-cms/all`,
+      const res = await axios.get(
+        `${import.meta.env.VITE_URL}/api/cms/getAllCms`,
       );
-      setSlides(data?.data || []);
-    } catch {
-      toast.error("Failed to fetch hero slides");
+      setSlides(res.data.banners);
+    } catch (error) {
+      console.log("Fetch error", error);
+      return null;
+    }
+  };
+
+  const saveSlides = async (slideList) => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_URL}/api/cms/addAllCms`,
+        {
+          slides: slideList,
+        },
+        { withCredentials: true },
+      );
+    } catch (error) {
+      console.log("Save error", error);
+      return null;
     }
   };
 
@@ -68,117 +64,121 @@ const HeroSectionCMS = () => {
     fetchSlides();
   }, []);
 
-  const addSlide = async () => {
-    const formData = new FormData();
-    formData.append("title", "New Hero Title");
-    formData.append("subtitle", "New subtitle");
-    formData.append("cta", "");
-    formData.append("link", "");
+  useEffect(() => {
+    if (isRolePermissionsError) {
+      console.error("Error fetching role permissions:", rolePermissionsError);
+      toast.error("Failed to load role permissions");
+    }
+  }, [isRolePermissionsError]);
+
+  if (isRolePermissionsLoading) {
+    return <Loader />;
+  }
+
+  const canUserAdd = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.write,
+  );
+  const canUserEdit = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.edit,
+  );
+  const canUserDelete = rolePermissions?.permissions.some(
+    (per) => per.submodule === "Content Management" && per.actions.delete,
+  );
+
+  const handleSave = async () => {
+    setIsEditing(false);
+    setEditingSlide(null);
+    await saveSlides(slides);
+  };
+
+  const addNewSlide = async () => {
+    const newSlide = {
+      title: "New Slide Title",
+      subtitle: "New slide subtitle",
+      cta: "Call to Action",
+    };
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_URL}/api/hero-cms/create`,
-        formData,
+      const response = await axios.post(
+        `${import.meta.env.VITE_URL}/api/cms/addCms`,
+        newSlide,
         { withCredentials: true },
       );
-
-      toast.success("Slide created");
-      fetchSlides();
-    } catch {
-      toast.error("Failed to create slide");
+      const savedSlide = response.data.banner;
+      setSlides((prev) => [...prev, savedSlide]);
+    } catch (error) {
+      console.log("Save error", error);
+      return null;
     }
   };
 
-  const saveAllSlides = async () => {
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slideId: string,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      setSaving(true);
-
-      await Promise.all(
-        slides.map((slide) => {
-          const formData = new FormData();
-          formData.append("title", slide.title);
-          formData.append("subtitle", slide.subtitle);
-          formData.append("cta", slide.cta || "");
-          formData.append("link", slide.link || "");
-
-          return axios.put(
-            `${import.meta.env.VITE_URL}/api/hero-cms/update/${slide._id}`,
-            formData,
-            { withCredentials: true },
-          );
-        }),
+      const res = await axios.post(
+        `${import.meta.env.VITE_URL}/api/uploads/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        },
       );
 
-      toast.success("Slides updated");
-      setIsEditing(false);
-      fetchSlides();
-    } catch {
-      toast.error("Failed to save changes");
+      const uploadedUrl = res.data?.url;
+      if (uploadedUrl) {
+        const updatedSlides = (Array.isArray(slides) ? slides : []).map(
+          (slide) =>
+            slide._id === slideId
+              ? { ...slide, image: `${uploadedUrl}?v=${Date.now()}` }
+              : slide,
+        );
+        setSlides(updatedSlides);
+        await saveSlides(updatedSlides);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
     } finally {
-      setSaving(false);
+      e.target.value = "";
+      setUploading(false);
     }
   };
 
-  const removeSlide = async (id: string) => {
+  const removeSlide = async (id) => {
     try {
       await axios.delete(
-        `${import.meta.env.VITE_URL}/api/hero-cms/delete/${id}`,
+        `${import.meta.env.VITE_URL}/api/cms/deleteCms/${id}`,
         { withCredentials: true },
       );
-
-      setSlides((prev) => prev.filter((item) => item._id !== id));
-      toast.success("Slide deleted");
-    } catch {
-      toast.error("Failed to delete slide");
+      setSlides((prevSlides) => prevSlides.filter((slide) => slide._id !== id));
+    } catch (error) {
+      console.error("Delete error", error);
     }
   };
 
-  const updateSlide = (id: string, field: keyof HeroSlide, value: string) => {
-    setSlides((prev) =>
-      prev.map((slide) =>
+  const updateSlide = (id, field, value) => {
+    setSlides((prevSlides) =>
+      prevSlides.map((slide) =>
         slide._id === id ? { ...slide, [field]: value } : slide,
       ),
     );
   };
 
-  const uploadImage = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    slide: HeroSlide,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("title", slide.title);
-    formData.append("subtitle", slide.subtitle);
-    formData.append("cta", slide.cta || "");
-    formData.append("link", slide.link || "");
-    formData.append("image", file);
-
-    try {
-      await axios.put(
-        `${import.meta.env.VITE_URL}/api/hero-cms/update/${slide._id}`,
-        formData,
-        { withCredentials: true },
-      );
-
-      toast.success("Image updated");
-      fetchSlides();
-    } catch {
-      toast.error("Image upload failed");
-    } finally {
-      e.target.value = "";
-    }
-  };
-
-  if (isRolePermissionsLoading) return <Loader />;
-  if (isError) return <Loader />;
-
   return (
     <Card>
       <CardHeader className="flex md:flex-row items-center justify-between flex-col gap-3 text-center md:text-left">
         <div>
-          <CardTitle className="mb-2">Hero Section Management</CardTitle>
+          <CardTitle className="mb-2">
+            Home Page-Below Featured Property
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
             Manage the main hero slider on your homepage
           </p>
@@ -194,12 +194,12 @@ const HeroSectionCMS = () => {
                       setIsEditing(false);
                       fetchSlides();
                     }}
-                    disabled={saving}
+                    disabled={uploading}
                   >
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button onClick={saveAllSlides} size="sm" disabled={saving}>
+                  <Button onClick={handleSave} size="sm" disabled={uploading}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>
@@ -216,14 +216,14 @@ const HeroSectionCMS = () => {
       <CardContent className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <h3 className="text-lg font-semibold">
-            Hero Slides ({slides.length})
+            Featured Properties ({slides?.length})
             <p className="text-sm text-muted-foreground text-red-500">
               Please Don't switch tabs while uploading or saving
             </p>
           </h3>
           {canUserAdd && (
             <Button
-              onClick={addSlide}
+              onClick={addNewSlide}
               variant="outline"
               size="sm"
               className="w-full md:w-auto"
@@ -235,7 +235,7 @@ const HeroSectionCMS = () => {
         </div>
 
         <div className="grid gap-4">
-          {slides.map((slide, index) => (
+          {(Array.isArray(slides) ? slides : [])?.map((slide, index) => (
             <Card key={slide._id} className="p-4">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="w-full md:w-32 h-40 md:h-20 bg-gray-200 rounded overflow-hidden flex-shrink-0">
@@ -272,6 +272,18 @@ const HeroSectionCMS = () => {
                           }
                         />
                       </div>
+                      {/* <div>
+                        <Label htmlFor={`cta-${slide._id}`}>
+                          Call to Action
+                        </Label>
+                        <Input
+                          id={`cta-${slide._id}`}
+                          value={slide.cta}
+                          onChange={(e) =>
+                            updateSlide(slide._id, "cta", e.target.value)
+                          }
+                        />
+                      </div> */}
                       <div className="col-span-1 md:col-span-2">
                         <Label htmlFor={`subtitle-${slide._id}`}>
                           Subtitle
@@ -285,63 +297,42 @@ const HeroSectionCMS = () => {
                           rows={2}
                         />
                       </div>
-                      <div>
-                        <Label>CTA Button Text</Label>
-                        <Input
-                          value={slide.cta || ""}
-                          onChange={(e) =>
-                            updateSlide(slide._id, "cta", e.target.value)
-                          }
-                          placeholder="Explore Now"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Button Link</Label>
-                        <Input
-                          value={slide.link || ""}
-                          onChange={(e) =>
-                            updateSlide(slide._id, "link", e.target.value)
-                          }
-                          placeholder="/public/contact"
-                        />
-                      </div>
                       <div className="col-span-1 md:col-span-2">
                         <Label htmlFor={`image-${slide._id}`}>Image URL</Label>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
                             type="file"
-                            hidden
-                            id={`hero-${slide._id}`}
                             accept="image/*"
-                            onChange={(e) => uploadImage(e, slide)}
+                            id={`image-${slide._id}`}
+                            className="hidden"
+                            onChange={(e) => handleFileChange(e, slide._id)}
                           />
+
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() =>
                               document
-                                .getElementById(`hero-${slide._id}`)
+                                .getElementById(`image-${slide._id}`)
                                 ?.click()
                             }
+                            className="w-full sm:w-auto"
                           >
                             <Upload className="h-4 w-4 mr-2" />
-                            Upload Image
+                            {uploading ? "Uploading..." : "Upload Image"}
                           </Button>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <h4 className="font-semibold">{slide?.title || "N/A"}</h4>
+                      <h4 className="font-semibold">{slide.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {slide?.subtitle || "N/A"}
+                        {slide.subtitle}
                       </p>
-                      {(slide.cta || slide.link) && (
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          CTA: {slide.cta || "N/A"} | Link:{" "}
-                          {slide.link || "N/A"}
-                        </div>
-                      )}
+                      {/* <Badge variant="outline" className="mt-2">
+                        {slide.cta}
+                      </Badge> */}
                     </div>
                   )}
                 </div>
@@ -354,4 +345,4 @@ const HeroSectionCMS = () => {
   );
 };
 
-export default HeroSectionCMS;
+export default FeatureCMS;
