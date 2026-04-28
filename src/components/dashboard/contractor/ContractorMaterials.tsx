@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -46,6 +45,9 @@ import {
   Package,
   CalendarClock,
   X,
+  EclipseIcon,
+  FlipVertical,
+  MoreVertical,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -55,10 +57,15 @@ import {
   Project,
   usefetchProjectsForDropdown,
 } from "@/utils/project/ProjectConfig";
-import { Building } from "@/types/building";
 import { useRBAC } from "@/config/RBAC";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// Material interface
 interface Material {
   _id: string;
   name: string;
@@ -69,14 +76,14 @@ interface Material {
   rate: number;
   totalCost: number;
   deliveryDate: string;
-  project: Project;
+  project: any;
   status: string;
   poNumber: string;
   invoiceNumber: string;
   remarks?: string;
+  contractor?: any;
 }
 
-// Form schema
 const materialSchema = z.object({
   name: z.string().min(2, "Material name is required"),
   type: z.string().min(1, "Material type is required"),
@@ -84,7 +91,7 @@ const materialSchema = z.object({
   unit: z.string().min(1, "Unit is required"),
   supplier: z.string().min(2, "Supplier name is required"),
   rate: z.coerce.number().positive("Rate must be positive"),
-  project: z.string().min(2, "Project is required"),
+  project: z.string().min(1, "Project is required"),
   deliveryDate: z.string().min(1, "Delivery date is required"),
   poNumber: z.string().min(1, "PO number is required"),
   invoiceNumber: z.string().optional(),
@@ -93,223 +100,290 @@ const materialSchema = z.object({
 
 type MaterialFormValues = z.infer<typeof materialSchema>;
 
+const materialTypes = [
+  "Cement",
+  "Steel",
+  "Sand",
+  "Aggregate",
+  "Bricks",
+  "Paint",
+  "Electrical",
+  "Plumbing",
+  "Timber",
+  "Glass",
+  "Tiles",
+  "Hardware",
+  "Chemicals",
+  "Tools",
+  "Other",
+];
+
+const materialUnits = [
+  "Bags",
+  "Kg",
+  "Tons",
+  "Cubic Meters",
+  "Cubic Feet",
+  "Pieces",
+  "Bundles",
+  "Rolls",
+  "Liters",
+  "Gallons",
+  "Sets",
+  "Sheets",
+  "Boxes",
+  "Pairs",
+  "Units",
+];
+
 const ContractorMaterials = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { userCanAddUser } = useRBAC({ roleSubmodule: "Materials" });
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [viewMaterialDialogOpen, setViewMaterialDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(
     null,
   );
-  // const [projects, setProjects] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState("all");
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { userCanAddUser, userCanEditUser } = useRBAC({
-    roleSubmodule: "Materials",
-  });
+  const [statusValue, setStatusValue] = useState("");
+  const [dialogType, setDialogType] = useState<
+    "add" | "edit" | "view" | "status" | null
+  >(null);
 
   const form = useForm<MaterialFormValues>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
       type: "Cement",
       unit: "Bags",
-      project: "", // This should be an empty string, not a hardcoded name
+      project: "",
       deliveryDate: new Date().toISOString().split("T")[0],
     },
   });
 
-  // Material types
-  const materialTypes = [
-    "Cement",
-    "Steel",
-    "Sand",
-    "Aggregate",
-    "Bricks",
-    "Paint",
-    "Electrical",
-    "Plumbing",
-    "Timber",
-    "Glass",
-    "Tiles",
-    "Hardware",
-    "Chemicals",
-    "Tools",
-    "Other",
-  ];
+  const editForm = useForm<MaterialFormValues>({
+    resolver: zodResolver(materialSchema),
+  });
 
-  // Material units
-  const materialUnits = [
-    "Bags",
-    "Kg",
-    "Tons",
-    "Cubic Meters",
-    "Cubic Feet",
-    "Pieces",
-    "Bundles",
-    "Rolls",
-    "Liters",
-    "Gallons",
-    "Sets",
-    "Sheets",
-    "Boxes",
-    "Pairs",
-    "Units",
-  ];
+  const { data: projects = [], isLoading: isLoadingProjects } =
+    usefetchProjectsForDropdown();
 
-  const handleSubmit = async (values: MaterialFormValues) => {
-    setIsLoading(true);
-    try {
+  const { data: materials = [], isLoading } = useQuery({
+    queryKey: ["materials"],
+    queryFn: async () => {
+      const res = await axios.get(`${import.meta.env.VITE_URL}/api/materials`, {
+        withCredentials: true,
+      });
+      return res.data;
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (values: MaterialFormValues) => {
       const payload = {
         ...values,
         quantity: Number(values.quantity),
         rate: Number(values.rate),
         deliveryDate: new Date(values.deliveryDate),
-        project: values.project, // ObjectId string OK
+        project: values.project,
         status: "Ordered",
       };
-
       const res = await axios.post(
         `${import.meta.env.VITE_URL}/api/materials`,
         payload,
-        { withCredentials: true },
-      );
-
-      toast.success("Material added successfully");
-      setAddDialogOpen(false);
-      fetchMaterials();
-    } catch (error: any) {
-      if (error?.response?.data?.field === "poNumber") {
-        form.setError("poNumber", {
-          message: error.response.data.message,
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const viewMaterial = (material: Material) => {
-    setSelectedMaterial(material);
-    setViewMaterialDialogOpen(true);
-  };
-
-  const {
-    data: projects,
-    isLoading: isLoadingProjects,
-    isError: isErrorProjects,
-    error: fetchProjectsError,
-  } = usefetchProjectsForDropdown();
-
-  const fetchMaterials = async () => {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_URL}/api/materials`, {
-        withCredentials: true,
-      });
-      // Assuming your backend returns an array of materials with a 'status' field.
-      // And the project is a nested object.
-      setMaterials(res.data);
-    } catch (error) {
-      console.error("Failed to fetch materials", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  // Use a new useEffect to apply filters whenever 'materials', 'activeTab', or 'searchQuery' changes
-  useEffect(() => {
-    const applyFilters = () => {
-      let tempMaterials = [...materials];
-
-      // Filter by search query
-      tempMaterials = tempMaterials.filter((material) => {
-        const materialName = material.name?.toLowerCase() || "";
-        const materialType = material.type?.toLowerCase() || "";
-        const supplier = material.supplier?.toLowerCase() || "";
-        const projectName =
-          (typeof material.project?.projectId === "object" &&
-            material.project?.projectId?.projectName?.toLowerCase()) ||
-          "";
-        const query = searchQuery.toLowerCase();
-
-        return (
-          materialName.includes(query) ||
-          materialType.includes(query) ||
-          supplier.includes(query) ||
-          projectName.includes(query)
-        );
-      });
-
-      // Filter by active tab
-      if (activeTab === "delivered") {
-        tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Delivered",
-        );
-      } else if (activeTab === "pending") {
-        tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Pending",
-        );
-      } else if (activeTab === "ordered") {
-        tempMaterials = tempMaterials.filter(
-          (material) => material.status === "Ordered",
-        );
-      }
-
-      setFilteredMaterials(tempMaterials);
-    };
-
-    applyFilters();
-  }, [materials, activeTab, searchQuery]);
-
-  if (isErrorProjects) {
-    toast.error(fetchProjectsError.message || "Error fetching projects");
-    console.error("Error fetching projects:", fetchProjectsError);
-    return null;
-  }
-
-  const markAsDelivered = async () => {
-    try {
-      if (!selectedMaterial) return;
-      await axios.patch(
-        `${import.meta.env.VITE_URL}/api/materials/${
-          selectedMaterial._id
-        }/status`,
         {
-          status: "Delivered",
+          withCredentials: true,
         },
       );
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Material added successfully");
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      closeDialog();
+    },
+    onError: (error: any) => {
+      if (error?.response?.data?.field === "poNumber") {
+        form.setError("poNumber", { message: error.response.data.message });
+      } else {
+        toast.error("Failed to add material");
+      }
+    },
+  });
 
-      toast.success("Material marked as delivered");
-      setViewMaterialDialogOpen(false);
-      fetchMaterials(); // Re-fetch to get the latest data
-    } catch (error) {
-      console.error("Failed to update status:", error);
-      toast.error("Failed to mark as delivered");
-    }
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: MaterialFormValues;
+    }) => {
+      const payload = {
+        ...values,
+        quantity: Number(values.quantity),
+        rate: Number(values.rate),
+        deliveryDate: new Date(values.deliveryDate),
+      };
+      const res = await axios.put(
+        `${import.meta.env.VITE_URL}/api/materials/${id}`,
+        payload,
+        {
+          withCredentials: true,
+        },
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Material updated successfully");
+      editForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      closeDialog();
+    },
+    onError: (error: any) => {
+      if (error?.response?.data?.field === "poNumber") {
+        editForm.setError("poNumber", { message: error.response.data.message });
+      } else {
+        toast.error("Failed to update material");
+      }
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await axios.patch(
+        `${import.meta.env.VITE_URL}/api/materials/${id}/status`,
+        { status },
+        { withCredentials: true },
+      );
+    },
+    onSuccess: () => {
+      toast.success("Status updated successfully");
+      setSelectedMaterial(null);
+      queryClient.invalidateQueries({ queryKey: ["materials"] });
+      closeDialog();
+    },
+    onError: () => {
+      toast.error("Failed to update status");
+    },
+  });
+
+  const openStatusDialog = (material: Material) => {
+    setSelectedMaterial(material);
+    setStatusValue(material.status);
+    setDialogType("status");
   };
 
-  // Calculate statistics
+  const closeDialog = () => {
+    setDialogType(null);
+    setSelectedMaterial(null);
+    setStatusValue("");
+    form.reset();
+    editForm.reset();
+  };
+
+  const openAddDialog = () => {
+    setSelectedMaterial(null);
+    setDialogType("add");
+  };
+
+  const openViewDialog = (material: Material) => {
+    setSelectedMaterial(material);
+    setDialogType("view");
+  };
+
+  const filteredMaterials = materials.filter((material: Material) => {
+    const query = searchQuery.toLowerCase();
+
+    const materialName = material.name?.toLowerCase() || "";
+    const materialType = material.type?.toLowerCase() || "";
+    const supplier = material.supplier?.toLowerCase() || "";
+    const status = material.status?.toLowerCase() || "";
+
+    const projectName =
+      typeof material.project?.projectId === "object"
+        ? material.project.projectId?.projectName?.toLowerCase() || ""
+        : "";
+
+    const matchesSearch =
+      materialName.includes(query) ||
+      materialType.includes(query) ||
+      supplier.includes(query) ||
+      projectName.includes(query) ||
+      status.includes(query);
+
+    if (activeTab === "all") return matchesSearch;
+
+    return (
+      matchesSearch && material.status.toLowerCase() === activeTab.toLowerCase()
+    );
+  });
+
   const totalMaterialCost = materials.reduce(
-    (total, material) => total + material.totalCost,
+    (sum, m) => sum + (m.totalCost || 0),
     0,
   );
   const pendingMaterialsCost = materials
-    .filter(
-      (material) =>
-        material.status === "Pending" || material.status === "Ordered",
-    )
-    .reduce((total, material) => total + material.totalCost, 0);
+    .filter((m) => m.status === "Pending" || m.status === "Ordered")
+    .reduce((sum, m) => sum + (m.totalCost || 0), 0);
   const deliveredMaterialsCount = materials.filter(
-    (material) => material.status === "Delivered",
+    (m) => m.status === "Delivered",
   ).length;
+
+  const handleAddSubmit = (values: MaterialFormValues) => {
+    createMutation.mutate(values);
+  };
+
+  const handleEditSubmit = (values: MaterialFormValues) => {
+    if (selectedMaterial) {
+      updateMutation.mutate({ id: selectedMaterial._id, values });
+    }
+  };
+
+  const handleStatusSubmit = () => {
+    if (!selectedMaterial) return;
+
+    statusMutation.mutate({
+      id: selectedMaterial._id,
+      status: statusValue,
+    });
+  };
+
+  const openEditDialog = (material: Material) => {
+    setSelectedMaterial(material);
+
+    editForm.reset({
+      name: material.name,
+      type: material.type,
+      quantity: material.quantity,
+      unit: material.unit,
+      supplier: material.supplier,
+      rate: material.rate,
+      project:
+        typeof material.project === "object"
+          ? material.project._id
+          : material.project,
+      deliveryDate: new Date(material.deliveryDate).toISOString().split("T")[0],
+      poNumber: material.poNumber,
+      invoiceNumber: material.invoiceNumber || "",
+      remarks: material.remarks || "",
+    });
+
+    setDialogType("edit");
+  };
+
+  const markAsDelivered = () => {
+    if (selectedMaterial) {
+      statusMutation.mutate({
+        id: selectedMaterial._id,
+        status: "Delivered",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -358,17 +432,15 @@ const ContractorMaterials = () => {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {Math.round((pendingMaterialsCost / totalMaterialCost) * 100) ||
-                0}{" "}
+              {totalMaterialCost
+                ? Math.round((pendingMaterialsCost / totalMaterialCost) * 100)
+                : 0}
               % of total cost
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* --- */}
-
-      {/* Search and Actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -380,35 +452,24 @@ const ContractorMaterials = () => {
           />
         </div>
         {user?.role !== "admin" && userCanAddUser && (
-          <Button onClick={() => setAddDialogOpen(true)}>
+          <Button onClick={openAddDialog}>
             <Plus className="mr-2 h-4 w-4" /> Add Material
           </Button>
         )}
       </div>
 
-      {/* --- */}
-
-      {/* Tabs for filtering */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="delivered" className="flex items-center">
-            <Package className="mr-2 h-4 w-4" /> Delivered
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="flex items-center">
-            <CalendarClock className="mr-2 h-4 w-4" /> Pending
-          </TabsTrigger>
-          <TabsTrigger value="ordered" className="flex items-center">
-            <FileText className="mr-2 h-4 w-4" /> Ordered
-          </TabsTrigger>
+          <TabsTrigger value="In Transit">In Transit</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="delivered">Delivered</TabsTrigger>
+          <TabsTrigger value="ordered">Ordered</TabsTrigger>
+          <TabsTrigger value="Cancelled">Cancelled</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* --- */}
-
-      {/* Materials Table */}
       <div className="border rounded-md">
-        {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
           <Table>
             <TableHeader>
@@ -428,7 +489,7 @@ const ContractorMaterials = () => {
               {filteredMaterials.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="h-24 text-center">
-                    No materials found.
+                    No materials found
                   </TableCell>
                 </TableRow>
               ) : (
@@ -441,17 +502,9 @@ const ContractorMaterials = () => {
                     <TableCell>
                       {material.quantity} {material.unit}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                        {material.rate.toLocaleString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center font-medium">
-                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                        {material.totalCost.toLocaleString()}
-                      </div>
+                    <TableCell>₹{material.rate.toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">
+                      ₹{material.totalCost.toLocaleString()}
                     </TableCell>
                     <TableCell
                       className="max-w-[150px] truncate"
@@ -459,64 +512,51 @@ const ContractorMaterials = () => {
                     >
                       {material.supplier}
                     </TableCell>
-                    <TableCell
-                      className="max-w-[200px] truncate"
-                      title={
-                        typeof material.project?.projectId === "object" &&
-                        material.project?.projectId !== null
-                          ? `${
-                              material.project?.projectId?.projectName ||
-                              "Unnamed Project"
-                            } / Floor ${
-                              (typeof material.project?.floorUnit ===
-                                "object" &&
-                                material.project?.floorUnit?.floorNumber) ||
-                              "N/A"
-                            } / Plot ${
-                              (typeof material.project?.unit === "object" &&
-                                material.project?.unit?.plotNo) ||
-                              "N/A"
-                            }`
-                          : "Unnamed Project"
-                      }
-                    >
-                      {material.project?.projectId
-                        ? `${
-                            typeof material.project?.projectId === "object" &&
-                            material.project?.projectId?.projectName
-                          } / Floor ${
-                            (typeof material.project?.floorUnit === "object" &&
-                              material.project?.floorUnit?.floorNumber) ||
-                            "N/A"
-                          } / Plot ${
-                            (typeof material.project?.unit === "object" &&
-                              material.project?.unit?.plotNo) ||
-                            "N/A"
-                          }`
-                        : "Unnamed Project"}
+                    <TableCell className="max-w-[200px] truncate">
+                      {material.project?.projectId?.projectName ||
+                        "Unnamed Project"}
                     </TableCell>
-
                     <TableCell>
                       <Badge
-                        className={`${
+                        className={
                           material.status === "Delivered"
                             ? "bg-green-100 text-green-800"
                             : material.status === "Pending"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-blue-100 text-blue-800"
-                        }`}
+                        }
                       >
                         {material.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => viewMaterial(material)}
-                      >
-                        View
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={() => openViewDialog(material)}
+                          >
+                            View
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onSelect={() => openEditDialog(material)}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onSelect={() => openStatusDialog(material)}
+                          >
+                            Update Status
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -525,75 +565,66 @@ const ContractorMaterials = () => {
           </Table>
         </div>
 
-        {/* --- */}
-
-        {/* Mobile Cards */}
-        <div className="block md:hidden p-2 space-y-4">
+        {/* Mobile View */}
+        <div className="block md:hidden p-4 space-y-4">
           {filteredMaterials.length === 0 ? (
-            <div className="text-center py-6 text-sm text-gray-500">
-              No materials found.
+            <div className="text-center py-8 text-muted-foreground">
+              No materials found
             </div>
           ) : (
             filteredMaterials.map((material) => (
               <div
                 key={material._id}
-                className="border rounded-lg p-4 shadow-sm bg-white space-y-3"
+                className="border rounded-lg p-4 space-y-3"
               >
                 <div className="font-semibold text-lg">{material.name}</div>
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Type:</span> {material.type}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="font-medium">Type:</span> {material.type}
+                  </div>
+                  <div>
+                    <span className="font-medium">Qty:</span>{" "}
+                    {material.quantity} {material.unit}
+                  </div>
+                  <div>
+                    <span className="font-medium">Rate:</span> ₹{material.rate}
+                  </div>
+                  <div>
+                    <span className="font-medium">Total:</span> ₹
+                    {material.totalCost}
+                  </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Quantity:</span>{" "}
-                  {material.quantity} {material.unit}
-                </div>
-                <div className="text-sm text-gray-600 flex items-center">
-                  <span className="font-medium mr-1">Rate:</span>
-                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                  {material.rate.toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600 flex items-center">
-                  <span className="font-medium mr-1">Total:</span>
-                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                  {material.totalCost.toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600 truncate">
+                <div className="text-sm">
                   <span className="font-medium">Supplier:</span>{" "}
                   {material.supplier}
                 </div>
-                <div className="text-sm text-gray-600 truncate">
-                  <span className="font-medium">Project:</span>{" "}
-                  {typeof material.project?.projectId === "object" &&
-                    `${material.project?.projectId?.projectName} - ${
-                      typeof material?.project?.floorUnit === "object"
-                        ? material?.project?.floorUnit?.floorNumber
-                        : "-"
-                    } - ${
-                      typeof material?.project?.unit === "object"
-                        ? material?.project?.unit?.plotNo
-                        : "-"
-                    }`}
-                </div>
                 <div>
                   <Badge
-                    className={`${
+                    className={
                       material.status === "Delivered"
                         ? "bg-green-100 text-green-800"
                         : material.status === "Pending"
                           ? "bg-amber-100 text-amber-800"
                           : "bg-blue-100 text-blue-800"
-                    }`}
+                    }
                   >
                     {material.status}
                   </Badge>
                 </div>
-                <div>
+                <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => viewMaterial(material)}
+                    onClick={() => openViewDialog(material)}
                   >
                     View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(material)}
+                  >
+                    Edit
                   </Button>
                 </div>
               </div>
@@ -602,20 +633,21 @@ const ContractorMaterials = () => {
         </div>
       </div>
 
-      {/* --- */}
-
-      {/* Add Material Dialog */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-y-scroll rounded-xl">
+      {/* Add Dialog */}
+      <Dialog
+        open={dialogType === "add"}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Material</DialogTitle>
           </DialogHeader>
-
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleSubmit)}
+              onSubmit={form.handleSubmit(handleAddSubmit)}
               className="space-y-6"
             >
+              {/* Form fields same as before - kept for brevity but fully functional */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -624,7 +656,7 @@ const ContractorMaterials = () => {
                     <FormItem>
                       <FormLabel>Material Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter material name" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -636,20 +668,20 @@ const ContractorMaterials = () => {
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Material Type</FormLabel>
+                      <FormLabel>Type</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select material type" />
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {materialTypes.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
+                          {materialTypes.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -666,12 +698,7 @@ const ContractorMaterials = () => {
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="100"
-                          min={0}
-                          {...field}
-                        />
+                        <Input type="number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -686,17 +713,17 @@ const ContractorMaterials = () => {
                       <FormLabel>Unit</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
+                            <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {materialUnits.map((unit) => (
-                            <SelectItem key={unit} value={unit}>
-                              {unit}
+                          {materialUnits.map((u) => (
+                            <SelectItem key={u} value={u}>
+                              {u}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -713,7 +740,7 @@ const ContractorMaterials = () => {
                     <FormItem>
                       <FormLabel>Supplier</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter supplier name" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -729,13 +756,7 @@ const ContractorMaterials = () => {
                       <FormControl>
                         <div className="relative">
                           <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            className="pl-10"
-                            type="number"
-                            placeholder="100"
-                            min={0}
-                            {...field}
-                          />
+                          <Input className="pl-10" type="number" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -751,7 +772,7 @@ const ContractorMaterials = () => {
                       <FormLabel>Project</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         disabled={isLoadingProjects}
                       >
                         <FormControl>
@@ -759,38 +780,19 @@ const ContractorMaterials = () => {
                             <SelectValue
                               placeholder={
                                 isLoadingProjects
-                                  ? "Loading projects..."
+                                  ? "Loading..."
                                   : "Select project"
                               }
                             />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {projects.map((project) => {
-                            const projectName =
-                              typeof project.projectId === "object" &&
-                              project.projectId !== null
-                                ? project.projectId.projectName
-                                : "Unnamed Project";
-
-                            const floorNumber =
-                              typeof project.floorUnit === "object" &&
-                              project.floorUnit !== null
-                                ? project.floorUnit.floorNumber
-                                : "No Floor";
-
-                            const plotNo =
-                              typeof project.unit === "object" &&
-                              project.unit !== null
-                                ? project.unit.plotNo
-                                : "No Plot";
-
-                            return (
-                              <SelectItem key={project._id} value={project._id}>
-                                {`${projectName} / Floor ${floorNumber} / Plot ${plotNo}`}
-                              </SelectItem>
-                            );
-                          })}
+                          {projects.map((p: any) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {p.projectId?.projectName} / Floor{" "}
+                              {p.floorUnit?.floorNumber} / Plot {p.unit?.plotNo}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -803,7 +805,7 @@ const ContractorMaterials = () => {
                   name="deliveryDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Expected Delivery Date</FormLabel>
+                      <FormLabel>Delivery Date</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -819,7 +821,7 @@ const ContractorMaterials = () => {
                     <FormItem>
                       <FormLabel>PO Number</FormLabel>
                       <FormControl>
-                        <Input placeholder="PO-2023-001" {...field} />
+                        <Input {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -831,13 +833,9 @@ const ContractorMaterials = () => {
                   name="invoiceNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Invoice Number (if available)</FormLabel>
+                      <FormLabel>Invoice Number</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="INV-2023-001"
-                          {...field}
-                          value={field.value || ""}
-                        />
+                        <Input {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -845,17 +843,14 @@ const ContractorMaterials = () => {
                 />
               </div>
 
-              {/* Total Cost Calculation */}
               <div className="border rounded-md p-4 bg-muted/50">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Cost:</span>
-                  <span className="text-xl font-bold flex items-center">
-                    <BadgeIndianRupee className="h-5 w-5 mr-1" />
-                    {form.watch("quantity") && form.watch("rate")
-                      ? (
-                          form.watch("quantity") * form.watch("rate")
-                        ).toLocaleString()
-                      : "0"}
+                <div className="flex justify-between text-lg font-medium">
+                  <span>Total Cost:</span>
+                  <span>
+                    ₹
+                    {(
+                      form.watch("quantity") * form.watch("rate") || 0
+                    ).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -867,28 +862,19 @@ const ContractorMaterials = () => {
                   <FormItem>
                     <FormLabel>Remarks</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Any additional notes about the material"
-                        className="resize-none"
-                        {...field}
-                        value={field.value || ""}
-                      />
+                      <Textarea {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setAddDialogOpen(false)}
-                >
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={closeDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  Add Material
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? "Adding..." : "Add Material"}
                 </Button>
               </div>
             </form>
@@ -896,15 +882,262 @@ const ContractorMaterials = () => {
         </DialogContent>
       </Dialog>
 
-      {/* --- */}
+      {/* Edit Dialog */}
+      <Dialog
+        open={dialogType === "edit"}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
+        <DialogContent className="md:w-[600px] w-[90vw] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Material</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(handleEditSubmit)}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Material Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-      {/* View Material Dialog */}
+                <FormField
+                  control={editForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {materialTypes.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {materialUnits.map((u) => (
+                            <SelectItem key={u} value={u}>
+                              {u}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="supplier"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Supplier</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rate (₹)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input className="pl-10" type="number" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="project"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={isLoadingProjects}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                isLoadingProjects
+                                  ? "Loading..."
+                                  : "Select project"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects.map((p: any) => (
+                            <SelectItem key={p._id} value={p._id}>
+                              {p.projectId?.projectName} / Floor{" "}
+                              {p.floorUnit?.floorNumber} / Plot {p.unit?.plotNo}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="deliveryDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="poNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PO Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="invoiceNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="border rounded-md p-4 bg-muted/50">
+                <div className="flex justify-between text-lg font-medium">
+                  <span>Total Cost:</span>
+                  <span>
+                    ₹
+                    {(
+                      Number(editForm.watch("quantity") || 0) *
+                      Number(editForm.watch("rate") || 0)
+                    ).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="remarks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Remarks</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={closeDialog}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Updating..." : "Update Material"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
       {selectedMaterial && (
         <Dialog
-          open={viewMaterialDialogOpen}
-          onOpenChange={setViewMaterialDialogOpen}
+          open={dialogType === "view"}
+          onOpenChange={(open) => !open && closeDialog()}
         >
-          <DialogContent className="sm:max-w-[600px] max-w-[90vw] max-h-[80vh] overflow-scroll rounded-xl">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Material Details</DialogTitle>
             </DialogHeader>
@@ -912,21 +1145,23 @@ const ContractorMaterials = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-bold text-xl">{selectedMaterial.name}</h3>
+                  <h3 className="font-bold text-xl">
+                    {selectedMaterial?.name || "N/A"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedMaterial.type}
+                    {selectedMaterial?.type || "N/A"}
                   </p>
                 </div>
                 <Badge
-                  className={`${
-                    selectedMaterial.status === "Delivered"
+                  className={
+                    selectedMaterial?.status === "Delivered"
                       ? "bg-green-100 text-green-800"
-                      : selectedMaterial.status === "Pending"
+                      : selectedMaterial?.status === "Pending"
                         ? "bg-amber-100 text-amber-800"
                         : "bg-blue-100 text-blue-800"
-                  }`}
+                  }
                 >
-                  {selectedMaterial.status}
+                  {selectedMaterial?.status || "N/A"}
                 </Badge>
               </div>
 
@@ -936,26 +1171,27 @@ const ContractorMaterials = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Quantity:</p>
                   <p>
-                    {selectedMaterial.quantity} {selectedMaterial.unit}
+                    {selectedMaterial?.quantity || "N/A"}{" "}
+                    {selectedMaterial?.unit || "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Rate:</p>
                   <p className="flex items-center">
                     <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                    {selectedMaterial.rate.toLocaleString()}
+                    {selectedMaterial?.rate?.toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Cost:</p>
                   <p className="flex items-center font-bold">
                     <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                    {selectedMaterial.totalCost.toLocaleString()}
+                    {selectedMaterial?.totalCost?.toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Supplier:</p>
-                  <p>{selectedMaterial.supplier}</p>
+                  <p>{selectedMaterial?.supplier || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Project:</p>
@@ -985,41 +1221,87 @@ const ContractorMaterials = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PO Number:</p>
-                  <p>{selectedMaterial.poNumber}</p>
+                  <p>{selectedMaterial?.poNumber || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Invoice Number:
                   </p>
-                  <p>{selectedMaterial.invoiceNumber || "-"}</p>
+                  <p>{selectedMaterial?.invoiceNumber || "-"}</p>
                 </div>
               </div>
 
-              {selectedMaterial.remarks && (
+              {selectedMaterial?.remarks && (
                 <>
                   <Separator />
                   <div>
                     <p className="text-sm text-muted-foreground">Remarks:</p>
-                    <p className="mt-1">{selectedMaterial.remarks}</p>
+                    <p className="mt-1">{selectedMaterial?.remarks || "N/A"}</p>
                   </div>
                 </>
               )}
 
               <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewMaterialDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={closeDialog}>
                   Close
                 </Button>
-                {selectedMaterial.status !== "Delivered" && (
-                  <Button onClick={markAsDelivered}>Mark as Delivered</Button>
-                )}
+                {selectedMaterial &&
+                  selectedMaterial?.status !== "Delivered" && (
+                    <Button onClick={markAsDelivered}>Mark as Delivered</Button>
+                  )}
               </div>
             </div>
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog
+        open={dialogType === "status"}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Material Status</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+
+              <Select value={statusValue} onValueChange={setStatusValue}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="Ordered">Ordered</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="In Transit">In Transit</SelectItem>
+                  <SelectItem value="Delivered">Delivered</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={closeDialog}>
+                Cancel
+              </Button>
+
+              <Button
+                onClick={handleStatusSubmit}
+                disabled={
+                  statusMutation.isPending ||
+                  !selectedMaterial ||
+                  statusValue === selectedMaterial.status
+                }
+              >
+                {statusMutation.isPending ? "Updating..." : "Update Status"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
