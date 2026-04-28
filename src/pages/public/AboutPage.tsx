@@ -5,6 +5,7 @@ import AnimatedTestimonials from "@/components/ui/AnimatedTestimonials";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { team, useAbout } from "@/utils/public/AboutPageConfig";
+import { getImageUrl } from "@/lib/image";
 
 const PublicAboutPage = () => {
   const { data, isLoading, isError, error } = useAbout();
@@ -47,7 +48,7 @@ const PublicAboutPage = () => {
       name: member?.name,
       designation: member?.role,
       quote: member?.bio,
-      src: member?.image,
+      src: getImageUrl(member?.image),
     }));
 
   const TestimonialsSection = () => (
@@ -130,16 +131,16 @@ const PublicAboutPage = () => {
                 {isLoading
                   ? "Loading..."
                   : isError
-                  ? `Something went wrong ${error?.message}`
-                  : data?.teamTitle || "Meet Our Visionary Leadership"}
+                    ? `Something went wrong ${error?.message}`
+                    : data?.teamTitle || "Meet Our Visionary Leadership"}
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 {isLoading
                   ? "Loading..."
                   : isError
-                  ? `Something went wrong ${error?.message}`
-                  : data?.teamDes ||
-                    "Guided by experience and innovation, our leadership team is dedicated to shaping the future of real estate."}
+                    ? `Something went wrong ${error?.message}`
+                    : data?.teamDes ||
+                      "Guided by experience and innovation, our leadership team is dedicated to shaping the future of real estate."}
               </p>
             </div>
             <motion.div

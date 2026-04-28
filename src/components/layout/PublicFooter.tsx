@@ -192,17 +192,18 @@ const PublicFooter = () => {
               <div className="flex items-start">
                 <MapPin className="h-5 w-5 mr-3 flex-shrink-0 text-estate-gold" />
                 <span className="text-gray-300 text-sm">
-                  123 Grand Avenue, Metropolis City, State 12345, Country
+                  US Residency5/9/30/1/17A, Road No. 2, Hill Fort, Adarsh Nagar,
+                  Hyderabad, Telangana 500004
                 </span>
               </div>
               <div className="flex items-center">
                 <Phone className="h-5 w-5 mr-3 flex-shrink-0 text-estate-gold" />
-                <span className="text-gray-300 text-sm">+91 98765 43210</span>
+                <span className="text-gray-300 text-sm">+91 891 936 2718</span>
               </div>
               <div className="flex items-center">
                 <Mail className="h-5 w-5 mr-3 flex-shrink-0 text-estate-gold" />
                 <span className="text-gray-300 text-sm">
-                  contact@estatecorp.com
+                  cskrealtorslimited@yahoo.co.in
                 </span>
               </div>
             </div>

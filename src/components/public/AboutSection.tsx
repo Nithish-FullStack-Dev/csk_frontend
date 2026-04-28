@@ -15,6 +15,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { useAbout } from "@/utils/public/AboutPageConfig.ts";
 import StatCard from "./StatCard";
 import Values from "./Values";
+import { getImageUrl } from "@/lib/image";
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 50 },
@@ -212,7 +213,7 @@ const AboutSection = () => {
               renderSkeletonImage()
             ) : (
               <img
-                src={aboutContent?.image}
+                src={getImageUrl(aboutContent?.image)}
                 alt="About Section"
                 className="w-full h-96 md:h-[500px] object-cover rounded-xl shadow-2xl"
               />
@@ -242,7 +243,9 @@ const AboutSection = () => {
                 onClick={() => setShowVideo(true)}
               >
                 <img
-                  src={aboutContent?.thumbnail || youtubeThumbnailUrl}
+                  src={getImageUrl(
+                    aboutContent?.thumbnail || youtubeThumbnailUrl,
+                  )}
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 group-hover:opacity-80"
                   alt="Video Thumbnail"
                 />

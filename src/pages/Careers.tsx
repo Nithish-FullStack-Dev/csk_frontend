@@ -430,11 +430,11 @@ export default function Careers() {
             Didn’t find a suitable role?
           </h2>
           <p className="mb-4 text-black">
-            Send your resume to careers@yourcompany.com
+            Send your resume to cskrealtorslimited@yahoo.co.in
           </p>
-          <button className="bg-estate-navy text-white px-6 py-2 rounded-lg">
+          {/* <button className="bg-estate-navy text-white px-6 py-2 rounded-lg">
             Contact HR
-          </button>
+          </button> */}
         </div>
       </div>
     </PublicLayout>
