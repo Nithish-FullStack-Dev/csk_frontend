@@ -1009,10 +1009,12 @@ const QualityControl = () => {
                         )
                       </div>
 
-                      <div>
-                        <strong>Contractor:</strong>{" "}
-                        {selectedIssue?.contractor?.name || "N/A"}
-                      </div>
+                      {user?.role !== "contractor" && (
+                        <div>
+                          <strong>Contractor:</strong>{" "}
+                          {selectedIssue?.contractor?.name || "N/A"}
+                        </div>
+                      )}
 
                       <div>
                         <strong>Reported Date:</strong>{" "}

@@ -46,7 +46,6 @@ interface Message {
 
 const ChatInterface = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("direct");
   const [messageInput, setMessageInput] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -54,9 +53,10 @@ const ChatInterface = () => {
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [latestMessages, setLatestMessages] = useState<Record<string, Message>>(
-    {}
+    {},
   );
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const getChatId = useCallback((userAId: string, userBId: string) => {
     if (!userAId || !userBId) return null;
@@ -198,12 +198,12 @@ const ChatInterface = () => {
       } else {
         await push(ref(db, `chats/${chatId}`), messagePayload);
         const snapshot = await get(
-          ref(db, `unreads/${chatId}/${selectedUser._id}`)
+          ref(db, `unreads/${chatId}/${selectedUser._id}`),
         );
         const currentCount = snapshot.val() || 0;
         await set(
           ref(db, `unreads/${chatId}/${selectedUser._id}`),
-          currentCount + 1
+          currentCount + 1,
         );
       }
       setMessageInput("");
@@ -237,13 +237,19 @@ const ChatInterface = () => {
   };
 
   const sortedUsers = [...users]
-    .filter((u) => u._id !== user?._id)
+    .filter(
+      (u) =>
+        u._id !== user?._id &&
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
     .sort((a, b) => {
       const latestA = latestMessages[a._id];
       const latestB = latestMessages[b._id];
+
       if (latestA && !latestB) return -1;
       if (!latestA && latestB) return 1;
       if (latestA && latestB) return latestB.timestamp - latestA.timestamp;
+
       return a.name.localeCompare(b.name);
     });
 
@@ -255,7 +261,7 @@ const ChatInterface = () => {
     const messageDay = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
 
     if (messageDay.getTime() === today.getTime()) {
@@ -276,15 +282,15 @@ const ChatInterface = () => {
     const todayMidnight = new Date(
       now.getFullYear(),
       now.getMonth(),
-      now.getDate()
+      now.getDate(),
     );
     const yesterdayMidnight = new Date(
-      todayMidnight.getTime() - 24 * 60 * 60 * 1000
+      todayMidnight.getTime() - 24 * 60 * 60 * 1000,
     );
     const messageDayMidnight = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
 
     if (messageDayMidnight.getTime() === todayMidnight.getTime()) {
@@ -308,79 +314,70 @@ const ChatInterface = () => {
             <CardHeader className="p-4 border-b">
               <CardTitle className="text-lg">Direct Messages</CardTitle>
             </CardHeader>
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="flex flex-col flex-1"
-            >
-              <CardContent className="p-0 border-b">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="direct">Direct</TabsTrigger>
-                  {/* <TabsTrigger value="groups">Groups</TabsTrigger> */}
-                </TabsList>
-              </CardContent>
-              <TabsContent value="direct" className="h-full mt-0">
-                <ScrollArea className="h-[calc(100vh-220px)]">
-                  {sortedUsers.length === 0 && (
-                    <div className="p-4 text-center text-muted-foreground">
-                      No other users available.
-                    </div>
-                  )}
-                  {sortedUsers.map((u) => (
-                    <div
-                      key={u._id}
-                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
-                        selectedUser?._id === u._id ? "bg-muted" : ""
-                      }`}
-                      onClick={() => setSelectedUser(u)}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage
-                          src={
-                            u.avatar ||
-                            `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
-                          }
-                          alt={u.name}
-                        />
-                        <AvatarFallback>
-                          {u.name ? u.name[0] : "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-sm font-medium relative pr-8">
-                        {u.name}
-                        {latestMessages[u._id] ? (
-                          <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
-                            <span className="truncate max-w-[calc(100%-60px)]">
-                              {latestMessages[u._id].senderId === user?._id
-                                ? "You: "
-                                : ""}
-                              {latestMessages[u._id].content}
-                            </span>
-                            <span className="ml-2 text-right flex-shrink-0">
-                              {formatTimestamp(latestMessages[u._id].timestamp)}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            No messages yet.
-                          </div>
-                        )}
-                        {unreadCounts[u._id] > 0 && (
-                          <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
-                            {unreadCounts[u._id]}
+            <div className="p-3 border-b">
+              <Input
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <CardContent className="p-0 border-b">
+              <ScrollArea className="h-[calc(100vh-220px)]">
+                {sortedUsers.length === 0 && (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No other users available.
+                  </div>
+                )}
+                {sortedUsers.map((u) => (
+                  <div
+                    key={u._id}
+                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
+                      selectedUser?._id === u._id ? "bg-muted" : ""
+                    }`}
+                    onClick={() => setSelectedUser(u)}
+                  >
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={
+                          u.avatar ||
+                          `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
+                        }
+                        alt={u.name}
+                      />
+                      <AvatarFallback>
+                        {u.name ? u.name[0] : "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-sm font-medium relative pr-8">
+                      {u.name}
+                      {latestMessages[u._id] ? (
+                        <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
+                          <span className="truncate max-w-[calc(100%-60px)]">
+                            {latestMessages[u._id].senderId === user?._id
+                              ? "You: "
+                              : ""}
+                            {latestMessages[u._id].content}
                           </span>
-                        )}
-                      </div>
+                          <span className="ml-2 text-right flex-shrink-0">
+                            {formatTimestamp(latestMessages[u._id].timestamp)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          No messages yet.
+                        </div>
+                      )}
+                      {unreadCounts[u._id] > 0 && (
+                        <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
+                          {unreadCounts[u._id]}
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </ScrollArea>
-              </TabsContent>
-              {/* <TabsContent value="groups" className="h-full mt-0">
-                <div className="p-4 text-muted-foreground text-center">
-                  Group chat functionality not yet implemented.
-                </div>
-              </TabsContent> */}
-            </Tabs>
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
           </Card>
 
           <Card className="lg:col-span-3 flex flex-col">
