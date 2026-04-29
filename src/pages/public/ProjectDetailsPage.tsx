@@ -78,7 +78,9 @@ const ProjectDetailsPage = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success(data?.message || "Visit scheduled successfully");
+      toast.success(
+        "Your details have been sent to our team successfully. We’ll contact you shortly.",
+      );
       setSiteVisitOpen(false);
     },
     onError: (err) => {

@@ -408,7 +408,7 @@ const ContactPage: React.FC = () => {
             >
               {/* IMPORTANT: Replace with actual Google Maps embed or equivalent */}
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d28064.269020139593!2d77.02477192771046!3d28.44840267611705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1s123%20Business%20District%2C%20Corporate%20Tower%2C%2015th%20Floor%2C%20Gurgaon%2C%20Haryana%20122001!5e0!3m2!1sen!2sin!4v1750069137119!5m2!1sen!2sin"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3806.6176691145447!2d78.47299547493515!3d17.406794583483716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb990050d0eda3%3A0x2feeb1664135da83!2sU%20S%20Residency!5e0!3m2!1sen!2sin!4v1777445080634!5m2!1sen!2sin"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

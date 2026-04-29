@@ -464,9 +464,9 @@ const OpenPlotsPage = () => {
                 className="block shine-container"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1721322800607-8c38375eef04?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" // Higher resolution image for a larger display
+                  src="/assets/images/why-csk.jpg"
                   alt="Plot Development Overview"
-                  className="rounded-xl shadow-2xl object-cover w-full h-80 md:h-96 transition-transform duration-500 group-hover:scale-105" // Added object-cover and specific height
+                  className="rounded-xl shadow-2xl object-cover w-full h-80 md:h-96 transition-transform duration-500 group-hover:scale-105"
                 />
                 <span className="shine-overlay"></span>
               </motion.div>
