@@ -174,6 +174,8 @@ import OpenLandDetailsPage from "./pages/OpenLandDetailsPage";
 import Careers from "./pages/Careers";
 import CreateJobPost from "./pages/dashboards/JobPostsPage";
 import JobPostsPage from "./pages/dashboards/JobPostsPage";
+import PrivacyPolicy from "./pages/public/PrivacyPolicy";
+import TermsOfService from "./pages/public/TermsOfService";
 // const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -259,6 +261,14 @@ const App = () => {
                     element={<OpenLandsPage />}
                   />
                   <Route path="/public/careers" element={<Careers />} />
+                  <Route
+                    path="/public/privacy-policy"
+                    element={<PrivacyPolicy />}
+                  />
+                  <Route
+                    path="/public/terms-of-service"
+                    element={<TermsOfService />}
+                  />
                   {/* ✅ ADD THIS HERE */}
                   <Route
                     path="/public/openLand/:id"
