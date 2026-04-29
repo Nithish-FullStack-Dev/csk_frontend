@@ -1,26 +1,71 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Edit, Save, Eye, Phone, Mail, MapPin, Clock } from "lucide-react";
+import {
+  Edit,
+  Save,
+  Eye,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Plus,
+} from "lucide-react";
 import axios from "axios";
 import { useRBAC } from "@/config/RBAC";
 import Loader from "../Loader";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const ContactCMS = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [contactInfo, setContactInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [faqForm, setFaqForm] = useState({
+    question: "",
+    answer: "",
+  });
+  const [editFaqForm, setEditFaqForm] = useState({
+    question: "",
+    answer: "",
+  });
+  const [editingFaqId, setEditingFaqId] = useState("");
+
+  const queryClient = useQueryClient();
+
+  const { data: faq = [], isLoading: faqLoading } = useQuery<
+    {
+      _id: string;
+      question: string;
+      answer: string;
+    }[]
+  >({
+    queryKey: ["faq"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/faq/getAll`,
+        { withCredentials: true },
+      );
+      return data.data || [];
+    },
+  });
 
   // Fetch contact info on component mount
   useEffect(() => {
     const fetchContactInfo = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_URL}/api/contact/contactInfo`
+          `${import.meta.env.VITE_URL}/api/contact/contactInfo`,
         );
         setContactInfo(response.data);
       } catch (error) {
@@ -32,19 +77,112 @@ const ContactCMS = () => {
 
     fetchContactInfo();
   }, []);
+
   const {
     isRolePermissionsLoading,
     userCanAddUser,
     userCanDeleteUser,
     userCanEditUser,
   } = useRBAC({ roleSubmodule: "Content Management" });
+
+  const addFaqMutation = useMutation({
+    mutationFn: async (payload: { question: string; answer: string }) => {
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_URL}/api/faq/add`,
+        payload,
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "faq added successfully");
+      queryClient.invalidateQueries({ queryKey: ["faq"] });
+      queryClient.invalidateQueries({ queryKey: ["faq-public"] });
+      setFaqForm({
+        question: "",
+        answer: "",
+      });
+    },
+    onError: (err) => {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response.data.message
+          : "failed to add faq",
+      );
+    },
+  });
+
+  const deleteFaqMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.delete(
+        `${import.meta.env.VITE_URL}/api/faq/delete/${id}`,
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "faq delete successfully");
+      queryClient.invalidateQueries({ queryKey: ["faq"] });
+      queryClient.invalidateQueries({ queryKey: ["faq-public"] });
+    },
+    onError: (err) => {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response.data.message
+          : "failed to delete faq",
+      );
+    },
+  });
+
+  const updateFaqMutation = useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: {
+        question: string;
+        answer: string;
+      };
+    }) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/faq/update/${id}`,
+        payload,
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "faq updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["faq"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["faq-public"],
+      });
+      setEditingFaqId("");
+      setEditFaqForm({
+        question: "",
+        answer: "",
+      });
+    },
+    onError: (err) => {
+      toast.error(
+        axios.isAxiosError(err)
+          ? err.response.data.message
+          : "failed to update faq",
+      );
+    },
+  });
+
   if (isRolePermissionsLoading) return <Loader />;
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
       await axios.post(
         `${import.meta.env.VITE_URL}/api/contact/updateContactInfo`,
-        contactInfo
+        contactInfo,
       );
       setIsEditing(false);
     } catch (error) {
@@ -52,6 +190,36 @@ const ContactCMS = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAddFaq = () => {
+    if (!faqForm.question.trim() || !faqForm.answer.trim()) return;
+
+    addFaqMutation.mutate({
+      question: faqForm.question,
+      answer: faqForm.answer,
+    });
+  };
+
+  const handleEditFaq = (item: {
+    _id: string;
+    question: string;
+    answer: string;
+  }) => {
+    setEditingFaqId(item._id);
+    setEditFaqForm({
+      question: item.question,
+      answer: item.answer,
+    });
+  };
+
+  const handleUpdateFaq = () => {
+    if (!editFaqForm.question.trim() || !editFaqForm.answer.trim()) return;
+
+    updateFaqMutation.mutate({
+      id: editingFaqId,
+      payload: editFaqForm,
+    });
   };
 
   const updateField = (field, value) => {
@@ -85,15 +253,24 @@ const ContactCMS = () => {
           <div className="flex flex-wrap gap-2 justify-center md:justify-end">
             {isEditing
               ? (userCanAddUser || userCanEditUser) && (
-                  <Button
-                    onClick={handleSave}
-                    size="sm"
-                    className="w-full sm:w-auto"
-                    disabled={isSaving}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Changes
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                      disabled={isSaving}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={isSaving}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </Button>
+                  </>
                 )
               : userCanEditUser && (
                   <Button
@@ -230,6 +407,153 @@ const ContactCMS = () => {
             </div>
           )}
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Frequently Asked Questions</CardTitle>
+          <CardDescription>
+            Manage FAQ content for website users
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {(userCanAddUser || userCanEditUser) && (
+            <div className="border rounded-lg p-4 space-y-4">
+              <div>
+                <Label>Question</Label>
+                <Input
+                  value={faqForm.question}
+                  onChange={(e) =>
+                    setFaqForm((prev) => ({
+                      ...prev,
+                      question: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>Answer</Label>
+                <Textarea
+                  rows={4}
+                  value={faqForm.answer}
+                  onChange={(e) =>
+                    setFaqForm((prev) => ({
+                      ...prev,
+                      answer: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <Button
+                onClick={handleAddFaq}
+                disabled={
+                  addFaqMutation.isPending ||
+                  !faqForm.question.trim() ||
+                  !faqForm.answer.trim()
+                }
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {addFaqMutation.isPending ? "Saving..." : "Save FAQ"}
+              </Button>
+            </div>
+          )}
+
+          {faqLoading ? (
+            <Loader />
+          ) : faq.length === 0 ? (
+            <div>No FAQs found</div>
+          ) : (
+            <div className="space-y-4">
+              {faq.map((item) => (
+                <div key={item._id} className="border rounded-lg p-4">
+                  {editingFaqId === item._id ? (
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Question</Label>
+                        <Input
+                          value={editFaqForm.question}
+                          onChange={(e) =>
+                            setEditFaqForm((prev) => ({
+                              ...prev,
+                              question: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Answer</Label>
+                        <Textarea
+                          rows={4}
+                          value={editFaqForm.answer}
+                          onChange={(e) =>
+                            setEditFaqForm((prev) => ({
+                              ...prev,
+                              answer: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleUpdateFaq}
+                          disabled={updateFaqMutation.isPending}
+                        >
+                          {updateFaqMutation.isPending ? "Saving..." : "Save"}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditingFaqId("")}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col md:flex-row md:justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{item.question}</h4>
+
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {item.answer}
+                        </p>
+                      </div>
+
+                      {isEditing && (
+                        <div className="flex gap-2">
+                          {userCanEditUser && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditFaq(item)}
+                            >
+                              Edit
+                            </Button>
+                          )}
+
+                          {userCanDeleteUser && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteFaqMutation.mutate(item._id)}
+                              disabled={deleteFaqMutation.isPending}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>{" "}
       </Card>
 
       {/* Social Media Management */}

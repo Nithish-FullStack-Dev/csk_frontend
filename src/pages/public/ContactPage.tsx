@@ -8,12 +8,15 @@ import {
   MessageCircle,
   LucideIcon,
   Globe,
+  Loader,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { easeOut, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import axios from "axios";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import CircleLoader from "@/components/CircleLoader";
 
 // --- NEW: Define a sophisticated Color Palette ---
 const palette = {
@@ -67,6 +70,23 @@ const ContactPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  const { data: faq = [], isLoading: faqLoading } = useQuery<
+    {
+      _id: string;
+      question: string;
+      answer: string;
+    }[]
+  >({
+    queryKey: ["faq-public"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/faq/getAllPublic`,
+        { withCredentials: true },
+      );
+      return data.data || [];
+    },
+  });
+
   const fetchContactInfo = async () => {
     try {
       const { data } = await axios.get(
@@ -94,14 +114,14 @@ const ContactPage: React.FC = () => {
   ];
 
   const quickContacts: QuickContact[] = [
-    { label: "Sales Enquiry", phone: "+91 98765 43210", icon: Phone },
+    { label: "Sales Enquiry", phone: "+91 891 936 2718", icon: Phone },
     {
       label: "Customer Support",
-      phone: "+91 98765 43211",
+      phone: "+91 891 936 2718",
       icon: MessageCircle,
     },
-    { label: "Site Visit Booking", phone: "+91 98765 43212", icon: MapPin },
-    { label: "Investment Guidance", phone: "+91 98765 43213", icon: Globe },
+    { label: "Site Visit Booking", phone: "+91 82475 05921", icon: MapPin },
+    { label: "Investment Guidance", phone: "+91 82475 05921", icon: Globe },
   ];
 
   // --- Framer Motion Variants for Scroll-Reveal ---
@@ -388,7 +408,7 @@ const ContactPage: React.FC = () => {
             >
               {/* IMPORTANT: Replace with actual Google Maps embed or equivalent */}
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d28064.269020139593!2d77.02477192771046!3d28.44840267611705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1s123%20Business%20District%2C%20Corporate%20Tower%2C%2015th%20Floor%2C%20Gurgaon%2C%20Haryana%20122001!5e0!3m2!1sen!2sin!4v1750069137119!5m2!1sen!2sin"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3806.6176691145447!2d78.47299547493515!3d17.406794583483716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb990050d0eda3%3A0x2feeb1664135da83!2sU%20S%20Residency!5e0!3m2!1sen!2sin!4v1777445080634!5m2!1sen!2sin"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
@@ -570,71 +590,58 @@ const ContactPage: React.FC = () => {
               initial="hidden"
               animate={faqInView ? "visible" : "hidden"}
             >
-              {[
-                {
-                  question: "What are your office hours?",
-                  answer:
-                    "Our offices are open Monday to Friday from 9:00 AM to 7:00 PM, and Saturday from 9:00 AM to 5:00 PM. Sunday visits are by appointment only to ensure we can provide dedicated attention.",
-                },
-                {
-                  question: "How can I schedule a site visit?",
-                  answer:
-                    "You can easily schedule a site visit by calling our dedicated site visit booking number, filling out the enquiry form directly on this page, or visiting any of our office locations. We're happy to arrange complimentary transportation for your convenience.",
-                },
-                {
-                  question: "Do you provide home loan assistance?",
-                  answer:
-                    "Absolutely! We have strong partnerships with leading banks and financial institutions to streamline your home loan process. Our experienced team will assist you with documentation, application submission, and securing competitive interest rates tailored to your needs.",
-                },
-                {
-                  question: "What types of properties do you specialize in?",
-                  answer:
-                    "We specialize in a diverse portfolio of premium residential and commercial properties, including luxury apartments, independent villas, plotted developments, and high-yield commercial spaces across key metropolitan areas.",
-                },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  whileHover={{
-                    y: -5,
-                    boxShadow: `0 4px 10px ${palette.hoverShadow}`,
-                    borderRadius: "0.75rem",
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Card
-                    className="border rounded-xl overflow-hidden transition-all duration-200" // Add overflow-hidden and transition
-                    style={{
-                      borderColor: palette.borderLight,
-                      backgroundColor: palette.backgroundLight,
-                      borderRadius: "0.75rem", // Explicitly set border radius
+              {faqLoading ? (
+                <CircleLoader />
+              ) : faq.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No FAQs found
+                </div>
+              ) : (
+                faq.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    variants={itemVariants}
+                    whileHover={{
+                      y: -5,
+                      boxShadow: `0 4px 10px ${palette.hoverShadow}`,
+                      borderRadius: "0.75rem",
                     }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   >
-                    <CardContent className="p-6">
-                      <details className="group">
-                        <summary
-                          className="font-semibold cursor-pointer text-xl"
-                          style={{ color: palette.primary }}
-                        >
-                          {item.question}
-                          <span className="ml-auto transition-transform group-open:rotate-90">
-                            <MessageCircle
-                              className="inline-block h-6 w-6 ml-2"
-                              style={{ color: palette.secondary }}
-                            />
-                          </span>
-                        </summary>
-                        <p
-                          className="mt-3 text-base leading-relaxed"
-                          style={{ color: palette.textDark }}
-                        >
-                          {item.answer}
-                        </p>
-                      </details>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                    <Card
+                      className="border rounded-xl overflow-hidden transition-all duration-200" // Add overflow-hidden and transition
+                      style={{
+                        borderColor: palette.borderLight,
+                        backgroundColor: palette.backgroundLight,
+                        borderRadius: "0.75rem", // Explicitly set border radius
+                      }}
+                    >
+                      <CardContent className="p-6">
+                        <details className="group">
+                          <summary
+                            className="font-semibold cursor-pointer text-xl"
+                            style={{ color: palette.primary }}
+                          >
+                            {item?.question || "N/A"}
+                            <span className="ml-auto transition-transform group-open:rotate-90">
+                              <MessageCircle
+                                className="inline-block h-6 w-6 ml-2"
+                                style={{ color: palette.secondary }}
+                              />
+                            </span>
+                          </summary>
+                          <p
+                            className="mt-3 text-base leading-relaxed"
+                            style={{ color: palette.textDark }}
+                          >
+                            {item?.answer || "N/A"}
+                          </p>
+                        </details>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
             </motion.div>
           </motion.div>
         </section>
