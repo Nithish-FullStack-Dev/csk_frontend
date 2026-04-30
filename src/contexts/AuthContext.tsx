@@ -93,8 +93,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(data);
     } catch (error) {
       if (error.response?.status === 401) {
+        toast.error(
+          axios.isAxiosError(error)
+            ? error.response.data.message
+            : "Session invalidated, please login again",
+        );
         setUser(null);
         setIsUnauthorized(true);
+        console.log("failed to load logged in user ", error);
       } else {
         console.log("failed to load logged in user ", error);
       }
