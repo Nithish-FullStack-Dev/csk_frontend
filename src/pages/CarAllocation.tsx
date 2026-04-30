@@ -1031,15 +1031,19 @@ const CarAllocation = () => {
                                   <SelectContent>
                                     {unassignedTeamMembers &&
                                     unassignedTeamMembers.length > 0 ? (
-                                      unassignedTeamMembers.map((member) => (
-                                        <SelectItem
-                                          key={member._id}
-                                          value={member._id}
-                                        >
-                                          {member.agentId.name} -{" "}
-                                          {member.agentId.role}
-                                        </SelectItem>
-                                      ))
+                                      unassignedTeamMembers
+                                        ?.filter((member) => member?.agentId)
+                                        .map((member) => (
+                                          <SelectItem
+                                            key={member._id}
+                                            value={member._id}
+                                          >
+                                            {member.agentId?.name ||
+                                              "Deleted User"}{" "}
+                                            -{" "}
+                                            {member.agentId?.role || "No Role"}
+                                          </SelectItem>
+                                        ))
                                     ) : (
                                       <SelectItem value="no-members" disabled>
                                         No unassigned team members available

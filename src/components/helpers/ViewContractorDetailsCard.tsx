@@ -31,13 +31,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Contractor</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <b>Name:</b> {contractor.userId?.name}
+              <b>Name:</b> {contractor?.userId?.name || "User Deleted"}
             </div>
             <div>
-              <b>Email:</b> {contractor.userId?.email}
+              <b>Email:</b> {contractor?.userId?.email || "-"}
             </div>
             <div>
-              <b>Phone:</b> {contractor.userId?.phone}
+              <b>Phone:</b> {contractor?.userId?.phone || "-"}
             </div>
             <div>
               <b>Type:</b> {contractor?.contractorType}
@@ -52,13 +52,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Company Information</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <b>Company Name:</b> {contractor?.companyName}
+              <b>Company Name:</b> {contractor?.companyName || " - "}
             </div>
             <div>
-              <b>GST Number:</b> {contractor?.gstNumber}
+              <b>GST Number:</b> {contractor?.gstNumber || " - "}
             </div>
             <div>
-              <b>PAN Number:</b> {contractor?.panCardNumber}
+              <b>PAN Number:</b> {contractor?.panCardNumber || " - "}
             </div>
           </div>
         </section>
@@ -94,13 +94,13 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Financial Summary</h3>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <b>Total Amount:</b> ₹{contractor?.amount}
+              <b>Total Amount:</b> ₹{contractor?.amount || " - "}
             </div>
             <div>
-              <b>Advance Paid:</b> ₹{contractor?.advancePaid}
+              <b>Advance Paid:</b> ₹{contractor?.advancePaid || " - "}
             </div>
             <div>
-              <b>Balance:</b> ₹{contractor?.balancePaid}
+              <b>Balance:</b> ₹{contractor?.balancePaid || " - "}
             </div>
           </div>
         </section>
@@ -137,16 +137,16 @@ export default function ViewContractorDetailsCard({ contractor }: Props) {
           <h3 className="font-semibold mb-2">Bank Details</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <b>Bank:</b> {contractor?.bankName}
+              <b>Bank:</b> {contractor?.bankName || " - "}
             </div>
             <div>
-              <b>Branch:</b> {contractor?.branchName}
+              <b>Branch:</b> {contractor?.branchName || " - "}
             </div>
             <div>
-              <b>Account No:</b> {contractor?.accountNumber}
+              <b>Account No:</b> {contractor?.accountNumber || " - "}
             </div>
             <div>
-              <b>IFSC:</b> {contractor?.ifscCode}
+              <b>IFSC:</b> {contractor?.ifscCode || " - "}
             </div>
           </div>
         </section>

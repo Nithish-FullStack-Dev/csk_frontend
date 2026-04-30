@@ -479,83 +479,106 @@ const TeamManagementTable = ({
                     </TableRow>
                   </TableHeader>
 
+                  {/* REPLACE ONLY YOUR TABLE BODY MAP SECTION */}
+
                   <TableBody>
-                    {response.data.map((agent: AgentList, idx) => (
-                      <TableRow
-                        key={idx}
-                        className="hover:bg-muted/30 transition-colors"
-                      >
-                        <TableCell className="py-3">
-                          {typeof agent.agentId === "object"
-                            ? agent.agentId.name
-                            : "-"}
-                        </TableCell>
+                    {(response?.data ?? []).map((agent: AgentList, idx) => {
+                      const agentUser =
+                        agent?.agentId && typeof agent.agentId === "object"
+                          ? agent.agentId
+                          : null;
 
-                        <TableCell className="py-3">
-                          {typeof agent.agentId === "object"
-                            ? agent.agentId.phone
-                            : "-"}
-                        </TableCell>
+                      return (
+                        <TableRow
+                          key={agent?._id ?? idx}
+                          className="hover:bg-muted/30 transition-colors"
+                        >
+                          {/* Agent Name */}
+                          <TableCell className="py-3">
+                            {agentUser?.name ?? "N/A"}
+                          </TableCell>
 
-                        <TableCell className="py-3">{agent.panCard}</TableCell>
-                        <TableCell className="py-3">
-                          {agent.aadharCard}
-                        </TableCell>
-                        <TableCell className="py-3">
-                          {agent.accountHolderName}
-                        </TableCell>
-                        <TableCell className="py-3">{agent.ifsc}</TableCell>
-                        <TableCell className="py-3">{agent.bankName}</TableCell>
-                        <TableCell className="py-3">
-                          {agent.branchName}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                          {/* Contact */}
+                          <TableCell className="py-3">
+                            {agentUser?.phone ?? "N/A"}
+                          </TableCell>
 
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          {/* PAN */}
+                          <TableCell className="py-3">
+                            {agent?.panCard ?? "N/A"}
+                          </TableCell>
 
-                              <DropdownMenuItem
-                                onClick={() => handleViewAgent(agent)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
+                          {/* Aadhar */}
+                          <TableCell className="py-3">
+                            {agent?.aadharCard ?? "N/A"}
+                          </TableCell>
 
-                              {userCanEditUser && (
+                          {/* Account Holder */}
+                          <TableCell className="py-3">
+                            {agent?.accountHolderName ?? "N/A"}
+                          </TableCell>
+
+                          {/* IFSC */}
+                          <TableCell className="py-3">
+                            {agent?.ifsc ?? "N/A"}
+                          </TableCell>
+
+                          {/* Bank */}
+                          <TableCell className="py-3">
+                            {agent?.bankName ?? "N/A"}
+                          </TableCell>
+
+                          {/* Branch */}
+                          <TableCell className="py-3">
+                            {agent?.branchName ?? "N/A"}
+                          </TableCell>
+
+                          {/* Actions */}
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
                                 <DropdownMenuItem
-                                  onClick={() => {
-                                    setMode("edit");
-                                    handleEditAgent(agent);
-                                  }}
+                                  onClick={() => handleViewAgent(agent)}
                                 >
-                                  <UserPlus className="h-4 w-4 mr-2" />
-                                  Edit Agent
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
                                 </DropdownMenuItem>
-                              )}
 
-                              {userCanDeleteUser && (
-                                <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-700"
-                                  onClick={() => {
-                                    setDeleteId(agent._id ?? null);
-                                    setDeleteDialogOpen(true);
-                                  }}
-                                >
-                                  <AlertTriangle className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                                {userCanEditUser && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditAgent(agent)}
+                                  >
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Edit Agent
+                                  </DropdownMenuItem>
+                                )}
+
+                                {userCanDeleteUser && (
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-700"
+                                    onClick={() => {
+                                      setDeleteId(agent?._id ?? null);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

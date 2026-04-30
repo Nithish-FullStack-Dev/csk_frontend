@@ -503,14 +503,25 @@ const TeamManagement = () => {
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {sortedAndFilteredTeamMembers?.map((member) => {
+                    const agent = member?.agentId;
+
+                    const sales = Number(member?.performance?.sales) || 0;
+                    const target = Number(member?.performance?.target) || 0;
+
                     const performancePercentage =
-                      member.performance.target > 0
-                        ? (member?.performance?.sales ||
-                            0 / member?.performance?.target) * 100
-                        : 0;
+                      target > 0 ? (sales / target) * 100 : 0;
+
                     const performanceLevel = getPerformanceLevel(
                       performancePercentage,
                     );
+
+                    const teamLeadName =
+                      member?.teamLeadId?.name || "Unassigned";
+
+                    const agentName = agent?.name || "Deleted User";
+                    const agentEmail = agent?.email || "";
+                    const agentRole = agent?.role || "No Role";
+                    const agentAvatar = agent?.avatar || "";
 
                     return (
                       <Card key={member._id}>
@@ -519,79 +530,65 @@ const TeamManagement = () => {
                             <div className="flex items-center space-x-3">
                               <Avatar className="h-12 w-12">
                                 <AvatarImage
-                                  src={member?.agentId?.avatar}
-                                  alt={member?.agentId?.name}
+                                  src={agentAvatar}
+                                  alt={agentName}
                                 />
                                 <AvatarFallback>
-                                  {member?.agentId?.name
+                                  {agentName
                                     .split(" ")
                                     .map((n) => n[0])
-                                    .join("")}
+                                    .join("")
+                                    .slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
+
                               <div>
-                                <h3 className="font-semibold">
-                                  {member?.agentId?.name}
-                                </h3>
+                                <h3 className="font-semibold">{agentName}</h3>
+
                                 <p className="text-sm text-muted-foreground">
-                                  {member?.agentId?.role}
+                                  {agentRole}
                                 </p>
-                                <Badge
-                                  className={getStatusColor(member?.status)}
-                                >
-                                  {member?.status}
-                                </Badge>
+
+                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                  <span className="font-medium">
+                                    Team Lead:
+                                  </span>
+                                  <span>{teamLeadName}</span>
+                                </div>
                               </div>
                             </div>
-                            {userCanEditUser && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleOpenEditDialog(member)}
-                              >
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                            )}
                           </div>
                         </CardHeader>
+
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-muted-foreground">Sales</p>
                               <p className="font-semibold">
-                                ₹
-                                {member?.performance?.sales?.toLocaleString(
-                                  "en-IN",
-                                  {
-                                    maximumFractionDigits: 0,
-                                  },
-                                )}
+                                ₹{sales.toLocaleString("en-IN")}
                               </p>
                             </div>
+
                             <div>
                               <p className="text-muted-foreground">Target</p>
                               <p className="font-semibold">
-                                ₹
-                                {member?.performance?.target?.toLocaleString(
-                                  "en-IN",
-                                  {
-                                    maximumFractionDigits: 0,
-                                  },
-                                )}
+                                ₹{target.toLocaleString("en-IN")}
                               </p>
                             </div>
+
                             <div>
                               <p className="text-muted-foreground">Deals</p>
                               <p className="font-semibold">
-                                {member?.performance?.deals}
+                                {member?.performance?.deals ?? 0}
                               </p>
                             </div>
+
                             <div>
                               <p className="text-muted-foreground">
                                 Conversion
                               </p>
                               <p className="font-semibold">
-                                {member?.performance?.conversionRate}%
+                                {member?.performance?.conversionRate ?? 0}%
                               </p>
                             </div>
                           </div>
@@ -599,59 +596,71 @@ const TeamManagement = () => {
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Target Achievement</span>
-                              <span className={performanceLevel?.color}>
-                                {performanceLevel?.level}
+
+                              <span className={performanceLevel.color}>
+                                {performanceLevel.level}
                               </span>
                             </div>
+
                             <Progress
                               value={performancePercentage}
                               className="h-2"
                             />
+
                             <p className="text-xs text-muted-foreground text-right">
-                              {performancePercentage?.toFixed(1)}% of target
+                              {performancePercentage.toFixed(1)}% of target
                             </p>
                           </div>
 
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>
-                              Last activity:{" "}
-                              {new Date(
-                                member?.performance?.lastActivity,
-                              ).toLocaleDateString()}{" "}
-                              {new Date(
-                                member?.performance?.lastActivity,
-                              ).toLocaleTimeString()}
-                            </span>
+                          <div className="text-xs text-muted-foreground">
+                            Last activity:{" "}
+                            {member?.performance?.lastActivity
+                              ? new Date(
+                                  member.performance.lastActivity,
+                                ).toLocaleString()
+                              : "No activity"}
                           </div>
 
-                          <div className="flex space-x-2">
-                            <a href={`tel:${member?.agentId?.phone || ""}`}>
+                          <div className="flex md:flex-row flex-col gap-2">
+                            <a href={`tel:${agent?.phone || ""}`}>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="flex-1"
+                                className="w-full"
                               >
                                 <Phone className="mr-2 h-3 w-3" />
                                 Call
                               </Button>
                             </a>
-                            <a
-                              href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                                member?.agentId?.email,
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1"
-                            >
+
+                            {agentEmail ? (
+                              <a
+                                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                                  agentEmail,
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                >
+                                  <Mail className="mr-2 h-3 w-3" />
+                                  Email Agent
+                                </Button>
+                              </a>
+                            ) : (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="flex-1"
+                                disabled
+                                className="w-full"
                               >
                                 <Mail className="mr-2 h-3 w-3" />
-                                Email
+                                No Email
                               </Button>
-                            </a>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
