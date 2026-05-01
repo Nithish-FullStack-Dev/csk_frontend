@@ -98,8 +98,10 @@ const ContractorsList = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openConDialog, setOpenConDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [editingContractor, setEditingContractor] = useState(null);
   const [deletecontractorId, setDeletecontractorId] = useState(null);
+  const [restorecontractorId, setRestorecontractorId] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewContractor, setViewContractor] = useState<any>(null);
   const [contractorListSearch, setContractorListSearch] = useState("");
@@ -132,6 +134,7 @@ const ContractorsList = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
       queryClient.invalidateQueries({ queryKey: ["fetchContractors"] });
+      queryClient.invalidateQueries({ queryKey: ["contractor-list-dropdown"] });
       toast.success(data?.message ?? "Contractor deleted successfully");
       setDeletecontractorId(null);
       setDeleteDialogOpen(false);
@@ -147,11 +150,40 @@ const ContractorsList = () => {
     },
   });
 
+  const restoreContractorMutation = useMutation({
+    mutationFn: async (contractorId) => {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/contractor/restore/${contractorId}`,
+        {},
+        { withCredentials: true },
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["contractors-list"] });
+      queryClient.invalidateQueries({ queryKey: ["fetchContractors"] });
+      queryClient.invalidateQueries({ queryKey: ["contractor-list-dropdown"] });
+      toast.success(data?.message ?? "Contractor restored successfully");
+      setRestorecontractorId(null);
+      setRestoreDialogOpen(false);
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error?.response.data.message || "Failed to restore contractor",
+        );
+      } else {
+        toast.error(error?.message || "Failed to restore contractor");
+      }
+    },
+  });
+
   const {
     data: allProjects = [],
     isLoading: isLoadingProjects,
     isError: isErrorProjects,
     error: projectsDropdownError,
+    refetch: projectDrop,
   } = usefetchProjectsForDropdownSiteIncharge();
 
   const {
@@ -303,6 +335,11 @@ const ContractorsList = () => {
   const handleDelete = () => {
     if (!deletecontractorId) return;
     deleteContractorMutation.mutate(deletecontractorId);
+  };
+
+  const handleRestore = () => {
+    if (!restorecontractorId) return;
+    restoreContractorMutation.mutate(restorecontractorId);
   };
 
   const handleCloseEditDialog = () => {
@@ -513,138 +550,159 @@ const ContractorsList = () => {
                               </TableCell>
                             </TableRow>
                           ) : (
-                            filteredAssignedContractors.map((contractor) => (
-                              <TableRow key={contractor._id}>
-                                <TableCell className="font-medium">
-                                  {contractor?.name}
-                                  <div className="text-xs text-muted-foreground">
-                                    Status: {contractor?.status}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {contractor.specialization || "General"}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {contractor?.projects?.length === 0 && (
-                                      <span className="text-xs text-muted-foreground">
-                                        No projects assigned
-                                      </span>
-                                    )}
-                                    {contractor?.projects?.map(
-                                      (project, index) => (
-                                        <Badge
-                                          key={index}
-                                          variant="secondary"
-                                          className="text-xs"
-                                        >
-                                          {project.projectName} — F
-                                          {project.floorNumber}/U
-                                          {project.unitType}
-                                        </Badge>
-                                      ),
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-col text-sm">
-                                    <div className="flex items-center">
-                                      <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
-                                      {contractor.phone}
+                            filteredAssignedContractors.map((contractor) => {
+                              const isUserDeleted =
+                                contractor.contractorIsDeleted === true;
+
+                              return (
+                                <TableRow
+                                  key={contractor._id}
+                                  className={`transition-colors ${
+                                    isUserDeleted
+                                      ? "opacity-60"
+                                      : "hover:bg-muted/30"
+                                  }`}
+                                >
+                                  <TableCell className="font-medium">
+                                    {contractor?.name}
+                                    <div className="text-xs text-muted-foreground">
+                                      Status: {contractor?.status}
                                     </div>
-                                    <div className="flex items-center">
-                                      <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
-                                      {contractor.email}
-                                    </div>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="space-y-1">
-                                    <div className="text-xs">
-                                      {contractor.completedTasks} /{" "}
-                                      {contractor.totalTasks} Tasks
-                                    </div>
-                                    <Progress
-                                      value={
-                                        (contractor.completedTasks /
-                                          contractor.totalTasks) *
-                                        100
-                                      }
-                                      className="h-2"
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        className="h-8 w-8 p-0"
-                                      >
-                                        <span className="sr-only">
-                                          Open menu
+                                  </TableCell>
+                                  <TableCell>
+                                    {contractor.specialization || "General"}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {contractor?.projects?.length === 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                          No projects assigned
                                         </span>
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>
-                                        Actions
-                                      </DropdownMenuLabel>
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setSelectedContractor(contractor);
-                                          setIsContractorDialogOpen(true);
-                                        }}
-                                      >
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={async () => {
-                                          setSelectedContractor(contractor);
-                                          setViewTasksDialogOpen(true);
-                                          setIsLoadingTasks(true);
-                                          try {
-                                            const res = await axios.get(
-                                              `${
-                                                import.meta.env.VITE_URL
-                                              }/api/project/site-incharge/${
-                                                contractor._id
-                                              }/contractor/tasks`,
-                                              { withCredentials: true },
-                                            );
-                                            setContractorTasks(res.data.tasks);
-                                          } catch (err) {
-                                            console.error(err);
-                                          } finally {
-                                            setIsLoadingTasks(false);
-                                          }
-                                        }}
-                                      >
-                                        View Tasks
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => navigate("/messaging")}
-                                      >
-                                        Send Message
-                                      </DropdownMenuItem>
-                                      {user?.role !== "admin" &&
-                                        userCanEditUser && (
-                                          <DropdownMenuItem
-                                            onClick={() => {
-                                              setSelectedContractor(contractor);
-                                              setNewStatus(contractor.status);
-                                              setStatusDialogOpen(true);
-                                            }}
+                                      )}
+                                      {contractor?.projects?.map(
+                                        (project, index) => (
+                                          <Badge
+                                            key={index}
+                                            variant="secondary"
+                                            className="text-xs"
                                           >
-                                            Update Status
+                                            {project.projectName} — F
+                                            {project.floorNumber}/U
+                                            {project.unitType}
+                                          </Badge>
+                                        ),
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col text-sm">
+                                      <div className="flex items-center">
+                                        <Phone className="h-3 w-3 mr-1 text-muted-foreground" />
+                                        {contractor.phone}
+                                      </div>
+                                      <div className="flex items-center">
+                                        <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
+                                        {contractor.email}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="space-y-1">
+                                      <div className="text-xs">
+                                        {contractor.completedTasks} /{" "}
+                                        {contractor.totalTasks} Tasks
+                                      </div>
+                                      <Progress
+                                        value={
+                                          (contractor.completedTasks /
+                                            contractor.totalTasks) *
+                                          100
+                                        }
+                                        className="h-2"
+                                      />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <span className="sr-only">
+                                            Open menu
+                                          </span>
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>
+                                          Actions
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            setSelectedContractor(contractor);
+                                            setIsContractorDialogOpen(true);
+                                          }}
+                                        >
+                                          View Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={async () => {
+                                            setSelectedContractor(contractor);
+                                            setViewTasksDialogOpen(true);
+                                            setIsLoadingTasks(true);
+                                            try {
+                                              const res = await axios.get(
+                                                `${
+                                                  import.meta.env.VITE_URL
+                                                }/api/project/site-incharge/${
+                                                  contractor._id
+                                                }/contractor/tasks`,
+                                                { withCredentials: true },
+                                              );
+                                              setContractorTasks(
+                                                res.data.tasks,
+                                              );
+                                            } catch (err) {
+                                              console.error(err);
+                                            } finally {
+                                              setIsLoadingTasks(false);
+                                            }
+                                          }}
+                                        >
+                                          View Tasks
+                                        </DropdownMenuItem>
+                                        {!isUserDeleted && (
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              navigate("/messaging")
+                                            }
+                                          >
+                                            Send Message
                                           </DropdownMenuItem>
                                         )}
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))
+                                        {!isUserDeleted &&
+                                          user?.role !== "admin" &&
+                                          userCanEditUser && (
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setSelectedContractor(
+                                                  contractor,
+                                                );
+                                                setNewStatus(contractor.status);
+                                                setStatusDialogOpen(true);
+                                              }}
+                                            >
+                                              Update Status
+                                            </DropdownMenuItem>
+                                          )}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
                           )}
                         </TableBody>
                       </Table>
@@ -832,122 +890,190 @@ const ContractorsList = () => {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {filteredContractorList?.map((contractor) => (
-                                <TableRow key={contractor._id}>
-                                  <TableCell className="font-medium">
-                                    {contractor.companyName}
-                                  </TableCell>
-                                  <TableCell>{contractor.gstNumber}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline">
-                                      {contractor.contractorType}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    {(typeof contractor?.userId === "object" &&
-                                      contractor?.userId?.phone) ||
-                                      "—"}
-                                  </TableCell>
-                                  <TableCell className="max-w-xs truncate">
-                                    {(typeof contractor?.userId === "object" &&
-                                      contractor?.userId?.email) ||
-                                      "—"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    ₹{(contractor.amount ?? 0).toLocaleString()}
-                                  </TableCell>
-                                  <TableCell className="text-right text-green-600">
-                                    ₹
-                                    {(
-                                      contractor.advancePaid ?? 0
-                                    ).toLocaleString()}
-                                  </TableCell>
-                                  <TableCell className="text-right text-red-600">
-                                    ₹
-                                    {(
-                                      contractor.balancePaid ?? 0
-                                    ).toLocaleString()}
-                                  </TableCell>
-                                  {/* <TableCell className="max-w-md">
+                              {filteredContractorList?.map(
+                                (contractor, idx) => {
+                                  const contractorUser =
+                                    contractor?.userId &&
+                                    typeof contractor.userId === "object"
+                                      ? contractor.userId
+                                      : null;
+
+                                  const isContractorDeleted =
+                                    contractorUser?.isDeleted === true;
+
+                                  const isContractorModelDeleted =
+                                    contractor.isDeleted === true;
+
+                                  return (
+                                    <TableRow
+                                      className={`transition-colors ${
+                                        isContractorDeleted ||
+                                        isContractorModelDeleted
+                                          ? "opacity-60"
+                                          : "hover:bg-muted/30"
+                                      }`}
+                                      key={contractor._id || idx}
+                                    >
+                                      <TableCell className="font-medium">
+                                        <span
+                                          className={
+                                            isContractorDeleted ||
+                                            isContractorModelDeleted
+                                              ? "line-through text-muted-foreground"
+                                              : ""
+                                          }
+                                        >
+                                          {contractor?.companyName ?? "N/A"}
+                                        </span>
+
+                                        {(isContractorModelDeleted ||
+                                          isContractorDeleted) && (
+                                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                            Deleted
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell>
+                                        {contractor.gstNumber}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline">
+                                          {contractor.contractorType}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        {(typeof contractor?.userId ===
+                                          "object" &&
+                                          contractor?.userId?.phone) ||
+                                          "—"}
+                                      </TableCell>
+                                      <TableCell className="max-w-xs truncate">
+                                        {(typeof contractor?.userId ===
+                                          "object" &&
+                                          contractor?.userId?.email) ||
+                                          "—"}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        ₹
+                                        {(
+                                          contractor.amount ?? 0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className="text-right text-green-600">
+                                        ₹
+                                        {(
+                                          contractor.advancePaid ?? 0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      <TableCell className="text-right text-red-600">
+                                        ₹
+                                        {(
+                                          contractor.balancePaid ?? 0
+                                        ).toLocaleString()}
+                                      </TableCell>
+                                      {/* <TableCell className="max-w-md">
                                     {contractor.workDetails || "—"}
                                   </TableCell> */}
-                                  <TableCell>
-                                    {contractor.billInvoiceNumber || "—"}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge
-                                      variant={
-                                        contractor.isActive
-                                          ? "default"
-                                          : "secondary"
-                                      }
-                                    >
-                                      {contractor.isActive
-                                        ? "Active"
-                                        : "Inactive"}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>
-                                    {contractor.billedDate
-                                      ? new Date(
-                                          contractor.billedDate,
-                                        ).toLocaleDateString()
-                                      : "—"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          className="h-8 w-8 p-0"
+                                      <TableCell>
+                                        {contractor.billInvoiceNumber || "—"}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          variant={
+                                            contractor.isActive
+                                              ? "default"
+                                              : "secondary"
+                                          }
                                         >
-                                          <span className="sr-only">
-                                            Open menu
-                                          </span>
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>
-                                          Actions
-                                        </DropdownMenuLabel>
-                                        <DropdownMenuItem
-                                          onClick={() => handleView(contractor)}
-                                        >
-                                          <Eye className="h-4 w-4 mr-2" />
-                                          View Details
-                                        </DropdownMenuItem>
-                                        {user?.role !== "admin" &&
-                                          userCanEditUser && (
+                                          {contractor.isActive
+                                            ? "Active"
+                                            : "Inactive"}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell>
+                                        {contractor.billedDate
+                                          ? new Date(
+                                              contractor.billedDate,
+                                            ).toLocaleDateString()
+                                          : "—"}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              className="h-8 w-8 p-0"
+                                            >
+                                              <span className="sr-only">
+                                                Open menu
+                                              </span>
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>
+                                              Actions
+                                            </DropdownMenuLabel>
                                             <DropdownMenuItem
                                               onClick={() =>
-                                                handleEdit(contractor)
+                                                handleView(contractor)
                                               }
                                             >
-                                              <Edit className="h-4 w-4 mr-2" />
-                                              Edit
+                                              <Eye className="h-4 w-4 mr-2" />
+                                              View Details
                                             </DropdownMenuItem>
-                                          )}
-                                        {user?.role !== "admin" &&
-                                          userCanDeleteUser && (
-                                            <DropdownMenuItem
-                                              onClick={() => {
-                                                setDeletecontractorId(
-                                                  contractor._id,
-                                                );
-                                                setDeleteDialogOpen(true);
-                                              }}
-                                              className="text-destructive"
-                                            >
-                                              <Trash2 className="h-4 w-4 mr-2" />
-                                              Delete
-                                            </DropdownMenuItem>
-                                          )}
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
+                                            {!isContractorDeleted &&
+                                              !isContractorModelDeleted &&
+                                              user?.role !== "admin" &&
+                                              userCanEditUser && (
+                                                <DropdownMenuItem
+                                                  onClick={() =>
+                                                    handleEdit(contractor)
+                                                  }
+                                                >
+                                                  <Edit className="h-4 w-4 mr-2" />
+                                                  Edit
+                                                </DropdownMenuItem>
+                                              )}
+                                            {!isContractorDeleted &&
+                                              !isContractorModelDeleted &&
+                                              user?.role !== "admin" &&
+                                              userCanDeleteUser && (
+                                                <DropdownMenuItem
+                                                  onClick={() => {
+                                                    setDeletecontractorId(
+                                                      contractor._id,
+                                                    );
+                                                    setDeleteDialogOpen(true);
+                                                  }}
+                                                  className="text-destructive"
+                                                >
+                                                  <Trash2 className="h-4 w-4 mr-2" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              )}
+                                            {isContractorModelDeleted &&
+                                              !isContractorDeleted && (
+                                                <DropdownMenuItem
+                                                  onClick={() => {
+                                                    setRestorecontractorId(
+                                                      contractor._id,
+                                                    );
+                                                    setRestoreDialogOpen(true);
+                                                  }}
+                                                  className="text-destructive"
+                                                >
+                                                  <Trash2 className="h-4 w-4 mr-2" />
+                                                  Restore
+                                                </DropdownMenuItem>
+                                              )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                },
+                              )}
                             </TableBody>
                           </Table>
                         </div>
@@ -1168,8 +1294,10 @@ const ContractorsList = () => {
                       );
 
                       toast.success("Contractor assigned successfully");
+
                       setOpenDialog(false);
                       refetchContractors();
+                      projectDrop();
                     } catch (err) {
                       console.error(err);
                       toast.error("Something went wrong");
@@ -1647,6 +1775,15 @@ const ContractorsList = () => {
           onConfirm={handleDelete}
           title="Delete Contractor"
           description="Are you sure you want to delete this contractor? This action cannot be undone."
+        />
+
+        <DeleteConfirmDialog
+          open={restoreDialogOpen}
+          onOpenChange={setRestoreDialogOpen}
+          onConfirm={handleRestore}
+          title="Restore Contractor"
+          description="Are you sure you want to restore this contractor?"
+          btnTxt="Restore"
         />
       </div>
     </MainLayout>

@@ -370,7 +370,7 @@ const AddContractorDialog = ({
             <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6 gap-2">
               {mode === "add" && (
                 <div className="col-span-full space-y-2">
-                  <Label>Select Contractor</Label>
+                  <Label>Select Contractor *</Label>
                   <Controller
                     name="userId"
                     control={control}
@@ -463,7 +463,7 @@ const AddContractorDialog = ({
               )} */}
 
               <div className="space-y-2">
-                <Label>Company Name</Label>
+                <Label>Company Name *</Label>
                 <Input className="w-full" {...register("companyName")} />
                 {errors.companyName && (
                   <p className="text-sm font-medium text-destructive">
@@ -473,7 +473,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>GST Number</Label>
+                <Label>GST Number *</Label>
                 <Input
                   className="w-full uppercase"
                   {...register("gstNumber", {
@@ -488,7 +488,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>PAN Number</Label>
+                <Label>PAN Number *</Label>
                 <Input
                   className="w-full uppercase"
                   {...register("panCardNumber", {
@@ -503,7 +503,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Contractor Type</Label>
+                <Label>Contractor Type *</Label>
                 <Controller
                   name="contractorType"
                   control={control}
@@ -559,7 +559,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Total Amount</Label>
+                <Label>Total Amount *</Label>
                 <Input
                   className="w-full"
                   type="number"
@@ -573,7 +573,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Advance Paid</Label>
+                <Label>Advance Paid *</Label>
                 <Input
                   className="w-full"
                   type="number"
@@ -587,7 +587,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Balance Paid</Label>
+                <Label>Balance Paid *</Label>
                 <Input
                   className="w-full"
                   type="number"
@@ -597,7 +597,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Invoice Number</Label>
+                <Label>Invoice Number </Label>
                 <Input className="w-full" {...register("billInvoiceNumber")} />
               </div>
 
@@ -611,7 +611,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Contract End Date</Label>
+                <Label>Contract End Date *</Label>
                 <Input
                   className="w-full"
                   type="date"
@@ -620,12 +620,12 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Bank Name</Label>
+                <Label>Bank Name *</Label>
                 <Input className="w-full" {...register("bankName")} />
               </div>
 
               <div className="space-y-2">
-                <Label>Account Number</Label>
+                <Label>Account Number *</Label>
                 <Input className="w-full" {...register("accountNumber")} />
                 {errors.accountNumber && (
                   <p className="text-sm font-medium text-destructive">
@@ -635,7 +635,7 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>IFSC Code</Label>
+                <Label>IFSC Code *</Label>
                 <Input
                   className="w-full uppercase"
                   {...register("ifscCode", {
@@ -650,14 +650,14 @@ const AddContractorDialog = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Branch Name</Label>
+                <Label>Branch Name *</Label>
                 <Input className="w-full" {...register("branchName")} />
               </div>
 
               <div className="col-span-full space-y-6">
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-semibold">
-                    Payment Records
+                    Payment Records *
                   </Label>
 
                   <Button

@@ -738,113 +738,129 @@ const QualityControl = () => {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredIssues.map((issue) => (
-                        <TableRow key={issue._id}>
-                          <TableCell className="font-medium">
-                            <div>
-                              {issue.title}
-                              {issue.taskId && (
-                                <div className="text-xs text-muted-foreground">
-                                  Task ID: {issue?.taskId}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {(typeof issue?.project?.projectId === "object" &&
-                              issue?.project?.projectId?.projectName) ||
-                              "Untitled Project"}{" "}
-                            - Floor{" "}
-                            {typeof issue?.project?.floorUnit === "object"
-                              ? issue?.project?.floorUnit?.floorNumber
-                              : "N/A"}{" "}
-                            (
-                            {typeof issue?.project?.floorUnit === "object"
-                              ? (issue?.project?.floorUnit?.unitType ?? "N/A")
-                              : "N/A"}
-                            ) - Unit{" "}
-                            {typeof issue?.project?.unit === "object"
-                              ? (issue?.project?.unit?.plotNo ?? "N/A")
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            {issue?.contractor?.name || "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            {issue.reported_date
-                              ? new Date(
-                                  issue.reported_date,
-                                ).toLocaleDateString()
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={severityColors[issue.severity]}
-                            >
-                              {issue.severity.charAt(0).toUpperCase() +
-                                issue.severity.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={statusColors[issue.status]}
-                            >
-                              {issue.status === "under_review"
-                                ? "Under Review"
-                                : issue.status.charAt(0).toUpperCase() +
-                                  issue.status.slice(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => handleViewDetails(issue)}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-
-                                {userCanEditUser && user?.role !== "admin" && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleUpdateStatus(issue)}
-                                  >
-                                    Update Status
-                                  </DropdownMenuItem>
+                      filteredIssues.map((issue) => {
+                        const isUserDeleted =
+                          issue.contractor.isDeleted === true;
+                        return (
+                          <TableRow
+                            key={issue._id}
+                            className={`transition-colors ${
+                              isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                            }`}
+                          >
+                            <TableCell className="font-medium">
+                              <div>
+                                {issue.title}
+                                {issue.taskId && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Task ID: {issue?.taskId}
+                                  </div>
                                 )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {(typeof issue?.project?.projectId === "object" &&
+                                issue?.project?.projectId?.projectName) ||
+                                "Untitled Project"}{" "}
+                              - Floor{" "}
+                              {typeof issue?.project?.floorUnit === "object"
+                                ? issue?.project?.floorUnit?.floorNumber
+                                : "N/A"}{" "}
+                              (
+                              {typeof issue?.project?.floorUnit === "object"
+                                ? (issue?.project?.floorUnit?.unitType ?? "N/A")
+                                : "N/A"}
+                              ) - Unit{" "}
+                              {typeof issue?.project?.unit === "object"
+                                ? (issue?.project?.unit?.plotNo ?? "N/A")
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {issue?.contractor?.name || "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              {issue.reported_date
+                                ? new Date(
+                                    issue.reported_date,
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={severityColors[issue.severity]}
+                              >
+                                {issue.severity.charAt(0).toUpperCase() +
+                                  issue.severity.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={statusColors[issue.status]}
+                              >
+                                {issue.status === "under_review"
+                                  ? "Under Review"
+                                  : issue.status.charAt(0).toUpperCase() +
+                                    issue.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem
+                                    onClick={() => handleViewDetails(issue)}
+                                  >
+                                    View Details
+                                  </DropdownMenuItem>
 
-                                {user?.role !== "admin" && (
+                                  {!isUserDeleted &&
+                                    userCanEditUser &&
+                                    user?.role !== "admin" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleUpdateStatus(issue)
+                                        }
+                                      >
+                                        Update Status
+                                      </DropdownMenuItem>
+                                    )}
+
+                                  {!isUserDeleted && user?.role !== "admin" && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedIssue(issue);
+                                        setAssignDialog(true);
+                                      }}
+                                    >
+                                      Assign Contractor
+                                    </DropdownMenuItem>
+                                  )}
+
                                   <DropdownMenuItem
                                     onClick={() => {
                                       setSelectedIssue(issue);
-                                      setAssignDialog(true);
+                                      setEvidenceDialogOpen(true);
                                     }}
                                   >
-                                    Assign Contractor
+                                    View Evidence
                                   </DropdownMenuItem>
-                                )}
-
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedIssue(issue);
-                                    setEvidenceDialogOpen(true);
-                                  }}
-                                >
-                                  View Evidence
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
