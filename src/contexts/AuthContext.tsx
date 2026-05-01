@@ -38,6 +38,7 @@ export interface User {
   updatedAt?: Date;
   createdAt?: Date;
   lastLogin?: Date;
+  isDeleted?: boolean;
 }
 
 // Define the context structure

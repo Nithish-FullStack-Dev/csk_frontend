@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCsrfToken, Roles, useAuth, UserRole } from "@/contexts/AuthContext";
 import axios from "axios";
 import { formatDistanceToNowStrict } from "date-fns";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import CircleLoader from "@/components/CircleLoader";
 import Loader from "@/components/Loader";
 import { Permission } from "@/types/permission";
@@ -53,7 +53,7 @@ export const fetchAllRoles = async () => {
 const fetchAllUsers = async () => {
   const csrfToken = await getCsrfToken();
   const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/user/getUsers`,
+    `${import.meta.env.VITE_URL}/api/user/getExistingUsers`,
     { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } },
   );
   return data.users || [];
@@ -80,6 +80,7 @@ const UserManagement = () => {
   const [deleting, setDeleting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [restore, setRestore] = useState(false);
 
   // Fetch all roles
   const {
@@ -90,6 +91,22 @@ const UserManagement = () => {
   } = useQuery<Roles[]>({
     queryKey: ["roles"],
     queryFn: fetchAllRoles,
+  });
+
+  const {
+    data: deletedUsers = [],
+    isLoading: isDeletedLoading,
+    isError: isDeletedError,
+    error: deletedError,
+  } = useQuery({
+    queryKey: ["deleted"],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/user/deleted`,
+        { withCredentials: true },
+      );
+      return data.users || [];
+    },
   });
 
   const {
@@ -125,6 +142,27 @@ const UserManagement = () => {
       return combined.includes(query);
     });
   }, [usersData, searchQuery]);
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/user/restore/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("User restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["deleted"] });
+      setRestore(false);
+      setSelectedUser(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to restore user");
+    },
+  });
 
   if (isRolePermissionsError) {
     console.error("Error fetching role permissions:", rolePermissionsError);
@@ -194,6 +232,7 @@ const UserManagement = () => {
       );
       toast.success("User deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["deleted"] });
       setShowEditUserDialog(false);
       setshowResetDeleteDialog(false);
     } catch (error: any) {
@@ -276,6 +315,11 @@ const UserManagement = () => {
     return status === "active"
       ? "bg-green-100 text-green-800 hover:bg-green-100/80"
       : "bg-red-100 text-red-800 hover:bg-red-100/80";
+  };
+
+  const handleRestore = async () => {
+    if (!selectedUser?._id) return;
+    restoreMutation.mutate(selectedUser._id);
   };
 
   return (
@@ -625,6 +669,60 @@ const UserManagement = () => {
           </Card>
         </Tabs>
 
+        {/* Deleted Users Section */}
+        <Card className="border-dashed border-red-200 bg-red-50/40">
+          <CardHeader>
+            <CardTitle className="text-red-700">Deleted Users</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              These users are archived. You can restore them anytime.
+            </p>
+          </CardHeader>
+
+          <CardContent>
+            {deletedUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No deleted users found
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {deletedUsers.map((user) => (
+                  <div
+                    key={user._id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
+                  >
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-100 text-red-700"
+                      >
+                        Deleted
+                      </Badge>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setRestore(true);
+                        }}
+                      >
+                        Restore
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
           <DialogContent className="md:w-full w-[90vw] max-h-[80vh] rounded-xl overflow-scroll">
             <DialogHeader>
@@ -789,6 +887,7 @@ const UserManagement = () => {
             <DialogFooter>
               <Button
                 variant="outline"
+                type="button"
                 onClick={() => setshowResetDeleteDialog(false)}
               >
                 Cancel
@@ -797,8 +896,35 @@ const UserManagement = () => {
                 variant="destructive"
                 onClick={handleDeleteUser}
                 disabled={deleting}
+                type="button"
               >
                 {deleting ? "Deleting User..." : "Delete User"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={restore} onOpenChange={setRestore}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Restore User</DialogTitle>
+              <DialogDescription>
+                Do you want to Restore user {selectedUser?.name}?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setRestore(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRestore}
+                disabled={restoreMutation.isPending}
+                type="button"
+              >
+                {restoreMutation.isPending ? "Restoring..." : "Restore User"}
               </Button>
             </DialogFooter>
           </DialogContent>

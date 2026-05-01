@@ -792,7 +792,7 @@ const ContractorsList = () => {
                         className="w-full md:w-64"
                       />
 
-                      {user?.role !== "admin" && userCanAddUser && (
+                      {
                         <Button
                           onClick={() => {
                             setEditingContractor(null);
@@ -802,7 +802,7 @@ const ContractorsList = () => {
                           <Users className="h-4 w-4 mr-2" />
                           Add Contractor
                         </Button>
-                      )}
+                      }
                     </div>
                   </div>
                   {isLoadingContractorList ? (

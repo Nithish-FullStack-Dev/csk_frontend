@@ -411,7 +411,7 @@ const AgentSchedule = () => {
                                   setRescheduleOpen(true);
                                 }}
                               >
-                                Reschedule
+                                Edit Status / Reschedule
                               </Button>
                             )}
                             <Button

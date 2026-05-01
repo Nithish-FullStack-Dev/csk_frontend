@@ -88,7 +88,9 @@ const TeamManagementTable = ({
   const [selectedProject, setSelectedProject] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [restoreId, setRestoreId] = useState(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<"add" | "edit">("add");
   const [editId, setEditId] = useState<string | null>(null);
@@ -179,6 +181,31 @@ const TeamManagementTable = ({
       setDeleteId(null);
       reset();
       toast.success(data?.message ?? "Agent deleted Successfully !!!");
+    },
+    onError: async (error) => {
+      if (error instanceof AxiosError)
+        toast.error(error?.response?.data?.message ?? "Something went wrong");
+      else toast.error(error?.message ?? "Something went wrong");
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/agentlist/restore/${id}`,
+        {},
+        { withCredentials: true },
+      );
+
+      return data;
+    },
+    onSuccess: async (data) => {
+      queryClient.invalidateQueries({ queryKey: ["agent-list"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-dropdown"] });
+      setRestoreDialogOpen(false);
+      setRestoreId(null);
+      reset();
+      toast.success(data?.message ?? "Agent restored Successfully !!!");
     },
     onError: async (error) => {
       if (error instanceof AxiosError)
@@ -396,7 +423,13 @@ const TeamManagementTable = ({
   };
 
   const handleDeleteAgent = () => {
+    if (!deleteId) return;
     deleteMutation.mutate(deleteId);
+  };
+
+  const handleRestoreAgent = () => {
+    if (!restoreId) return;
+    restoreMutation.mutate(restoreId);
   };
 
   return (
@@ -488,14 +521,35 @@ const TeamManagementTable = ({
                           ? agent.agentId
                           : null;
 
+                      const isDeletedUser = agentUser?.isDeleted === true;
+                      const isAgentDeleted = agent.isDeleted === true;
+
                       return (
                         <TableRow
                           key={agent?._id ?? idx}
-                          className="hover:bg-muted/30 transition-colors"
+                          className={`transition-colors ${
+                            isDeletedUser || isAgentDeleted
+                              ? "opacity-60"
+                              : "hover:bg-muted/30"
+                          }`}
                         >
                           {/* Agent Name */}
                           <TableCell className="py-3">
-                            {agentUser?.name ?? "N/A"}
+                            <span
+                              className={
+                                isDeletedUser || isAgentDeleted
+                                  ? "line-through text-muted-foreground"
+                                  : ""
+                              }
+                            >
+                              {agentUser?.name ?? "N/A"}
+                            </span>
+
+                            {(isDeletedUser || isAgentDeleted) && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                Deleted
+                              </span>
+                            )}
                           </TableCell>
 
                           {/* Contact */}
@@ -552,27 +606,46 @@ const TeamManagementTable = ({
                                   View Details
                                 </DropdownMenuItem>
 
-                                {userCanEditUser && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditAgent(agent)}
-                                  >
-                                    <UserPlus className="h-4 w-4 mr-2" />
-                                    Edit Agent
-                                  </DropdownMenuItem>
-                                )}
+                                {!isDeletedUser &&
+                                  !isAgentDeleted &&
+                                  userCanEditUser && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditAgent(agent)}
+                                    >
+                                      <UserPlus className="h-4 w-4 mr-2" />
+                                      Edit Agent
+                                    </DropdownMenuItem>
+                                  )}
 
-                                {userCanDeleteUser && (
-                                  <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-700"
-                                    onClick={() => {
-                                      setDeleteId(agent?._id ?? null);
-                                      setDeleteDialogOpen(true);
-                                    }}
-                                  >
-                                    <AlertTriangle className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
+                                {!isDeletedUser &&
+                                  !isAgentDeleted &&
+                                  userCanDeleteUser && (
+                                    <DropdownMenuItem
+                                      className="text-red-600 focus:text-red-700"
+                                      onClick={() => {
+                                        setDeleteId(agent?._id ?? null);
+                                        setDeleteDialogOpen(true);
+                                      }}
+                                    >
+                                      <AlertTriangle className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  )}
+
+                                {isAgentDeleted &&
+                                  !isDeletedUser &&
+                                  userCanEditUser && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setRestoreId(agent?._id ?? null);
+                                        setRestoreDialogOpen(true);
+                                      }}
+                                      className="text-red-600 focus:text-red-700"
+                                    >
+                                      <AlertTriangle className="h-4 w-4 mr-2" />
+                                      Restore
+                                    </DropdownMenuItem>
+                                  )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -928,6 +1001,15 @@ const TeamManagementTable = ({
         onConfirm={handleDeleteAgent}
         title="Delete Agent"
         description="Are you sure you want to delete this agent? This action cannot be undone."
+      />
+
+      <DeleteConfirmDialog
+        open={restoreDialogOpen}
+        onOpenChange={setRestoreDialogOpen}
+        onConfirm={handleRestoreAgent}
+        title="Restore Agent"
+        description="Are you sure you want to Restore this agent?"
+        btnTxt="Restore"
       />
     </section>
   );

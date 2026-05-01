@@ -113,7 +113,7 @@ const AgentDashboard = () => {
               label: "My Schedule",
               description: "View appointments",
               icon: <Calendar className="mr-2 h-5 w-5 text-estate-teal" />,
-              link: "/schedule",
+              link: "/myschedule",
             },
             {
               label: "Site Visits",

@@ -20,6 +20,7 @@ import { useForm, Controller } from "react-hook-form";
 import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { Label } from "@/components/ui/label";
 
 export function RescheduleDialogAgent({
   open,
@@ -45,6 +46,7 @@ export function RescheduleDialogAgent({
         : "",
       location: schedule.location || "",
       notes: schedule.notes || "",
+      status: schedule.status || "scheduled",
     },
   });
 
@@ -88,37 +90,81 @@ export function RescheduleDialogAgent({
         </DialogHeader>
         <DialogDescription></DialogDescription>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input {...register("title")} placeholder="Title" required />
-
-          {/* Lead / Client Selection */}
-          <Controller
-            disabled
-            name="clientId"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client._id} value={client._id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-
-          <div className="grid grid-cols-2 gap-2">
-            <Input type="date" {...register("date")} />
-            <Input type="time" {...register("startTime")} />
-            <Input type="time" {...register("endTime")} />
+          <div className="flex flex-col gap-1">
+            <Label>Title</Label>
+            <Input {...register("title")} placeholder="Enter title" required />
           </div>
 
-          <Input {...register("location")} placeholder="Location" />
-          <Textarea {...register("notes")} placeholder="Notes" />
+          <div className="flex flex-col gap-1">
+            <Label>Client</Label>
+            {/* Lead / Client Selection */}
+            <Controller
+              disabled
+              name="clientId"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client._id} value={client._id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1">
+              <Label>Date</Label>
+              <Input type="date" {...register("date")} />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label>Start Time</Label>
+              <Input type="time" {...register("startTime")} />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label>End Time</Label>
+              <Input type="time" {...register("endTime")} />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Label>Location</Label>
+            <Input {...register("location")} placeholder="Enter location" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label>Notes</Label>
+            <Textarea {...register("notes")} placeholder="Enter notes" />
+          </div>
+          <div>
+            <Label>Status</Label>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="rescheduled">Rescheduled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
 
           <DialogFooter className="flex justify-end gap-2">
             <Button
