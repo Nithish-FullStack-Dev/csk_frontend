@@ -89,6 +89,9 @@ export default function OpenLandLeadsTable({
           };
 
           const isUserDeleted = lead?.addedBy?.isDeleted === true;
+          const isLandDeleted =
+            typeof lead?.openLand === "object" &&
+            lead?.openLand?.isDeleted === true;
 
           return (
             <TableRow
@@ -108,7 +111,7 @@ export default function OpenLandLeadsTable({
 
                 {isUserDeleted && (
                   <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    Agent Deleted
+                    Agent De-activated
                   </span>
                 )}
               </TableCell>
@@ -119,9 +122,45 @@ export default function OpenLandLeadsTable({
                 </Badge>
               </TableCell>
 
-              <TableCell>{(lead.openLand as OpenLand)?.projectName}</TableCell>
+              <TableCell
+                className={`transition-colors ${
+                  isLandDeleted ? "opacity-60" : "hover:bg-muted/30"
+                }`}
+              >
+                <span
+                  className={
+                    isLandDeleted ? "line-through text-muted-foreground" : ""
+                  }
+                >
+                  {(lead.openLand as OpenLand)?.projectName ?? "N/A"}
+                </span>
 
-              <TableCell>{(lead.openLand as OpenLand)?.landType}</TableCell>
+                {isLandDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Land De-activated
+                  </span>
+                )}
+              </TableCell>
+
+              <TableCell
+                className={`transition-colors ${
+                  isLandDeleted ? "opacity-60" : "hover:bg-muted/30"
+                }`}
+              >
+                <span
+                  className={
+                    isLandDeleted ? "line-through text-muted-foreground" : ""
+                  }
+                >
+                  {(lead.openLand as OpenLand)?.landType ?? "N/A"}
+                </span>
+
+                {isLandDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Land De-activated
+                  </span>
+                )}
+              </TableCell>
 
               <TableCell>
                 <Badge

@@ -23,6 +23,7 @@ import {
   Download,
   X,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { Building } from "@/types/building";
 import { BuildingDialog } from "@/components/properties/BuildingDialog";
@@ -79,6 +80,7 @@ const NewProperties = () => {
   const [currentOpenPlot, setCurrentOpenPlot] = useState<OpenPlot | undefined>(
     undefined,
   );
+  const [restoreDialog, setRestoreDialog] = useState(false);
 
   const [filteredOpenPlots, setFilteredOpenPlots] = useState<OpenPlot[]>([]);
   const [filteredOpenLand, setFilteredOpenLand] = useState<OpenLand[]>([]);
@@ -87,6 +89,7 @@ const NewProperties = () => {
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
     undefined,
   );
+  const [restoreId, setRestoreId] = useState(null);
 
   const {
     data: buildings,
@@ -257,6 +260,33 @@ const NewProperties = () => {
     setFilteredOpenLand(landResults);
   }, [searchTerm, typeFilter, statusFilter, openPlots, openLandData]);
 
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/openLand/restore/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Open land restored");
+
+      setRestoreId(null);
+      setRestoreDialog(false);
+
+      queryClient.invalidateQueries({ queryKey: ["openLand"] });
+    },
+    onError: (err) => {
+      console.error("restored OpenLand error:", err);
+      toast.error(
+        axios.isAxiosError(err)
+          ? err?.response?.data?.message || "Failed to delete open land"
+          : err.message,
+      );
+    },
+  });
+
   if (openPlotsError) {
     toast.error((openPlotsErr as any)?.message || "Failed to fetch open plots");
     console.error(openPlotsErr);
@@ -290,6 +320,11 @@ const NewProperties = () => {
     setSelectedBuilding(building);
     setDialogMode("edit");
     setBuildingDialogOpen(true);
+  };
+
+  const handleRestore = () => {
+    if (!restoreId) return;
+    restoreMutation.mutate(restoreId);
   };
 
   const handleDeleteConfirm = () => {
@@ -920,134 +955,150 @@ const NewProperties = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredOpenLand?.map((land) => (
-                      <Card
-                        key={land?._id}
-                        onClick={() =>
-                          navigate(`/properties/openland/${land?._id}`)
-                        }
-                        className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                      >
-                        <div className="relative">
-                          {land?.thumbnailUrl ? (
-                            <img
-                              src={getImageUrl(land?.thumbnailUrl)}
-                              alt={land?.projectName}
-                              className="h-48 w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-48 bg-muted flex items-center justify-center">
-                              <Building2 className="h-10 w-10 opacity-20" />
-                            </div>
-                          )}
-                        </div>
-
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-1">
-                            <h3 className="font-semibold text-lg">
-                              {land?.projectName} — {land?.surveyNumber}
-                            </h3>
-
-                            <div
-                              className="flex gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {canEdit && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => handleEditOpenLand(land, e)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {userCanDeleteUser && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    openDeleteDialog("land", land?._id!, e)
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+                    {filteredOpenLand?.map((land) => {
+                      const isUserDeleted = land?.isDeleted === true;
+                      return (
+                        <Card
+                          className={`overflow-hidden hover:shadow-lg transition cursor-pointer ${
+                            isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                          }`}
+                          key={land?._id}
+                          onClick={() =>
+                            navigate(`/properties/openland/${land?._id}`)
+                          }
+                        >
+                          <div className="relative">
+                            {land?.thumbnailUrl ? (
+                              <img
+                                src={getImageUrl(land?.thumbnailUrl)}
+                                alt={land?.projectName}
+                                className="h-48 w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-48 bg-muted flex items-center justify-center">
+                                <Building2 className="h-10 w-10 opacity-20" />
+                              </div>
+                            )}
                           </div>
 
-                          <div className="flex items-center text-sm text-muted-foreground mb-3">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {land?.location || "Location not specified"}
-                          </div>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="font-semibold text-lg">
+                                {land?.projectName} — {land?.surveyNumber}
+                              </h3>
 
-                          <div className="space-y-2 mb-4 text-sm">
-                            <div className="flex justify-between">
-                              <span>Land Type</span>
-                              <span>{land?.landType}</span>
+                              <div
+                                className="flex gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {!isUserDeleted && canEdit && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => handleEditOpenLand(land, e)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {!isUserDeleted && userCanDeleteUser && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      openDeleteDialog("land", land?._id!, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {isUserDeleted && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setRestoreId(land._id);
+                                      setRestoreDialog(true);
+                                    }}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Facing</span>
-                              <span>{land?.facing}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Land Area</span>
-                              <span>
-                                {land?.landArea}/{land?.areaUnit}
-                              </span>
-                            </div>
-                          </div>
 
-                          <div className="border-t pt-3 text-sm space-y-2">
-                            <div className="flex justify-between">
-                              <span>Availability</span>
-                              <span>
-                                {land?.availableDate
-                                  ? new Date(
-                                      land?.availableDate,
-                                    ).toLocaleDateString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })
-                                  : "—"}
-                              </span>
+                            <div className="flex items-center text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {land?.location || "Location not specified"}
                             </div>
-                          </div>
 
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              size="sm"
-                              className="flex-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/properties/openland/${land._id}`);
-                              }}
-                            >
-                              View Land Details
-                            </Button>
-                            {land?.brochureUrl && (
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={(e) =>
-                                    handleDownload(
-                                      e,
-                                      land?.brochureUrl!,
-                                      land?.projectName,
-                                      land?._id,
-                                    )
-                                  }
-                                  disabled={downloadingId === land?._id}
-                                  title="Download Brochure"
-                                >
-                                  {downloadingId === land._id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                {/* <Button
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div className="flex justify-between">
+                                <span>Land Type</span>
+                                <span>{land?.landType}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Facing</span>
+                                <span>{land?.facing}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Land Area</span>
+                                <span>
+                                  {land?.landArea}/{land?.areaUnit}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="border-t pt-3 text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span>Availability</span>
+                                <span>
+                                  {land?.availableDate
+                                    ? new Date(
+                                        land?.availableDate,
+                                      ).toLocaleDateString("en-IN", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      })
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/properties/openland/${land._id}`);
+                                }}
+                              >
+                                View Land Details
+                              </Button>
+                              {land?.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        land?.brochureUrl!,
+                                        land?.projectName,
+                                        land?._id,
+                                      )
+                                    }
+                                    disabled={downloadingId === land?._id}
+                                    title="Download Brochure"
+                                  >
+                                    {downloadingId === land._id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Download className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  {/* <Button
                                     variant="outline"
                                     size="icon"
                                     onClick={(e) =>
@@ -1061,12 +1112,13 @@ const NewProperties = () => {
                                   >
                                     <Share2 className="h-4 w-4" />
                                   </Button> */}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -1091,6 +1143,15 @@ const NewProperties = () => {
         building={selectedBuilding || undefined}
         mode={dialogMode}
         onSuccessfulSave={handleSuccessfulSave}
+      />
+
+      <DeleteConfirmDialog
+        open={restoreDialog}
+        onOpenChange={setRestoreDialog}
+        onConfirm={handleRestore}
+        title={"Restore Open Land"}
+        description={"Are you sure you want to restore this open land?"}
+        btnTxt="Restore"
       />
 
       <DeleteConfirmDialog
