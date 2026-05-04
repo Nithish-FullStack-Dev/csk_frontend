@@ -788,93 +788,126 @@ const SiteInspections = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    (filteredInspections || [])?.map((inspection) => (
-                      <TableRow key={inspection._id}>
-                        <TableCell className="font-medium">
-                          {inspection.title}
-                          <div className="text-xs text-muted-foreground">
-                            {inspection.location}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {inspection?.project?.projectName ||
-                            "Property not Avalible"}{" "}
-                          / {inspection?.floorUnit?.floorNumber || "N/A"}/{" "}
-                          {inspection?.unit?.plotNo || "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={typeColors[inspection.type] || ""}
-                          >
-                            {inspection.type === "quality_issue"
-                              ? "Quality Issue"
-                              : inspection.type.charAt(0).toUpperCase() +
-                                inspection.type.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(inspection.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={statusColors[inspection.status] || ""}
-                          >
-                            {inspection.status.charAt(0).toUpperCase() +
-                              inspection.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Camera className="h-4 w-4 mr-1 text-muted-foreground" />
-                            {inspection.photos?.length || "0"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              {userCanViewUser && (
-                                <DropdownMenuItem
-                                  onClick={() => handleViewDetails(inspection)}
-                                >
-                                  View Details
-                                </DropdownMenuItem>
-                              )}
-                              {user?.role !== "admin" && userCanAddUser && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedInspectionForPhotos(inspection);
-                                    setOpenPhotoDialog(true);
-                                  }}
-                                >
-                                  Add Photos
-                                </DropdownMenuItem>
-                              )}
-                              {user?.role !== "admin" && userCanEditUser && (
-                                <DropdownMenuItem
-                                  onClick={() => handleUpdateStatus(inspection)}
-                                >
-                                  Update Status
-                                </DropdownMenuItem>
-                              )}
-                              {/* <DropdownMenuItem
+                    (filteredInspections || [])?.map((inspection) => {
+                      const isUserDeleted =
+                        inspection?.site_incharge?.isDeleted === true;
+                      return (
+                        <TableRow
+                          className={`transition-colors ${
+                            isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                          }`}
+                          key={inspection._id}
+                        >
+                          <TableCell className="font-medium">
+                            <span
+                              className={
+                                isUserDeleted
+                                  ? "line-through text-muted-foreground"
+                                  : ""
+                              }
+                            >
+                              {inspection.title || "N/A"}
+                            </span>
+
+                            {isUserDeleted && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                User Deleted
+                              </span>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              {inspection.location}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {inspection?.project?.projectName ||
+                              "Property not Avalible"}{" "}
+                            / {inspection?.floorUnit?.floorNumber || "N/A"}/{" "}
+                            {inspection?.unit?.plotNo || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={typeColors[inspection.type] || ""}
+                            >
+                              {inspection.type === "quality_issue"
+                                ? "Quality Issue"
+                                : inspection.type.charAt(0).toUpperCase() +
+                                  inspection.type.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(inspection.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusColors[inspection.status] || ""}
+                            >
+                              {inspection.status.charAt(0).toUpperCase() +
+                                inspection.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Camera className="h-4 w-4 mr-1 text-muted-foreground" />
+                              {inspection.photos?.length || "0"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                {userCanViewUser && (
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleViewDetails(inspection)
+                                    }
+                                  >
+                                    View Details
+                                  </DropdownMenuItem>
+                                )}
+                                {!isUserDeleted &&
+                                  user?.role !== "admin" &&
+                                  userCanAddUser && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedInspectionForPhotos(
+                                          inspection,
+                                        );
+                                        setOpenPhotoDialog(true);
+                                      }}
+                                    >
+                                      Add Photos
+                                    </DropdownMenuItem>
+                                  )}
+                                {!isUserDeleted &&
+                                  user?.role !== "admin" &&
+                                  userCanEditUser && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleUpdateStatus(inspection)
+                                      }
+                                    >
+                                      Update Status
+                                    </DropdownMenuItem>
+                                  )}
+                                {/* <DropdownMenuItem
                                 onClick={() => handleExportReport(inspection)}
                               >
                                 Export Report
                               </DropdownMenuItem> */}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>

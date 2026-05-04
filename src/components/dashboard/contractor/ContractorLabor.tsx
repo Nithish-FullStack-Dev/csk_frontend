@@ -336,55 +336,79 @@ const ContractorLabor = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTeams.map((team) => (
-                  <TableRow key={team._id}>
-                    <TableCell className="font-medium">{team.name}</TableCell>
-                    <TableCell>{team.supervisor}</TableCell>
-                    <TableCell>{team.type}</TableCell>
-                    <TableCell>{team.members}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                        {team.wage}
-                      </div>
-                    </TableCell>
-                    <TableCell
-                      className="max-w-[150px] truncate"
-                      title={getProjectDisplay(team)}
+                filteredTeams.map((team) => {
+                  const isUserDeleted = team?.contractor?.isDeleted === true;
+                  return (
+                    <TableRow
+                      className={`transition-colors ${
+                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                      }`}
+                      key={team._id}
                     >
-                      {getProjectDisplay(team)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          team.status === "Active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
+                      <TableCell className="font-medium">
+                        <span
+                          className={
+                            isUserDeleted
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }
+                        >
+                          {team?.name || "N/A"}
+                        </span>
+
+                        {isUserDeleted && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            User Deleted
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>{team.supervisor}</TableCell>
+                      <TableCell>{team.type}</TableCell>
+                      <TableCell>{team.members}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                          {team.wage}
+                        </div>
+                      </TableCell>
+                      <TableCell
+                        className="max-w-[150px] truncate"
+                        title={getProjectDisplay(team)}
                       >
-                        {team.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => viewTeam(team)}
+                        {getProjectDisplay(team)}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            team.status === "Active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
                         >
-                          Details
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => viewAttendance(team)}
-                        >
-                          Attendance
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {team.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => viewTeam(team)}
+                          >
+                            Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => viewAttendance(team)}
+                          >
+                            Attendance
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -945,70 +969,74 @@ const ContractorLabor = () => {
               </div>
 
               {/* Record Attendance Form */}
-              {user?.role !== "admin" && userCanAddUser && (
-                <div className="space-y-4 pt-2 border-t">
-                  <h3 className="text-base font-medium">
-                    Record Attendance for Today
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="attendance-date">Date</Label>
-                      <Input
-                        id="attendance-date"
-                        type="date"
-                        value={attendanceDate}
-                        max={new Date().toISOString().split("T")[0]}
-                        onChange={(e) => setAttendanceDate(e.target.value)}
-                      />
+              {!selectedTeam?.contractor?.isDeleted === true &&
+                user?.role !== "admin" &&
+                userCanAddUser && (
+                  <div className="space-y-4 pt-2 border-t">
+                    <h3 className="text-base font-medium">
+                      Record Attendance for Today
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="attendance-date">Date</Label>
+                        <Input
+                          id="attendance-date"
+                          type="date"
+                          value={attendanceDate}
+                          max={new Date().toISOString().split("T")[0]}
+                          onChange={(e) => setAttendanceDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="attendance-present">Present</Label>
+                        <Input
+                          id="attendance-present"
+                          type="number"
+                          value={present}
+                          min="0"
+                          max={selectedTeam.members}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+
+                            if (!selectedTeam) return;
+
+                            const clamped = Math.min(
+                              Math.max(value, 0),
+                              selectedTeam.members,
+                            );
+
+                            setPresent(clamped);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="attendance-absent">Absent</Label>
+                        <Input
+                          id="attendance-absent"
+                          type="number"
+                          value={absent}
+                          readOnly
+                          className="bg-gray-50"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="attendance-present">Present</Label>
-                      <Input
-                        id="attendance-present"
-                        type="number"
-                        value={present}
-                        min="0"
-                        max={selectedTeam.members}
-                        onChange={(e) => {
-                          const value = Number(e.target.value);
 
-                          if (!selectedTeam) return;
-
-                          const clamped = Math.min(
-                            Math.max(value, 0),
-                            selectedTeam.members,
-                          );
-
-                          setPresent(clamped);
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="attendance-absent">Absent</Label>
-                      <Input
-                        id="attendance-absent"
-                        type="number"
-                        value={absent}
-                        readOnly
-                        className="bg-gray-50"
-                      />
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <Button
+                        onClick={handleSaveAttendance}
+                        disabled={
+                          createdAttendance.isPending || attendanceExists
+                        }
+                      >
+                        {attendanceExists
+                          ? "Attendance Already Recorded"
+                          : createdAttendance.isPending
+                            ? "Saving..."
+                            : "Save Attendance"}
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex justify-end space-x-2 mt-2">
-                    <Button
-                      onClick={handleSaveAttendance}
-                      disabled={createdAttendance.isPending || attendanceExists}
-                    >
-                      {attendanceExists
-                        ? "Attendance Already Recorded"
-                        : createdAttendance.isPending
-                          ? "Saving..."
-                          : "Save Attendance"}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                )}
             </div>
           </DialogContent>
         </Dialog>

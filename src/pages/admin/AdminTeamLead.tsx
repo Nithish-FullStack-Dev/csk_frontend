@@ -40,6 +40,7 @@ interface User {
   email: string;
   role: string;
   avatar: string;
+  isDeleted?: boolean;
 }
 
 const AdminTeamLead = () => {
@@ -252,8 +253,15 @@ const AdminTeamLead = () => {
 
             const level = getPerformanceLevel(performance);
 
+            const isUserDeleted = member?.teamLeadId?.isDeleted === true;
+
             return (
-              <Card key={member._id}>
+              <Card
+                className={`transition-colors ${
+                  isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                }`}
+                key={member._id}
+              >
                 <CardHeader>
                   <div className="flex justify-between">
                     <div className="flex gap-3 items-center">
@@ -265,7 +273,23 @@ const AdminTeamLead = () => {
                       </Avatar>
 
                       <div>
-                        <CardTitle className="text-lg">{name}</CardTitle>
+                        <CardTitle className="text-lg">
+                          <span
+                            className={
+                              isUserDeleted
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }
+                          >
+                            {name || "N/A"}
+                          </span>
+
+                          {isUserDeleted && (
+                            <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                             User Deleted
+                            </span>
+                          )}
+                        </CardTitle>
                         <p className="text-sm text-muted-foreground">{role}</p>
                         <Badge className={getStatusColor(member.status)}>
                           {member.status}

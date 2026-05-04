@@ -926,9 +926,20 @@ const LeadManagement = () => {
                   <div className="space-y-1 text-sm">
                     <p>
                       Added By:{" "}
-                      <span className="font-medium">
-                        {selectedLead?.addedBy?.name || "N/A"}
+                      <span
+                        className={`font-medium ${
+                          selectedLead?.addedBy?.isDeleted === true
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }`}
+                      >
+                        {selectedLead?.addedBy?.name || "Deleted User"}
                       </span>
+                      {selectedLead?.addedBy?.isDeleted === true && (
+                        <span className="ml-2 text-xs text-red-600">
+                          (Deleted)
+                        </span>
+                      )}
                     </p>
                     <p>
                       Role:{" "}

@@ -50,6 +50,7 @@ interface SiteVisitRequest {
     // Optional as it might not be present for approved/rejected mocks
     name: string;
     avatar: string;
+    role: string;
     _id: string; // Assuming an ID for the user
   };
   priority: "high" | "medium" | "low";
@@ -64,33 +65,15 @@ interface SiteVisitRequest {
   approvalNotes?: string;
 }
 
-const fetchAllAgentSiteVisit = async (): Promise<SiteVisitRequest[]> => {
-  const { data } = await axios.get(
-    `${import.meta.env.VITE_URL}/api/siteVisit/getSiteVisitOfAgents`,
-    { withCredentials: true },
-  );
-  return data;
-};
-
 const Approvals = () => {
   const [selectedRequest, setSelectedRequest] =
     useState<SiteVisitRequest | null>(null);
   const [approvalNotes, setApprovalNotes] = useState("");
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [viewRequest, setViewRequest] = useState<SiteVisitRequest | null>(null);
 
   const { user } = useAuth();
-
-  const {
-    data: allSiteVisits = [],
-    isLoading: approvalLoading,
-    isError: approvalError,
-    error: approvalErr,
-  } = useQuery<SiteVisitRequest[]>({
-    queryKey: ["siteVisitsOfAgents"],
-    queryFn: fetchAllAgentSiteVisit,
-    staleTime: 0,
-  });
 
   const updateSiteVisitStatus = useMutation({
     mutationFn: async ({
@@ -186,44 +169,7 @@ const Approvals = () => {
     userCanEditUser,
   } = useRBAC({ roleSubmodule: "Approvals" });
 
-  if (approvalLoading || isRolePermissionsLoading) return <Loader />;
-  if (approvalError) {
-    toast.error("Failed to fetch approval site visits.");
-    console.error("Fetch site visit error:", approvalErr);
-    return (
-      <MainLayout>
-        <div className="text-center text-red-500">
-          Error loading approvals. Please try again later.
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "site_visit":
-        return <MapPin className="h-4 w-4" />;
-      case "expense":
-        return <DollarSign className="h-4 w-4" />;
-      case "leave":
-        return <Calendar className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "site_visit":
-        return "bg-blue-100 text-blue-800";
-      case "expense":
-        return "bg-green-100 text-green-800";
-      case "leave":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  if (isRolePermissionsLoading) return <Loader />;
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -358,217 +304,249 @@ const Approvals = () => {
                 </CardContent>
               </Card>
             ) : (
-              pendingRequests.map((request) => (
-                <Card
-                  key={request._id}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between md:flex-row flex-col gap-5">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge
-                              className={getPriorityColor(request.priority)}
-                            >
-                              {request.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Requested by:{" "}
-                              {request.bookedBy?.name || "Unknown"}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {new Date(request.createdAt).toLocaleString()}
-                            </span>
+              pendingRequests.map((request) => {
+                const isUserDeleted = request?.bookedBy?.isDeleted === true;
+                return (
+                  <Card
+                    key={request._id}
+                    className={`hover:shadow-md transition-shadow ${
+                      isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between md:flex-row flex-col gap-5">
+                        <div className="flex items-start space-x-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={request.bookedBy?.avatar || ""} />
+                            <AvatarFallback>
+                              {request.bookedBy?.name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold">
+                                <span
+                                  className={
+                                    isUserDeleted
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }
+                                >
+                                  Site Visit Request
+                                </span>
+
+                                {isUserDeleted && (
+                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                    Deleted
+                                  </span>
+                                )}
+                              </h3>
+                              <Badge
+                                className={getPriorityColor(request.priority)}
+                              >
+                                {request.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {request.description}
+                            </p>
+                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                              <span>
+                                Requested by:{" "}
+                                {request.bookedBy?.name || "Unknown"}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {new Date(request.createdAt).toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex space-x-2">
-                        <Dialog
-                          open={
-                            isDialogOpen && selectedRequest?._id === request._id
-                          }
-                          onOpenChange={setIsDialogOpen}
-                        >
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedRequest(request);
-                                setIsDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="mr-1 h-3 w-3" />
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          {selectedRequest && ( // Only render dialog content if a request is selected
-                            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
-                              <DialogHeader>
-                                <DialogTitle>Site Visit Request</DialogTitle>
-                                <DialogDescription>
-                                  Review request details and take action
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Requested By</Label>
-                                    <div className="flex items-center space-x-2 mt-1">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage
-                                          src={
-                                            selectedRequest.bookedBy?.avatar ||
-                                            ""
-                                          }
-                                        />
-                                        <AvatarFallback>
-                                          {selectedRequest.bookedBy?.name?.charAt(
-                                            0,
-                                          ) || "U"}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-sm">
-                                        {selectedRequest.bookedBy?.name}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Label>Request Time</Label>
-                                    <p className="text-sm mt-1">
-                                      {new Date(
-                                        selectedRequest.createdAt,
-                                      ).toLocaleString()}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <Label>Details</Label>
-                                  <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                      <span>Date:</span>
-                                      <span>{selectedRequest.date}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Time:</span>
-                                      <span>{selectedRequest.time}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span>Priority:</span>
-                                      <span>{selectedRequest.priority}</span>
-                                    </div>
-                                    {selectedRequest.notes && (
-                                      <div className="flex justify-between">
-                                        <span>Notes:</span>
-                                        <span>{selectedRequest.notes}</span>
+                        <div className="flex space-x-2">
+                          <Dialog
+                            open={
+                              isDialogOpen &&
+                              selectedRequest?._id === request._id
+                            }
+                            onOpenChange={setIsDialogOpen}
+                          >
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setIsDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="mr-1 h-3 w-3" />
+                                View
+                              </Button>
+                            </DialogTrigger>
+                            {selectedRequest && (
+                              <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
+                                <DialogHeader>
+                                  <DialogTitle>Site Visit Request</DialogTitle>
+                                  <DialogDescription>
+                                    Review request details and take action
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Requested By</Label>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarImage
+                                            src={
+                                              selectedRequest.bookedBy
+                                                ?.avatar || ""
+                                            }
+                                          />
+                                          <AvatarFallback>
+                                            {selectedRequest.bookedBy?.name?.charAt(
+                                              0,
+                                            ) || "U"}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-sm">
+                                          {selectedRequest.bookedBy?.name}
+                                        </span>
                                       </div>
-                                    )}
+                                    </div>
+                                    <div>
+                                      <Label>Request Time</Label>
+                                      <p className="text-sm mt-1">
+                                        {new Date(
+                                          selectedRequest.createdAt,
+                                        ).toLocaleString()}
+                                      </p>
+                                    </div>
                                   </div>
-                                </div>
 
-                                {user?.role !== "admin" && (
                                   <div className="space-y-2">
-                                    <Label htmlFor="approval-notes">
-                                      Approval Notes (Optional)
-                                    </Label>
-                                    <Textarea
-                                      id="approval-notes"
-                                      placeholder="Add any notes or conditions..."
-                                      onChange={(e) =>
-                                        setApprovalNotes(e.target.value)
-                                      }
-                                      value={approvalNotes}
-                                    />
+                                    <Label>Details</Label>
+                                    <div className="p-3 bg-muted rounded-lg space-y-2 text-sm">
+                                      <div className="flex justify-between">
+                                        <span>Date:</span>
+                                        <span>{selectedRequest.date}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Time:</span>
+                                        <span>{selectedRequest.time}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span>Priority:</span>
+                                        <span>{selectedRequest.priority}</span>
+                                      </div>
+                                      {selectedRequest.notes && (
+                                        <div className="flex justify-between">
+                                          <span>Notes:</span>
+                                          <span>{selectedRequest.notes}</span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
 
-                                <div className="flex space-x-2">
-                                  {userCanDeleteUser &&
-                                    user?.role !== "admin" && (
-                                      <Button
-                                        variant="outline"
-                                        className="flex-1 text-red-600 border-red-200"
-                                        onClick={() =>
-                                          handleAction(request!._id, "rejected")
+                                  {user?.role !== "admin" && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor="approval-notes">
+                                        Approval Notes (Optional)
+                                      </Label>
+                                      <Textarea
+                                        id="approval-notes"
+                                        placeholder="Add any notes or conditions..."
+                                        onChange={(e) =>
+                                          setApprovalNotes(e.target.value)
                                         }
-                                        disabled={
-                                          updateSiteVisitStatus.isPending
-                                        }
-                                      >
-                                        <X className="mr-2 h-4 w-4" />
-                                        Reject
-                                      </Button>
-                                    )}
-                                  {userCanAddUser && user?.role !== "admin" && (
-                                    <Button
-                                      className="flex-1 bg-green-600 hover:bg-green-700"
-                                      onClick={() =>
-                                        handleAction(
-                                          selectedRequest._id,
-                                          "approved",
-                                        )
-                                      }
-                                      disabled={updateSiteVisitStatus.isPending}
-                                    >
-                                      <Check className="mr-2 h-4 w-4" />
-                                      Approve
-                                    </Button>
+                                        value={approvalNotes}
+                                      />
+                                    </div>
                                   )}
+
+                                  <div className="flex space-x-2">
+                                    {!isUserDeleted &&
+                                      userCanDeleteUser &&
+                                      user?.role !== "admin" && (
+                                        <Button
+                                          variant="outline"
+                                          className="flex-1 text-red-600 border-red-200"
+                                          onClick={() =>
+                                            handleAction(
+                                              request!._id,
+                                              "rejected",
+                                            )
+                                          }
+                                          disabled={
+                                            updateSiteVisitStatus.isPending
+                                          }
+                                        >
+                                          <X className="mr-2 h-4 w-4" />
+                                          Reject
+                                        </Button>
+                                      )}
+                                    {!isUserDeleted &&
+                                      userCanAddUser &&
+                                      user?.role !== "admin" && (
+                                        <Button
+                                          className="flex-1 bg-green-600 hover:bg-green-700"
+                                          onClick={() =>
+                                            handleAction(
+                                              selectedRequest._id,
+                                              "approved",
+                                            )
+                                          }
+                                          disabled={
+                                            updateSiteVisitStatus.isPending
+                                          }
+                                        >
+                                          <Check className="mr-2 h-4 w-4" />
+                                          Approve
+                                        </Button>
+                                      )}
+                                  </div>
                                 </div>
-                              </div>
-                            </DialogContent>
-                          )}
-                        </Dialog>
-                        {userCanDeleteUser && user?.role !== "admin" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600"
-                            onClick={() =>
-                              handleAction(request._id, "rejected")
-                            }
-                            disabled={updateSiteVisitStatus.isPending}
-                          >
-                            <X className="mr-1 h-3 w-3" />
-                            Reject
-                          </Button>
-                        )}
-                        {userCanAddUser && user?.role !== "admin" && (
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() =>
-                              handleAction(request._id, "approved")
-                            }
-                            disabled={updateSiteVisitStatus.isPending}
-                          >
-                            <Check className="mr-1 h-3 w-3" />
-                            Approve
-                          </Button>
-                        )}
+                              </DialogContent>
+                            )}
+                          </Dialog>
+                          {!isUserDeleted &&
+                            userCanDeleteUser &&
+                            user?.role !== "admin" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600"
+                                onClick={() =>
+                                  handleAction(request._id, "rejected")
+                                }
+                                disabled={updateSiteVisitStatus.isPending}
+                              >
+                                <X className="mr-1 h-3 w-3" />
+                                Reject
+                              </Button>
+                            )}
+                          {!isUserDeleted &&
+                            userCanAddUser &&
+                            user?.role !== "admin" && (
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() =>
+                                  handleAction(request._id, "approved")
+                                }
+                                disabled={updateSiteVisitStatus.isPending}
+                              >
+                                <Check className="mr-1 h-3 w-3" />
+                                Approve
+                              </Button>
+                            )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
 
@@ -583,55 +561,95 @@ const Approvals = () => {
                 </CardContent>
               </Card>
             ) : (
-              approvedRequests.map((request) => (
-                <Card key={request._id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge className="bg-green-100 text-green-800">
-                              <Check className="h-3 w-3 mr-1" />
-                              Approved
-                            </Badge>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {approvedRequests.map((request) => {
+                  const isUserDeleted = request?.bookedBy?.isDeleted === true;
+                  return (
+                    <Card
+                      className={`hover:shadow-md transition-shadow ${
+                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                      }`}
+                      key={request._id}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage
+                                src={request.bookedBy?.avatar || ""}
+                              />
+                              <AvatarFallback>
+                                {request.bookedBy?.name?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h3 className="font-semibold">
+                                  <span
+                                    className={
+                                      isUserDeleted
+                                        ? "line-through text-muted-foreground"
+                                        : ""
+                                    }
+                                  >
+                                    Site Visit Request
+                                  </span>
+
+                                  {isUserDeleted && (
+                                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                      Deleted
+                                    </span>
+                                  )}
+                                </h3>
+                                <Badge className="bg-green-100 text-green-800">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Approved
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {request.notes}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                                <span>
+                                  Approved by:{" "}
+                                  {/* You might need to store who approved it in your backend data */}
+                                  You
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  {/* Display approval date if available, otherwise creation date */}
+                                  {request.updatedAt
+                                    ? new Date(
+                                        request.updatedAt,
+                                      ).toLocaleString()
+                                    : new Date(
+                                        request.createdAt,
+                                      ).toLocaleString()}
+                                </span>
+                              </div>
+                              {request.approvalNotes && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Notes: {request.approvalNotes}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.notes}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Approved by:{" "}
-                              {/* You might need to store who approved it in your backend data */}
-                              You
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {/* Display approval date if available, otherwise creation date */}
-                              {request.updatedAt
-                                ? new Date(request.updatedAt).toLocaleString()
-                                : new Date(request.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {request.approvalNotes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Notes: {request.approvalNotes}
-                            </p>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setViewRequest(request);
+                            }}
+                          >
+                            <Eye className="mr-1 h-3 w-3" />
+                            View
+                          </Button>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
 
@@ -646,58 +664,143 @@ const Approvals = () => {
                 </CardContent>
               </Card>
             ) : (
-              rejectedRequests.map((request) => (
-                <Card key={request._id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.bookedBy?.avatar || ""} />
-                          <AvatarFallback>
-                            {request.bookedBy?.name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold">
-                              Site Visit Request
-                            </h3>
-                            <Badge className="bg-red-100 text-red-800">
-                              <X className="h-3 w-3 mr-1" />
-                              Rejected
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {request.description}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>
-                              Rejected by:{" "}
-                              {/* You might need to store who rejected it in your backend data */}
-                              You
-                            </span>
-                            <span>•</span>
-                            <span>
-                              {/* Display rejection date if available, otherwise creation date */}
-                              {request.updatedAt
-                                ? new Date(request.updatedAt).toLocaleString()
-                                : new Date(request.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {request.approvalNotes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Notes: {request.approvalNotes}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {rejectedRequests.map((request) => (
+                  <Card key={request._id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={request.bookedBy?.avatar || ""} />
+                            <AvatarFallback>
+                              {request.bookedBy?.name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="font-semibold">
+                                Site Visit Request
+                              </h3>
+                              <Badge className="bg-red-100 text-red-800">
+                                <X className="h-3 w-3 mr-1" />
+                                Rejected
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {request.description}
                             </p>
-                          )}
+                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                              <span>
+                                Rejected by:{" "}
+                                {/* You might need to store who rejected it in your backend data */}
+                                You
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {/* Display rejection date if available, otherwise creation date */}
+                                {request.updatedAt
+                                  ? new Date(request.updatedAt).toLocaleString()
+                                  : new Date(
+                                      request.createdAt,
+                                    ).toLocaleString()}
+                              </span>
+                            </div>
+                            {request.approvalNotes && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Notes: {request.approvalNotes}
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setViewRequest(request);
+                          }}
+                        >
+                          <Eye className="mr-1 h-3 w-3" />
+                          View
+                        </Button>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
+        <Dialog open={!!viewRequest} onOpenChange={() => setViewRequest(null)}>
+          {viewRequest && (
+            <DialogContent className="md:w-[600px] w-[90vw] max-h-[80vh] overflow-auto rounded-xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {viewRequest.approvalStatus === "approved"
+                    ? "Approved Request"
+                    : "Rejected Request"}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Avatar>
+                    <AvatarImage src={viewRequest.bookedBy?.avatar || ""} />
+                    <AvatarFallback>
+                      {viewRequest.bookedBy?.name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{viewRequest.bookedBy?.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {viewRequest.bookedBy?.role}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label>Date</Label>
+                    <p>{viewRequest.date}</p>
+                  </div>
+                  <div>
+                    <Label>Time</Label>
+                    <p>{viewRequest.time}</p>
+                  </div>
+                  <div>
+                    <Label>Priority</Label>
+                    <p>{viewRequest.priority}</p>
+                  </div>
+                  <div>
+                    <Label>Status</Label>
+                    <p
+                      className={
+                        viewRequest.approvalStatus === "approved"
+                          ? "text-green-600 font-medium"
+                          : "text-red-600 font-medium"
+                      }
+                    >
+                      {viewRequest.approvalStatus}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Description</Label>
+                  <p className="text-sm">{viewRequest.description}</p>
+                </div>
+
+                {viewRequest.approvalNotes && (
+                  <div>
+                    <Label>Notes</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {viewRequest.approvalNotes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          )}
+        </Dialog>
       </div>
     </MainLayout>
   );

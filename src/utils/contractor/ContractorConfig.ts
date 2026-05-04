@@ -258,10 +258,11 @@ export interface LaborTeam {
   remarks?: string;
   attendancePercentage: number;
   attendanceRecords: [AttendenceRecord];
+  contractor?: User | null;
 }
 
 export const fetchTeams = async () => {
-  const response = await axios.get(`${import.meta.env.VITE_URL}/api/labor  `, {
+  const response = await axios.get(`${import.meta.env.VITE_URL}/api/labor`, {
     withCredentials: true,
   });
   return response.data;

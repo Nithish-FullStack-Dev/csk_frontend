@@ -214,6 +214,8 @@ const CarAllocation = () => {
     (member) => !assignedUserIds.has(member.agentId?._id),
   );
 
+  console.log(unassignedTeamMembers);
+
   // Update car by id
   const queryClient = useQueryClient();
 
@@ -1032,7 +1034,11 @@ const CarAllocation = () => {
                                     {unassignedTeamMembers &&
                                     unassignedTeamMembers.length > 0 ? (
                                       unassignedTeamMembers
-                                        ?.filter((member) => member?.agentId)
+                                        ?.filter(
+                                          (member) =>
+                                            member?.agentId &&
+                                            !member?.agentId?.isDeleted,
+                                        )
                                         .map((member) => (
                                           <SelectItem
                                             key={member._id}

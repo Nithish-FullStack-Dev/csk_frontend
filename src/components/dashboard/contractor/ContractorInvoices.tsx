@@ -655,10 +655,30 @@ const ContractorInvoices = () => {
                 </TableRow>
               ) : (
                 filteredInvoices?.map((invoice, idx) => {
+                  const isUserDeleted = invoice?.user?.isDeleted === true;
                   return (
-                    <TableRow key={invoice?._id || idx}>
+                    <TableRow
+                      className={`transition-colors ${
+                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                      }`}
+                      key={invoice?._id || idx}
+                    >
                       <TableCell className="font-medium">
-                        {invoice.invoiceNumber}
+                        <span
+                          className={
+                            isUserDeleted
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }
+                        >
+                          {invoice?.invoiceNumber ?? "N/A"}
+                        </span>
+
+                        {isUserDeleted && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            Deleted
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {invoice?.project?.projectName +
@@ -723,7 +743,8 @@ const ContractorInvoices = () => {
                             View
                           </Button>
 
-                          {invoice.status !== "paid" &&
+                          {!isUserDeleted &&
+                            invoice.status !== "paid" &&
                             user?.role !== "contractor" && (
                               <Button
                                 variant="outline"

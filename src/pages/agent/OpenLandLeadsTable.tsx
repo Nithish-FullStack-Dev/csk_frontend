@@ -87,9 +87,31 @@ export default function OpenLandLeadsTable({
             Closed: "bg-green-100 text-green-800",
             Rejected: "bg-red-100 text-red-800",
           };
+
+          const isUserDeleted = lead?.addedBy?.isDeleted === true;
+
           return (
-            <TableRow key={lead._id}>
-              <TableCell className="font-medium">{lead.name}</TableCell>
+            <TableRow
+              className={`transition-colors ${
+                isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+              }`}
+              key={lead._id}
+            >
+              <TableCell className="font-medium">
+                <span
+                  className={
+                    isUserDeleted ? "line-through text-muted-foreground" : ""
+                  }
+                >
+                  {lead.name ?? "N/A"}
+                </span>
+
+                {isUserDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Agent Deleted
+                  </span>
+                )}
+              </TableCell>
 
               <TableCell>
                 <Badge className={statusColors[lead.status] || ""}>
@@ -165,21 +187,23 @@ export default function OpenLandLeadsTable({
 
                         <DropdownMenuSeparator />
 
-                        {userCanEditUser && onEdit && (
+                        {!isUserDeleted && userCanEditUser && onEdit && (
                           <DropdownMenuItem onClick={() => onEdit(lead)}>
                             <FileText className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
                         )}
 
-                        {userCanDeleteUser && handleDeleteLead && (
-                          <DropdownMenuItem
-                            onClick={(e) => handleDeleteLead(lead._id, e)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        )}
+                        {!isUserDeleted &&
+                          userCanDeleteUser &&
+                          handleDeleteLead && (
+                            <DropdownMenuItem
+                              onClick={(e) => handleDeleteLead(lead._id, e)}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
