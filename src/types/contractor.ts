@@ -53,6 +53,7 @@ export interface ContractorList {
   finalPaymentDate?: string;
 
   isActive: boolean;
+  isDeleted?: boolean;
 
   createdAt: string;
   updatedAt: string;

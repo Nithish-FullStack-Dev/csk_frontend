@@ -106,6 +106,8 @@ export interface Contractor {
   completedTasks: number;
   totalTasks: number;
   rating: 1 | 2 | 3 | 4 | 5;
+  isDeleted?: boolean;
+  contractorIsDeleted?: boolean;
 }
 
 interface UpcomingTask {
@@ -337,7 +339,6 @@ export const usefetchContractorListDropDown = () => {
   return useQuery({
     queryKey: ["contractor-list-dropdown"],
     queryFn: fetchContractorListProjects,
-    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -345,14 +346,12 @@ export const useFetchTasks = () => {
   return useQuery<UpcomingTask[]>({
     queryKey: ["formattedTasks"],
     queryFn: fetchFormattedTasks,
-    staleTime: 5 * 60 * 1000,
   });
 };
 export const useTasks = () => {
   return useQuery<Task[]>({
     queryKey: ["tasks"],
     queryFn: fetchTasks,
-    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -360,7 +359,6 @@ export const useQualityIssues = () => {
   return useQuery({
     queryKey: ["qualityIssues"],
     queryFn: fetchQualityIssues,
-    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -368,6 +366,5 @@ export const useContractorList = () => {
   return useQuery<ContractorResponse>({
     queryKey: ["contractors-list"],
     queryFn: fetchContractorList,
-    staleTime: 5 * 60 * 1000,
   });
 };

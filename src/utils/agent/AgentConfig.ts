@@ -23,6 +23,7 @@ export interface AgentList {
   paymentDate: string | null;
   notes?: string;
   approvedBy: Populated<User>;
+  isDeleted?: boolean;
 }
 
 export interface AgentListResponse {
@@ -35,7 +36,7 @@ export interface AgentListResponse {
 export const fetchAllAgentList = async (): Promise<AgentListResponse> => {
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/agentlist/getAllAgentsLists`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data;
 };

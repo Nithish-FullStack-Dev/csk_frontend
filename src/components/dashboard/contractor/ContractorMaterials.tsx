@@ -493,73 +493,87 @@ const ContractorMaterials = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredMaterials.map((material) => (
-                  <TableRow key={material._id}>
-                    <TableCell className="font-medium">
-                      {material.name}
-                    </TableCell>
-                    <TableCell>{material.type}</TableCell>
-                    <TableCell>
-                      {material.quantity} {material.unit}
-                    </TableCell>
-                    <TableCell>₹{material.rate.toLocaleString()}</TableCell>
-                    <TableCell className="font-medium">
-                      ₹{material.totalCost.toLocaleString()}
-                    </TableCell>
-                    <TableCell
-                      className="max-w-[150px] truncate"
-                      title={material.supplier}
+                filteredMaterials.map((material) => {
+                  const isUserDeleted =
+                    material?.contractor?.isDeleted === true;
+                  console.log(isUserDeleted);
+                  return (
+                    <TableRow
+                      className={`transition-colors ${
+                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                      }`}
+                      key={material._id}
                     >
-                      {material.supplier}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {material.project?.projectId?.projectName ||
-                        "Unnamed Project"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          material.status === "Delivered"
-                            ? "bg-green-100 text-green-800"
-                            : material.status === "Pending"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-blue-100 text-blue-800"
-                        }
+                      <TableCell className="font-medium">
+                        {material.name}
+                      </TableCell>
+                      <TableCell>{material.type}</TableCell>
+                      <TableCell>
+                        {material.quantity} {material.unit}
+                      </TableCell>
+                      <TableCell>₹{material.rate.toLocaleString()}</TableCell>
+                      <TableCell className="font-medium">
+                        ₹{material.totalCost.toLocaleString()}
+                      </TableCell>
+                      <TableCell
+                        className="max-w-[150px] truncate"
+                        title={material.supplier}
                       >
-                        {material.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
+                        {material.supplier}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {material.project?.projectId?.projectName ||
+                          "Unnamed Project"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            material.status === "Delivered"
+                              ? "bg-green-100 text-green-800"
+                              : material.status === "Pending"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-blue-100 text-blue-800"
+                          }
+                        >
+                          {material.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onSelect={() => openViewDialog(material)}
-                          >
-                            View
-                          </DropdownMenuItem>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onSelect={() => openViewDialog(material)}
+                            >
+                              View
+                            </DropdownMenuItem>
 
-                          <DropdownMenuItem
-                            onSelect={() => openEditDialog(material)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
+                            {!isUserDeleted && (
+                              <DropdownMenuItem
+                                onSelect={() => openEditDialog(material)}
+                              >
+                                Edit
+                              </DropdownMenuItem>
+                            )}
 
-                          <DropdownMenuItem
-                            onSelect={() => openStatusDialog(material)}
-                          >
-                            Update Status
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            {!isUserDeleted && (
+                              <DropdownMenuItem
+                                onSelect={() => openStatusDialog(material)}
+                              >
+                                Update Status
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

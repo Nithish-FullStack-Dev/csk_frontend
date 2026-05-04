@@ -557,6 +557,16 @@ const TeamManagement = () => {
                                 </div>
                               </div>
                             </div>
+
+                            {userCanEditUser && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleOpenEditDialog(member)}
+                              >
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </CardHeader>
 
