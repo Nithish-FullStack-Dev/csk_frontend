@@ -35,6 +35,7 @@ export interface Building {
   brochureUrl?: string | null;
   brochureFileId?: string | null;
   createdAt?: string;
+  isDeleted?: boolean;
 }
 
 export interface FloorUnit {

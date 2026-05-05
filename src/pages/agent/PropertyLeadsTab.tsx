@@ -130,8 +130,15 @@ export default function PropertyLeadsTab({
                   ? `${leadProperty?.propertyType} - ${leadUnit?.plotNo}`
                   : "N/A";
 
+                const isUserDeleted = lead?.addedBy?.isDeleted === true;
+
                 return (
-                  <TableRow key={lead._id}>
+                  <TableRow
+                    className={`transition-colors ${
+                      isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                    }`}
+                    key={lead._id}
+                  >
                     <TableCell>
                       <LeadUserCell lead={lead} />
                     </TableCell>
@@ -147,7 +154,21 @@ export default function PropertyLeadsTab({
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell">
-                      {propertyDisplayName}
+                      <span
+                        className={
+                          isUserDeleted
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }
+                      >
+                        {propertyDisplayName ?? "N/A"}
+                      </span>
+
+                      {isUserDeleted && (
+                        <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                          Agent Deleted
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell>
@@ -158,7 +179,7 @@ export default function PropertyLeadsTab({
                           ]
                         }
                       >
-                        {lead?.propertyStatus||"N/A"}
+                        {lead?.propertyStatus || "N/A"}
                       </Badge>
                     </TableCell>
 
@@ -268,6 +289,8 @@ function ActionsMenu({
   const { user } = useAuth();
   const isAdmin = user.role === "admin";
 
+  const isUserDeleted = lead?.addedBy?.isDeleted === true;
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="icon" onClick={onView}>
@@ -300,7 +323,7 @@ function ActionsMenu({
               </DropdownMenuItem>
             </a>
 
-            {!isSalesManager && (
+            {!isUserDeleted && !isSalesManager && (
               <DropdownMenuItem onClick={onVisit}>
                 <Calendar className="mr-2 h-4 w-4" /> Schedule Visit
               </DropdownMenuItem>
@@ -308,13 +331,13 @@ function ActionsMenu({
 
             <DropdownMenuSeparator />
 
-            {userCanEditUser && (
+            {!isUserDeleted && userCanEditUser && (
               <DropdownMenuItem onClick={onEdit}>
                 <FileText className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
             )}
 
-            {userCanDeleteUser && (
+            {!isUserDeleted && userCanDeleteUser && (
               <DropdownMenuItem onClick={onDelete}>
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>

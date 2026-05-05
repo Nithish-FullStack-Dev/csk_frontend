@@ -10,6 +10,7 @@ import AccountantDashboard from "./dashboards/AccountantDashboard";
 import ContractorDashboard from "./dashboards/ContractorDashboard";
 import { Loader2 } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
+import { Navigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
@@ -22,9 +23,9 @@ const Dashboard = () => {
     );
   }
 
-  const renderDashboard = () => {
-    if (!user) return null;
+  if (!user) return <Navigate to="/login" replace />;
 
+  const renderDashboard = () => {
     switch (user.role) {
       case "owner":
         return <OwnerDashboard />;

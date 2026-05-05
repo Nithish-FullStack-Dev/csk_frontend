@@ -4,6 +4,7 @@ export interface InnerPlot extends InnerPlotFormValues {
   _id: string;
   thumbnailUrl?: string;
   images: string[];
+  isDeleted?: boolean;
 }
 
 export const innerPlotSchema = z.object({

@@ -1,6 +1,6 @@
 import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 export async function fetchPropertyById(id: string) {
@@ -8,7 +8,6 @@ export async function fetchPropertyById(id: string) {
     `${import.meta.env.VITE_URL}/api/building/getBuildingById/${id}`,
     { withCredentials: true },
   );
-  console.log("fetchPropertyById response:", data);
   return data.data;
 }
 
@@ -96,12 +95,11 @@ export const deleteFloor = async (floorId: string) => {
   );
   return data;
 };
+
 export const usePropertyById = (id: string) => {
   return useQuery<Building>({
     queryKey: ["propertyById", id],
     queryFn: () => fetchPropertyById(id),
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
     enabled: !!id,
   });
 };
@@ -119,7 +117,6 @@ export const useOpenLandById = (id: string) => {
     queryKey: ["openLandById", id],
     queryFn: () => fetchOpenLandById(id),
     enabled: !!id,
-    staleTime: Infinity,
   });
 };
 
@@ -127,8 +124,6 @@ export const useUpcomingProperties = () => {
   return useQuery({
     queryKey: ["upcomingProperties"],
     queryFn: fetchUpcomingProperties,
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 };
 
@@ -136,16 +131,12 @@ export const useOngoingProperties = () => {
   return useQuery({
     queryKey: ["ongoingProperties"],
     queryFn: fetchOngoingProperties,
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 };
 export const useCompletedProperties = () => {
   return useQuery({
     queryKey: ["completedProperties"],
     queryFn: fetchCompletedProperties,
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 };
 
@@ -153,15 +144,11 @@ export const useOpenPlots = () => {
   return useQuery({
     queryKey: ["openPlots"],
     queryFn: fetchOpenPlots,
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 };
 export const useOpenLand = () => {
   return useQuery({
     queryKey: ["openLand"],
     queryFn: fetchOpenLand,
-    staleTime: Infinity,
-    placeholderData: keepPreviousData,
   });
 };

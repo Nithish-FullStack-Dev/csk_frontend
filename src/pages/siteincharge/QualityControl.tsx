@@ -740,7 +740,7 @@ const QualityControl = () => {
                     ) : (
                       filteredIssues.map((issue) => {
                         const isUserDeleted =
-                          issue.contractor.isDeleted === true;
+                          issue?.contractor?.isDeleted === true;
                         return (
                           <TableRow
                             key={issue._id}
@@ -750,8 +750,22 @@ const QualityControl = () => {
                           >
                             <TableCell className="font-medium">
                               <div>
-                                {issue.title}
-                                {issue.taskId && (
+                                <span
+                                  className={
+                                    isUserDeleted
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }
+                                >
+                                  {issue?.title || "N/A"}
+                                </span>
+
+                                {isUserDeleted && (
+                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                    User Deleted
+                                  </span>
+                                )}
+                                {issue?.taskId && (
                                   <div className="text-xs text-muted-foreground">
                                     Task ID: {issue?.taskId}
                                   </div>

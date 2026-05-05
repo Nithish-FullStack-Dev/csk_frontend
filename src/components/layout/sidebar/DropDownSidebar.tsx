@@ -87,6 +87,7 @@ const NAV_GROUPS: NavGroup[] = [
       "Contractors",
       "Materials",
       "Labor Management",
+      "Inspection Schedule",
     ],
   },
   {

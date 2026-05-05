@@ -56,6 +56,7 @@ interface User {
   avatar?: string;
   // add phone if your backend provides it
   phone?: string;
+  isDeleted?: boolean;
 }
 
 const fetchUnassignedMem = async (): Promise<User[]> => {
@@ -568,9 +569,14 @@ const AdminTeamAgent = () => {
             const agentEmail = agent?.email || "";
             const agentRole = agent?.role || "No Role";
             const agentAvatar = agent?.avatar || "";
-
+            const isUserDeleted = member?.agentId?.isDeleted === true;
             return (
-              <Card key={member._id}>
+              <Card
+                className={`transition-colors ${
+                  isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                }`}
+                key={member._id}
+              >
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
@@ -586,7 +592,23 @@ const AdminTeamAgent = () => {
                       </Avatar>
 
                       <div>
-                        <h3 className="font-semibold">{agentName}</h3>
+                        <h3 className="font-semibold">
+                          <span
+                            className={
+                              isUserDeleted
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }
+                          >
+                            {agentName || "N/A"}
+                          </span>
+
+                          {isUserDeleted && (
+                            <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                              User Deleted
+                            </span>
+                          )}
+                        </h3>
 
                         <p className="text-sm text-muted-foreground">
                           {agentRole}

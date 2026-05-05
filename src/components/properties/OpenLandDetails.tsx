@@ -170,7 +170,7 @@ export default function OpenLandDetails({
             <ChevronLeft className="mr-2 h-4 w-4" /> Back to Open Lands
           </Button>
 
-          {canEdit && (
+          {initialLand?.isDeleted === false && canEdit && (
             <div className="flex gap-3">
               <Button size="sm" onClick={onEdit}>
                 <Edit className="mr-2 h-4 w-4" /> Edit

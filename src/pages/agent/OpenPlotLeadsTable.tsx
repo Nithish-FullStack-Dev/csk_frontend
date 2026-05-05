@@ -49,8 +49,11 @@ export default function OpenPlotLeadsTable({
   userCanDeleteUser,
 }: Props) {
   const { user } = useAuth();
+
   const data = leads.filter((l) => l.openPlot && l.innerPlot && !l.openLand);
+
   const isAdmin = user.role === "admin";
+
   if (!data.length) {
     return <EmptyState text="No Open Plot Leads Found" />;
   }
@@ -78,116 +81,185 @@ export default function OpenPlotLeadsTable({
       <TableBody>
         {data.map((lead) => {
           const propertyStatusColors: Record<string, string> = {
-                  New: "bg-blue-100 text-blue-800",
-                  Enquiry: "bg-yellow-100 text-yellow-800",
-                  Assigned: "bg-purple-100 text-purple-800",
-                  "Follow up": "bg-orange-100 text-orange-800",
-                  "In Progress": "bg-indigo-100 text-indigo-800",
-                  Closed: "bg-green-100 text-green-800",
-                  Rejected: "bg-red-100 text-red-800",
-                };
-          return(
-          <TableRow key={lead._id}>
-            <TableCell className="font-medium">{lead?.name || "N/A"}</TableCell>
+            New: "bg-blue-100 text-blue-800",
+            Enquiry: "bg-yellow-100 text-yellow-800",
+            Assigned: "bg-purple-100 text-purple-800",
+            "Follow up": "bg-orange-100 text-orange-800",
+            "In Progress": "bg-indigo-100 text-indigo-800",
+            Closed: "bg-green-100 text-green-800",
+            Rejected: "bg-red-100 text-red-800",
+          };
 
-            <TableCell>
-              <Badge className={statusColors[lead?.status] || ""}>
-                {lead?.status || "N/A"}
-              </Badge>
-            </TableCell>
+          const isUserDeleted = lead?.addedBy?.isDeleted === true;
 
-            <TableCell>
-              {(lead.openPlot as OpenPlot)?.projectName || "N/A"}
-            </TableCell>
+          const isOuterPlotDeleted = Boolean(
+            typeof lead?.openPlot === "object" && lead?.openPlot?.isDeleted,
+          );
 
-            <TableCell>
-              Plot {(lead.innerPlot as InnerPlot)?.plotNo || "N/A"}
-            </TableCell>
+          const isInnerPlotDeleted = Boolean(
+            typeof lead?.innerPlot === "object" && lead?.innerPlot?.isDeleted,
+          );
 
-            <TableCell><Badge
-                        className={
-                          propertyStatusColors[
-                            lead.propertyStatus as keyof typeof propertyStatusColors
-                          ]
-                        }
-                      >
-                        {lead?.propertyStatus||"N/A"}
-                      </Badge></TableCell>
+          return (
+            <TableRow
+              key={lead._id}
+              className={`transition-colors ${
+                isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+              }`}
+            >
+              <TableCell className="font-medium">
+                <span
+                  className={
+                    isUserDeleted ? "line-through text-muted-foreground" : ""
+                  }
+                >
+                  {lead.name ?? "N/A"}
+                </span>
 
-            <TableCell>
-              {lead.lastContact
-                ? formatDistanceToNow(new Date(lead.lastContact), {
-                    addSuffix: true,
-                  })
-                : "N/A"}
-            </TableCell>
-
-            {/* ACTIONS */}
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-2">
-                {setSelectedLead && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedLead(lead)}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                {isUserDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Agent De-Activated
+                  </span>
                 )}
+              </TableCell>
 
-                {!isAdmin && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
+              <TableCell>
+                <Badge className={statusColors[lead?.status] || ""}>
+                  {lead?.status || "N/A"}
+                </Badge>
+              </TableCell>
 
-                    <DropdownMenuContent align="end">
-                      <a href={`tel:${lead.phone}`}>
-                        <DropdownMenuItem>
-                          <PhoneCall className="mr-2 h-4 w-4" />
-                          Call
-                        </DropdownMenuItem>
-                      </a>
+              <TableCell>
+                <span
+                  className={
+                    isOuterPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  {(lead.openPlot as OpenPlot)?.projectName || "N/A"}
+                </span>
 
-                      <a
-                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
-                          lead.email,
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <DropdownMenuItem>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Email
-                        </DropdownMenuItem>
-                      </a>
+                {isOuterPlotDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Plot De-Activated
+                  </span>
+                )}
+              </TableCell>
 
-                      <DropdownMenuSeparator />
+              <TableCell>
+                <span
+                  className={
+                    isInnerPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  Plot {(lead.innerPlot as InnerPlot)?.plotNo || "N/A"}
+                </span>
 
-                      {userCanEditUser && onEdit && (
-                        <DropdownMenuItem onClick={() => onEdit(lead)}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                      )}
+                {isInnerPlotDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Inner Plot De-Activated
+                  </span>
+                )}
+              </TableCell>
 
-                      {userCanDeleteUser && handleDeleteLead && (
-                        <DropdownMenuItem
-                          onClick={(e) => handleDeleteLead(lead._id, e)}
+              <TableCell>
+                <Badge
+                  className={
+                    propertyStatusColors[
+                      lead.propertyStatus as keyof typeof propertyStatusColors
+                    ]
+                  }
+                >
+                  {lead?.propertyStatus || "N/A"}
+                </Badge>
+              </TableCell>
+
+              <TableCell>
+                {lead.lastContact
+                  ? formatDistanceToNow(new Date(lead.lastContact), {
+                      addSuffix: true,
+                    })
+                  : "N/A"}
+              </TableCell>
+
+              {/* ACTIONS */}
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {setSelectedLead && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedLead(lead)}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {!isAdmin && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end">
+                        <a href={`tel:${lead.phone}`}>
+                          <DropdownMenuItem>
+                            <PhoneCall className="mr-2 h-4 w-4" />
+                            Call
+                          </DropdownMenuItem>
+                        </a>
+
+                        <a
+                          href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                            lead.email,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        )})}
+                          <DropdownMenuItem>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Email
+                          </DropdownMenuItem>
+                        </a>
+
+                        <DropdownMenuSeparator />
+
+                        {!isInnerPlotDeleted &&
+                          !isOuterPlotDeleted &&
+                          !isUserDeleted &&
+                          userCanEditUser &&
+                          onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(lead)}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+
+                        {!isInnerPlotDeleted &&
+                          !isOuterPlotDeleted &&
+                          !isUserDeleted &&
+                          userCanDeleteUser &&
+                          handleDeleteLead && (
+                            <DropdownMenuItem
+                              onClick={(e) => handleDeleteLead(lead._id, e)}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

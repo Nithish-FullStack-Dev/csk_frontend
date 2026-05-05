@@ -505,7 +505,21 @@ const ContractorMaterials = () => {
                       key={material._id}
                     >
                       <TableCell className="font-medium">
-                        {material.name}
+                        <span
+                          className={
+                            isUserDeleted
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }
+                        >
+                          {material?.name || "N/A"}
+                        </span>
+
+                        {isUserDeleted && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            User Deleted
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>{material.type}</TableCell>
                       <TableCell>

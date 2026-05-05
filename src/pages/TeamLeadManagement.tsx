@@ -63,6 +63,7 @@ interface User {
   email: string;
   role: string;
   avatar: string;
+  isDeleted?: boolean;
 }
 
 const fetchUnassignedMem = async (): Promise<User[]> => {
@@ -540,8 +541,15 @@ const TeamLeadManagement = () => {
                 performancePercentage,
               );
 
+              const isUserDeleted = member?.teamLeadId?.isDeleted === true;
+
               return (
-                <Card key={member._id}>
+                <Card
+                  className={`transition-colors ${
+                    isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                  }`}
+                  key={member._id}
+                >
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
@@ -561,7 +569,21 @@ const TeamLeadManagement = () => {
                         </Avatar>
                         <div>
                           <h3 className="font-semibold">
-                            {member?.teamLeadId?.name}
+                            <span
+                              className={
+                                isUserDeleted
+                                  ? "line-through text-muted-foreground"
+                                  : ""
+                              }
+                            >
+                              {member?.teamLeadId?.name || "N/A"}
+                            </span>
+
+                            {isUserDeleted && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                Deleted
+                              </span>
+                            )}
                           </h3>
                           <p className="text-sm text-muted-foreground">
                             {member?.teamLeadId?.role}
@@ -571,7 +593,7 @@ const TeamLeadManagement = () => {
                           </Badge>
                         </div>
                       </div>
-                      {userCanEditUser && (
+                      {!isUserDeleted && userCanEditUser && (
                         <Button
                           size="sm"
                           variant="ghost"

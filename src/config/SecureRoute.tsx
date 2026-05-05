@@ -23,14 +23,14 @@ const SecureRoute = ({ children, requireToken = true }: SecureRouteProps) => {
   if (!user) return <Navigate to="/login" replace />;
 
   if (user?.role !== "owner" && user?.role !== "accountant") {
-    return <Navigate to="/" />;
+    return <Navigate to="/app" />;
   }
 
   if (requireToken) {
     const token = getCookie("secure_access");
 
     if (!token || token === "undefined" || token === "null") {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/app" replace />;
     }
   }
 

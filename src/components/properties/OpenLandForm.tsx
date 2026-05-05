@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getCsrfToken, useAuth } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const openLandFormSchema = z
   .object({
@@ -149,6 +150,7 @@ export default function OpenLandForm({
 }: OpenLandFormProps) {
   const { user } = useAuth();
   const isEditing = !!openLand;
+  const queryClient = useQueryClient();
 
   const form = useForm<OpenLandFormValues>({
     resolver: zodResolver(openLandFormSchema),
@@ -406,7 +408,7 @@ export default function OpenLandForm({
           ? "Open land updated successfully!"
           : "Open land created successfully!",
       );
-
+      queryClient.invalidateQueries({ queryKey: ["openLand"] });
       onSubmit(saved);
       onCancel();
     } catch (err: any) {

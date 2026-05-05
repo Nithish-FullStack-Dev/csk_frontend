@@ -8,7 +8,8 @@ const AuthRedirect = () => {
   const location = useLocation(); // ✅ correct
 
   useEffect(() => {
-    const isPublicRoute = location.pathname.startsWith("/public");
+    const path = location.pathname;
+    const isPublicRoute = path === "/" || path.startsWith("/public");
     if (isUnauthorized) {
       if (!isPublicRoute) {
         setIsUnauthorized(false);

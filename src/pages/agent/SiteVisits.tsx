@@ -1062,8 +1062,15 @@ const VisitCard = ({
     day: "2-digit",
   });
 
+  const isUserDeleted =
+    typeof visit?.bookedBy === "object" && visit?.bookedBy?.isDeleted === true;
+
   return (
-    <Card>
+    <Card
+      className={`transition-colors ${
+        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+      }`}
+    >
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -1078,7 +1085,21 @@ const VisitCard = ({
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{visit?.clientId?.name}</p>
+              <p className="font-medium">
+                <span
+                  className={
+                    isUserDeleted ? "line-through text-muted-foreground" : ""
+                  }
+                >
+                  {visit?.clientId?.name || "N/A"}
+                </span>
+
+                {isUserDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    User Deleted
+                  </span>
+                )}
+              </p>
               <div className="flex items-center text-sm text-muted-foreground">
                 <MapPin className="mr-1 h-3 w-3" />
                 {visit?.clientId?.isPropertyLead &&
@@ -1168,7 +1189,8 @@ const VisitCard = ({
                 View Details
               </DropdownMenuItem>
 
-              {userCanEditUser &&
+              {!isUserDeleted &&
+                userCanEditUser &&
                 user?.role !== "admin" &&
                 visit.visitStatus !== "completed" &&
                 visit.visitStatus !== "cancelled" && (

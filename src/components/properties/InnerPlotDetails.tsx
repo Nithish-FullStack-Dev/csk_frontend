@@ -22,9 +22,9 @@ import {
   Image as ImageIcon,
   User,
   Mail,
+  RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { InnerPlot } from "@/types/InnerPlot";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getInnerPlots, deleteInnerPlot } from "@/api/innerPlot.api";
@@ -41,6 +41,7 @@ import {
 import { getImageUrl } from "@/lib/image";
 import { toast } from "sonner";
 import axios from "axios";
+import { useRBAC } from "@/config/RBAC";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -56,25 +57,16 @@ export function getInnerPlotStatusBadge(status: string) {
     </Badge>
   );
 }
-// const getImageUrl = (url?: string) => {
-//   if (!url) return "";
-
-//   // Cloudinary or external images
-//   if (url.startsWith("http")) return url;
-
-//   // Local images
-//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
-// };
 
 export function InnerPlotDetails() {
   const { _id } = useParams<{ _id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const canEdit = user && ["owner", "admin"].includes(user.role);
+
   /* ---------- STATE ---------- */
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [restorePlotOpen, setRestorePlotOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState("");
@@ -103,6 +95,10 @@ export function InnerPlotDetails() {
     isError: customersError,
     error: customersErr,
   } = useCustomersByinnerPlotId(_id!);
+
+  const { userCanDeleteUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Properties",
+  });
 
   /* ---------- DELETE ---------- */
   const deleteMutation = useMutation({
@@ -135,6 +131,41 @@ export function InnerPlotDetails() {
     },
   });
 
+  const restorePlotMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/innerPlot/restoreInnerPlot/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+
+    onSuccess: async (data) => {
+      toast.success(data?.message || "inner plot restore successfully");
+      await queryClient.invalidateQueries({
+        queryKey: ["inner-plots"],
+        exact: false,
+      });
+
+      // refresh open plot page
+      await queryClient.invalidateQueries({
+        queryKey: ["open-plot"],
+        exact: false,
+      });
+      setRestorePlotOpen(false);
+      navigate(-1);
+    },
+
+    onError: (error) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response.data.message
+          : "Failed to restore inner plot",
+      );
+    },
+  });
+
   /* ---------- GALLERY ---------- */
   const galleryImages = useMemo(() => {
     if (!plot) return [];
@@ -147,6 +178,9 @@ export function InnerPlotDetails() {
   if (isLoading) return <Loader />;
   if (isError || !plot) return <p>Inner plot not found</p>;
 
+  const isInnerPlotDeleted = Boolean(plot?.isDeleted);
+  const isPlotDeleted = Boolean(plot?.openPlotId?.isDeleted);
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -157,17 +191,32 @@ export function InnerPlotDetails() {
             Back to Inner Plots
           </Button>
 
-          {canEdit && (
+          {!isInnerPlotDeleted && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setEditOpen(true)}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
-              </Button>
+              {userCanEditUser && (
+                <Button size="sm" onClick={() => setEditOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit
+                </Button>
+              )}
+              {userCanDeleteUser && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash className="mr-2 h-4 w-4" /> Delete
+                </Button>
+              )}
+            </div>
+          )}
+          {isInnerPlotDeleted && !isPlotDeleted && (
+            <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="destructive"
-                onClick={() => setDeleteOpen(true)}
+                onClick={() => setRestorePlotOpen(true)}
               >
-                <Trash className="mr-2 h-4 w-4" /> Delete
+                <RotateCcw className="mr-2 h-4 w-4" /> Restore
               </Button>
             </div>
           )}
@@ -188,7 +237,21 @@ export function InnerPlotDetails() {
 
             <div className={`${plot.thumbnailUrl ? "md:w-2/3" : "w-full"} p-6`}>
               <h2 className="text-2xl font-bold mb-1">
-                Inner Plot – {plot.plotNo}
+                <span
+                  className={
+                    isInnerPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  Inner Plot – {plot.plotNo || "N/A"}
+                </span>
+
+                {isInnerPlotDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Plot De-Activated
+                  </span>
+                )}
               </h2>
               {getInnerPlotStatusBadge(plot.status)}
               <p className="text-muted-foreground mt-1">
@@ -464,6 +527,15 @@ export function InnerPlotDetails() {
           title="Delete Inner Plot"
           description="Are you sure you want to delete this inner plot?"
           onConfirm={() => deleteMutation.mutate(plot._id)}
+        />
+
+        <DeleteConfirmDialog
+          open={restorePlotOpen}
+          onOpenChange={setRestorePlotOpen}
+          title="Restore Inner Plot"
+          description="Are you sure you want to restore this inner plot?"
+          onConfirm={() => restorePlotMutation.mutate(plot._id)}
+          btnTxt="Restore"
         />
       </div>
     </MainLayout>

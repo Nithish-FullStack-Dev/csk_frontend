@@ -12,6 +12,14 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "@/components/ui/use-toast";
 import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function RescheduleDialog({
   open,
@@ -19,7 +27,6 @@ export function RescheduleDialog({
   schedule,
   fetchAppointments,
 }) {
-  console.log(schedule);
   const [formData, setFormData] = useState({
     title: "",
     date: "",
@@ -86,7 +93,7 @@ export function RescheduleDialog({
           schedule._id
         }`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast({ title: "Success", description: "Appointment rescheduled." });
@@ -151,6 +158,26 @@ export function RescheduleDialog({
             disabled
             readOnly
           />
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status *</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => {
+                setFormData((prev) => ({ ...prev, status: value }));
+              }}
+              required
+            >
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-2">

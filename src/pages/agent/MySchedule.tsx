@@ -84,7 +84,6 @@ const MySchedule = () => {
   } = useQuery({
     queryKey: ["clients"],
     queryFn: fetchContractor,
-    staleTime: 2 * 60 * 1000,
   });
 
   const { isRolePermissionsLoading, userCanAddUser } = useRBAC({
@@ -107,7 +106,7 @@ const MySchedule = () => {
   }));
 
   const todaysAppointments = processedSchedules.filter((appt) =>
-    date ? isSameDay(appt.date, date) : false
+    date ? isSameDay(appt.date, date) : false,
   );
 
   const handlePreviousDay = () => {
@@ -171,7 +170,7 @@ const MySchedule = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_URL}/api/user-schedule/schedule`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       toast.success("Appointment created successfully.");
@@ -183,7 +182,7 @@ const MySchedule = () => {
       console.error("API Error:", error);
       toast.error(
         error?.response?.data?.error ||
-          "Something went wrong while saving appointment."
+          "Something went wrong while saving appointment.",
       );
     } finally {
       setSaving(false);
@@ -530,7 +529,7 @@ const MySchedule = () => {
                                   setRescheduleOpen(true);
                                 }}
                               >
-                                Reschedule
+                                Reschedule / Update Status
                               </Button>
 
                               <Button
