@@ -56,7 +56,7 @@ const UnitDetails = () => {
     if (buildingId && floorId) {
       navigate(`/buildings/${buildingId}/floors/${floorId}/units`);
     } else {
-      navigate("/"); // fallback
+      navigate("/app"); // fallback
     }
   };
 

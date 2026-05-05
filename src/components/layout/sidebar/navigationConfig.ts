@@ -176,7 +176,7 @@ import {
 
 export const moduleToNavItem: Record<string, any> = {
   // Common modules
-  Dashboard: { to: "/", icon: Home, label: "Dashboard" },
+  Dashboard: { to: "/app", icon: Home, label: "Dashboard" },
   Profile: { to: "/profile", icon: User, label: "Profile" },
   // "System Settings": {
   //   to: "/settings",

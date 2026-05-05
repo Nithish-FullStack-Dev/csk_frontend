@@ -37,7 +37,7 @@ const SidebarHeader = ({ collapsed, toggleCollapsed }: SidebarHeaderProps) => {
     >
       {!collapsed ? (
         <Link
-          to="/"
+          to="/app"
           className="flex items-center gap-2 transition-all duration-300 hover:opacity-90"
         >
           <img

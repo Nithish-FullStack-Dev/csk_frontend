@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 
 const navigation = [
-  { name: "Home", href: "/public" },
+  { name: "Home", href: "/" },
   { name: "About", href: "/public/about" },
   {
     name: "Properties",
@@ -83,7 +83,7 @@ const PublicHeader = () => {
       >
         <div className="container mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <Link to="/public" className="flex items-center flex-shrink-0">
+            <Link to="/" className="flex items-center flex-shrink-0">
               <div className="w-24 md:w-28 transition-transform duration-500 hover:scale-105">
                 <img
                   src={"/assets/images/logo.png"}

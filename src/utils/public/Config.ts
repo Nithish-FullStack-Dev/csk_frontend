@@ -1,6 +1,6 @@
 import { Building, FloorUnit } from "@/types/building";
 import { OpenLand } from "@/types/OpenLand";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 export async function fetchPropertyById(id: string) {
@@ -8,7 +8,6 @@ export async function fetchPropertyById(id: string) {
     `${import.meta.env.VITE_URL}/api/building/getBuildingById/${id}`,
     { withCredentials: true },
   );
-  console.log("fetchPropertyById response:", data);
   return data.data;
 }
 

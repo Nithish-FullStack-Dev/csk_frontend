@@ -224,20 +224,20 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ReactQueryDevtools initialIsOpen={false} position="bottom" />
       <TooltipProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <SocketProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
               <AuthRedirect />
               <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
                 <Route element={<PublicSuspenseWrapper />}>
-                  <Route path="/public" element={<HomePage />} />
+                  <Route path="/" element={<HomePage />} />
                   <Route path="/public/about" element={<PublicAboutPage />} />
                   <Route
-                    path="/public/properties"
+                    path="/public/property"
                     element={<PublicPropertiesPage />}
                   />
                   <Route
@@ -294,7 +294,7 @@ const App = () => {
                 <Route element={<PrivateSuspenseWrapper />}>
                   <Route path="/login" element={<Login />} />
                   <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/app" element={<Dashboard />} />
                   <Route
                     path="/messaging"
                     element={
@@ -424,7 +424,7 @@ const App = () => {
                   {/* Public User Route - Redirects to public homepage */}
                   <Route
                     path="/public-user"
-                    element={<Navigate to="/public" replace />}
+                    element={<Navigate to="/" replace />}
                   />
 
                   {/* Property Routes */}
@@ -849,9 +849,9 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
-            </BrowserRouter>
-          </SocketProvider>
-        </AuthProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </SocketProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

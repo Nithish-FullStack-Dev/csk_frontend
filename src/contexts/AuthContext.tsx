@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 
 export interface Roles {
@@ -83,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const queryClient = useQueryClient();
+  const location = useLocation();
 
   // gets the logged in user
   const fetchLoggedInUser = async () => {
@@ -110,13 +112,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Check for existing session on mount
   useEffect(() => {
-    fetchLoggedInUser();
-  }, []);
+    const path = location.pathname;
+
+    const isPublicRoute = path === "/" || path.startsWith("/public");
+
+    // ✅ Only fetch user if NOT public route
+    if (!isPublicRoute) {
+      fetchLoggedInUser();
+    } else {
+      setIsLoading(false);
+    }
+  }, [location.pathname]);
 
   // Login function
-
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
