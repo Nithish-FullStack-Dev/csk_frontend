@@ -617,152 +617,159 @@ const NewProperties = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredBuildings.map((b, idx) => (
-                      <Card
-                        key={b._id || idx}
-                        className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                      >
-                        <div className="relative">
-                          {b.thumbnailUrl ? (
-                            <img
-                              src={getImageUrl(b.thumbnailUrl)}
-                              alt={b.projectName}
-                              className="h-48 w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-48 bg-muted flex items-center justify-center">
-                              <Building2 className="h-10 w-10 opacity-20" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 right-3">
-                            {getStatusBadge(b.constructionStatus)}
-                          </div>
-                        </div>
-
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-1">
-                            <h3 className="font-semibold text-lg">
-                              {b.projectName}
-                            </h3>
-                            <div
-                              className="flex gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {canEdit && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => handleEditBuilding(b, e)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {userCanDeleteUser && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    openDeleteDialog("building", b._id!, e)
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
+                    {filteredBuildings.map((b, idx) => {
+                      const isBuildingDeleted = Boolean(b?.isDeleted);
+                      return (
+                        <Card
+                          className={`overflow-hidden hover:shadow-lg transition cursor-pointer ${
+                            isBuildingDeleted
+                              ? "opacity-60"
+                              : "hover:bg-muted/30"
+                          }`}
+                          key={b._id || idx}
+                        >
+                          <div className="relative">
+                            {b.thumbnailUrl ? (
+                              <img
+                                src={getImageUrl(b.thumbnailUrl)}
+                                alt={b.projectName}
+                                className="h-48 w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-48 bg-muted flex items-center justify-center">
+                                <Building2 className="h-10 w-10 opacity-20" />
+                              </div>
+                            )}
+                            <div className="absolute top-3 right-3">
+                              {getStatusBadge(b.constructionStatus)}
                             </div>
                           </div>
 
-                          <div className="flex items-center text-sm text-muted-foreground mb-3">
-                            <MapPin className="h-4 w-4 mr-1" /> {b.location}
-                          </div>
-
-                          <div className="space-y-2 mb-4 text-sm">
-                            <div className="flex justify-between">
-                              <span>Total Units</span>
-                              <span>{b.totalUnits}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Available</span>
-                              <span className="text-green-600">
-                                {b.availableUnits}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Sold</span>
-                              <span className="text-blue-600">
-                                {b.soldUnits}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="border-t pt-3 text-sm space-y-2">
-                            <div className="flex justify-between">
-                              <span className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-1" /> Completion
-                              </span>
-                              <span>
-                                {new Date(
-                                  b.completionDate,
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Municipal</span>
-                              {b.municipalPermission ? (
-                                <Check className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <X className="h-4 w-4 text-red-500" />
-                              )}
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="font-semibold text-lg">
+                                {b.projectName}
+                              </h3>
+                              <div
+                                className="flex gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {!isBuildingDeleted && canEdit && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => handleEditBuilding(b, e)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {!isBuildingDeleted && userCanDeleteUser && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      openDeleteDialog("building", b._id!, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
 
-                            {/* RERA Status */}
-                            <div className="flex justify-between mt-2">
-                              <span>RERA Approved</span>
-                              {b.reraApproved ? (
-                                <div className="flex items-center space-x-2">
+                            <div className="flex items-center text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4 mr-1" /> {b.location}
+                            </div>
+
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div className="flex justify-between">
+                                <span>Total Units</span>
+                                <span>{b.totalUnits}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Available</span>
+                                <span className="text-green-600">
+                                  {b.availableUnits}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Sold</span>
+                                <span className="text-blue-600">
+                                  {b.soldUnits}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="border-t pt-3 text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1" />{" "}
+                                  Completion
+                                </span>
+                                <span>
+                                  {new Date(
+                                    b.completionDate,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Municipal</span>
+                                {b.municipalPermission ? (
                                   <Check className="h-4 w-4 text-green-500" />
-                                  <span className="text-sm font-medium">
-                                    {b.reraNumber || "N/A"}
-                                  </span>
-                                </div>
-                              ) : (
-                                <X className="h-4 w-4 text-red-500" />
-                              )}
-                            </div>
-                          </div>
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500" />
+                                )}
+                              </div>
 
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              size="sm"
-                              className="flex-1"
-                              onClick={() =>
-                                navigate(`/properties/building/${b?._id}`)
-                              }
-                            >
-                              View More
-                            </Button>
-                            {b?.brochureUrl && (
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={(e) =>
-                                    handleDownload(
-                                      e,
-                                      b?.brochureUrl!,
-                                      b?.projectName,
-                                      b._id,
-                                    )
-                                  }
-                                  disabled={downloadingId === b._id}
-                                  title="Download Brochure"
-                                >
-                                  {downloadingId === b._id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                {/* <Button
+                              {/* RERA Status */}
+                              <div className="flex justify-between mt-2">
+                                <span>RERA Approved</span>
+                                {b.reraApproved ? (
+                                  <div className="flex items-center space-x-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    <span className="text-sm font-medium">
+                                      {b.reraNumber || "N/A"}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500" />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={() =>
+                                  navigate(`/properties/building/${b?._id}`)
+                                }
+                              >
+                                View More
+                              </Button>
+                              {b?.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        b?.brochureUrl!,
+                                        b?.projectName,
+                                        b._id,
+                                      )
+                                    }
+                                    disabled={downloadingId === b._id}
+                                    title="Download Brochure"
+                                  >
+                                    {downloadingId === b._id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Download className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                  {/* <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={(e) =>
@@ -772,12 +779,13 @@ const NewProperties = () => {
                               >
                                 <Share2 className="h-4 w-4" />
                               </Button> */}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

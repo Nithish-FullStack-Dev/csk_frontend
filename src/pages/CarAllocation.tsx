@@ -214,8 +214,6 @@ const CarAllocation = () => {
     (member) => !assignedUserIds.has(member.agentId?._id),
   );
 
-  console.log(unassignedTeamMembers);
-
   // Update car by id
   const queryClient = useQueryClient();
 

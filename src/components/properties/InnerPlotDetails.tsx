@@ -41,6 +41,7 @@ import {
 import { getImageUrl } from "@/lib/image";
 import { toast } from "sonner";
 import axios from "axios";
+import { useRBAC } from "@/config/RBAC";
 
 /* ---------- STATUS BADGE ---------- */
 export function getInnerPlotStatusBadge(status: string) {
@@ -61,8 +62,7 @@ export function InnerPlotDetails() {
   const { _id } = useParams<{ _id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const canEdit = user && ["owner", "admin"].includes(user.role);
+
   /* ---------- STATE ---------- */
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -95,6 +95,10 @@ export function InnerPlotDetails() {
     isError: customersError,
     error: customersErr,
   } = useCustomersByinnerPlotId(_id!);
+
+  const { userCanDeleteUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Properties",
+  });
 
   /* ---------- DELETE ---------- */
   const deleteMutation = useMutation({
@@ -174,7 +178,8 @@ export function InnerPlotDetails() {
   if (isLoading) return <Loader />;
   if (isError || !plot) return <p>Inner plot not found</p>;
 
-  const isUserDeleted = Boolean(plot?.isDeleted);
+  const isInnerPlotDeleted = Boolean(plot?.isDeleted);
+  const isPlotDeleted = Boolean(plot?.openPlotId?.isDeleted);
 
   return (
     <MainLayout>
@@ -186,21 +191,25 @@ export function InnerPlotDetails() {
             Back to Inner Plots
           </Button>
 
-          {!isUserDeleted && canEdit && (
+          {!isInnerPlotDeleted && (
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setEditOpen(true)}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash className="mr-2 h-4 w-4" /> Delete
-              </Button>
+              {userCanEditUser && (
+                <Button size="sm" onClick={() => setEditOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit
+                </Button>
+              )}
+              {userCanDeleteUser && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash className="mr-2 h-4 w-4" /> Delete
+                </Button>
+              )}
             </div>
           )}
-          {isUserDeleted && (
+          {isInnerPlotDeleted && !isPlotDeleted && (
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -230,13 +239,15 @@ export function InnerPlotDetails() {
               <h2 className="text-2xl font-bold mb-1">
                 <span
                   className={
-                    isUserDeleted ? "line-through text-muted-foreground" : ""
+                    isInnerPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
                   }
                 >
                   Inner Plot – {plot.plotNo || "N/A"}
                 </span>
 
-                {isUserDeleted && (
+                {isInnerPlotDeleted && (
                   <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
                     Plot De-Activated
                   </span>
