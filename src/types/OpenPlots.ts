@@ -16,13 +16,8 @@ export const openPlotSchema = z.object({
   googleMapsLocation: z
     .string()
     .optional()
-    .refine(
-      (v) => !v || v.startsWith("http"),
-      "Enter valid Google Maps link",
-    ),
-  totalArea: z.coerce
-    .number()
-    .positive("Total area must be greater than 0"),
+    .refine((v) => !v || v.startsWith("http"), "Enter valid Google Maps link"),
+  totalArea: z.coerce.number().positive("Total area must be greater than 0"),
 
   areaUnit: z.enum(["SqFt", "SqYd", "Acre"]),
 
@@ -50,5 +45,6 @@ export interface OpenPlot extends OpenPlotFormValues {
   images: string[];
   brochureUrl?: string;
   googleMapsLocation?: string;
-  updatedAt?: string
+  updatedAt?: string;
+  isDeleted?: boolean;
 }

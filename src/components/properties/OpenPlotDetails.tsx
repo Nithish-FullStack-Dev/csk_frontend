@@ -23,12 +23,9 @@ import {
 } from "lucide-react";
 import { OpenPlot } from "@/types/OpenPlots";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLeadbyOpenPlotId } from "@/utils/buildings/Projects";
-import { Lead } from "@/utils/leads/LeadConfig";
 import axios from "axios";
 import { InnerPlotDialog } from "./InnerPlotDialog";
 import { useNavigate } from "react-router-dom";
-// import { getAllInnerPlot } from "@/api/inneropenPlotData?.api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import BulkInnerPlotGenerator from "./BulkInnerPlotGenerator";
 import CsvInnerPlotUploader from "./CsvInnerPlotUploader";
@@ -36,9 +33,9 @@ import { toast } from "sonner";
 import { getAllInnerPlot } from "@/api/innerPlot.api";
 import MainLayout from "../layout/MainLayout";
 import { OpenPlotDialog } from "./OpenPlotsDialog";
-import { get } from "http";
 import { getImageUrl } from "@/lib/image";
 import { useRBAC } from "@/config/RBAC";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 
 export function getStatusBadge(status: string) {
   const statusColors: Record<string, string> = {
@@ -63,21 +60,8 @@ interface OpenPlotDetailsProps {
   onDelete: () => void;
   onBack: () => void;
 }
-// const getImageUrl = (url?: string) => {
-//   if (!url) return "";
 
-//   // Cloudinary or external images
-//   if (url.startsWith("http")) return url;
-
-//   // Local images
-//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
-// };
-export function OpenPlotDetails({
-  plot,
-  onEdit,
-  onDelete,
-  onBack,
-}: OpenPlotDetailsProps) {
+export function OpenPlotDetails({ plot }: OpenPlotDetailsProps) {
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -93,15 +77,11 @@ export function OpenPlotDetails({
   const [bulkManualOpen, setBulkManualOpen] = useState(false);
   const [csvUploadOpen, setCsvUploadOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const canEdit = user && ["owner", "admin"].includes(user.role);
   const queryClient = useQueryClient();
 
-  const {
-    isRolePermissionsLoading,
-    userCanAddUser,
-    userCanDeleteUser,
-    userCanEditUser,
-  } = useRBAC({ roleSubmodule: "Properties" });
+  const { userCanAddUser, userCanDeleteUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Properties",
+  });
 
   const { data: openPlotData, isLoading: plotLoading } = useQuery({
     queryKey: ["open-plot", plot?._id],
@@ -113,6 +93,7 @@ export function OpenPlotDetails({
     },
     enabled: !!plot?._id,
   });
+
   const {
     data: innerPlots = [],
     isLoading: innerPlotsLoading,
@@ -125,14 +106,15 @@ export function OpenPlotDetails({
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      return await axios.delete(
+      const { data } = await axios.delete(
         `${import.meta.env.VITE_URL}/api/openPlot/deleteOpenPlot/${openPlotData?._id}`,
         { withCredentials: true },
       );
+      return data;
     },
 
-    onSuccess: () => {
-      toast.success("Open plot deleted successfully");
+    onSuccess: (data) => {
+      toast.success(data?.message || "Open plot deleted successfully");
 
       // 🔥 VERY IMPORTANT (same like NewProperties)
       queryClient.invalidateQueries({ queryKey: ["openPlots"] });
@@ -145,8 +127,12 @@ export function OpenPlotDetails({
       navigate("/properties");
     },
 
-    onError: () => {
-      toast.error("Failed to delete open plot");
+    onError: (error) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response.data.message
+          : "Failed to delete open plot",
+      );
     },
   });
 
@@ -159,23 +145,7 @@ export function OpenPlotDetails({
     setLightboxOpen(true);
   };
 
-  const getEmbeddableGoogleMapSrc = (mapLink?: string): string => {
-    if (!mapLink) return "";
-
-    // If already embed link → use directly
-    if (mapLink.includes("google.com/maps/embed")) {
-      return mapLink;
-    }
-
-    // If share link → convert to embed
-    if (mapLink.includes("google.com/maps")) {
-      return `https://www.google.com/maps?q=${encodeURIComponent(
-        mapLink,
-      )}&output=embed`;
-    }
-
-    return "";
-  };
+  const isUserDeleted = Boolean(openPlotData?.isDeleted);
 
   return (
     <MainLayout>
@@ -190,12 +160,14 @@ export function OpenPlotDetails({
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to All Open Plots
           </Button>
-          <div className="flex md:flex-row flex-col gap-3">
-            {canEdit && (
-              <>
+          {!isUserDeleted && (
+            <div className="flex md:flex-row flex-col gap-3">
+              {userCanEditUser && (
                 <Button size="sm" onClick={() => setEditOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
+              )}
+              {userCanDeleteUser && (
                 <Button
                   size="sm"
                   variant="destructive"
@@ -203,9 +175,9 @@ export function OpenPlotDetails({
                 >
                   <Trash className="mr-2 h-4 w-4" /> Delete
                 </Button>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Basic Info */}
@@ -226,7 +198,21 @@ export function OpenPlotDetails({
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-bold mb-1">
-                    {openPlotData?.projectName}
+                    <span
+                      className={
+                        isUserDeleted
+                          ? "line-through text-muted-foreground"
+                          : ""
+                      }
+                    >
+                      {openPlotData?.projectName || "N/A"}
+                    </span>
+
+                    {isUserDeleted && (
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                        Plot De-Activated
+                      </span>
+                    )}
                   </h2>
                   {getStatusBadge(openPlotData?.status)}
                   <p className="text-muted-foreground mt-1">
@@ -273,7 +259,7 @@ export function OpenPlotDetails({
               Inner Plots
             </CardTitle>
 
-            {userCanAddUser && (
+            {plot?.isDeleted === false && userCanAddUser && (
               <div className="flex gap-2">
                 <Button
                   variant="default"
@@ -314,10 +300,13 @@ export function OpenPlotDetails({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {innerPlots.map((inner, idx) => {
+                const isPlotDeleted = Boolean(inner?.isDeleted);
                 return (
                   <Card
+                    className={`overflow-hidden hover:shadow-lg transition cursor-pointer ${
+                      isPlotDeleted ? "opacity-60" : "hover:bg-muted/30"
+                    }`}
                     key={inner._id || idx}
-                    className="overflow-hidden hover:shadow-lg transition"
                   >
                     {/* Thumbnail */}
                     {inner.thumbnailUrl ? (
@@ -555,6 +544,7 @@ export function OpenPlotDetails({
             </div>
           </DialogContent>
         </Dialog>
+
         <OpenPlotDialog
           open={editOpen}
           onOpenChange={(val) => {
@@ -572,6 +562,7 @@ export function OpenPlotDetails({
           }}
           openPlot={openPlotData}
         />
+
         {/* Lightbox */}
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl h-[80vh] p-0">
@@ -582,6 +573,7 @@ export function OpenPlotDetails({
             />
           </DialogContent>
         </Dialog>
+
         <InnerPlotDialog
           open={innerPlotDialogOpen}
           onOpenChange={(val) => {

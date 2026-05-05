@@ -89,7 +89,9 @@ const NewProperties = () => {
   const [currentOpenLand, setCurrentOpenLand] = useState<OpenLand | undefined>(
     undefined,
   );
+  const [restorePlotOpen, setRestorePlotOpen] = useState(false);
   const [restoreId, setRestoreId] = useState(null);
+  const [restorePlotId, setRestorePlotId] = useState(null);
 
   const {
     data: buildings,
@@ -260,7 +262,7 @@ const NewProperties = () => {
     setFilteredOpenLand(landResults);
   }, [searchTerm, typeFilter, statusFilter, openPlots, openLandData]);
 
-  const restoreMutation = useMutation({
+  const restoreLandMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await axios.patch(
         `${import.meta.env.VITE_URL}/api/openLand/restore/${id}`,
@@ -283,6 +285,32 @@ const NewProperties = () => {
         axios.isAxiosError(err)
           ? err?.response?.data?.message || "Failed to delete open land"
           : err.message,
+      );
+    },
+  });
+
+  const restorePlotMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/openPlot/restoreOpenplot/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+
+    onSuccess: (data) => {
+      toast.success(data?.message || "Open plot restore successfully");
+      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+      setRestorePlotOpen(false);
+      setRestorePlotId(null);
+    },
+
+    onError: (error) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response.data.message
+          : "Failed to restore open plot",
       );
     },
   });
@@ -324,7 +352,7 @@ const NewProperties = () => {
 
   const handleRestore = () => {
     if (!restoreId) return;
-    restoreMutation.mutate(restoreId);
+    restoreLandMutation.mutate(restoreId);
   };
 
   const handleDeleteConfirm = () => {
@@ -371,16 +399,23 @@ const NewProperties = () => {
     setopenLandDialog(false);
   };
 
+  const handlePlotRestore = () => {
+    if (!restorePlotId) return;
+    restorePlotMutation.mutate(restorePlotId);
+  };
+
   const handleEditOpenPlot = (plot: OpenPlot, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenPlot(plot);
     setDialogOpenPlot(true);
   };
+
   const handleEditOpenLand = (land: OpenLand, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentOpenLand(land);
     setopenLandDialog(true);
   };
+
   const openDeleteDialog = (
     type: "building" | "plot" | "land",
     id: string,
@@ -777,151 +812,168 @@ const NewProperties = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredOpenPlots.map((plot) => (
-                      <Card
-                        key={plot._id}
-                        onClick={() =>
-                          navigate(`/properties/openplot/${plot._id}`)
-                        }
-                        className="overflow-hidden hover:shadow-lg transition cursor-pointer"
-                      >
-                        {/* ---------- THUMBNAIL ---------- */}
-                        <div className="relative">
-                          {plot.thumbnailUrl ? (
-                            <img
-                              src={plot.thumbnailUrl}
-                              alt={plot.projectName}
-                              className="h-48 w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-48 bg-muted flex items-center justify-center">
-                              <Building2 className="h-10 w-10 opacity-20" />
-                            </div>
-                          )}
-                        </div>
-
-                        <CardContent className="p-4">
-                          {/* ---------- HEADER ---------- */}
-                          <div className="flex justify-between items-start mb-1">
-                            <h3 className="font-semibold text-lg">
-                              {plot.projectName} — {plot.openPlotNo}
-                            </h3>
-
-                            <div
-                              className="flex gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {canEdit && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) => handleEditOpenPlot(plot, e)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {userCanDeleteUser && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    openDeleteDialog("plot", plot._id, e)
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* ---------- LOCATION ---------- */}
-                          <div className="flex items-center text-sm text-muted-foreground mb-3">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            {plot.location || "Location not specified"}
-                          </div>
-
-                          {/* ---------- LAND DETAILS ---------- */}
-                          <div className="space-y-2 mb-4 text-sm">
-                            <div className="flex justify-between">
-                              <span>Total Area</span>
-                              <span>
-                                {plot.totalArea} {plot.areaUnit}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between">
-                              <span>Facing</span>
-                              <span>{plot.facing || "—"}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                              <span>Road Width</span>
-                              <span>
-                                {plot.roadWidthFt
-                                  ? `${plot.roadWidthFt} ft`
-                                  : "—"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* ---------- LEGAL / STATUS ---------- */}
-                          <div className="border-t pt-3 text-sm space-y-2">
-                            <div className="flex justify-between">
-                              <span>Status</span>
-                              <span>{plot.status}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                              <span>Title</span>
-                              <span>{plot.titleStatus}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                              <span>Approval</span>
-                              <span>{plot.approvalAuthority || "—"}</span>
-                            </div>
-                          </div>
-
-                          {/* ---------- ACTION ---------- */}
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              size="sm"
-                              className="flex-1"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/properties/openplot/${plot._id}`);
-                              }}
-                            >
-                              View Details
-                            </Button>
-                            {plot?.brochureUrl && (
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={(e) =>
-                                    handleDownload(
-                                      e,
-                                      plot?.brochureUrl!,
-                                      plot?.projectName,
-                                      plot?._id,
-                                    )
-                                  }
-                                  disabled={downloadingId === plot?._id}
-                                  title="Download Brochure"
-                                >
-                                  {downloadingId === plot?._id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
+                    {filteredOpenPlots.map((plot) => {
+                      const isUserDeleted = plot?.isDeleted === true;
+                      return (
+                        <Card
+                          className={`overflow-hidden hover:shadow-lg transition cursor-pointer ${
+                            isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                          }`}
+                          key={plot._id}
+                          onClick={() =>
+                            navigate(`/properties/openplot/${plot._id}`)
+                          }
+                        >
+                          {/* ---------- THUMBNAIL ---------- */}
+                          <div className="relative">
+                            {plot.thumbnailUrl ? (
+                              <img
+                                src={plot.thumbnailUrl}
+                                alt={plot.projectName}
+                                className="h-48 w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-48 bg-muted flex items-center justify-center">
+                                <Building2 className="h-10 w-10 opacity-20" />
                               </div>
                             )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+
+                          <CardContent className="p-4">
+                            {/* ---------- HEADER ---------- */}
+                            <div className="flex justify-between items-start mb-1">
+                              <h3 className="font-semibold text-lg">
+                                {plot.projectName} — {plot.openPlotNo}
+                              </h3>
+
+                              <div
+                                className="flex gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {!isUserDeleted && canEdit && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => handleEditOpenPlot(plot, e)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {!isUserDeleted && userCanDeleteUser && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) =>
+                                      openDeleteDialog("plot", plot._id, e)
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {isUserDeleted && userCanDeleteUser && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setRestorePlotId(plot._id);
+                                      setRestorePlotOpen(true);
+                                    }}
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* ---------- LOCATION ---------- */}
+                            <div className="flex items-center text-sm text-muted-foreground mb-3">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {plot.location || "Location not specified"}
+                            </div>
+
+                            {/* ---------- LAND DETAILS ---------- */}
+                            <div className="space-y-2 mb-4 text-sm">
+                              <div className="flex justify-between">
+                                <span>Total Area</span>
+                                <span>
+                                  {plot.totalArea} {plot.areaUnit}
+                                </span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Facing</span>
+                                <span>{plot.facing || "—"}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Road Width</span>
+                                <span>
+                                  {plot.roadWidthFt
+                                    ? `${plot.roadWidthFt} ft`
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* ---------- LEGAL / STATUS ---------- */}
+                            <div className="border-t pt-3 text-sm space-y-2">
+                              <div className="flex justify-between">
+                                <span>Status</span>
+                                <span>{plot.status}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Title</span>
+                                <span>{plot.titleStatus}</span>
+                              </div>
+
+                              <div className="flex justify-between">
+                                <span>Approval</span>
+                                <span>{plot.approvalAuthority || "—"}</span>
+                              </div>
+                            </div>
+
+                            {/* ---------- ACTION ---------- */}
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/properties/openplot/${plot._id}`);
+                                }}
+                              >
+                                View Details
+                              </Button>
+                              {plot?.brochureUrl && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={(e) =>
+                                      handleDownload(
+                                        e,
+                                        plot?.brochureUrl!,
+                                        plot?.projectName,
+                                        plot?._id,
+                                      )
+                                    }
+                                    disabled={downloadingId === plot?._id}
+                                    title="Download Brochure"
+                                  >
+                                    {downloadingId === plot?._id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Download className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -1172,6 +1224,15 @@ const NewProperties = () => {
               ? "Are you sure you want to delete this open plot?"
               : "Are you sure you want to delete this open land?"
         }
+      />
+
+      <DeleteConfirmDialog
+        title="Confirm Restore"
+        description="Are you sure you want to restore this open plot?"
+        open={restorePlotOpen}
+        onOpenChange={setRestorePlotOpen}
+        onConfirm={handlePlotRestore}
+        btnTxt="Restore"
       />
 
       {/* OpenPlot dialog (calls your existing component) */}

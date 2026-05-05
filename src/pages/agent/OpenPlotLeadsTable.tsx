@@ -49,8 +49,11 @@ export default function OpenPlotLeadsTable({
   userCanDeleteUser,
 }: Props) {
   const { user } = useAuth();
+
   const data = leads.filter((l) => l.openPlot && l.innerPlot && !l.openLand);
+
   const isAdmin = user.role === "admin";
+
   if (!data.length) {
     return <EmptyState text="No Open Plot Leads Found" />;
   }
@@ -86,7 +89,17 @@ export default function OpenPlotLeadsTable({
             Closed: "bg-green-100 text-green-800",
             Rejected: "bg-red-100 text-red-800",
           };
+
           const isUserDeleted = lead?.addedBy?.isDeleted === true;
+
+          const isOuterPlotDeleted = Boolean(
+            typeof lead?.openPlot === "object" && lead?.openPlot?.isDeleted,
+          );
+
+          const isInnerPlotDeleted = Boolean(
+            typeof lead?.innerPlot === "object" && lead?.innerPlot?.isDeleted,
+          );
+
           return (
             <TableRow
               key={lead._id}
@@ -105,7 +118,7 @@ export default function OpenPlotLeadsTable({
 
                 {isUserDeleted && (
                   <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    Agent Deleted
+                    Agent De-Activated
                   </span>
                 )}
               </TableCell>
@@ -117,11 +130,39 @@ export default function OpenPlotLeadsTable({
               </TableCell>
 
               <TableCell>
-                {(lead.openPlot as OpenPlot)?.projectName || "N/A"}
+                <span
+                  className={
+                    isOuterPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  {(lead.openPlot as OpenPlot)?.projectName || "N/A"}
+                </span>
+
+                {isOuterPlotDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Plot De-Activated
+                  </span>
+                )}
               </TableCell>
 
               <TableCell>
-                Plot {(lead.innerPlot as InnerPlot)?.plotNo || "N/A"}
+                <span
+                  className={
+                    isInnerPlotDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  Plot {(lead.innerPlot as InnerPlot)?.plotNo || "N/A"}
+                </span>
+
+                {isInnerPlotDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Inner Plot De-Activated
+                  </span>
+                )}
               </TableCell>
 
               <TableCell>
@@ -188,14 +229,20 @@ export default function OpenPlotLeadsTable({
 
                         <DropdownMenuSeparator />
 
-                        {!isUserDeleted && userCanEditUser && onEdit && (
-                          <DropdownMenuItem onClick={() => onEdit(lead)}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                        )}
+                        {!isInnerPlotDeleted &&
+                          !isOuterPlotDeleted &&
+                          !isUserDeleted &&
+                          userCanEditUser &&
+                          onEdit && (
+                            <DropdownMenuItem onClick={() => onEdit(lead)}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          )}
 
-                        {!isUserDeleted &&
+                        {!isInnerPlotDeleted &&
+                          !isOuterPlotDeleted &&
+                          !isUserDeleted &&
                           userCanDeleteUser &&
                           handleDeleteLead && (
                             <DropdownMenuItem
