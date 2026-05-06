@@ -9,9 +9,17 @@ const AuthRedirect = () => {
 
   useEffect(() => {
     const path = location.pathname;
+
+    const hostname = window.location.hostname;
+
+    const subdomain = hostname.split(".")[0];
+
+    const isCRM = subdomain === "app";
+
     const isPublicRoute = path === "/" || path.startsWith("/public");
+
     if (isUnauthorized) {
-      if (!isPublicRoute) {
+      if (isCRM && !isPublicRoute) {
         setIsUnauthorized(false);
         navigate("/login", { replace: true });
       } else {
