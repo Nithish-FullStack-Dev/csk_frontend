@@ -854,8 +854,10 @@ const App = () => {
                   <Route path="/index" element={<Navigate to="/" replace />} />
 
                   {/* Catch-all route for 404 */}
+                </Route>
+                
+                }
                   <Route path="*" element={<NotFound />} />
-                </Route>}
               </Routes>
             </AuthProvider>
           </BrowserRouter>
