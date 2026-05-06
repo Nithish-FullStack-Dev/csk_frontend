@@ -114,8 +114,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const path = location.pathname;
+    const hostname = window.location.hostname;
+
+    const subdomain = hostname.split(".")[0];
+
+    const isCRM = subdomain === "app";
 
     const isPublicRoute = path === "/" || path.startsWith("/public");
+
+    if (!isCRM) {
+      setIsLoading(false);
+      return;
+    }
 
     // ✅ Only fetch user if NOT public route
     if (!isPublicRoute) {
