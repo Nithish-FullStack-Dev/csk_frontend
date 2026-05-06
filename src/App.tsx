@@ -296,7 +296,7 @@ const App = () => {
                   {/* <Route path="/kanban" element={<Kanban />} /> */}
                   {/* <Route path="/department" element={<Department />} /> */}
                 </Route>
-                  )}
+                  }
 
                 {/* Admin Routes */}
                 {isCRM && <Route element={<PrivateSuspenseWrapper />}>
@@ -855,7 +855,7 @@ const App = () => {
 
                   {/* Catch-all route for 404 */}
                   <Route path="*" element={<NotFound />} />
-                </Route>)}
+                </Route>}
               </Routes>
             </AuthProvider>
           </BrowserRouter>
