@@ -61,6 +61,7 @@ import {
   fetchCustomerPayments,
 } from "@/utils/accountant/CustomerPaymentConfig";
 import { getImageUrl } from "@/lib/image";
+import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
 
 const SecureCustomer = () => {
   const { user } = useAuth();
@@ -70,9 +71,11 @@ const SecureCustomer = () => {
     null,
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null,
   );
+  const [customerToRestore, setCustomerToRestore] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [uploadPdfOpen, setUploadPdfOpen] = useState(false);
@@ -80,7 +83,6 @@ const SecureCustomer = () => {
   const [search, setSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState("add");
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
     null,
   );
@@ -189,6 +191,26 @@ const SecureCustomer = () => {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message || "Failed to delete customer");
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/customer/restoreCustomer/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Customer restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      setRestoreDialogOpen(false);
+      setCustomerToRestore(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || "Failed to restore customer");
     },
   });
 
@@ -482,188 +504,299 @@ const SecureCustomer = () => {
                               </TableCell>
                             </TableRow>
                           ) : (
-                            filteredCustomers.map((customer) => (
-                              <TableRow key={customer._id}>
-                                <TableCell>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">
-                                      {(typeof customer.customerId ===
-                                        "object" &&
-                                        customer.customerId?.name) ||
-                                        "N/A"}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {typeof customer.customerId ===
-                                        "object" && customer.customerId?.email}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">
-                                      {(typeof customer.purchasedFrom ===
-                                        "object" &&
-                                        customer.purchasedFrom?.name) ||
-                                        "N/A"}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {typeof customer.purchasedFrom ===
-                                        "object" &&
-                                        customer.purchasedFrom?.email}
-                                    </span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    className={
-                                      customer?.purchaseType === "BUILDING"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : customer?.purchaseType === "PLOT"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : "bg-green-100 text-green-800"
-                                    }
-                                  >
-                                    {customer?.purchaseType}
-                                  </Badge>
-                                </TableCell>
+                            filteredCustomers.map((customer) => {
+                              const isBuildingDeleted =
+                                customer?.property &&
+                                typeof customer.property === "object" &&
+                                customer.property?.isDeleted;
 
-                                <TableCell>
-                                  {/* BUILDING */}
-                                  {customer?.purchaseType === "BUILDING" && (
+                              const isFloorDeleted =
+                                customer?.floorUnit &&
+                                typeof customer.floorUnit === "object" &&
+                                customer.floorUnit?.isDeleted;
+
+                              const isUnitDeleted =
+                                customer?.unit &&
+                                typeof customer.unit === "object" &&
+                                customer.unit?.isDeleted;
+
+                              const isPlotDeleted =
+                                customer?.openPlot &&
+                                typeof customer.openPlot === "object" &&
+                                customer.openPlot?.isDeleted;
+
+                              const isInnerPlotDeleted =
+                                customer?.innerPlot &&
+                                typeof customer.innerPlot === "object" &&
+                                customer.innerPlot?.isDeleted;
+
+                              const isLandDeleted =
+                                customer?.openLand &&
+                                typeof customer.openLand === "object" &&
+                                customer.openLand?.isDeleted;
+
+                              const isCustomerDeleted =
+                                customer?.isDeleted === true;
+
+                              // ONLY THESE disable row/actions
+                              const isAnyDeleted =
+                                isCustomerDeleted ||
+                                isBuildingDeleted ||
+                                isFloorDeleted ||
+                                isUnitDeleted ||
+                                isPlotDeleted ||
+                                isInnerPlotDeleted ||
+                                isLandDeleted;
+                              return (
+                                <TableRow
+                                  key={customer._id}
+                                  className={`transition-all ${
+                                    isAnyDeleted ? "opacity-60 bg-muted/30" : ""
+                                  }`}
+                                >
+                                  <TableCell>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="font-medium">
+                                        {(typeof customer.customerId ===
+                                          "object" &&
+                                          customer.customerId?.name) ||
+                                          "N/A"}
+                                      </span>
+                                      {isBuildingDeleted && (
+                                        <Badge variant="destructive">
+                                          Building De-Activated
+                                        </Badge>
+                                      )}
+
+                                      {!isBuildingDeleted && isFloorDeleted && (
+                                        <Badge className="bg-orange-500 text-white">
+                                          Floor De-Activated
+                                        </Badge>
+                                      )}
+
+                                      {!isBuildingDeleted &&
+                                        !isFloorDeleted &&
+                                        isUnitDeleted && (
+                                          <Badge variant="secondary">
+                                            Unit De-Activated
+                                          </Badge>
+                                        )}
+
+                                      {isPlotDeleted && (
+                                        <Badge className="bg-purple-500 text-white">
+                                          Plot De-Activated
+                                        </Badge>
+                                      )}
+                                      {isInnerPlotDeleted && (
+                                        <Badge className="bg-purple-500 text-white">
+                                          Inner Plot De-Activated
+                                        </Badge>
+                                      )}
+
+                                      {isLandDeleted && (
+                                        <Badge className="bg-green-600 text-white">
+                                          Land De-Activated
+                                        </Badge>
+                                      )}
+
+                                      {isCustomerDeleted && (
+                                        <Badge variant="outline">
+                                          Customer Deleted
+                                        </Badge>
+                                      )}
+                                      <span className="text-xs text-gray-500">
+                                        {typeof customer.customerId ===
+                                          "object" &&
+                                          customer.customerId?.email}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
                                     <div className="flex flex-col">
                                       <span className="font-medium">
-                                        {(typeof customer.property ===
+                                        {(typeof customer.purchasedFrom ===
                                           "object" &&
-                                          customer.property?.projectName) ||
+                                          customer.purchasedFrom?.name) ||
                                           "N/A"}
                                       </span>
                                       <span className="text-xs text-gray-500">
-                                        {(typeof customer.unit === "object" &&
-                                          customer.unit?.plotNo) ||
-                                          ""}
-                                        {typeof customer.floorUnit ===
+                                        {typeof customer.purchasedFrom ===
                                           "object" &&
-                                        customer.floorUnit?.floorNumber
-                                          ? ` • Floor ${customer.floorUnit.floorNumber}`
-                                          : ""}
+                                          customer.purchasedFrom?.email}
                                       </span>
                                     </div>
-                                  )}
-
-                                  {/* PLOT */}
-                                  {customer?.purchaseType === "PLOT" && (
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">
-                                        {(typeof customer.openPlot ===
-                                          "object" &&
-                                          customer.openPlot?.projectName) ||
-                                          "N/A"}
-                                      </span>
-
-                                      <span className="text-xs text-gray-500">
-                                        Plot No:{" "}
-                                        {(typeof customer.innerPlot ===
-                                          "object" &&
-                                          customer.innerPlot?.plotNo) ||
-                                          "N/A"}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* LAND */}
-                                  {customer?.purchaseType === "LAND" && (
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">
-                                        {(typeof customer.openLand ===
-                                          "object" &&
-                                          customer.openLand?.projectName) ||
-                                          "N/A"}
-                                      </span>
-
-                                      <span className="text-xs text-gray-500">
-                                        Survey:{" "}
-                                        {(typeof customer.openLand ===
-                                          "object" &&
-                                          customer.openLand?.surveyNumber) ||
-                                          "N/A"}
-                                      </span>
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  ₹
-                                  {customer.totalAmount?.toLocaleString(
-                                    "en-IN",
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  {customer.advanceReceived != null
-                                    ? `₹${customer.balancePayment.toLocaleString(
-                                        "en-IN",
-                                      )}`
-                                    : "-"}
-                                </TableCell>
-                                <TableCell>
-                                  {renderStatusBadge(customer.status)}
-                                </TableCell>
-                                <TableCell>
-                                  {renderPaymentStatusBadge(
-                                    customer.paymentStatus,
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={() => handleView(customer)}
-                                      >
-                                        View Details
-                                      </DropdownMenuItem>
-                                      {
-                                        <DropdownMenuItem
-                                          onClick={() => handleEdit(customer)}
-                                        >
-                                          Edit
-                                        </DropdownMenuItem>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      className={
+                                        customer?.purchaseType === "BUILDING"
+                                          ? "bg-blue-100 text-blue-800"
+                                          : customer?.purchaseType === "PLOT"
+                                            ? "bg-purple-100 text-purple-800"
+                                            : "bg-green-100 text-green-800"
                                       }
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setSelectedCustomer(customer);
-                                          setUploadPdfOpen(true);
-                                        }}
-                                      >
-                                        Upload PDF
-                                      </DropdownMenuItem>
+                                    >
+                                      {customer?.purchaseType}
+                                    </Badge>
+                                  </TableCell>
 
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setSelectedCustomerId(customer._id);
-                                          setPaymentOpen(true);
-                                        }}
-                                      >
-                                        Add Payment
-                                      </DropdownMenuItem>
+                                  <TableCell>
+                                    {/* BUILDING */}
+                                    {customer?.purchaseType === "BUILDING" && (
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">
+                                          {(typeof customer.property ===
+                                            "object" &&
+                                            customer.property?.projectName) ||
+                                            "N/A"}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {(typeof customer.unit === "object" &&
+                                            customer.unit?.plotNo) ||
+                                            ""}
+                                          {typeof customer.floorUnit ===
+                                            "object" &&
+                                          customer.floorUnit?.floorNumber
+                                            ? ` • Floor ${customer.floorUnit.floorNumber}`
+                                            : ""}
+                                        </span>
+                                      </div>
+                                    )}
 
-                                      {
+                                    {/* PLOT */}
+                                    {customer?.purchaseType === "PLOT" && (
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">
+                                          {(typeof customer.openPlot ===
+                                            "object" &&
+                                            customer.openPlot?.projectName) ||
+                                            "N/A"}
+                                        </span>
+
+                                        <span className="text-xs text-gray-500">
+                                          Plot No:{" "}
+                                          {(typeof customer.innerPlot ===
+                                            "object" &&
+                                            customer.innerPlot?.plotNo) ||
+                                            "N/A"}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* LAND */}
+                                    {customer?.purchaseType === "LAND" && (
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">
+                                          {(typeof customer.openLand ===
+                                            "object" &&
+                                            customer.openLand?.projectName) ||
+                                            "N/A"}
+                                        </span>
+
+                                        <span className="text-xs text-gray-500">
+                                          Survey:{" "}
+                                          {(typeof customer.openLand ===
+                                            "object" &&
+                                            customer.openLand?.surveyNumber) ||
+                                            "N/A"}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    ₹
+                                    {customer.totalAmount?.toLocaleString(
+                                      "en-IN",
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {customer.advanceReceived != null
+                                      ? `₹${customer.balancePayment.toLocaleString(
+                                          "en-IN",
+                                        )}`
+                                      : "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {renderStatusBadge(customer.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {renderPaymentStatusBadge(
+                                      customer.paymentStatus,
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
                                         <DropdownMenuItem
-                                          className="text-red-600"
-                                          onClick={() =>
-                                            handleDeleteClick(customer)
-                                          }
+                                          onClick={() => handleView(customer)}
                                         >
-                                          Delete
+                                          View Details
                                         </DropdownMenuItem>
-                                      }
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            ))
+                                        {!isAnyDeleted && (
+                                          <DropdownMenuItem
+                                            onClick={() => handleEdit(customer)}
+                                          >
+                                            Edit
+                                          </DropdownMenuItem>
+                                        )}
+                                        {!isAnyDeleted && (
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              setSelectedCustomer(customer);
+                                              setUploadPdfOpen(true);
+                                            }}
+                                          >
+                                            Upload PDF
+                                          </DropdownMenuItem>
+                                        )}
+
+                                        {!isAnyDeleted && (
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              setSelectedCustomerId(
+                                                customer._id,
+                                              );
+                                              setPaymentOpen(true);
+                                            }}
+                                          >
+                                            Add Payment
+                                          </DropdownMenuItem>
+                                        )}
+
+                                        {!isAnyDeleted && (
+                                          <DropdownMenuItem
+                                            className="text-red-600"
+                                            onClick={() =>
+                                              handleDeleteClick(customer)
+                                            }
+                                          >
+                                            Delete
+                                          </DropdownMenuItem>
+                                        )}
+                                        {isCustomerDeleted && (
+                                          <DropdownMenuItem
+                                            className="text-red-600"
+                                            onClick={() => {
+                                              setCustomerToRestore(
+                                                customer._id,
+                                              );
+                                              setRestoreDialogOpen(true);
+                                            }}
+                                          >
+                                            Restore
+                                          </DropdownMenuItem>
+                                        )}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
                           )}
                         </TableBody>
                       </Table>
@@ -712,23 +845,46 @@ const SecureCustomer = () => {
                 <div className="space-y-3">
                   <SectionTitle title="Customer & Agent" />
 
-                  <InfoItem
-                    label="Customer"
-                    value={
-                      typeof selectedCustomer?.customerId === "object"
-                        ? `${selectedCustomer?.customerId?.name ?? ""} (${selectedCustomer?.customerId?.email ?? ""})`
-                        : "N/A"
-                    }
-                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">Customer</span>
 
-                  <InfoItem
-                    label="Agent"
-                    value={
-                      typeof selectedCustomer?.purchasedFrom === "object"
-                        ? `${selectedCustomer?.purchasedFrom?.name ?? ""} (${selectedCustomer?.purchasedFrom?.email ?? ""})`
-                        : "N/A"
-                    }
-                  />
+                      {selectedCustomer?.isDeleted && (
+                        <Badge variant="destructive">Customer Deleted</Badge>
+                      )}
+                    </div>
+
+                    <InfoItem
+                      label=""
+                      value={
+                        typeof selectedCustomer?.customerId === "object"
+                          ? `${selectedCustomer?.customerId?.name ?? ""} (${selectedCustomer?.customerId?.email ?? ""})`
+                          : "N/A"
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">Agent</span>
+
+                      {selectedCustomer?.purchasedFrom &&
+                        typeof selectedCustomer.purchasedFrom === "object" &&
+                        selectedCustomer.purchasedFrom?.isDeleted && (
+                          <Badge variant="destructive">User Deactivated</Badge>
+                        )}
+                    </div>
+
+                    <InfoItem
+                      label=""
+                      value={
+                        selectedCustomer?.purchasedFrom &&
+                        typeof selectedCustomer.purchasedFrom === "object"
+                          ? `${selectedCustomer?.purchasedFrom?.name ?? ""} (${selectedCustomer?.purchasedFrom?.email ?? ""})`
+                          : "N/A"
+                      }
+                    />
+                  </div>
                 </div>
 
                 {/* PROPERTY DETAILS */}
@@ -738,66 +894,151 @@ const SecureCustomer = () => {
                   {/* BUILDING PURCHASE */}
                   {selectedCustomer?.purchaseType === "BUILDING" && (
                     <>
-                      <InfoItem
-                        label="Project"
-                        value={
-                          typeof selectedCustomer?.property === "object"
-                            ? selectedCustomer?.property?.projectName
-                            : "N/A"
-                        }
-                        subValue={
-                          typeof selectedCustomer?.property === "object"
-                            ? selectedCustomer?.property?.location
-                            : ""
-                        }
-                      />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">Project</span>
 
-                      <InfoItem
-                        label="Unit"
-                        value={
-                          typeof selectedCustomer?.unit === "object"
-                            ? selectedCustomer?.unit?.plotNo
-                            : "N/A"
-                        }
-                        subValue={
-                          typeof selectedCustomer?.floorUnit === "object"
-                            ? `Floor ${selectedCustomer?.floorUnit?.floorNumber}`
-                            : ""
-                        }
-                      />
+                          {selectedCustomer?.property &&
+                            typeof selectedCustomer.property === "object" &&
+                            selectedCustomer.property?.isDeleted && (
+                              <Badge variant="destructive">
+                                Building Deactivated
+                              </Badge>
+                            )}
+                        </div>
+
+                        <InfoItem
+                          label=""
+                          value={
+                            typeof selectedCustomer?.property === "object"
+                              ? selectedCustomer?.property?.projectName
+                              : "N/A"
+                          }
+                          subValue={
+                            typeof selectedCustomer?.property === "object"
+                              ? selectedCustomer?.property?.location
+                              : ""
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">Floor</span>
+
+                          {selectedCustomer?.floorUnit &&
+                            typeof selectedCustomer.floorUnit === "object" &&
+                            selectedCustomer.floorUnit?.isDeleted && (
+                              <Badge className="bg-orange-500 text-white">
+                                Floor Deactivated
+                              </Badge>
+                            )}
+                        </div>
+
+                        <InfoItem
+                          label=""
+                          value={
+                            typeof selectedCustomer?.floorUnit === "object"
+                              ? selectedCustomer?.floorUnit?.floorNumber
+                              : "N/A"
+                          }
+                          subValue={
+                            typeof selectedCustomer?.floorUnit === "object"
+                              ? `Floor ${selectedCustomer?.floorUnit?.unitType}`
+                              : ""
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">Unit</span>
+
+                          {selectedCustomer?.unit &&
+                            typeof selectedCustomer.unit === "object" &&
+                            selectedCustomer.unit?.isDeleted && (
+                              <Badge variant="secondary">
+                                Unit Deactivated
+                              </Badge>
+                            )}
+                        </div>
+
+                        <InfoItem
+                          label=""
+                          value={
+                            typeof selectedCustomer?.unit === "object"
+                              ? selectedCustomer?.unit?.plotNo
+                              : "N/A"
+                          }
+                          subValue={
+                            typeof selectedCustomer?.floorUnit === "object"
+                              ? `Floor ${selectedCustomer?.floorUnit?.floorNumber}`
+                              : ""
+                          }
+                        />
+                      </div>
                     </>
                   )}
 
                   {/* PLOT PURCHASE */}
                   {selectedCustomer?.purchaseType === "PLOT" && (
                     <>
-                      <InfoItem
-                        label="Layout"
-                        value={
-                          typeof selectedCustomer?.openPlot === "object"
-                            ? selectedCustomer?.openPlot?.projectName
-                            : "N/A"
-                        }
-                        subValue={
-                          typeof selectedCustomer?.openPlot === "object"
-                            ? selectedCustomer?.openPlot?.location
-                            : ""
-                        }
-                      />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">Layout</span>
 
-                      <InfoItem
-                        label="Plot Number"
-                        value={
-                          typeof selectedCustomer?.innerPlot === "object"
-                            ? selectedCustomer?.innerPlot?.plotNo
-                            : "N/A"
-                        }
-                        subValue={
-                          typeof selectedCustomer?.innerPlot === "object"
-                            ? `${selectedCustomer?.innerPlot?.area ?? ""} Sqft`
-                            : ""
-                        }
-                      />
+                          {selectedCustomer?.openPlot &&
+                            typeof selectedCustomer.openPlot === "object" &&
+                            selectedCustomer.openPlot?.isDeleted && (
+                              <Badge className="bg-purple-500 text-white">
+                                Plot Deactivated
+                              </Badge>
+                            )}
+                        </div>
+
+                        <InfoItem
+                          label=""
+                          value={
+                            typeof selectedCustomer?.openPlot === "object"
+                              ? selectedCustomer?.openPlot?.projectName
+                              : "N/A"
+                          }
+                          subValue={
+                            typeof selectedCustomer?.openPlot === "object"
+                              ? selectedCustomer?.openPlot?.location
+                              : ""
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">
+                            Plot Number
+                          </span>
+
+                          {selectedCustomer?.innerPlot &&
+                            typeof selectedCustomer.innerPlot === "object" &&
+                            selectedCustomer.innerPlot?.isDeleted && (
+                              <Badge className="bg-purple-500 text-white">
+                                Inner Plot Deactivated
+                              </Badge>
+                            )}
+                        </div>
+
+                        <InfoItem
+                          label=""
+                          value={
+                            typeof selectedCustomer?.innerPlot === "object"
+                              ? selectedCustomer?.innerPlot?.plotNo
+                              : "N/A"
+                          }
+                          subValue={
+                            typeof selectedCustomer?.innerPlot === "object"
+                              ? `${selectedCustomer?.innerPlot?.area ?? ""} Sqft`
+                              : ""
+                          }
+                        />
+                      </div>
                     </>
                   )}
 
@@ -925,33 +1166,67 @@ const SecureCustomer = () => {
                   <SectionTitle title="Construction Details" />
 
                   <div className="grid grid-cols-2 gap-4">
-                    <InfoItem
-                      label="Site Incharge"
-                      value={
-                        typeof selectedCustomer?.siteInchargeId === "object"
-                          ? `${selectedCustomer?.siteInchargeId?.name ?? ""} (${selectedCustomer?.siteInchargeId?.phone ?? ""})`
-                          : "N/A"
-                      }
-                      subValue={
-                        typeof selectedCustomer?.siteInchargeId === "object"
-                          ? selectedCustomer?.siteInchargeId?.email
-                          : ""
-                      }
-                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">
+                          Site Incharge
+                        </span>
 
-                    <InfoItem
-                      label="Contractor"
-                      value={
-                        typeof selectedCustomer?.contractorId === "object"
-                          ? `${selectedCustomer?.contractorId?.name ?? ""} (${selectedCustomer?.contractorId?.phone ?? ""})`
-                          : "N/A"
-                      }
-                      subValue={
-                        typeof selectedCustomer?.contractorId === "object"
-                          ? selectedCustomer?.contractorId?.email
-                          : ""
-                      }
-                    />
+                        {selectedCustomer?.siteInchargeId &&
+                          typeof selectedCustomer.siteInchargeId === "object" &&
+                          selectedCustomer.siteInchargeId?.isDeleted && (
+                            <Badge variant="destructive">
+                              User Deactivated
+                            </Badge>
+                          )}
+                      </div>
+
+                      <InfoItem
+                        label=""
+                        value={
+                          selectedCustomer?.siteInchargeId &&
+                          typeof selectedCustomer.siteInchargeId === "object"
+                            ? `${selectedCustomer?.siteInchargeId?.name ?? ""} (${selectedCustomer?.siteInchargeId?.phone ?? ""})`
+                            : "N/A"
+                        }
+                        subValue={
+                          selectedCustomer?.siteInchargeId &&
+                          typeof selectedCustomer.siteInchargeId === "object"
+                            ? selectedCustomer?.siteInchargeId?.email
+                            : ""
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">Contractor</span>
+
+                        {selectedCustomer?.contractorId &&
+                          typeof selectedCustomer.contractorId === "object" &&
+                          selectedCustomer.contractorId?.isDeleted && (
+                            <Badge variant="destructive">
+                              User Deactivated
+                            </Badge>
+                          )}
+                      </div>
+
+                      <InfoItem
+                        label=""
+                        value={
+                          selectedCustomer?.contractorId &&
+                          typeof selectedCustomer.contractorId === "object"
+                            ? `${selectedCustomer?.contractorId?.name ?? ""} (${selectedCustomer?.contractorId?.phone ?? ""})`
+                            : "N/A"
+                        }
+                        subValue={
+                          selectedCustomer?.contractorId &&
+                          typeof selectedCustomer.contractorId === "object"
+                            ? selectedCustomer?.contractorId?.email
+                            : ""
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1133,7 +1408,7 @@ const SecureCustomer = () => {
                 Upload a PDF document for{" "}
                 <span className="font-medium">
                   {typeof selectedCustomer?.customerId === "object"
-                    ? selectedCustomer.customerId.name
+                    ? selectedCustomer?.customerId?.name
                     : "this customer"}
                 </span>
                 .
@@ -1206,8 +1481,7 @@ const SecureCustomer = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete customer</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this customer record? This
-                action cannot be undone.
+                Are you sure you want to delete this customer record?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1282,6 +1556,18 @@ const SecureCustomer = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <DeleteConfirmDialog
+          title="Restore Customer"
+          description="Are you sure you want to restore this customer?"
+          onConfirm={() => {
+            if (!customerToRestore) return;
+            restoreMutation.mutate(customerToRestore);
+          }}
+          open={restoreDialogOpen}
+          onOpenChange={setRestoreDialogOpen}
+          btnTxt="Restore"
+        />
       </div>
     </MainLayout>
   );

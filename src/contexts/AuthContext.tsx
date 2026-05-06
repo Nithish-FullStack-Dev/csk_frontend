@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const subdomain = hostname.split(".")[0];
 
-    const isCRM = subdomain === "app";
+    const isCRM = subdomain === "app" || hostname === "localhost";
 
     const isPublicRoute = path === "/" || path.startsWith("/public");
 

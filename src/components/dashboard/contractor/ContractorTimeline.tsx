@@ -32,16 +32,19 @@ interface Project {
     _id: string;
     projectName: string;
     location: string;
+    isDeleted?: boolean;
   };
   floorUnit: {
     _id: string;
     floorNumber: number;
     unitType: string;
+    isDeleted?: boolean;
   };
   unit: {
     _id: string;
     plotNo: string;
     propertyType: string;
+    isDeleted?: boolean;
   };
   startDate: string;
   endDate: string;
@@ -60,6 +63,10 @@ interface TimelineItem {
   status: string;
   type: string;
   description?: string;
+
+  isBuildingDeleted?: boolean;
+  isFloorDeleted?: boolean;
+  isUnitDeleted?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -111,6 +118,10 @@ const ContractorTimeline: React.FC = () => {
                 "upcoming",
               type: "task",
               description: project?.description || "No description",
+
+              isBuildingDeleted: project?.projectId?.isDeleted,
+              isFloorDeleted: project?.floorUnit?.isDeleted,
+              isUnitDeleted: project?.unit?.isDeleted,
             });
           });
         });
@@ -184,57 +195,96 @@ const ContractorTimeline: React.FC = () => {
         <div key={project} className="space-y-4">
           <h3 className="font-semibold text-lg text-gray-800">{project}</h3>
           <div className="space-y-3 pl-4 border-l-2 border-gray-200">
-            {items.map((item) => (
-              <div key={item.id} className="relative">
-                <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[3rem] top-2"></div>
-                <div className="p-4 border rounded-lg hover:shadow-md transition">
-                  <div className="flex flex-wrap justify-between mb-2">
-                    <div className="flex items-center">
-                      <h4 className="font-medium text-md mr-2">{item.title}</h4>
-                      <Badge
-                        variant="secondary"
-                        className={`${
-                          statusColors[item.status] || "bg-gray-100"
-                        }`}
-                      >
-                        {getStatusIcon(item.status)}
-                        {item.status.charAt(0).toUpperCase() +
-                          item.status.slice(1)}
+            {items.map((item) => {
+              const isAnyDeleted =
+                item.isBuildingDeleted ||
+                item.isFloorDeleted ||
+                item.isUnitDeleted;
+              return (
+                <div
+                  key={item.id}
+                  className={`
+    p-4 border rounded-lg transition
+    ${isAnyDeleted ? "bg-muted/40 border-dashed opacity-70" : "hover:shadow-md"}
+  `}
+                >
+                  <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[3rem] top-2"></div>
+                  <div className="p-4 border rounded-lg hover:shadow-md transition">
+                    <div className="flex flex-wrap justify-between mb-2">
+                      <div className="flex items-center">
+                        <h4 className="font-medium text-md mr-2">
+                          {item.title}
+                        </h4>
+                        <Badge
+                          variant="secondary"
+                          className={`${
+                            statusColors[item.status] || "bg-gray-100"
+                          }`}
+                        >
+                          {getStatusIcon(item.status)}
+                          {item.status.charAt(0).toUpperCase() +
+                            item.status.slice(1)}
+                        </Badge>
+                      </div>
+                      {isAnyDeleted && (
+                        <div className="mb-3">
+                          {item.isBuildingDeleted && (
+                            <Badge variant="destructive">
+                              Building De-Activated
+                            </Badge>
+                          )}
+
+                          {!item.isBuildingDeleted && item.isFloorDeleted && (
+                            <Badge className="bg-orange-500 text-white">
+                              Floor De-Activated
+                            </Badge>
+                          )}
+
+                          {!item.isBuildingDeleted &&
+                            !item.isFloorDeleted &&
+                            item.isUnitDeleted && (
+                              <Badge variant="secondary">
+                                Unit De-Activated
+                              </Badge>
+                            )}
+                        </div>
+                      )}
+                      <Badge variant="outline" className="capitalize">
+                        {typeIcons[item.type]}
+                        {item.type}
                       </Badge>
                     </div>
-                    <Badge variant="outline" className="capitalize">
-                      {typeIcons[item.type]}
-                      {item.type}
-                    </Badge>
-                  </div>
 
-                  <p className="text-sm text-gray-600 mb-2">
-                    {item.description}
-                  </p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {item.description}
+                    </p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500">
-                    <div>
-                      <span className="font-medium text-gray-700">Unit:</span>{" "}
-                      {item.unit}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Start:</span>{" "}
-                      {new Date(item.startDate).toLocaleDateString()}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">End:</span>{" "}
-                      {new Date(item.endDate).toLocaleDateString()}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">
-                        Project:
-                      </span>{" "}
-                      {item.project}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500">
+                      <div>
+                        <span className="font-medium text-gray-700">Unit:</span>{" "}
+                        {item.unit}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">
+                          Start:
+                        </span>{" "}
+                        {new Date(item.startDate).toLocaleDateString()}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">End:</span>{" "}
+                        {new Date(item.endDate).toLocaleDateString()}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">
+                          Project:
+                        </span>{" "}
+                        {item.project}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

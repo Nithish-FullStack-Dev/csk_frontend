@@ -72,6 +72,7 @@ export interface Customer {
   finalPrice?: number;
   paymentStatus?: "Pending" | "In Progress" | "Completed";
   pdfDocument?: string;
+  isDeleted?: boolean;
 
   images?: string[];
 

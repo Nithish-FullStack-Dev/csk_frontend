@@ -1,5 +1,6 @@
 import { User } from "@/contexts/AuthContext";
 import { Customer } from "@/utils/buildings/CustomerConfig";
+import { Building, FloorUnit } from "./building";
 
 export type VillaFacing =
   | "North"
@@ -75,4 +76,7 @@ export interface Property {
   enquiryCustomerContact?: string;
   purchasedCustomerName?: string;
   purchasedCustomerContact?: string;
+  isDeleted?: boolean;
+  buildingId?: Building;
+  floorId?: FloorUnit;
 }

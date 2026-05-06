@@ -362,9 +362,38 @@ const ContractorTaskList = () => {
               </TableRow>
             ) : (
               filteredTasks.map((task, idx) => {
+                const isAnyDeleted =
+                  task?.isBuildingDeleted ||
+                  task?.isFloorDeleted ||
+                  task?.isUnitDeleted;
                 return (
-                  <TableRow key={task._id || idx}>
-                    <TableCell className="font-medium">{task.title}</TableCell>
+                  <TableRow
+                    key={task._id || idx}
+                    className={isAnyDeleted ? "opacity-60 bg-muted/30" : ""}
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{task.title}</span>
+
+                        {task.isBuildingDeleted && (
+                          <Badge variant="destructive">
+                            Building De-Activated
+                          </Badge>
+                        )}
+
+                        {!task.isBuildingDeleted && task.isFloorDeleted && (
+                          <Badge className="bg-orange-500 text-white">
+                            Floor De-Activated
+                          </Badge>
+                        )}
+
+                        {!task.isBuildingDeleted &&
+                          !task.isFloorDeleted &&
+                          task.isUnitDeleted && (
+                            <Badge variant="secondary">Unit De-Activated</Badge>
+                          )}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {task?.project}, floorNo: {task?.floorNumber} unit:{" "}
                       {task?.plotNo}
@@ -403,24 +432,26 @@ const ContractorTaskList = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-1">
-                        {user?.role !== "admin" && userCanAddUser && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setProgress(task.progress);
-                              //setStatus(task.status);
-                              handleUploadEvidence(task);
-                            }}
-                            className={
-                              task.hasEvidence
-                                ? "text-blue-600 hover:text-blue-800"
-                                : ""
-                            }
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Button>
-                        )}
+                        {!isAnyDeleted &&
+                          user?.role !== "admin" &&
+                          userCanAddUser && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setProgress(task.progress);
+                                //setStatus(task.status);
+                                handleUploadEvidence(task);
+                              }}
+                              className={
+                                task.hasEvidence
+                                  ? "text-blue-600 hover:text-blue-800"
+                                  : ""
+                              }
+                            >
+                              <Camera className="h-4 w-4" />
+                            </Button>
+                          )}
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -441,18 +472,20 @@ const ContractorTaskList = () => {
                             >
                               View Details
                             </DropdownMenuItem>
-                            {user?.role !== "admin" && userCanEditUser && (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTask(task);
-                                  setProgress(task.progress);
-                                  setSelectedPhase(task.phase);
-                                  setEditTaskOpen(true);
-                                }}
-                              >
-                                Edit Task
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTask(task);
+                                    setProgress(task.progress);
+                                    setSelectedPhase(task.phase);
+                                    setEditTaskOpen(true);
+                                  }}
+                                >
+                                  Edit Task
+                                </DropdownMenuItem>
+                              )}
                             {/*  */}
                             {/* {task.status === "pending" && (
                               <DropdownMenuItem>
@@ -462,15 +495,17 @@ const ContractorTaskList = () => {
                             {task.status === "rejected" && (
                               <DropdownMenuItem>Resume Work</DropdownMenuItem>
                             )} */}
-                            {user?.role !== "admin" && userCanEditUser && (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  handleUploadEvidence(task);
-                                }}
-                              >
-                                Upload Photos
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    handleUploadEvidence(task);
+                                  }}
+                                >
+                                  Upload Photos
+                                </DropdownMenuItem>
+                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -482,119 +517,162 @@ const ContractorTaskList = () => {
           </TableBody>
         </Table>
         <div className="space-y-4 lg:hidden block">
-          {filteredTasks.map((task, idx) => (
-            <div
-              key={task?._id || idx}
-              className="border rounded-md p-4 shadow-sm bg-white"
-            >
-              {/* Task Title */}
-              <div className="flex justify-between items-start">
-                <h3 className="font-medium text-lg">{task?.title || "-"}</h3>
-                <Badge
-                  variant="outline"
-                  className={
-                    statusColors[task?.status] || "bg-gray-100 text-gray-800"
-                  }
-                >
-                  {task?.status || "-"}
-                </Badge>
-              </div>
-
-              {/* Project / Unit */}
-              <p className="text-sm text-gray-500 mt-1">
-                {task?.project || "-"} / {task?.unit || "-"}
-              </p>
-
-              {/* Phase & Verification */}
-              <div className="flex justify-between mt-2">
-                <span className="text-sm text-gray-600">
-                  {task?.phase || "-"}
-                </span>
-
-                <Badge
-                  variant="outline"
-                  className={
-                    siteStatusColors[task?.verificationDecision] ||
-                    "bg-gray-100 text-gray-800"
-                  }
-                >
-                  {task?.verificationDecision
-                    ? task.verificationDecision
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())
-                    : "-"}
-                </Badge>
-              </div>
-
-              {/* Deadline & Progress */}
-              <div className="flex justify-between mt-2 text-sm text-gray-500">
-                <span>Deadline: {formatDate(task?.deadline)}</span>
-                <span>
-                  Progress:{" "}
-                  {task?.progress !== undefined
-                    ? `${task?.progress ?? 0}%`
-                    : "-"}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-2 mt-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleUploadEvidence(task)}
-                  className={
-                    task.hasEvidence ? "text-blue-600 hover:text-blue-800" : ""
-                  }
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="max-h-[250px]"
-                    sideOffset={8}
+          {filteredTasks.map((task, idx) => {
+            const isAnyDeleted =
+              task?.isBuildingDeleted ||
+              task?.isFloorDeleted ||
+              task?.isUnitDeleted;
+            return (
+              <div
+                key={task?._id || idx}
+                className={`border rounded-md p-4 shadow-sm ${
+                  isAnyDeleted
+                    ? "bg-muted/30 opacity-60 border-dashed"
+                    : "bg-white"
+                }`}
+              >
+                {/* Task Title */}
+                <div className="flex justify-between items-start">
+                  <h3 className="font-medium text-lg">{task?.title || "-"}</h3>
+                  <Badge
+                    variant="outline"
+                    className={
+                      statusColors[task?.status] || "bg-gray-100 text-gray-800"
+                    }
                   >
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setViewDetailsOpen(true);
-                      }}
-                    >
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setProgress(task.progress);
-                        setSelectedPhase(task.phase);
-                        setEditTaskOpen(true);
-                      }}
-                    >
-                      Edit Task
-                    </DropdownMenuItem>
-                    {task.status === "pending" && (
-                      <DropdownMenuItem>Mark as In Progress</DropdownMenuItem>
+                    {task?.status || "-"}
+                  </Badge>
+                </div>
+
+                {/* Project / Unit */}
+                <p className="text-sm text-gray-500 mt-1">
+                  {task?.project || "-"} / {task?.unit || "-"}
+                </p>
+                {isAnyDeleted && (
+                  <div className="mt-2">
+                    {task.isBuildingDeleted && (
+                      <Badge variant="destructive">Building De-Activated</Badge>
                     )}
-                    {task.status === "rejected" && (
-                      <DropdownMenuItem>Resume Work</DropdownMenuItem>
+
+                    {!task.isBuildingDeleted && task.isFloorDeleted && (
+                      <Badge className="bg-orange-500 text-white">
+                        Floor De-Activated
+                      </Badge>
                     )}
-                    <DropdownMenuItem
+
+                    {!task.isBuildingDeleted &&
+                      !task.isFloorDeleted &&
+                      task.isUnitDeleted && (
+                        <Badge variant="secondary">Unit De-Activated</Badge>
+                      )}
+                  </div>
+                )}
+
+                {/* Phase & Verification */}
+                <div className="flex justify-between mt-2">
+                  <span className="text-sm text-gray-600">
+                    {task?.phase || "-"}
+                  </span>
+
+                  <Badge
+                    variant="outline"
+                    className={
+                      siteStatusColors[task?.verificationDecision] ||
+                      "bg-gray-100 text-gray-800"
+                    }
+                  >
+                    {task?.verificationDecision
+                      ? task.verificationDecision
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())
+                      : "-"}
+                  </Badge>
+                </div>
+
+                {/* Deadline & Progress */}
+                <div className="flex justify-between mt-2 text-sm text-gray-500">
+                  <span>Deadline: {formatDate(task?.deadline)}</span>
+                  <span>
+                    Progress:{" "}
+                    {task?.progress !== undefined
+                      ? `${task?.progress ?? 0}%`
+                      : "-"}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-2 mt-3">
+                  {!isAnyDeleted && user?.role !== "admin" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleUploadEvidence(task)}
+                      className={
+                        task.hasEvidence
+                          ? "text-blue-600 hover:text-blue-800"
+                          : ""
+                      }
                     >
-                      Upload Photos
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="max-h-[250px]"
+                      sideOffset={8}
+                    >
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setViewDetailsOpen(true);
+                        }}
+                      >
+                        View Details
+                      </DropdownMenuItem>
+                      {!isAnyDeleted && user?.role !== "admin" && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setProgress(task.progress);
+                            setSelectedPhase(task.phase);
+                            setEditTaskOpen(true);
+                          }}
+                        >
+                          Edit Task
+                        </DropdownMenuItem>
+                      )}
+                      {task.status === "pending" &&
+                        !isAnyDeleted &&
+                        user?.role !== "admin" && (
+                          <DropdownMenuItem>
+                            Mark as In Progress
+                          </DropdownMenuItem>
+                        )}
+                      {task.status === "rejected" &&
+                        !isAnyDeleted &&
+                        user?.role !== "admin" && (
+                          <DropdownMenuItem>Resume Work</DropdownMenuItem>
+                        )}
+                      {!isAnyDeleted && user?.role !== "admin" && (
+                        <DropdownMenuItem
+                          onClick={() => handleUploadEvidence(task)}
+                        >
+                          Upload Photos
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <Dialog open={uploadEvidenceOpen} onOpenChange={setUploadEvidenceOpen}>

@@ -210,9 +210,8 @@ const App = () => {
 
   const subdomain = hostname.split(".")[0];
 
-  const isCRM =
-    subdomain === "app" ;
-  
+  const isCRM = subdomain === "app" || hostname === "localhost";
+
   const TeamRouteWrapper = () => {
     const { user } = useAuth();
     const role = String(user?.role || "").toLowerCase();
@@ -240,370 +239,372 @@ const App = () => {
               <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
-                {!isCRM && <Route element={<PublicSuspenseWrapper />}>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/public/about" element={<PublicAboutPage />} />
-                  <Route
-                    path="/public/property"
-                    element={<PublicPropertiesPage />}
-                  />
-                  <Route
-                    path="/public/completed-projects"
-                    element={<CompletedProjectsPage />}
-                  />
-                  <Route
-                    path="/public/ongoing-projects"
-                    element={<OngoingProjectsPage />}
-                  />
-                  <Route
-                    path="/public/upcoming-projects"
-                    element={<UpcomingProjectsPage />}
-                  />
-                  <Route
-                    path="/public/open-plots"
-                    element={<OpenPlotsPage />}
-                  />
-                  <Route
-                    path="/public/open-lands"
-                    element={<OpenLandsPage />}
-                  />
-                  <Route path="/public/careers" element={<Careers />} />
-                  <Route
-                    path="/public/privacy-policy"
-                    element={<PrivacyPolicy />}
-                  />
-                  <Route
-                    path="/public/terms-of-service"
-                    element={<TermsOfService />}
-                  />
-                  {/* ✅ ADD THIS HERE */}
-                  <Route
-                    path="/public/openLand/:id"
-                    element={<OpenLandDetails />}
-                  />
-                  <Route
-                    path="/public/openPlot/:id"
-                    element={<OpenPlotsDetails />}
-                  />
-                  {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
-                  {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
-                  <Route path="/public/contact" element={<ContactPage />} />
+                {!isCRM && (
+                  <Route element={<PublicSuspenseWrapper />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/public/about" element={<PublicAboutPage />} />
+                    <Route
+                      path="/public/property"
+                      element={<PublicPropertiesPage />}
+                    />
+                    <Route
+                      path="/public/completed-projects"
+                      element={<CompletedProjectsPage />}
+                    />
+                    <Route
+                      path="/public/ongoing-projects"
+                      element={<OngoingProjectsPage />}
+                    />
+                    <Route
+                      path="/public/upcoming-projects"
+                      element={<UpcomingProjectsPage />}
+                    />
+                    <Route
+                      path="/public/open-plots"
+                      element={<OpenPlotsPage />}
+                    />
+                    <Route
+                      path="/public/open-lands"
+                      element={<OpenLandsPage />}
+                    />
+                    <Route path="/public/careers" element={<Careers />} />
+                    <Route
+                      path="/public/privacy-policy"
+                      element={<PrivacyPolicy />}
+                    />
+                    <Route
+                      path="/public/terms-of-service"
+                      element={<TermsOfService />}
+                    />
+                    {/* ✅ ADD THIS HERE */}
+                    <Route
+                      path="/public/openLand/:id"
+                      element={<OpenLandDetails />}
+                    />
+                    <Route
+                      path="/public/openPlot/:id"
+                      element={<OpenPlotsDetails />}
+                    />
+                    {/* <Route path= "/public/open-land" element={<OpenLandProperties />}/> */}
+                    {/* <Route path="/public/open-land" element={<OpenLandProperties />} /> */}
+                    <Route path="/public/contact" element={<ContactPage />} />
 
-                  <Route
-                    path="/public/project/:id"
-                    element={<ProjectDetailsPage />}
-                  />
-                  {/* <Route path="/kanban" element={<Kanban />} /> */}
-                  {/* <Route path="/department" element={<Department />} /> */}
-                </Route>
-                  }
+                    <Route
+                      path="/public/project/:id"
+                      element={<ProjectDetailsPage />}
+                    />
+                    {/* <Route path="/kanban" element={<Kanban />} /> */}
+                    {/* <Route path="/department" element={<Department />} /> */}
+                  </Route>
+                )}
 
                 {/* Admin Routes */}
-                {isCRM && <Route element={<PrivateSuspenseWrapper />}>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="/app" element={<Dashboard />} />
-                  <Route
-                    path="/messaging"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Communications"}>
-                        <ChatInterface />
-                      </ProtectedRoute>
-                    }
-                  />
+                {isCRM && (
+                  <Route element={<PrivateSuspenseWrapper />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="/app" element={<Dashboard />} />
+                    <Route
+                      path="/messaging"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Communications"}>
+                          <ChatInterface />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Secured */}
-                  <Route
-                    path="/secure"
-                    element={
-                      <SecureRoute requireToken={false}>
-                        <Form />
-                      </SecureRoute>
-                    }
-                  />
-                  <Route
-                    path="/secure/dashboard"
-                    element={
-                      <SecureRoute requireToken>
-                        <SecureDashboard />
-                      </SecureRoute>
-                    }
-                  />
-                  <Route
-                    path="/secure/customer"
-                    element={
-                      <SecureRoute requireToken>
-                        <SecureCustomer />
-                      </SecureRoute>
-                    }
-                  />
+                    {/* Secured */}
+                    <Route
+                      path="/secure"
+                      element={
+                        <SecureRoute requireToken={false}>
+                          <Form />
+                        </SecureRoute>
+                      }
+                    />
+                    <Route
+                      path="/secure/dashboard"
+                      element={
+                        <SecureRoute requireToken>
+                          <SecureDashboard />
+                        </SecureRoute>
+                      }
+                    />
+                    <Route
+                      path="/secure/customer"
+                      element={
+                        <SecureRoute requireToken>
+                          <SecureCustomer />
+                        </SecureRoute>
+                      }
+                    />
 
-                  {/* <Route
+                    {/* <Route
                     path="/public/openPlot/:id"
                     element={<OpenPlotsDetails />}
                   /> */}
-                  {/* <Route
+                    {/* <Route
                     path="/public/openLand/:id"
                     element={<OpenLandDetails />}
                   /> */}
-                  <Route
-                    path="/enquiry"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Enquiry"}>
-                        <Enquiry />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/enquiry"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Enquiry"}>
+                          <Enquiry />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Reports Module */}
-                  <Route
-                    path="/reports"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <ReportsHome />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/properties"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <PropertiesReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/users-access"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <UsersAccessReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/agents"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <AgentsReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/team-leads"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <TeamLeadsReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/sales-managers"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <SalesManagersReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/accounting"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <AccountingReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/contractors"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <ContractorsReport />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports/site-incharge"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <SiteInchargeReport />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Reports Module */}
+                    <Route
+                      path="/reports"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <ReportsHome />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/properties"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <PropertiesReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/users-access"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <UsersAccessReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/agents"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <AgentsReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/team-leads"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <TeamLeadsReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/sales-managers"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <SalesManagersReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/accounting"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <AccountingReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/contractors"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <ContractorsReport />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports/site-incharge"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <SiteInchargeReport />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Public User Route - Redirects to public homepage */}
-                  <Route
-                    path="/public-user"
-                    element={<Navigate to="/" replace />}
-                  />
+                    {/* Public User Route - Redirects to public homepage */}
+                    <Route
+                      path="/public-user"
+                      element={<Navigate to="/" replace />}
+                    />
 
-                  {/* Property Routes */}
-                  <Route
-                    path="/properties"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <NewProperties />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Property Routes */}
+                    <Route
+                      path="/properties"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <NewProperties />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* <Route
+                    {/* <Route
                   path="/properties/openplot/:id"
                   element={<OpenPlotsDetails />}
                 /> */}
-                  <Route
-                    path="/properties/openplot/:id"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <OpenPlotDetailsPage />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/properties/openplot/:id"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <OpenPlotDetailsPage />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  <Route
-                    path="/properties/openland/:id"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <OpenLandDetailsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties/building/:buildingId"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <BuildingDetails />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/properties/openland/:id"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <OpenLandDetailsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/properties/building/:buildingId"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <BuildingDetails />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  <Route
-                    path="/properties/building/:buildingId/floor/:floorId"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <FloorUnits />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties/building/:buildingId/floor/:floorId/unit/:unitId"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <UnitDetails />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/properties/openplot/:id/inner-detail/:_id"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Properties"}>
-                        <InnerPlotDetails />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/properties/building/:buildingId/floor/:floorId"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <FloorUnits />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/properties/building/:buildingId/floor/:floorId/unit/:unitId"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <UnitDetails />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/properties/openplot/:id/inner-detail/:_id"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Properties"}>
+                          <InnerPlotDetails />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* CMS Route */}
-                  <Route
-                    path="/content"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Content Management"}>
-                        <ContentManagement />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* CMS Route */}
+                    <Route
+                      path="/content"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Content Management"}>
+                          <ContentManagement />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Owner & Admin Routes */}
-                  <Route
-                    path="/analytics"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Business Analytics"}>
-                        <BusinessAnalytics />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/users"
-                    element={
-                      <ProtectedRoute roleSubmodule={"User Management"}>
-                        <UserManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/roles"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Role Management"}>
-                        <RoleManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/sales"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Sales Overview"}>
-                        <SalesOverview />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/operations"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Operations"}>
-                        <OperationsWorkflow />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/finances"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Finances"}>
-                        <Finances />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute roleSubmodule={"System Config"}>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Owner & Admin Routes */}
+                    <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Business Analytics"}>
+                          <BusinessAnalytics />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/users"
+                      element={
+                        <ProtectedRoute roleSubmodule={"User Management"}>
+                          <UserManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/roles"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Role Management"}>
+                          <RoleManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/sales"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Sales Overview"}>
+                          <SalesOverview />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/operations"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Operations"}>
+                          <OperationsWorkflow />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/finances"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Finances"}>
+                          <Finances />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute roleSubmodule={"System Config"}>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* <Route path="/kanban" element={<Kanban />} /> */}
-                  <Route
-                    path="/kanban"
-                    element={
-                      <ProtectedRoute roleSubmodule={"System Config"}>
-                        <Kanban />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/audit"
-                    element={
-                      <ProtectedRoute roleSubmodule={"System Config"}>
-                        <AuditLogViewer />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/department"
-                    element={
-                      <ProtectedRoute roleSubmodule={"System Config"}>
-                        <Department />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* <Route path="/kanban" element={<Kanban />} /> */}
+                    <Route
+                      path="/kanban"
+                      element={
+                        <ProtectedRoute roleSubmodule={"System Config"}>
+                          <Kanban />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/audit"
+                      element={
+                        <ProtectedRoute roleSubmodule={"System Config"}>
+                          <AuditLogViewer />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/department"
+                      element={
+                        <ProtectedRoute roleSubmodule={"System Config"}>
+                          <Department />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Profile"}>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Profile"}>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* <Route
+                    {/* <Route
                     path="/trash-buildings"
                     element={
                       <ProtectedRoute roleSubmodule={"Trash – Buildings"}>
@@ -612,159 +613,161 @@ const App = () => {
                     }
                   /> */}
 
-                  <Route
-                    path="/job-posts"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Careers Management"}>
-                        <JobPostsPage />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/job-posts"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Careers Management"}>
+                          <JobPostsPage />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Sales Manager Routes */}
-                  <Route
-                    path="/customer"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Customer Management"}>
-                        <CustomerManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/team"
-                    element={
-                      <ProtectedRoute roleSubmodule={"My Team"}>
-                        <TeamRouteWrapper />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/teamLead"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Team Management"}>
-                        <TeamLeadRouteWrapper />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Sales Manager Routes */}
+                    <Route
+                      path="/customer"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Customer Management"}>
+                          <CustomerManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/team"
+                      element={
+                        <ProtectedRoute roleSubmodule={"My Team"}>
+                          <TeamRouteWrapper />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/teamLead"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Team Management"}>
+                          <TeamLeadRouteWrapper />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Team Lead Routes */}
-                  <Route
-                    path="/vehicles"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Car Allocation"}>
-                        <CarAllocation />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/approvals"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Approvals"}>
-                        <Approvals />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Team Lead Routes */}
+                    <Route
+                      path="/vehicles"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Car Allocation"}>
+                          <CarAllocation />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/approvals"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Approvals"}>
+                          <Approvals />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Agent Routes */}
-                  <Route
-                    path="/leads"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Lead Management"}>
-                        {<LeadManagement />}
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/schedule"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Inspection Schedule"}>
-                        <MySchedule />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/myschedule"
-                    element={
-                      <ProtectedRoute roleSubmodule={"My Schedule"}>
-                        <AgentSchedule />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/visits"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Site Visits"}>
-                        <SiteVisits />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/documents"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Documents"}>
-                        <AgentDocuments />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/commissions"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Commissions"}>
-                        <MyCommissions />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Agent Routes */}
+                    <Route
+                      path="/leads"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Lead Management"}>
+                          {<LeadManagement />}
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/schedule"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Inspection Schedule"}>
+                          <MySchedule />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/myschedule"
+                      element={
+                        <ProtectedRoute roleSubmodule={"My Schedule"}>
+                          <AgentSchedule />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/visits"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Site Visits"}>
+                          <SiteVisits />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/documents"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Documents"}>
+                          <AgentDocuments />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/commissions"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Commissions"}>
+                          <MyCommissions />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Contractor Routes */}
-                  <Route
-                    path="/projects"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Projects Overview"}>
-                        <ContractorProjects />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/tasks"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Project Task Management"}>
-                        <ContractorTasks />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/timeline"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Construction Timeline"}>
-                        <ContractorTimeline />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/materials"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Materials"}>
-                        <ContractorMaterials />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/labor"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Labor Management"}>
-                        <ContractorLabor />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/invoices"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Invoices"}>
-                        <ContractorInvoices />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* <Route
+                    {/* Contractor Routes */}
+                    <Route
+                      path="/projects"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Projects Overview"}>
+                          <ContractorProjects />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tasks"
+                      element={
+                        <ProtectedRoute
+                          roleSubmodule={"Project Task Management"}
+                        >
+                          <ContractorTasks />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/timeline"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Construction Timeline"}>
+                          <ContractorTimeline />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/materials"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Materials"}>
+                          <ContractorMaterials />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/labor"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Labor Management"}>
+                          <ContractorLabor />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/invoices"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Invoices"}>
+                          <ContractorInvoices />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* <Route
                   path="/evidence"
                   element={
                     <ProtectedRoute roleSubmodule={"Photo Evidence"}>
@@ -773,68 +776,68 @@ const App = () => {
                   }
                 /> */}
 
-                  {/* Site Incharge Routes */}
-                  <Route
-                    path="/verifications"
-                    element={
-                      <ProtectedRoute
-                        roleSubmodule={"Project Task Verifications"}
-                      >
-                        <TaskVerifications />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/quality"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Quality Control"}>
-                        <QualityControl />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/inspections"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Site Inspections"}>
-                        <SiteInspections />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/contractors"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Contractors"}>
-                        <ContractorsList />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/progress"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Construction Progress"}>
-                        <ConstructionProgress />
-                      </ProtectedRoute>
-                    }
-                  />
+                    {/* Site Incharge Routes */}
+                    <Route
+                      path="/verifications"
+                      element={
+                        <ProtectedRoute
+                          roleSubmodule={"Project Task Verifications"}
+                        >
+                          <TaskVerifications />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/quality"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Quality Control"}>
+                          <QualityControl />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/inspections"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Site Inspections"}>
+                          <SiteInspections />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/contractors"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Contractors"}>
+                          <ContractorsList />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/progress"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Construction Progress"}>
+                          <ConstructionProgress />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  {/* Accountant Routes */}
-                  <Route
-                    path="/secure/payments"
-                    element={
-                      <SecureRoute requireToken>
-                        <Payments />
-                      </SecureRoute>
-                    }
-                  />
-                  <Route
-                    path="/reports"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Reports"}>
-                        <Reports />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* <Route
+                    {/* Accountant Routes */}
+                    <Route
+                      path="/secure/payments"
+                      element={
+                        <SecureRoute requireToken>
+                          <Payments />
+                        </SecureRoute>
+                      }
+                    />
+                    <Route
+                      path="/reports"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Reports"}>
+                          <Reports />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* <Route
                     path="/budgets"
                     element={
                       <ProtectedRoute roleSubmodule={"Budget Tracking"}>
@@ -842,22 +845,24 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   /> */}
-                  <Route
-                    path="/taxes"
-                    element={
-                      <ProtectedRoute roleSubmodule={"Tax Documents"}>
-                        <TaxDocuments />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Redirect index to dashboard */}
-                  <Route path="/index" element={<Navigate to="/" replace />} />
+                    <Route
+                      path="/taxes"
+                      element={
+                        <ProtectedRoute roleSubmodule={"Tax Documents"}>
+                          <TaxDocuments />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Redirect index to dashboard */}
+                    <Route
+                      path="/index"
+                      element={<Navigate to="/" replace />}
+                    />
 
-                  {/* Catch-all route for 404 */}
-                </Route>
-                
-                }
-                  <Route path="*" element={<NotFound />} />
+                    {/* Catch-all route for 404 */}
+                  </Route>
+                )}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthProvider>
           </BrowserRouter>

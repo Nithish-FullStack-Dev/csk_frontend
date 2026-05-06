@@ -260,8 +260,6 @@ export const usefetchProjects = () => {
   return useQuery({
     queryKey: ["fetchProjects"],
     queryFn: fetchProjects,
-    staleTime: 2 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 };
 

@@ -739,20 +739,40 @@ const QualityControl = () => {
                       </TableRow>
                     ) : (
                       filteredIssues.map((issue) => {
+                        const isBuildingDeleted =
+                          typeof issue?.project?.projectId === "object" &&
+                          issue?.project?.projectId?.isDeleted === true;
+
+                        const isFloorDeleted =
+                          typeof issue?.project?.floorUnit === "object" &&
+                          issue?.project?.floorUnit?.isDeleted === true;
+
+                        const isUnitDeleted =
+                          typeof issue?.project?.unit === "object" &&
+                          issue?.project?.unit?.isDeleted === true;
+
                         const isUserDeleted =
                           issue?.contractor?.isDeleted === true;
+
+                        const isAnyDeleted =
+                          isBuildingDeleted ||
+                          isFloorDeleted ||
+                          isUnitDeleted ||
+                          isUserDeleted;
                         return (
                           <TableRow
                             key={issue._id}
                             className={`transition-colors ${
-                              isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                              isAnyDeleted
+                                ? "opacity-60 bg-muted/30"
+                                : "hover:bg-muted/30"
                             }`}
                           >
                             <TableCell className="font-medium">
                               <div>
                                 <span
                                   className={
-                                    isUserDeleted
+                                    isAnyDeleted
                                       ? "line-through text-muted-foreground"
                                       : ""
                                   }
@@ -760,11 +780,34 @@ const QualityControl = () => {
                                   {issue?.title || "N/A"}
                                 </span>
 
-                                {isUserDeleted && (
-                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                                    User Deleted
+                                {isBuildingDeleted && (
+                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-red-100 text-red-700">
+                                    Building De-Activated
                                   </span>
                                 )}
+
+                                {!isBuildingDeleted && isFloorDeleted && (
+                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700">
+                                    Floor De-Activated
+                                  </span>
+                                )}
+
+                                {!isBuildingDeleted &&
+                                  !isFloorDeleted &&
+                                  isUnitDeleted && (
+                                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">
+                                      Unit De-Activated
+                                    </span>
+                                  )}
+
+                                {!isBuildingDeleted &&
+                                  !isFloorDeleted &&
+                                  !isUnitDeleted &&
+                                  isUserDeleted && (
+                                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                      Contractor Deleted
+                                    </span>
+                                  )}
                                 {issue?.taskId && (
                                   <div className="text-xs text-muted-foreground">
                                     Task ID: {issue?.taskId}
@@ -838,7 +881,7 @@ const QualityControl = () => {
                                     View Details
                                   </DropdownMenuItem>
 
-                                  {!isUserDeleted &&
+                                  {!isAnyDeleted &&
                                     userCanEditUser &&
                                     user?.role !== "admin" && (
                                       <DropdownMenuItem
@@ -850,7 +893,7 @@ const QualityControl = () => {
                                       </DropdownMenuItem>
                                     )}
 
-                                  {!isUserDeleted && user?.role !== "admin" && (
+                                  {!isAnyDeleted && user?.role !== "admin" && (
                                     <DropdownMenuItem
                                       onClick={() => {
                                         setSelectedIssue(issue);
@@ -890,104 +933,133 @@ const QualityControl = () => {
                     No quality issues found matching your filters
                   </div>
                 ) : (
-                  filteredIssues.map((issue) => (
-                    <div
-                      key={issue._id}
-                      className="border rounded-xl p-4 shadow-sm bg-white"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-base">
-                            {issue.title}
-                          </h3>
-                          {issue.taskId && (
-                            <p className="text-xs text-muted-foreground">
-                              Task ID: {issue?.taskId}
-                            </p>
-                          )}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetails(issue)}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                            {userCanEditUser && user?.role !== "admin" && (
-                              <DropdownMenuItem
-                                onClick={() => handleUpdateStatus(issue)}
-                              >
-                                Update Status
-                              </DropdownMenuItem>
+                  filteredIssues.map((issue) => {
+                    const isBuildingDeleted =
+                      typeof issue?.project?.projectId === "object" &&
+                      issue?.project?.projectId?.isDeleted === true;
+
+                    const isFloorDeleted =
+                      typeof issue?.project?.floorUnit === "object" &&
+                      issue?.project?.floorUnit?.isDeleted === true;
+
+                    const isUnitDeleted =
+                      typeof issue?.project?.unit === "object" &&
+                      issue?.project?.unit?.isDeleted === true;
+
+                    const isUserDeleted = issue?.contractor?.isDeleted === true;
+
+                    const isAnyDeleted =
+                      isBuildingDeleted ||
+                      isFloorDeleted ||
+                      isUnitDeleted ||
+                      isUserDeleted;
+                    return (
+                      <div
+                        key={issue._id}
+                        className={`border rounded-xl p-4 shadow-sm ${
+                          isAnyDeleted
+                            ? "bg-muted/30 opacity-60 border-dashed"
+                            : "bg-white"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-base">
+                              {issue.title}
+                            </h3>
+                            {issue.taskId && (
+                              <p className="text-xs text-muted-foreground">
+                                Task ID: {issue?.taskId}
+                              </p>
                             )}
-                            {user?.role !== "admin" && (
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-5 w-5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handleViewDetails(issue)}
+                              >
+                                View Details
+                              </DropdownMenuItem>
+                              {!isAnyDeleted &&
+                                userCanEditUser &&
+                                user?.role !== "admin" && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleUpdateStatus(issue)}
+                                  >
+                                    Update Status
+                                  </DropdownMenuItem>
+                                )}
+                              {!isAnyDeleted && user?.role !== "admin" && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedIssue(issue);
+                                    setAssignDialog(true);
+                                  }}
+                                >
+                                  Assign Contractor
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedIssue(issue);
-                                  setAssignDialog(true);
+                                  setEvidenceDialogOpen(true);
                                 }}
                               >
-                                Assign Contractor
+                                View Evidence
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedIssue(issue);
-                                setEvidenceDialogOpen(true);
-                              }}
-                            >
-                              View Evidence
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
 
-                      <div className="mt-3 grid gap-2 text-sm">
-                        <p>
-                          <strong>Project:</strong>{" "}
-                          {getProjectName(issue.project)}
-                        </p>
-                        <p>
-                          <strong>Contractor:</strong>{" "}
-                          {issue?.contractor?.name || "N/A"}
-                        </p>
-                        <p>
-                          <strong>Date:</strong>{" "}
-                          {issue?.reported_date
-                            ? new Date(issue.reported_date).toLocaleDateString()
-                            : "N/A"}
-                        </p>
-                        <p>
-                          <strong>Severity:</strong>{" "}
-                          <Badge
-                            variant="outline"
-                            className={severityColors[issue.severity]}
-                          >
-                            {issue.severity.charAt(0).toUpperCase() +
-                              issue.severity.slice(1)}
-                          </Badge>
-                        </p>
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          <Badge
-                            variant="outline"
-                            className={statusColors[issue.status]}
-                          >
-                            {issue.status === "under_review"
-                              ? "Under Review"
-                              : issue.status.charAt(0).toUpperCase() +
-                                issue.status.slice(1)}
-                          </Badge>
-                        </p>
+                        <div className="mt-3 grid gap-2 text-sm">
+                          <p>
+                            <strong>Project:</strong>{" "}
+                            {getProjectName(issue.project)}
+                          </p>
+                          <p>
+                            <strong>Contractor:</strong>{" "}
+                            {issue?.contractor?.name || "N/A"}
+                          </p>
+                          <p>
+                            <strong>Date:</strong>{" "}
+                            {issue?.reported_date
+                              ? new Date(
+                                  issue.reported_date,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </p>
+                          <p>
+                            <strong>Severity:</strong>{" "}
+                            <Badge
+                              variant="outline"
+                              className={severityColors[issue.severity]}
+                            >
+                              {issue.severity.charAt(0).toUpperCase() +
+                                issue.severity.slice(1)}
+                            </Badge>
+                          </p>
+                          <p>
+                            <strong>Status:</strong>{" "}
+                            <Badge
+                              variant="outline"
+                              className={statusColors[issue.status]}
+                            >
+                              {issue.status === "under_review"
+                                ? "Under Review"
+                                : issue.status.charAt(0).toUpperCase() +
+                                  issue.status.slice(1)}
+                            </Badge>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

@@ -655,18 +655,31 @@ const ContractorInvoices = () => {
                 </TableRow>
               ) : (
                 filteredInvoices?.map((invoice, idx) => {
+                  const isBuildingDeleted =
+                    invoice?.project?.isDeleted === true;
+
+                  const isFloorDeleted = invoice?.floorUnit?.isDeleted === true;
+
+                  const isUnitDeleted = invoice?.unit?.isDeleted === true;
+
                   const isUserDeleted = invoice?.user?.isDeleted === true;
+
+                  const isAnyDeleted =
+                    isBuildingDeleted ||
+                    isFloorDeleted ||
+                    isUnitDeleted ||
+                    isUserDeleted;
                   return (
                     <TableRow
                       className={`transition-colors ${
-                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                        isAnyDeleted ? "opacity-60" : "hover:bg-muted/30"
                       }`}
                       key={invoice?._id || idx}
                     >
                       <TableCell className="font-medium">
                         <span
                           className={
-                            isUserDeleted
+                            isAnyDeleted
                               ? "line-through text-muted-foreground"
                               : ""
                           }
@@ -674,11 +687,26 @@ const ContractorInvoices = () => {
                           {invoice?.invoiceNumber ?? "N/A"}
                         </span>
 
-                        {isUserDeleted && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                            Deleted
-                          </span>
+                        {isBuildingDeleted && (
+                          <Badge className="bg-red-500 text-white">
+                            Building De-Activated
+                          </Badge>
                         )}
+
+                        {!isBuildingDeleted && isFloorDeleted && (
+                          <Badge className="bg-orange-500 text-white">
+                            Floor De-Activated
+                          </Badge>
+                        )}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          isUnitDeleted && <Badge>Unit De-Activated</Badge>}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          !isUnitDeleted &&
+                          isUserDeleted && <Badge>Contractor Deleted</Badge>}
                       </TableCell>
                       <TableCell>
                         {invoice?.project?.projectName +
@@ -743,7 +771,7 @@ const ContractorInvoices = () => {
                             View
                           </Button>
 
-                          {!isUserDeleted &&
+                          {!isAnyDeleted &&
                             invoice.status !== "paid" &&
                             user?.role !== "contractor" && (
                               <Button
@@ -799,97 +827,147 @@ const ContractorInvoices = () => {
               No invoices found.
             </div>
           ) : (
-            filteredInvoices.map((invoice, idx) => (
-              <div
-                key={invoice?._id || idx}
-                className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">#{invoice.invoiceNumber}</h3>
-                  <Badge
-                    className={`${
-                      invoice?.status === "paid"
-                        ? "bg-green-100 text-green-800"
-                        : invoice?.status === "pending"
-                          ? "bg-blue-100 text-blue-800"
-                          : invoice?.status === "rejected"
-                            ? "bg-red-100 text-red-800"
-                            : invoice?.status === "approved"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                    } text-sm py-1 px-3`}
-                  >
-                    {invoice?.status}
-                  </Badge>
-                </div>
+            filteredInvoices.map((invoice, idx) => {
+              const isBuildingDeleted = invoice?.project?.isDeleted === true;
 
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Project:</span>{" "}
-                  {invoice?.project?.projectName +
-                    " / " +
-                    (invoice?.floorUnit?.floorNumber || "-") +
-                    (invoice?.floorUnit?.unitType || "-") +
-                    " / " +
-                    (invoice?.unit?.propertyType || "-") +
-                    (invoice?.unit?.plotNo || "-")}
-                </p>
+              const isFloorDeleted = invoice?.floorUnit?.isDeleted === true;
 
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Date:</span>{" "}
-                  {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
-                  })}
-                </p>
+              const isUnitDeleted = invoice?.unit?.isDeleted === true;
 
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Due Date:</span>{" "}
-                  {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "2-digit",
-                  })}
-                </p>
+              const isUserDeleted = invoice?.user?.isDeleted === true;
 
-                <p className="text-sm text-gray-600 flex items-center">
-                  <span className="font-medium mr-1">Amount:</span>
-                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                  {invoice.total.toLocaleString()}
-                </p>
+              const isAnyDeleted =
+                isBuildingDeleted ||
+                isFloorDeleted ||
+                isUnitDeleted ||
+                isUserDeleted;
+              return (
+                <div
+                  key={invoice?._id || idx}
+                  className={`border rounded-lg p-4 shadow-sm space-y-2 bg-white ${
+                    isAnyDeleted ? "opacity-60" : "hover:bg-muted/30"
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">
+                      <span
+                        className={
+                          isAnyDeleted
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }
+                      >
+                        #{invoice?.invoiceNumber ?? "N/A"}
+                      </span>
 
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => viewInvoice(invoice)}
-                    >
-                      View
-                    </Button>
-
-                    {invoice.status !== "paid" &&
-                      user?.role !== "contractor" &&
-                      user?.role !== "admin" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setIsEditMode(true);
-                            setSelectedInvoice(invoice);
-
-                            setSelectedProject(invoice.project?._id || "");
-                            setSelectedFloorUnit(invoice.floorUnit?._id || "");
-                            setSelectedUnit(invoice.unit?._id || "");
-
-                            setCreateDialogOpen(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
+                      {isBuildingDeleted && (
+                        <Badge className="bg-red-500 text-white">
+                          Building De-Activated
+                        </Badge>
                       )}
 
-                    {/* {user?.role !== "contractor" && (
+                      {!isBuildingDeleted && isFloorDeleted && (
+                        <Badge className="bg-orange-500 text-white">
+                          Floor De-Activated
+                        </Badge>
+                      )}
+
+                      {!isBuildingDeleted &&
+                        !isFloorDeleted &&
+                        isUnitDeleted && <Badge>Unit De-Activated</Badge>}
+
+                      {!isBuildingDeleted &&
+                        !isFloorDeleted &&
+                        !isUnitDeleted &&
+                        isUserDeleted && <Badge>Contractor Deleted</Badge>}
+                    </h3>
+                    <Badge
+                      className={`${
+                        invoice?.status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : invoice?.status === "pending"
+                            ? "bg-blue-100 text-blue-800"
+                            : invoice?.status === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : invoice?.status === "approved"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                      } text-sm py-1 px-3`}
+                    >
+                      {invoice?.status}
+                    </Badge>
+                  </div>
+
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Project:</span>{" "}
+                    {invoice?.project?.projectName +
+                      " / " +
+                      (invoice?.floorUnit?.floorNumber || "-") +
+                      (invoice?.floorUnit?.unitType || "-") +
+                      " / " +
+                      (invoice?.unit?.propertyType || "-") +
+                      (invoice?.unit?.plotNo || "-")}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Date:</span>{" "}
+                    {new Date(invoice.issueDate).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    })}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Due Date:</span>{" "}
+                    {new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    })}
+                  </p>
+
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <span className="font-medium mr-1">Amount:</span>
+                    <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                    {invoice.total.toLocaleString()}
+                  </p>
+
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => viewInvoice(invoice)}
+                      >
+                        View
+                      </Button>
+
+                      {!isAnyDeleted &&
+                        invoice.status !== "paid" &&
+                        user?.role !== "contractor" &&
+                        user?.role !== "admin" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setIsEditMode(true);
+                              setSelectedInvoice(invoice);
+
+                              setSelectedProject(invoice.project?._id || "");
+                              setSelectedFloorUnit(
+                                invoice.floorUnit?._id || "",
+                              );
+                              setSelectedUnit(invoice.unit?._id || "");
+
+                              setCreateDialogOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        )}
+
+                      {/* {user?.role !== "contractor" && (
                       <Select
                         value={invoice.status}
                         disabled={updateStatusMutation.isPending}
@@ -915,10 +993,11 @@ const ContractorInvoices = () => {
                         </SelectContent>
                       </Select>
                     )} */}
-                  </div>
-                </TableCell>
-              </div>
-            ))
+                    </div>
+                  </TableCell>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
