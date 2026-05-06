@@ -206,6 +206,13 @@ const PrivateSuspenseWrapper = () => (
 );
 
 const App = () => {
+  const hostname = window.location.hostname;
+
+  const subdomain = hostname.split(".")[0];
+
+  const isCRM =
+    subdomain === "app" ;
+  
   const TeamRouteWrapper = () => {
     const { user } = useAuth();
     const role = String(user?.role || "").toLowerCase();
@@ -233,7 +240,7 @@ const App = () => {
               <ScrollToTop />
               <Routes>
                 {/* Public Routes */}
-                <Route element={<PublicSuspenseWrapper />}>
+                {!isCRM && <Route element={<PublicSuspenseWrapper />}>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/public/about" element={<PublicAboutPage />} />
                   <Route
@@ -289,9 +296,10 @@ const App = () => {
                   {/* <Route path="/kanban" element={<Kanban />} /> */}
                   {/* <Route path="/department" element={<Department />} /> */}
                 </Route>
+                  )}
 
                 {/* Admin Routes */}
-                <Route element={<PrivateSuspenseWrapper />}>
+                {isCRM && <Route element={<PrivateSuspenseWrapper />}>
                   <Route path="/login" element={<Login />} />
                   <Route path="/unauthorized" element={<Unauthorized />} />
                   <Route path="/app" element={<Dashboard />} />
@@ -847,7 +855,7 @@ const App = () => {
 
                   {/* Catch-all route for 404 */}
                   <Route path="*" element={<NotFound />} />
-                </Route>
+                </Route>)}
               </Routes>
             </AuthProvider>
           </BrowserRouter>
