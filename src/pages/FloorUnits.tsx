@@ -30,41 +30,9 @@ const fetchUnits = async (buildingId: string, floorId: string) => {
     `${
       import.meta.env.VITE_URL
     }/api/unit/getUnitsByFloorIdAndBuildingId/${buildingId}/${floorId}`,
-    { withCredentials: true }
+    { withCredentials: true },
   );
   return data.data as Property[];
-};
-
-// const createUnit = async (unitData: FormData) => {
-//   const { data } = await axios.post(
-//     `${import.meta.env.VITE_URL}/api/unit/createUnit`,
-//     unitData,
-//     {
-//       withCredentials: true,
-//       headers: { "Content-Type": "multipart/form-data" },
-//     }
-//   );
-//   return data.data as Property;
-// };
-
-// const updateUnit = async (unitId: string, unitData: FormData) => {
-//   const { data } = await axios.patch(
-//     `${import.meta.env.VITE_URL}/api/unit/updateUnit/${unitId}`,
-//     unitData,
-//     {
-//       withCredentials: true,
-//       headers: { "Content-Type": "multipart/form-data" },
-//     }
-//   );
-//   return data.data as Property;
-// };
-
-const deleteUnit = async (unitId: string) => {
-  const { data } = await axios.delete(
-    `${import.meta.env.VITE_URL}/api/unit/deleteUnit/${unitId}`,
-    { withCredentials: true }
-  );
-  return data.data;
 };
 
 const FloorUnits = () => {
@@ -154,6 +122,7 @@ const FloorUnits = () => {
     console.error(error?.message);
     toast.error(error?.message || "Failed to fetch units");
   }
+
   if (isLoading) return <Loader />;
 
   return (
@@ -188,45 +157,68 @@ const FloorUnits = () => {
             </p>
           )}
 
-          {apartments.map((apartment, idx) => (
-            <Card
-              key={apartment._id || idx}
-              className="hover:shadow-md transition-shadow"
-              onClick={() =>
-                navigate(
-                  `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`
-                )
-              }
-            >
-              <CardContent className="p-0">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-1">
-                    {apartment.thumbnailUrl ? (
-                      <img
-                        src={apartment.thumbnailUrl}
-                        alt={`Unit ${apartment.plotNo}`}
-                        className="h-48 md:h-full w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-                      />
-                    ) : (
-                      <div className="h-48 md:h-full w-full bg-muted flex items-center justify-center">
-                        <Home className="h-12 w-12 opacity-20" />
-                      </div>
-                    )}
-                  </div>
+          {apartments.map((apartment, idx) => {
+            const isBuildingDeleted = Boolean(apartment?.buildingId?.isDeleted);
+            const isFloorDeleted = Boolean(apartment?.floorId?.isDeleted);
+            const isUnitDeleted = Boolean(apartment?.isDeleted);
 
-                  <div className="md:col-span-3 p-6">
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                      <div className="flex-1 space-y-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="text-xl font-bold">
-                              Unit {apartment.plotNo}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              Mem. No: {apartment.memNo || "N/A"}
-                            </p>
-                          </div>
-                          {/* <div className="flex items-center gap-2">
+            const isDisabled =
+              isBuildingDeleted || isFloorDeleted || isUnitDeleted;
+            return (
+              <Card
+                key={apartment._id || idx}
+                className={` hover:shadow-md transition-shadow ${
+                  isDisabled ? "opacity-60" : "hover:bg-muted/30"
+                }`}
+                onClick={() =>
+                  navigate(
+                    `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`,
+                  )
+                }
+              >
+                <CardContent className="p-0">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="md:col-span-1">
+                      {apartment.thumbnailUrl ? (
+                        <img
+                          src={apartment.thumbnailUrl}
+                          alt={`Unit ${apartment.plotNo}`}
+                          className="h-48 md:h-full w-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                        />
+                      ) : (
+                        <div className="h-48 md:h-full w-full bg-muted flex items-center justify-center">
+                          <Home className="h-12 w-12 opacity-20" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="md:col-span-3 p-6">
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="text-xl font-bold">
+                                <span
+                                  className={
+                                    isDisabled
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }
+                                >
+                                  Unit {apartment.plotNo || "N/A"}
+                                </span>
+
+                                {isDisabled && (
+                                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                    Unit De-Activated
+                                  </span>
+                                )}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Mem. No: {apartment.memNo || "N/A"}
+                              </p>
+                            </div>
+                            {/* <div className="flex items-center gap-2">
                               {getStatusBadge(apartment.status)}
                               {canEdit && (
                                 <div className="flex gap-1">
@@ -251,41 +243,41 @@ const FloorUnits = () => {
                                 </div>
                               )}
                             </div> */}
-                        </div>
+                          </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Extent
-                            </p>
-                            <p className="font-medium">
-                              {apartment.extent} sq.ft
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Facing
-                            </p>
-                            <p className="font-medium">
-                              {apartment.villaFacing || "N/A"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">
-                              Customer
-                            </p>
-                            <div className="flex items-center">
-                              <User className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Extent
+                              </p>
                               <p className="font-medium">
-                                {(apartment.customerId as any)?.user?.name ||
-                                  apartment.purchasedCustomerName ||
-                                  (apartment.status === "Sold"
-                                    ? "Owner"
-                                    : "Available")}
+                                {apartment.extent} sq.ft
                               </p>
                             </div>
-                          </div>
-                          {/* <div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Facing
+                              </p>
+                              <p className="font-medium">
+                                {apartment.villaFacing || "N/A"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">
+                                Customer
+                              </p>
+                              <div className="flex items-center">
+                                <User className="h-4 w-4 mr-1 text-muted-foreground" />
+                                <p className="font-medium">
+                                  {(apartment.customerId as any)?.user?.name ||
+                                    apartment.purchasedCustomerName ||
+                                    (apartment.status === "Sold"
+                                      ? "Owner"
+                                      : "Available")}
+                                </p>
+                              </div>
+                            </div>
+                            {/* <div>
                             <p className="text-sm text-muted-foreground">
                               Price
                             </p>
@@ -293,9 +285,9 @@ const FloorUnits = () => {
                               {formatIndianCurrency(apartment.totalAmount)}
                             </p>
                           </div> */}
-                        </div>
+                          </div>
 
-                        {/* {apartment.status !== "Available" && (
+                          {/* {apartment.status !== "Available" && (
                           <div>
                             <div className="flex justify-between text-sm mb-1">
                               <span className="flex items-center">
@@ -310,23 +302,24 @@ const FloorUnits = () => {
                             />
                           </div>
                         )} */}
-                      </div>
+                        </div>
 
-                      <Button
-                        onClick={() =>
-                          navigate(
-                            `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`
-                          )
-                        }
-                      >
-                        View Full Details
-                      </Button>
+                        <Button
+                          onClick={() =>
+                            navigate(
+                              `/properties/building/${buildingId}/floor/${floorId}/unit/${apartment._id}`,
+                            )
+                          }
+                        >
+                          View Full Details
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 

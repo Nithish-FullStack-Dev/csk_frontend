@@ -337,18 +337,40 @@ const ContractorLabor = () => {
                 </TableRow>
               ) : (
                 filteredTeams.map((team) => {
-                  const isUserDeleted = team?.contractor?.isDeleted === true;
+                  const isBuildingDeleted =
+                    typeof team?.project === "object" &&
+                    typeof team?.project?.projectId === "object" &&
+                    team?.project?.projectId?.isDeleted === true;
+
+                  const isFloorDeleted =
+                    typeof team?.project === "object" &&
+                    typeof team?.project?.floorUnit === "object" &&
+                    team?.project?.floorUnit?.isDeleted === true;
+
+                  const isUnitDeleted =
+                    typeof team?.project === "object" &&
+                    typeof team?.project?.unit === "object" &&
+                    team?.project?.unit?.isDeleted === true;
+
+                  const isContractorDeleted =
+                    team?.contractor?.isDeleted === true;
+
+                  const isAnyDeleted =
+                    isBuildingDeleted ||
+                    isFloorDeleted ||
+                    isUnitDeleted ||
+                    isContractorDeleted;
                   return (
                     <TableRow
                       className={`transition-colors ${
-                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                        isAnyDeleted ? "opacity-60" : "hover:bg-muted/30"
                       }`}
                       key={team._id}
                     >
                       <TableCell className="font-medium">
                         <span
                           className={
-                            isUserDeleted
+                            isAnyDeleted
                               ? "line-through text-muted-foreground"
                               : ""
                           }
@@ -356,11 +378,34 @@ const ContractorLabor = () => {
                           {team?.name || "N/A"}
                         </span>
 
-                        {isUserDeleted && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                            User Deleted
-                          </span>
+                        {isBuildingDeleted && (
+                          <div className="bg-red-500 text-white">
+                            Building De-Activated
+                          </div>
                         )}
+
+                        {!isBuildingDeleted && isFloorDeleted && (
+                          <div className="bg-orange-500 text-white">
+                            Floor De-Activated
+                          </div>
+                        )}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          isUnitDeleted && (
+                            <div className="bg-red-500 text-white">
+                              Unit De-Activated
+                            </div>
+                          )}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          !isUnitDeleted &&
+                          isContractorDeleted && (
+                            <div className="bg-red-500 text-white">
+                              Contractor Deleted
+                            </div>
+                          )}
                       </TableCell>
                       <TableCell>{team.supervisor}</TableCell>
                       <TableCell>{team.type}</TableCell>
@@ -397,13 +442,15 @@ const ContractorLabor = () => {
                           >
                             Details
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => viewAttendance(team)}
-                          >
-                            Attendance
-                          </Button>
+                          {!isAnyDeleted && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => viewAttendance(team)}
+                            >
+                              Attendance
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -421,62 +468,121 @@ const ContractorLabor = () => {
               No labor teams found.
             </div>
           ) : (
-            filteredTeams.map((team) => (
-              <div
-                key={team._id}
-                className="border rounded-lg p-4 shadow-sm space-y-2 bg-white"
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold">{team.name}</h3>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      team.status === "Active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {team.status}
-                  </span>
-                </div>
+            filteredTeams.map((team) => {
+              const isBuildingDeleted =
+                typeof team?.project === "object" &&
+                typeof team?.project?.projectId === "object" &&
+                team?.project?.projectId?.isDeleted === true;
 
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Supervisor:</span>{" "}
-                  {team.supervisor}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Type:</span> {team.type}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Workers:</span> {team.members}
-                </p>
-                <p className="text-sm text-gray-600 flex items-center">
-                  <span className="font-medium mr-1">Daily Wage:</span>
-                  <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
-                  {team.wage}
-                </p>
-                <p className="text-sm text-gray-600 truncate">
-                  <span className="font-medium">Project:</span>{" "}
-                  {getProjectDisplay(team)}
-                </p>
+              const isFloorDeleted =
+                typeof team?.project === "object" &&
+                typeof team?.project?.floorUnit === "object" &&
+                team?.project?.floorUnit?.isDeleted === true;
 
-                <div className="flex space-x-2 pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => viewTeam(team)}
-                  >
-                    Details
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => viewAttendance(team)}
-                  >
-                    Attendance
-                  </Button>
+              const isUnitDeleted =
+                typeof team?.project === "object" &&
+                typeof team?.project?.unit === "object" &&
+                team?.project?.unit?.isDeleted === true;
+
+              const isContractorDeleted = team?.contractor?.isDeleted === true;
+
+              const isAnyDeleted =
+                isBuildingDeleted ||
+                isFloorDeleted ||
+                isUnitDeleted ||
+                isContractorDeleted;
+              return (
+                <div
+                  key={team._id}
+                  className={`border rounded-lg p-4 shadow-sm space-y-2 transition-all ${
+                    isAnyDeleted
+                      ? "opacity-60 bg-muted/30 border-dashed"
+                      : "hover:bg-muted/30"
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {isBuildingDeleted && (
+                        <div className="bg-red-500 text-white">
+                          Building De-Activated
+                        </div>
+                      )}
+
+                      {!isBuildingDeleted && isFloorDeleted && (
+                        <div className="bg-orange-500 text-white">
+                          Floor De-Activated
+                        </div>
+                      )}
+
+                      {!isBuildingDeleted &&
+                        !isFloorDeleted &&
+                        isUnitDeleted && (
+                          <div className="bg-red-500 text-white">
+                            Unit De-Activated
+                          </div>
+                        )}
+
+                      {!isBuildingDeleted &&
+                        !isFloorDeleted &&
+                        !isUnitDeleted &&
+                        isContractorDeleted && (
+                          <div className="bg-red-500 text-white">
+                            Contractor Deleted
+                          </div>
+                        )}
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        team.status === "Active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {team.status}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Supervisor:</span>{" "}
+                    {team.supervisor}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Type:</span> {team.type}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Workers:</span> {team.members}
+                  </p>
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <span className="font-medium mr-1">Daily Wage:</span>
+                    <BadgeIndianRupee className="h-3.5 w-3.5 mr-1" />
+                    {team.wage}
+                  </p>
+                  <p className="text-sm text-gray-600 truncate">
+                    <span className="font-medium">Project:</span>{" "}
+                    {getProjectDisplay(team)}
+                  </p>
+
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => viewTeam(team)}
+                    >
+                      Details
+                    </Button>
+                    {!isAnyDeleted && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewAttendance(team)}
+                      >
+                        Attendance
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -969,7 +1075,18 @@ const ContractorLabor = () => {
               </div>
 
               {/* Record Attendance Form */}
-              {!selectedTeam?.contractor?.isDeleted === true &&
+              {!(
+                (typeof selectedTeam?.project === "object" &&
+                  typeof selectedTeam?.project?.projectId === "object" &&
+                  selectedTeam?.project?.projectId?.isDeleted) ||
+                (typeof selectedTeam?.project === "object" &&
+                  typeof selectedTeam?.project?.floorUnit === "object" &&
+                  selectedTeam?.project?.floorUnit?.isDeleted) ||
+                (typeof selectedTeam?.project === "object" &&
+                  typeof selectedTeam?.project?.unit === "object" &&
+                  selectedTeam?.project?.unit?.isDeleted) ||
+                selectedTeam?.contractor?.isDeleted
+              ) &&
                 user?.role !== "admin" &&
                 userCanAddUser && (
                   <div className="space-y-4 pt-2 border-t">

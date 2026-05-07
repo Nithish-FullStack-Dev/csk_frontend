@@ -103,10 +103,30 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
             allTasks.length > 0
               ? Math.round((completedTasks.length / allTasks.length) * 100)
               : 0;
+
+          const isBuildingDeleted = Boolean(
+            typeof project?.projectId === "object" &&
+            project?.projectId?.isDeleted,
+          );
+
+          const isFloorDeleted = Boolean(
+            typeof project?.floorUnit === "object" &&
+            project?.floorUnit?.isDeleted,
+          );
+
+          const isUnitDeleted = Boolean(
+            typeof project?.unit === "object" && project?.unit?.isDeleted,
+          );
+
+          const isAnyDeleted =
+            isBuildingDeleted || isFloorDeleted || isUnitDeleted;
           return (
             <div
               key={project._id}
-              className="border rounded-xl p-6 bg-card shadow-sm relative"
+              className={`
+    border rounded-xl p-6 shadow-sm relative transition-all
+    ${isAnyDeleted ? "bg-muted/40 border-dashed opacity-75" : "bg-card"}
+  `}
             >
               {/* Menu */}
               <div className="absolute top-4 right-4">
@@ -118,53 +138,20 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                   </DropdownMenuTrigger>
 
                   <DropdownMenuContent align="end" className="w-44">
-                    {userCanEditUser && user?.role !== "admin" && (
-                      <DropdownMenuItem onClick={() => setEditProject(project)}>
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Edit Project
-                      </DropdownMenuItem>
-                    )}
+                    {userCanEditUser &&
+                      !isAnyDeleted &&
+                      user?.role !== "admin" && (
+                        <DropdownMenuItem
+                          onClick={() => setEditProject(project)}
+                        >
+                          <Edit2 className="mr-2 h-4 w-4" />
+                          Edit Project
+                        </DropdownMenuItem>
+                      )}
 
                     <DropdownMenuItem onClick={() => setViewProject(project)}>
                       View Details
                     </DropdownMenuItem>
-
-                    {/* <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault(); // prevents dropdown closing before dialog opens
-                            setDeleteProjectId(project._id);
-                          }}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Project
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Project?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete this project and its tasks.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            {deletingId === project._id
-                              ? "Deleting..."
-                              : "Delete"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog> */}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -175,6 +162,19 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                   {project.projectId && typeof project.projectId === "object"
                     ? project.projectId.projectName
                     : "Untitled Project"}
+                  {isBuildingDeleted && (
+                    <Badge variant="destructive">Building De-Activated</Badge>
+                  )}
+
+                  {!isBuildingDeleted && isFloorDeleted && (
+                    <Badge className="bg-orange-500 text-white">
+                      Floor De-Activated
+                    </Badge>
+                  )}
+
+                  {!isBuildingDeleted && !isFloorDeleted && isUnitDeleted && (
+                    <Badge variant="secondary">Unit De-Activated</Badge>
+                  )}
                 </h2>
 
                 <Badge
@@ -188,6 +188,24 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
                   {project?.status || "Status Unknown"}
                 </Badge>
               </div>
+              {isAnyDeleted && (
+                <div className="mt-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3">
+                  <p className="text-sm font-medium text-yellow-700">
+                    This project is currently de-activated.
+                  </p>
+
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Editing, task updates, contractor actions, and progress
+                    updates are disabled because the associated
+                    {isBuildingDeleted
+                      ? " building"
+                      : isFloorDeleted
+                        ? " floor"
+                        : " unit"}{" "}
+                    has been de-activated.
+                  </p>
+                </div>
+              )}
 
               <p className="text-sm text-muted-foreground mt-1">
                 {typeof project.projectId === "object" &&

@@ -151,6 +151,11 @@ export const fetchTasks = async () => {
 
     title: task?.taskTitle || "-",
     project: task?.projectName || "-",
+
+    isBuildingDeleted: task?.isBuildingDeleted || false,
+    isFloorDeleted: task?.isFloorDeleted || false,
+    isUnitDeleted: task?.isUnitDeleted || false,
+
     unit: task?.unit || "-",
     floorNumber: task?.floorNumber ?? "-",
     plotNo: task?.plotNo || "-",

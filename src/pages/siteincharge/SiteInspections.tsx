@@ -789,19 +789,36 @@ const SiteInspections = () => {
                     </TableRow>
                   ) : (
                     (filteredInspections || [])?.map((inspection) => {
+                      const isBuildingDeleted =
+                        inspection?.project?.isDeleted === true;
+
+                      const isFloorDeleted =
+                        inspection?.floorUnit?.isDeleted === true;
+
+                      const isUnitDeleted =
+                        inspection?.unit?.isDeleted === true;
+
                       const isUserDeleted =
                         inspection?.site_incharge?.isDeleted === true;
+
+                      const isAnyDeleted =
+                        isBuildingDeleted ||
+                        isFloorDeleted ||
+                        isUnitDeleted ||
+                        isUserDeleted;
                       return (
                         <TableRow
                           className={`transition-colors ${
-                            isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                            isAnyDeleted
+                              ? "opacity-60 bg-muted/30"
+                              : "hover:bg-muted/30"
                           }`}
                           key={inspection._id}
                         >
                           <TableCell className="font-medium">
                             <span
                               className={
-                                isUserDeleted
+                                isAnyDeleted
                                   ? "line-through text-muted-foreground"
                                   : ""
                               }
@@ -809,11 +826,34 @@ const SiteInspections = () => {
                               {inspection.title || "N/A"}
                             </span>
 
-                            {isUserDeleted && (
-                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                                User Deleted
+                            {isBuildingDeleted && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-red-100 text-red-700">
+                                Building De-Activated
                               </span>
                             )}
+
+                            {!isBuildingDeleted && isFloorDeleted && (
+                              <span className="ml-2 text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700">
+                                Floor De-Activated
+                              </span>
+                            )}
+
+                            {!isBuildingDeleted &&
+                              !isFloorDeleted &&
+                              isUnitDeleted && (
+                                <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-700">
+                                  Unit De-Activated
+                                </span>
+                              )}
+
+                            {!isBuildingDeleted &&
+                              !isFloorDeleted &&
+                              !isUnitDeleted &&
+                              isUserDeleted && (
+                                <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                                  Site Incharge Deleted
+                                </span>
+                              )}
                             <div className="text-xs text-muted-foreground">
                               {inspection.location}
                             </div>
@@ -872,7 +912,7 @@ const SiteInspections = () => {
                                     View Details
                                   </DropdownMenuItem>
                                 )}
-                                {!isUserDeleted &&
+                                {!isAnyDeleted &&
                                   user?.role !== "admin" &&
                                   userCanAddUser && (
                                     <DropdownMenuItem
@@ -886,7 +926,7 @@ const SiteInspections = () => {
                                       Add Photos
                                     </DropdownMenuItem>
                                   )}
-                                {!isUserDeleted &&
+                                {!isAnyDeleted &&
                                   user?.role !== "admin" &&
                                   userCanEditUser && (
                                     <DropdownMenuItem
@@ -920,92 +960,114 @@ const SiteInspections = () => {
                   No inspections found matching your filters
                 </div>
               ) : (
-                (filteredInspections || [])?.map((inspection) => (
-                  <div
-                    key={inspection._id}
-                    className="border rounded-md p-4 shadow-sm bg-white space-y-2"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">{inspection.title}</h4>
-                      <Badge
-                        variant="outline"
-                        className={statusColors[inspection.status] || ""}
-                      >
-                        {inspection.status.charAt(0).toUpperCase() +
-                          inspection.status.slice(1)}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {inspection.location}
-                    </p>
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>
-                        Project: {inspection?.project?.projectName || "N/A"}
-                      </span>
-                      <span>
-                        Unit: {inspection?.floorUnit?.floorNumber || "N/A"}
-                      </span>
-                      <span>
-                        Unit: {inspection?.unit?.propertyType || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>
-                        Type:{" "}
-                        {inspection.type === "quality_issue"
-                          ? "Quality Issue"
-                          : inspection.type}
-                      </span>
-                      <span>
-                        Date: {new Date(inspection.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Camera className="h-4 w-4 mr-1" />{" "}
-                      {inspection.photos?.length || "0"} Photos
-                    </div>
-                    <div className="flex justify-end mt-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Actions
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {user?.role !== "admin" && userCanViewUser && (
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetails(inspection)}
-                            >
-                              View Details
-                            </DropdownMenuItem>
-                          )}
-                          {user?.role !== "admin" && userCanAddUser && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedInspectionForPhotos(inspection);
-                                setOpenPhotoDialog(true);
-                              }}
-                            >
-                              Add Photos
-                            </DropdownMenuItem>
-                          )}
-                          {user?.role !== "admin" && userCanEditUser && (
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateStatus(inspection)}
-                            >
-                              Update Status
-                            </DropdownMenuItem>
-                          )}
-                          {/* <DropdownMenuItem
+                (filteredInspections || [])?.map((inspection) => {
+                  const isBuildingDeleted =
+                    inspection?.project?.isDeleted === true;
+
+                  const isFloorDeleted =
+                    inspection?.floorUnit?.isDeleted === true;
+
+                  const isUnitDeleted = inspection?.unit?.isDeleted === true;
+
+                  const isUserDeleted =
+                    inspection?.site_incharge?.isDeleted === true;
+
+                  const isAnyDeleted =
+                    isBuildingDeleted ||
+                    isFloorDeleted ||
+                    isUnitDeleted ||
+                    isUserDeleted;
+                  return (
+                    <div
+                      key={inspection._id}
+                      className={`border rounded-md p-4 shadow-sm space-y-2 ${
+                        isAnyDeleted
+                          ? "bg-muted/30 opacity-60 border-dashed"
+                          : "bg-white"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">{inspection.title}</h4>
+                        <Badge
+                          variant="outline"
+                          className={statusColors[inspection.status] || ""}
+                        >
+                          {inspection.status.charAt(0).toUpperCase() +
+                            inspection.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {inspection.location}
+                      </p>
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>
+                          Project: {inspection?.project?.projectName || "N/A"}
+                        </span>
+                        <span>
+                          Unit: {inspection?.floorUnit?.floorNumber || "N/A"}
+                        </span>
+                        <span>
+                          Unit: {inspection?.unit?.propertyType || "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-600">
+                        <span>
+                          Type:{" "}
+                          {inspection.type === "quality_issue"
+                            ? "Quality Issue"
+                            : inspection.type}
+                        </span>
+                        <span>
+                          Date: {new Date(inspection.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Camera className="h-4 w-4 mr-1" />{" "}
+                        {inspection.photos?.length || "0"} Photos
+                      </div>
+                      <div className="flex justify-end mt-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              Actions
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {user?.role !== "admin" && userCanViewUser && (
+                              <DropdownMenuItem
+                                onClick={() => handleViewDetails(inspection)}
+                              >
+                                View Details
+                              </DropdownMenuItem>
+                            )}
+                            {user?.role !== "admin" && userCanAddUser && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedInspectionForPhotos(inspection);
+                                  setOpenPhotoDialog(true);
+                                }}
+                              >
+                                Add Photos
+                              </DropdownMenuItem>
+                            )}
+                            {user?.role !== "admin" && userCanEditUser && (
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateStatus(inspection)}
+                              >
+                                Update Status
+                              </DropdownMenuItem>
+                            )}
+                            {/* <DropdownMenuItem
                             onClick={() => handleExportReport(inspection)}
                           >
                             Export Report
                           </DropdownMenuItem> */}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

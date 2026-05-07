@@ -92,6 +92,8 @@ const NewProperties = () => {
   const [restorePlotOpen, setRestorePlotOpen] = useState(false);
   const [restoreId, setRestoreId] = useState(null);
   const [restorePlotId, setRestorePlotId] = useState(null);
+  const [buildingRestoreId, setBuildingRestoreId] = useState(null);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
 
   const {
     data: buildings,
@@ -311,6 +313,35 @@ const NewProperties = () => {
         axios.isAxiosError(error)
           ? error.response.data.message
           : "Failed to restore open plot",
+      );
+    },
+  });
+
+  const restoreBuildingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log(id);
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/building/restore/${id}`,
+        {},
+        {
+          withCredentials: true,
+        },
+      );
+      return data;
+    },
+    onSuccess: async (data) => {
+      toast.success(data?.message || "Building Restored successfully");
+      await queryClient.invalidateQueries({ queryKey: ["buildings"] });
+      await queryClient.invalidateQueries({ queryKey: ["trash-buildings"] });
+      // await queryClient.refetchQueries({ queryKey: ["buildings"] });
+      setBuildingRestoreId(null);
+      setRestoreDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : error.message,
       );
     },
   });
@@ -675,6 +706,18 @@ const NewProperties = () => {
                                   </Button>
                                 )}
                               </div>
+                              {isBuildingDeleted && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setBuildingRestoreId(b._id);
+                                    setRestoreDialogOpen(true);
+                                  }}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
 
                             <div className="flex items-center text-sm text-muted-foreground mb-3">
@@ -1240,6 +1283,17 @@ const NewProperties = () => {
         open={restorePlotOpen}
         onOpenChange={setRestorePlotOpen}
         onConfirm={handlePlotRestore}
+        btnTxt="Restore"
+      />
+
+      <DeleteConfirmDialog
+        open={restoreDialogOpen}
+        onOpenChange={setRestoreDialogOpen}
+        onConfirm={() => {
+          restoreBuildingMutation.mutate(buildingRestoreId);
+        }}
+        title={"Delete Restore"}
+        description={"Are you sure you want to restore this building?"}
         btnTxt="Restore"
       />
 

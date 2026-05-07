@@ -24,6 +24,7 @@ import {
   Calendar,
   PercentIcon,
   Building,
+  RotateCcw,
 } from "lucide-react";
 import { FloorUnit } from "@/types/building";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +63,20 @@ const BuildingDetails = () => {
   const [openFloorId, setOpenFloorId] = useState<string | null>(null);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
+  // Dialog states
+  const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
+  const [floorDialogOpen, setFloorDialogOpen] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState<FloorUnit | undefined>();
+  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restoreFloorDialogOpen, setRestoreFloorDialogOpen] = useState(false);
+  const [restoreFloorId, setRestoreFloorId] = useState(null);
+
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "building" | "floor";
+    id: string;
+  } | null>(null);
+
   // Fetch floors
   const {
     data: floors,
@@ -73,34 +88,7 @@ const BuildingDetails = () => {
     queryFn: () => getFloorsByBuildingId(buildingId!),
     enabled: !!buildingId,
   });
-  const handleDownload = async (
-    e: React.MouseEvent,
-    url?: string | null,
-    projectName?: string | null,
-  ) => {
-    e.stopPropagation();
-    if (!url) return toast.error("No brochure available");
 
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Download failed");
-
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `${projectName || "brochure"}.pdf`;
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to download brochure");
-    }
-  };
   const { data: allUnits = [], isLoading: unitsLoading } = useQuery({
     queryKey: ["all-units", buildingId],
     queryFn: async () => {
@@ -117,6 +105,7 @@ const BuildingDetails = () => {
     },
     enabled: !!floors && floors.length > 0,
   });
+
   const unitProgressQueries = useQueries({
     queries: (allUnits || []).map((unit: any) => ({
       queryKey: ["unit-project-full", unit._id],
@@ -148,6 +137,7 @@ const BuildingDetails = () => {
       enabled: !!buildingId && !!unit.floorId,
     })),
   });
+
   const progressMap = useMemo(() => {
     const map: Record<string, any> = {};
     unitProgressQueries.forEach((query) => {
@@ -157,6 +147,7 @@ const BuildingDetails = () => {
     });
     return map;
   }, [unitProgressQueries]);
+
   const {
     data: building,
     isLoading: buildingLoading,
@@ -167,17 +158,6 @@ const BuildingDetails = () => {
     queryFn: () => getBuildingById(buildingId!),
     enabled: !!buildingId,
   });
-
-  // Dialog states
-  const [buildingDialogOpen, setBuildingDialogOpen] = useState(false);
-  const [floorDialogOpen, setFloorDialogOpen] = useState(false);
-  const [selectedFloor, setSelectedFloor] = useState<FloorUnit | undefined>();
-  const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    type: "building" | "floor";
-    id: string;
-  } | null>(null);
 
   const {
     isRolePermissionsLoading,
@@ -228,6 +208,53 @@ const BuildingDetails = () => {
     },
   });
 
+  const restoreFloorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/floor/restoreFloor/${id}`,
+        {},
+        { withCredentials: true },
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Floor/Unit restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["floors", buildingId] });
+      queryClient.invalidateQueries({ queryKey: ["building", buildingId] });
+      queryClient.invalidateQueries({
+        queryKey: ["lead-management"],
+        refetchType: "active",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inspections"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["units"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["fetchProjects"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["customers"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["invoice"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules"],
+      });
+      setRestoreFloorId(null);
+      setRestoreFloorDialogOpen(false);
+    },
+
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to restore floor");
+    },
+  });
+
   const deleteFloorMutation = useMutation({
     mutationFn: deleteFloor,
     onSuccess: (data) => {
@@ -240,6 +267,12 @@ const BuildingDetails = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["inspections"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["units"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit"],
       });
       queryClient.invalidateQueries({
         queryKey: ["fetchProjects"],
@@ -315,6 +348,7 @@ const BuildingDetails = () => {
 
   // Building actions
   const handleEditBuilding = () => setBuildingDialogOpen(true);
+
   const handleDeleteBuilding = () => {
     setDeleteTarget({ type: "building", id: buildingId! });
     setDeleteDialogOpen(true);
@@ -379,6 +413,8 @@ const BuildingDetails = () => {
     queryClient.invalidateQueries({ queryKey: ["buildings"] });
   };
 
+  const isBuildingDeleted = Boolean(building?.isDeleted);
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -392,18 +428,20 @@ const BuildingDetails = () => {
             <ChevronLeft className="mr-2 h-4 w-4" /> Back to Buildings
           </Button>
 
-          <div className="flex gap-2 md:flex-row flex-col">
-            {userCanEditUser && (
-              <Button variant="outline" onClick={handleEditBuilding}>
-                <Edit className="mr-2 h-4 w-4" /> Edit
-              </Button>
-            )}
-            {userCanDeleteUser && (
-              <Button variant="destructive" onClick={handleDeleteBuilding}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </Button>
-            )}
-          </div>
+          {!isBuildingDeleted && (
+            <div className="flex gap-2 md:flex-row flex-col">
+              {userCanEditUser && (
+                <Button variant="outline" onClick={handleEditBuilding}>
+                  <Edit className="mr-2 h-4 w-4" /> Edit
+                </Button>
+              )}
+              {userCanDeleteUser && (
+                <Button variant="destructive" onClick={handleDeleteBuilding}>
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Building Info */}
@@ -420,7 +458,21 @@ const BuildingDetails = () => {
             )}
             <div className="p-6 flex-1">
               <h1 className="text-3xl font-bold mb-2">
-                {building.projectName}
+                <span
+                  className={
+                    isBuildingDeleted
+                      ? "line-through text-muted-foreground"
+                      : ""
+                  }
+                >
+                  {building?.projectName || "N/A"}
+                </span>
+
+                {isBuildingDeleted && (
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Building De-Activated
+                  </span>
+                )}
               </h1>
               <div className="flex items-center text-muted-foreground mb-4">
                 <MapPin className="h-4 w-4 mr-1" /> {building.location}
@@ -538,23 +590,25 @@ const BuildingDetails = () => {
         {/* Floors/Units */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="flex items-center">
-                <Layers className="mr-2 h-5 w-5" /> Floors & Units
-              </CardTitle>
-              {userCanAddUser && (
-                <div className="flex gap-2">
-                  <Button onClick={handleAddFloor}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
-                  </Button>
+            {!isBuildingDeleted && (
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center">
+                  <Layers className="mr-2 h-5 w-5" /> Floors & Units
+                </CardTitle>
+                {userCanAddUser && (
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddFloor}>
+                      <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
+                    </Button>
 
-                  <Button onClick={() => setBulkDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Bulk Generator
-                  </Button>
-                  <Button onClick={() => setCsvOpen(true)}>Upload CSV</Button>
-                </div>
-              )}
-            </div>
+                    <Button onClick={() => setBulkDialogOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" /> Bulk Generator
+                    </Button>
+                    <Button onClick={() => setCsvOpen(true)}>Upload CSV</Button>
+                  </div>
+                )}
+              </div>
+            )}
           </CardHeader>
 
           <CardContent>
@@ -562,79 +616,101 @@ const BuildingDetails = () => {
               {(floors || [])
                 .slice()
                 .sort((a, b) => a.floorNumber - b.floorNumber)
-                .map((floor, idx) => (
-                  <Card
-                    key={floor._id || idx}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Home className="h-5 w-5 text-muted-foreground" />
-                              <h3 className="text-lg font-semibold">
-                                Floor {floor.floorNumber} - {floor.unitType}
-                              </h3>
-                            </div>
+                .map((floor, idx) => {
+                  const isFloorDeleted = Boolean(floor?.isDeleted);
+                  return (
+                    <Card
+                      className={`hover:shadow-md transition-shadow ${
+                        isFloorDeleted || isBuildingDeleted
+                          ? "opacity-60"
+                          : "hover:bg-muted/30"
+                      }`}
+                      key={floor._id || idx}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Home className="h-5 w-5 text-muted-foreground" />
+                                <h3 className="text-lg font-semibold">
+                                  Floor {floor.floorNumber} - {floor.unitType}
+                                </h3>
+                              </div>
 
-                            <div className="flex gap-1">
-                              {userCanEditUser && (
+                              {!isFloorDeleted && !isBuildingDeleted && (
+                                <div className="flex gap-1">
+                                  {userCanEditUser && (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={(e) => handleEditFloor(floor, e)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {userCanDeleteUser && (
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={(e) =>
+                                        handleDeleteFloor(floor._id, e)
+                                      }
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
+                              {isFloorDeleted && !isBuildingDeleted && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  onClick={(e) => handleEditFloor(floor, e)}
+                                  onClick={() => {
+                                    setRestoreFloorId(floor._id);
+                                    setRestoreFloorDialogOpen(true);
+                                  }}
                                 >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {userCanDeleteUser && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={(e) =>
-                                    handleDeleteFloor(floor._id, e)
-                                  }
-                                >
-                                  <Trash2 className="h-4 w-4" />
+                                  <RotateCcw className="h-4 w-4" />
                                 </Button>
                               )}
                             </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                              <div>
+                                Total Units:{" "}
+                                <span className="font-medium">
+                                  {floor.totalSubUnits}
+                                </span>
+                              </div>
+                              <div>
+                                Available:{" "}
+                                <span className="font-medium text-green-600">
+                                  {floor.availableSubUnits}
+                                </span>
+                              </div>
+                              <div>
+                                Sold:{" "}
+                                <span className="font-medium text-blue-600">
+                                  {floor.totalSubUnits -
+                                    floor.availableSubUnits}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                              Total Units:{" "}
-                              <span className="font-medium">
-                                {floor.totalSubUnits}
-                              </span>
-                            </div>
-                            <div>
-                              Available:{" "}
-                              <span className="font-medium text-green-600">
-                                {floor.availableSubUnits}
-                              </span>
-                            </div>
-                            <div>
-                              Sold:{" "}
-                              <span className="font-medium text-blue-600">
-                                {floor.totalSubUnits - floor.availableSubUnits}
-                              </span>
-                            </div>
-                          </div>
+                          <Button
+                            onClick={() =>
+                              navigate(
+                                `/properties/building/${buildingId}/floor/${floor._id}`,
+                              )
+                            }
+                          >
+                            View Units
+                          </Button>
                         </div>
-                        <Button
-                          onClick={() =>
-                            navigate(
-                              `/properties/building/${buildingId}/floor/${floor._id}`,
-                            )
-                          }
-                        >
-                          View Units
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               {(!floors || floors.length === 0) && (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground">No floors found</p>
@@ -643,6 +719,7 @@ const BuildingDetails = () => {
             </div>
           </CardContent>
         </Card>
+
         {/* Construction Overview */}
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
@@ -945,6 +1022,18 @@ const BuildingDetails = () => {
             ? "Are you sure you want to delete this building? This action cannot be undone."
             : "Deleting this floor/unit will permanently remove all related units and associated data (projects, leads, invoices, etc.). This action cannot be undone. Do you want to continue?"
         }
+      />
+
+      <DeleteConfirmDialog
+        open={restoreFloorDialogOpen}
+        onOpenChange={setRestoreFloorDialogOpen}
+        onConfirm={() => {
+          if (!restoreFloorId) return;
+          restoreFloorMutation.mutate(restoreFloorId);
+        }}
+        title="Restore Floor/Unit"
+        description="Are you sure you want to restore this building?"
+        btnTxt="Restore"
       />
     </MainLayout>
   );

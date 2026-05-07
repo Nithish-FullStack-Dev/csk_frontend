@@ -494,20 +494,34 @@ const ContractorMaterials = () => {
                 </TableRow>
               ) : (
                 filteredMaterials.map((material) => {
-                  const isUserDeleted =
+                  const isBuildingDeleted =
+                    material?.project?.projectId?.isDeleted === true;
+
+                  const isFloorDeleted =
+                    material?.project?.floorUnit?.isDeleted === true;
+
+                  const isUnitDeleted =
+                    material?.project?.unit?.isDeleted === true;
+
+                  const isContractorDeleted =
                     material?.contractor?.isDeleted === true;
-                  console.log(isUserDeleted);
+
+                  const isAnyDeleted =
+                    isBuildingDeleted ||
+                    isFloorDeleted ||
+                    isUnitDeleted ||
+                    isContractorDeleted;
                   return (
                     <TableRow
                       className={`transition-colors ${
-                        isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                        isAnyDeleted ? "opacity-60" : "hover:bg-muted/30"
                       }`}
                       key={material._id}
                     >
                       <TableCell className="font-medium">
                         <span
                           className={
-                            isUserDeleted
+                            isAnyDeleted
                               ? "line-through text-muted-foreground"
                               : ""
                           }
@@ -515,11 +529,30 @@ const ContractorMaterials = () => {
                           {material?.name || "N/A"}
                         </span>
 
-                        {isUserDeleted && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                            User Deleted
-                          </span>
+                        {isBuildingDeleted && (
+                          <Badge variant="destructive">
+                            Building De-Activated
+                          </Badge>
                         )}
+
+                        {!isBuildingDeleted && isFloorDeleted && (
+                          <Badge className="bg-orange-500 text-white">
+                            Floor De-Activated
+                          </Badge>
+                        )}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          isUnitDeleted && (
+                            <Badge variant="secondary">Unit De-Activated</Badge>
+                          )}
+
+                        {!isBuildingDeleted &&
+                          !isFloorDeleted &&
+                          !isUnitDeleted &&
+                          isContractorDeleted && (
+                            <Badge variant="outline">Contractor Deleted</Badge>
+                          )}
                       </TableCell>
                       <TableCell>{material.type}</TableCell>
                       <TableCell>
@@ -567,7 +600,7 @@ const ContractorMaterials = () => {
                               View
                             </DropdownMenuItem>
 
-                            {!isUserDeleted && (
+                            {!isAnyDeleted && (
                               <DropdownMenuItem
                                 onSelect={() => openEditDialog(material)}
                               >
@@ -575,7 +608,7 @@ const ContractorMaterials = () => {
                               </DropdownMenuItem>
                             )}
 
-                            {!isUserDeleted && (
+                            {!isAnyDeleted && (
                               <DropdownMenuItem
                                 onSelect={() => openStatusDialog(material)}
                               >
@@ -600,63 +633,106 @@ const ContractorMaterials = () => {
               No materials found
             </div>
           ) : (
-            filteredMaterials.map((material) => (
-              <div
-                key={material._id}
-                className="border rounded-lg p-4 space-y-3"
-              >
-                <div className="font-semibold text-lg">{material.name}</div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="font-medium">Type:</span> {material.type}
+            filteredMaterials.map((material) => {
+              const isBuildingDeleted =
+                material?.project?.projectId?.isDeleted === true;
+
+              const isFloorDeleted =
+                material?.project?.floorUnit?.isDeleted === true;
+
+              const isUnitDeleted = material?.project?.unit?.isDeleted === true;
+
+              const isContractorDeleted =
+                material?.contractor?.isDeleted === true;
+
+              const isAnyDeleted =
+                isBuildingDeleted ||
+                isFloorDeleted ||
+                isUnitDeleted ||
+                isContractorDeleted;
+              return (
+                <div
+                  key={material._id}
+                  className={`border rounded-lg p-4 space-y-3 transition-all ${
+                    isAnyDeleted ? "opacity-60 bg-muted/30 border-dashed" : ""
+                  }`}
+                >
+                  <div className="font-semibold text-lg">{material.name}</div>
+                  {isBuildingDeleted && (
+                    <Badge variant="destructive">Building De-Activated</Badge>
+                  )}
+
+                  {!isBuildingDeleted && isFloorDeleted && (
+                    <Badge className="bg-orange-500 text-white">
+                      Floor De-Activated
+                    </Badge>
+                  )}
+
+                  {!isBuildingDeleted && !isFloorDeleted && isUnitDeleted && (
+                    <Badge variant="secondary">Unit De-Activated</Badge>
+                  )}
+
+                  {!isBuildingDeleted &&
+                    !isFloorDeleted &&
+                    !isUnitDeleted &&
+                    isContractorDeleted && (
+                      <Badge variant="outline">Contractor Deleted</Badge>
+                    )}
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="font-medium">Type:</span> {material.type}
+                    </div>
+                    <div>
+                      <span className="font-medium">Qty:</span>{" "}
+                      {material.quantity} {material.unit}
+                    </div>
+                    <div>
+                      <span className="font-medium">Rate:</span> ₹
+                      {material.rate}
+                    </div>
+                    <div>
+                      <span className="font-medium">Total:</span> ₹
+                      {material.totalCost}
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Supplier:</span>{" "}
+                    {material.supplier}
                   </div>
                   <div>
-                    <span className="font-medium">Qty:</span>{" "}
-                    {material.quantity} {material.unit}
+                    <Badge
+                      className={
+                        material.status === "Delivered"
+                          ? "bg-green-100 text-green-800"
+                          : material.status === "Pending"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-blue-100 text-blue-800"
+                      }
+                    >
+                      {material.status}
+                    </Badge>
                   </div>
-                  <div>
-                    <span className="font-medium">Rate:</span> ₹{material.rate}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openViewDialog(material)}
+                    >
+                      View
+                    </Button>
+                    {!isAnyDeleted && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(material)}
+                      >
+                        Edit
+                      </Button>
+                    )}
                   </div>
-                  <div>
-                    <span className="font-medium">Total:</span> ₹
-                    {material.totalCost}
-                  </div>
                 </div>
-                <div className="text-sm">
-                  <span className="font-medium">Supplier:</span>{" "}
-                  {material.supplier}
-                </div>
-                <div>
-                  <Badge
-                    className={
-                      material.status === "Delivered"
-                        ? "bg-green-100 text-green-800"
-                        : material.status === "Pending"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-blue-100 text-blue-800"
-                    }
-                  >
-                    {material.status}
-                  </Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openViewDialog(material)}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(material)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

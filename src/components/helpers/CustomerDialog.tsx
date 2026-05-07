@@ -97,7 +97,6 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
   } = useQuery({
     queryKey: ["availableCustomersForSelection"],
     queryFn: fetchAllCustomer_purchased,
-    staleTime: 2 * 60 * 1000,
   });
 
   const {
@@ -268,49 +267,49 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       setValue("unit", unitId, { shouldValidate: false });
       setIsEditLoading(false);
     }
-    if (purchaseType === "BUILDING") {
-      const propertyId =
-        typeof initialData.property === "object"
-          ? initialData.property?._id
-          : "";
+    // if (purchaseType === "BUILDING") {
+    //   const propertyId =
+    //     typeof initialData.property === "object"
+    //       ? initialData.property?._id
+    //       : "";
 
-      const floorUnitId =
-        typeof initialData.floorUnit === "object"
-          ? initialData.floorUnit?._id
-          : "";
+    //   const floorUnitId =
+    //     typeof initialData.floorUnit === "object"
+    //       ? initialData.floorUnit?._id
+    //       : "";
 
-      const unitId =
-        typeof initialData.unit === "object" ? initialData.unit?._id : "";
+    //   const unitId =
+    //     typeof initialData.unit === "object" ? initialData.unit?._id : "";
 
-      setProjectId(propertyId);
-      setFloorUnitId(floorUnitId);
+    //   setProjectId(propertyId);
+    //   setFloorUnitId(floorUnitId);
 
-      setValue("property", propertyId);
-      setValue("floorUnit", floorUnitId);
-      setValue("unit", unitId);
-    }
-    if (purchaseType === "PLOT") {
-      const openPlotId =
-        typeof initialData.openPlot === "object"
-          ? initialData.openPlot?._id
-          : "";
+    //   setValue("property", propertyId);
+    //   setValue("floorUnit", floorUnitId);
+    //   setValue("unit", unitId);
+    // }
+    // if (purchaseType === "PLOT") {
+    //   const openPlotId =
+    //     typeof initialData.openPlot === "object"
+    //       ? initialData.openPlot?._id
+    //       : "";
 
-      const innerPlotId =
-        typeof initialData.innerPlot === "object"
-          ? initialData.innerPlot?._id
-          : "";
+    //   const innerPlotId =
+    //     typeof initialData.innerPlot === "object"
+    //       ? initialData.innerPlot?._id
+    //       : "";
 
-      setValue("openPlot", openPlotId);
-      setValue("innerPlot", innerPlotId);
-    }
-    if (purchaseType === "LAND") {
-      const openLandId =
-        typeof initialData.openLand === "object"
-          ? initialData.openLand?._id
-          : "";
+    //   setValue("openPlot", openPlotId);
+    //   setValue("innerPlot", innerPlotId);
+    // }
+    // if (purchaseType === "LAND") {
+    //   const openLandId =
+    //     typeof initialData.openLand === "object"
+    //       ? initialData.openLand?._id
+    //       : "";
 
-      setValue("openLand", openLandId);
-    }
+    //   setValue("openLand", openLandId);
+    // }
   }, [
     open,
     mode,
@@ -354,6 +353,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
       queryClient.invalidateQueries({
         queryKey: ["availableCustomersForSelection"],
       });
+      reset();
       onOpenChange(false);
     },
     onError: (err: any) => {
@@ -857,7 +857,7 @@ const CustomerDialog = ({ onOpenChange, open, mode, initialData }: Props) => {
                         <SelectContent>
                           {innerPlots.map((p: any) => (
                             <SelectItem key={p._id} value={p._id}>
-                              {p.plotNumber}
+                              {p.plotNo}
                             </SelectItem>
                           ))}
                         </SelectContent>

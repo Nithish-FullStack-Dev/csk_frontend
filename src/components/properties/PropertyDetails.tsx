@@ -16,6 +16,7 @@ import {
   X,
   Image,
   Mail,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,6 +95,8 @@ export function PropertyDetails({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
     useState(false);
+  const [propertyRestoreDialogOpen, setPropertyRestoreDialogOpen] =
+    useState(false);
 
   const [apartmentDialogOpen, setApartmentDialogOpen] = useState(false);
   const [selectedApartment, setSelectedApartment] = useState<
@@ -134,7 +137,7 @@ export function PropertyDetails({
     error: unitProgressErr,
   } = useUnitProgress(buildingId, floorId, property?._id);
 
-  const { userCanAddUser, userCanDeleteUser, userCanEditUser } = useRBAC({
+  const { userCanDeleteUser, userCanEditUser } = useRBAC({
     roleSubmodule: "Properties",
   });
 
@@ -196,6 +199,9 @@ export function PropertyDetails({
       queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", apartmentToDelete],
+      });
 
       queryClient.invalidateQueries({
         queryKey: ["lead-management"],
@@ -235,6 +241,38 @@ export function PropertyDetails({
     },
   });
 
+  const restoreUnitMutation = useMutation({
+    mutationFn: async (unitId: string) => {
+      const { data } = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/unit/restoreUnit/${unitId}`,
+        {},
+        { withCredentials: true },
+      );
+
+      return data;
+    },
+
+    onSuccess: (res) => {
+      toast.success(res.message || "Unit restored successfully");
+
+      queryClient.invalidateQueries({
+        queryKey: ["unit", property._id],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : error.message,
+      );
+    },
+  });
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "Not specified";
     const date = new Date(dateString);
@@ -265,6 +303,7 @@ export function PropertyDetails({
     setDeleteDialogOpen(false);
     setApartmentToDelete(null);
   };
+
   const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
     if (mode === "add") {
       data.append("buildingId", buildingId!);
@@ -277,6 +316,16 @@ export function PropertyDetails({
       });
     }
   };
+
+  const isBuildingDeleted = Boolean(property?.buildingId?.isDeleted);
+
+  const isFloorDeleted = Boolean(property?.floorId?.isDeleted);
+
+  const isUnitDeleted = Boolean(property?.isDeleted);
+
+  const isAnyDeleted = isBuildingDeleted || isFloorDeleted || isUnitDeleted;
+
+  const canRestoreUnit = isUnitDeleted && !isBuildingDeleted && !isFloorDeleted;
 
   return (
     <>
@@ -293,7 +342,7 @@ export function PropertyDetails({
           </Button>
 
           <div className="flex md:flex-row flex-col gap-3">
-            {userCanEditUser && (
+            {!isAnyDeleted && userCanEditUser && (
               <Button
                 size="sm"
                 onClick={(e) => handleEditApartment(property, e)}
@@ -301,13 +350,23 @@ export function PropertyDetails({
                 <Edit className="mr-2 h-4 w-4" /> Edit
               </Button>
             )}
-            {userCanDeleteUser && (
+            {!isAnyDeleted && userCanDeleteUser && (
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={(e) => handleDeleteClick(property._id!, e)}
               >
                 <Trash className="mr-2 h-4 w-4" /> Delete
+              </Button>
+            )}
+            {canRestoreUnit && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPropertyRestoreDialogOpen(true)}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Restore
               </Button>
             )}
           </div>
@@ -331,7 +390,35 @@ export function PropertyDetails({
                 <div>
                   <div className="flex items-center space-x-2 mb-1">
                     <h2 className="text-2xl font-bold">
-                      {property?.projectName}
+                      <span
+                        className={
+                          isAnyDeleted
+                            ? "line-through text-muted-foreground"
+                            : ""
+                        }
+                      >
+                        {property?.plotNo || "N/A"}
+                      </span>
+
+                      {isBuildingDeleted && (
+                        <span className="ml-2 text-xs px-2 py-0.5 rounded bg-red-100 text-red-700">
+                          Building De-Activated
+                        </span>
+                      )}
+
+                      {!isBuildingDeleted && isFloorDeleted && (
+                        <span className="ml-2 text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-700">
+                          Floor De-Activated
+                        </span>
+                      )}
+
+                      {!isBuildingDeleted &&
+                        !isFloorDeleted &&
+                        isUnitDeleted && (
+                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            Unit De-Activated
+                          </span>
+                        )}
                     </h2>
                     {getStatusBadge(property?.status)}
                   </div>
@@ -894,11 +981,20 @@ export function PropertyDetails({
       />
 
       <DeleteConfirmDialog
+        open={propertyRestoreDialogOpen}
+        onOpenChange={setPropertyRestoreDialogOpen}
+        onConfirm={() => restoreUnitMutation.mutate(property._id!)}
+        title="Restore Unit"
+        description="Are you sure you want to restore this unit?"
+        btnTxt="Restore"
+      />
+
+      <DeleteConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
         title="Delete Unit"
-        description="Deleting this unit will permanently remove all related data including projects, leads, invoices, and inspections. This action cannot be undone. Do you want to continue?"
+        description="Are you sure you want to delete this unit?"
       />
     </>
   );
