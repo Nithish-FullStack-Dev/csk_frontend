@@ -23,7 +23,7 @@ const Login = () => {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to="/" replace />;
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

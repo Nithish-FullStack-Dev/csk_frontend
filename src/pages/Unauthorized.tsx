@@ -15,7 +15,7 @@ const Unauthorized = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild variant="outline">
-            <Link to="/app">Go to Dashboard</Link>
+            <Link to="/">Go to Dashboard</Link>
           </Button>
           <Button asChild className="bg-estate-navy hover:bg-estate-navy/90">
             <Link to="/login">Change Account</Link>
