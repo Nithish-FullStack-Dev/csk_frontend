@@ -344,6 +344,7 @@ const ContractorTaskList = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Task</TableHead>
+              {user?.role === "admin" && <TableHead>Contractor</TableHead>}
               <TableHead>Project / Unit</TableHead>
               <TableHead>Phase</TableHead>
               <TableHead>Status</TableHead>
@@ -365,7 +366,8 @@ const ContractorTaskList = () => {
                 const isAnyDeleted =
                   task?.isBuildingDeleted ||
                   task?.isFloorDeleted ||
-                  task?.isUnitDeleted;
+                  task?.isUnitDeleted ||
+                  task?.isContractorDeleted;
                 return (
                   <TableRow
                     key={task._id || idx}
@@ -374,7 +376,11 @@ const ContractorTaskList = () => {
                     <TableCell className="font-medium">
                       <div className="flex flex-wrap items-center gap-2">
                         <span>{task.title}</span>
-
+                        {task?.isContractorDeleted && (
+                          <Badge variant="destructive">
+                            Contractor De-Activated
+                          </Badge>
+                        )}
                         {task.isBuildingDeleted && (
                           <Badge variant="destructive">
                             Building De-Activated
@@ -394,6 +400,25 @@ const ContractorTaskList = () => {
                           )}
                       </div>
                     </TableCell>
+                    {user?.role === "admin" && (
+                      <TableCell>
+                        <span
+                          className={
+                            task?.isContractorDeleted
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }
+                        >
+                          {task?.contractorName || "-"}
+                        </span>
+
+                        {task?.isContractorDeleted && (
+                          <Badge variant="destructive" className="ml-2">
+                            Deleted
+                          </Badge>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {task?.project}, floorNo: {task?.floorNumber} unit:{" "}
                       {task?.plotNo}
@@ -521,7 +546,8 @@ const ContractorTaskList = () => {
             const isAnyDeleted =
               task?.isBuildingDeleted ||
               task?.isFloorDeleted ||
-              task?.isUnitDeleted;
+              task?.isUnitDeleted ||
+              task?.isContractorDeleted;
             return (
               <div
                 key={task?._id || idx}
@@ -543,6 +569,18 @@ const ContractorTaskList = () => {
                     {task?.status || "-"}
                   </Badge>
                 </div>
+
+                {user?.role === "admin" && (
+                  <p
+                    className={`text-sm mt-1 ${
+                      task?.isContractorDeleted
+                        ? "line-through text-muted-foreground"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    Contractor: {task?.contractorName || "-"}
+                  </p>
+                )}
 
                 {/* Project / Unit */}
                 <p className="text-sm text-gray-500 mt-1">

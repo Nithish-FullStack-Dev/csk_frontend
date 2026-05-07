@@ -919,6 +919,47 @@ const LeadManagement = () => {
                     </div>
                   </div>
                 )}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedLead?.addedBy?.isDeleted && (
+                    <Badge variant="secondary">Agent Deleted</Badge>
+                  )}
+
+                  {selectedLead?.property &&
+                    typeof selectedLead.property === "object" &&
+                    selectedLead.property?.isDeleted && (
+                      <Badge variant="destructive">Building Deleted</Badge>
+                    )}
+
+                  {selectedLead?.floorUnit &&
+                    typeof selectedLead.floorUnit === "object" &&
+                    selectedLead.floorUnit?.isDeleted && (
+                      <Badge variant="destructive">Floor Deleted</Badge>
+                    )}
+
+                  {selectedLead?.unit &&
+                    typeof selectedLead.unit === "object" &&
+                    selectedLead.unit?.isDeleted && (
+                      <Badge variant="destructive">Unit Deleted</Badge>
+                    )}
+
+                  {selectedLead?.openPlot &&
+                    typeof selectedLead.openPlot === "object" &&
+                    selectedLead.openPlot?.isDeleted && (
+                      <Badge variant="destructive">Open Plot Deleted</Badge>
+                    )}
+
+                  {selectedLead?.innerPlot &&
+                    typeof selectedLead.innerPlot === "object" &&
+                    selectedLead.innerPlot?.isDeleted && (
+                      <Badge variant="destructive">Inner Plot Deleted</Badge>
+                    )}
+
+                  {selectedLead?.openLand &&
+                    typeof selectedLead.openLand === "object" &&
+                    selectedLead.openLand?.isDeleted && (
+                      <Badge variant="destructive">Open Land Deleted</Badge>
+                    )}
+                </div>
 
                 {/* ================= OWNERSHIP ================= */}
                 <div>

@@ -685,39 +685,51 @@ const UserManagement = () => {
               </p>
             ) : (
               <div className="space-y-3">
-                {deletedUsers.map((user) => (
-                  <div
-                    key={user._id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
+                {(Array.isArray(deletedUsers) ? deletedUsers : []).map(
+                  (user, idx) => (
+                    <div
+                      key={user?._id || idx}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-white shadow-sm"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          <span className="font-bold text-muted-foreground">
+                            Name:{" "}
+                          </span>{" "}
+                          {user?.name || "N/A"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-bold">Email: </span>{" "}
+                          {user?.email || "N/A"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-bold">Role: </span>{" "}
+                          {user?.role || "N/A"}
+                        </p>
+                      </div>
 
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className="bg-red-100 text-red-700"
-                      >
-                        Deleted
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="bg-red-100 text-red-700"
+                        >
+                          De-Activated
+                        </Badge>
 
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setRestore(true);
-                        }}
-                      >
-                        Restore
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setRestore(true);
+                          }}
+                        >
+                          Restore
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             )}
           </CardContent>

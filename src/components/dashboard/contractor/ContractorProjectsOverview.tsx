@@ -160,7 +160,7 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               <div className="flex items-center justify-between pr-10">
                 <h2 className="text-xl font-semibold">
                   {project.projectId && typeof project.projectId === "object"
-                    ? project.projectId.projectName
+                    ? project.projectId.projectName + " "
                     : "Untitled Project"}
                   {isBuildingDeleted && (
                     <Badge variant="destructive">Building De-Activated</Badge>

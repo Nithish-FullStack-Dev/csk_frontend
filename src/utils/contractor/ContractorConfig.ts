@@ -122,6 +122,11 @@ export interface VerificationTask {
   qualityAssessment?: string;
   noteBySiteIncharge?: string;
   siteInchargeUploadedPhotos?: string[];
+  isBuildingDeleted?: boolean;
+  isFloorDeleted?: boolean;
+  isUnitDeleted?: boolean;
+  isSiteInchargeDeleted?: boolean;
+  isContractorDeleted?: boolean;
 }
 
 export const statusColors: Record<string, string> = {
@@ -171,6 +176,12 @@ export const fetchTasks = async () => {
     priority: mapPriority(task?.priority || "unspecified"),
 
     siteInchargeName: task?.siteInchargeName || "-",
+
+    isSiteInchargeDeleted: task?.isSiteInchargeDeleted || false,
+
+    isContractorDeleted: task?.isContractorDeleted || false,
+
+    contractorName: task?.contractorName || "-",
 
     // 🔥 ADD THESE (VERY IMPORTANT)
     statusForSiteIncharge: task?.statusForSiteIncharge || "",

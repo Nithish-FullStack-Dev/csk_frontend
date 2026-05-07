@@ -132,10 +132,27 @@ export default function PropertyLeadsTab({
 
                 const isUserDeleted = lead?.addedBy?.isDeleted === true;
 
+                const isBuildingDeleted =
+                  typeof lead?.property === "object" &&
+                  lead?.property?.isDeleted === true;
+
+                const isFloorDeleted =
+                  typeof lead?.floorUnit === "object" &&
+                  lead?.floorUnit?.isDeleted === true;
+
+                const isUnitDeleted =
+                  typeof lead?.unit === "object" &&
+                  lead?.unit?.isDeleted === true;
+
+                const isPropertyDataDeleted =
+                  isBuildingDeleted || isFloorDeleted || isUnitDeleted;
+
+                const isAnyDeleted = isUserDeleted || isPropertyDataDeleted;
+
                 return (
                   <TableRow
                     className={`transition-colors ${
-                      isUserDeleted ? "opacity-60" : "hover:bg-muted/30"
+                      isAnyDeleted ? "opacity-60" : "hover:bg-muted/30"
                     }`}
                     key={lead._id}
                   >
@@ -156,7 +173,7 @@ export default function PropertyLeadsTab({
                     <TableCell className="hidden md:table-cell">
                       <span
                         className={
-                          isUserDeleted
+                          isAnyDeleted
                             ? "line-through text-muted-foreground"
                             : ""
                         }
@@ -165,9 +182,21 @@ export default function PropertyLeadsTab({
                       </span>
 
                       {isUserDeleted && (
-                        <span className="ml-2 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                          Agent Deleted
-                        </span>
+                        <Badge variant="secondary">Agent De-Activated</Badge>
+                      )}
+
+                      {isBuildingDeleted && (
+                        <Badge variant="destructive">
+                          Building De-Activated
+                        </Badge>
+                      )}
+
+                      {isFloorDeleted && (
+                        <Badge variant="destructive">Floor De-Activated</Badge>
+                      )}
+
+                      {isUnitDeleted && (
+                        <Badge variant="destructive">Unit De-Activated</Badge>
                       )}
                     </TableCell>
 
@@ -291,6 +320,20 @@ function ActionsMenu({
 
   const isUserDeleted = lead?.addedBy?.isDeleted === true;
 
+  const isBuildingDeleted =
+    typeof lead?.property === "object" && lead?.property?.isDeleted === true;
+
+  const isFloorDeleted =
+    typeof lead?.floorUnit === "object" && lead?.floorUnit?.isDeleted === true;
+
+  const isUnitDeleted =
+    typeof lead?.unit === "object" && lead?.unit?.isDeleted === true;
+
+  const isPropertyDataDeleted =
+    isBuildingDeleted || isFloorDeleted || isUnitDeleted;
+
+  const isAnyDeleted = isUserDeleted || isPropertyDataDeleted;
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="icon" onClick={onView}>
@@ -323,7 +366,7 @@ function ActionsMenu({
               </DropdownMenuItem>
             </a>
 
-            {!isUserDeleted && !isSalesManager && (
+            {!isAnyDeleted && !isSalesManager && (
               <DropdownMenuItem onClick={onVisit}>
                 <Calendar className="mr-2 h-4 w-4" /> Schedule Visit
               </DropdownMenuItem>
@@ -331,13 +374,13 @@ function ActionsMenu({
 
             <DropdownMenuSeparator />
 
-            {!isUserDeleted && userCanEditUser && (
+            {!isAnyDeleted && userCanEditUser && (
               <DropdownMenuItem onClick={onEdit}>
                 <FileText className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
             )}
 
-            {!isUserDeleted && userCanDeleteUser && (
+            {!isAnyDeleted && userCanDeleteUser && (
               <DropdownMenuItem onClick={onDelete}>
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </DropdownMenuItem>
@@ -383,8 +426,28 @@ function MobileLeadCard({
     ? `${leadProperty?.projectName} - ${leadUnit.plotNo}`
     : "N/A";
 
+  const isUserDeleted = lead?.addedBy?.isDeleted === true;
+
+  const isBuildingDeleted =
+    typeof lead?.property === "object" && lead?.property?.isDeleted === true;
+
+  const isFloorDeleted =
+    typeof lead?.floorUnit === "object" && lead?.floorUnit?.isDeleted === true;
+
+  const isUnitDeleted =
+    typeof lead?.unit === "object" && lead?.unit?.isDeleted === true;
+
+  const isPropertyDataDeleted =
+    isBuildingDeleted || isFloorDeleted || isUnitDeleted;
+
+  const isAnyDeleted = isUserDeleted || isPropertyDataDeleted;
+
   return (
-    <div className="bg-white border rounded-lg shadow p-4 space-y-2">
+    <div
+      className={`border rounded-lg shadow p-4 space-y-2 ${
+        isAnyDeleted ? "opacity-60 bg-muted/20" : "bg-white"
+      }`}
+    >
       <LeadUserCell lead={lead} />
 
       <div className="flex justify-between">

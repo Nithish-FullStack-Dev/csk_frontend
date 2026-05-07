@@ -26,12 +26,14 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import MainLayout from "../layout/MainLayout";
+import { Badge } from "../ui/badge";
 
 interface User {
   _id: string;
   name: string;
   email: string;
   avatar?: string;
+  isDeleted?: boolean;
 }
 
 interface Message {
@@ -329,53 +331,59 @@ const ChatInterface = () => {
                     No other users available.
                   </div>
                 )}
-                {sortedUsers.map((u) => (
-                  <div
-                    key={u._id}
-                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
-                      selectedUser?._id === u._id ? "bg-muted" : ""
-                    }`}
-                    onClick={() => setSelectedUser(u)}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={
-                          u.avatar ||
-                          `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
-                        }
-                        alt={u.name}
-                      />
-                      <AvatarFallback>
-                        {u.name ? u.name[0] : "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-sm font-medium relative pr-8">
-                      {u.name}
-                      {latestMessages[u._id] ? (
-                        <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
-                          <span className="truncate max-w-[calc(100%-60px)]">
-                            {latestMessages[u._id].senderId === user?._id
-                              ? "You: "
-                              : ""}
-                            {latestMessages[u._id].content}
+                {sortedUsers.map((u) => {
+                  const isUserDeleted = Boolean(u?.isDeleted);
+                  return (
+                    <div
+                      key={u._id}
+                      className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-muted transition-colors ${
+                        selectedUser?._id === u._id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => setSelectedUser(u)}
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={
+                            u.avatar ||
+                            `https://ui-avatars.com/api/?name=${u.name}&background=random&color=fff`
+                          }
+                          alt={u.name}
+                        />
+                        <AvatarFallback>
+                          {u.name ? u.name[0] : "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-sm font-medium relative pr-8">
+                        {u.name}{" "}
+                        {isUserDeleted && (
+                          <Badge variant="destructive">User De-Activated</Badge>
+                        )}
+                        {latestMessages[u._id] ? (
+                          <div className="text-xs text-muted-foreground mt-1 flex justify-between items-center">
+                            <span className="truncate max-w-[calc(100%-60px)]">
+                              {latestMessages[u._id].senderId === user?._id
+                                ? "You: "
+                                : ""}
+                              {latestMessages[u._id].content}
+                            </span>
+                            <span className="ml-2 text-right flex-shrink-0">
+                              {formatTimestamp(latestMessages[u._id].timestamp)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            No messages yet.
+                          </div>
+                        )}
+                        {unreadCounts[u._id] > 0 && (
+                          <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
+                            {unreadCounts[u._id]}
                           </span>
-                          <span className="ml-2 text-right flex-shrink-0">
-                            {formatTimestamp(latestMessages[u._id].timestamp)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          No messages yet.
-                        </div>
-                      )}
-                      {unreadCounts[u._id] > 0 && (
-                        <span className="absolute right-0 top-1 inline-flex items-center justify-center bg-red-500 text-white rounded-full h-5 w-5 text-xs">
-                          {unreadCounts[u._id]}
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </ScrollArea>
             </CardContent>
           </Card>

@@ -139,7 +139,9 @@ const materialUnits = [
 const ContractorMaterials = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { userCanAddUser } = useRBAC({ roleSubmodule: "Materials" });
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Materials",
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -600,21 +602,25 @@ const ContractorMaterials = () => {
                               View
                             </DropdownMenuItem>
 
-                            {!isAnyDeleted && (
-                              <DropdownMenuItem
-                                onSelect={() => openEditDialog(material)}
-                              >
-                                Edit
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onSelect={() => openEditDialog(material)}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                              )}
 
-                            {!isAnyDeleted && (
-                              <DropdownMenuItem
-                                onSelect={() => openStatusDialog(material)}
-                              >
-                                Update Status
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onSelect={() => openStatusDialog(material)}
+                                >
+                                  Update Status
+                                </DropdownMenuItem>
+                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -720,15 +726,17 @@ const ContractorMaterials = () => {
                     >
                       View
                     </Button>
-                    {!isAnyDeleted && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(material)}
-                      >
-                        Edit
-                      </Button>
-                    )}
+                    {!isAnyDeleted &&
+                      user?.role !== "admin" &&
+                      userCanEditUser && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(material)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                   </div>
                 </div>
               );
@@ -1350,6 +1358,8 @@ const ContractorMaterials = () => {
                   Close
                 </Button>
                 {selectedMaterial &&
+                  user?.role !== "admin" &&
+                  userCanEditUser &&
                   selectedMaterial?.status !== "Delivered" && (
                     <Button onClick={markAsDelivered}>Mark as Delivered</Button>
                   )}

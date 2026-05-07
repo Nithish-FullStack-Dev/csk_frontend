@@ -53,6 +53,13 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getImageUrl } from "@/lib/image";
 import { useRBAC } from "@/config/RBAC";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // --- API Functions ---
 
@@ -104,6 +111,11 @@ const JobPostsPage = () => {
   // Application Filters
   const [appSearch, setAppSearch] = useState("");
   const [appStatusFilter, setAppStatusFilter] = useState("all");
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+
+  const [selectedStatusJob, setSelectedStatusJob] = useState<any>(null);
+
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   const { userCanAddUser, userCanDeleteUser, userCanEditUser } = useRBAC({
     roleSubmodule: "Careers Management",
@@ -150,6 +162,40 @@ const JobPostsPage = () => {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_URL}/api/job-posts/updateJobPostStatus/${id}`,
+        { status },
+        {
+          withCredentials: true,
+        },
+      );
+
+      return response.data;
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["jobPosts"],
+      });
+
+      toast.success("Job status updated successfully");
+
+      setStatusDialogOpen(false);
+      setSelectedStatusJob(null);
+      setSelectedStatus("");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : "Failed to update status",
+      );
+    },
+  });
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "applied":
@@ -163,6 +209,12 @@ const JobPostsPage = () => {
       default:
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
+  };
+
+  const openStatusDialog = (job: any) => {
+    setSelectedStatusJob(job);
+    setSelectedStatus(job.status);
+    setStatusDialogOpen(true);
   };
 
   const resetFilters = () => {
@@ -323,6 +375,7 @@ const JobPostsPage = () => {
                           <TableHead className="font-semibold">
                             Posted On
                           </TableHead>
+                          <TableHead>Expiry</TableHead>
                           <TableHead className="text-right font-semibold">
                             Actions
                           </TableHead>
@@ -340,78 +393,121 @@ const JobPostsPage = () => {
                           </TableRow>
                         ) : (
                           Array.isArray(data?.data) &&
-                          data?.data?.map((job: any) => (
-                            <TableRow
-                              key={job._id}
-                              className="hover:bg-slate-50/50 transition-colors"
-                            >
-                              <TableCell className="font-medium text-slate-900">
-                                {job.title}
-                              </TableCell>
-                              <TableCell>{job.department}</TableCell>
-                              <TableCell>{job.location}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className="font-normal capitalize font-sans"
-                                >
-                                  {job.jobType}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    job.status === "published"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                  className="capitalize"
-                                >
-                                  {job.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-slate-500">
-                                {job.createdAt
-                                  ? format(
-                                      new Date(job.createdAt),
-                                      "MMM dd, yyyy",
-                                    )
-                                  : "N/A"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleView(job)}
-                                    className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                          data?.data?.map((job: any) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+
+                            const expiryDate = job.expiresAt
+                              ? new Date(job.expiresAt)
+                              : null;
+
+                            if (expiryDate) {
+                              expiryDate.setHours(0, 0, 0, 0);
+                            }
+
+                            const isExpired = expiryDate && expiryDate < today;
+
+                            return (
+                              <TableRow
+                                key={job._id}
+                                className="hover:bg-slate-50/50 transition-colors"
+                              >
+                                <TableCell className="font-medium text-slate-900">
+                                  {job.title}
+                                </TableCell>
+                                <TableCell>{job.department}</TableCell>
+                                <TableCell>{job.location}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className="font-normal capitalize font-sans"
                                   >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  {userCanEditUser && (
+                                    {job.jobType}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    className={
+                                      job.status === "published"
+                                        ? "bg-green-100 text-green-700"
+                                        : job.status === "closed"
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-yellow-100 text-yellow-700"
+                                    }
+                                  >
+                                    {job.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-slate-500">
+                                  {job.createdAt
+                                    ? format(
+                                        new Date(job.createdAt),
+                                        "MMM dd, yyyy",
+                                      )
+                                    : "N/A"}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col gap-1">
+                                    <span>
+                                      {job?.expiresAt
+                                        ? new Date(
+                                            job.expiresAt,
+                                          ).toLocaleDateString("en-IN")
+                                        : "No Expiry"}
+                                    </span>
+
+                                    {isExpired && (
+                                      <Badge variant="destructive">
+                                        Expired
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-1">
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={() => handleEdit(job)}
-                                      className="h-8 w-8 text-slate-400 hover:text-emerald-600"
+                                      onClick={() => handleView(job)}
+                                      className="h-8 w-8 text-slate-400 hover:text-blue-600"
                                     >
-                                      <Edit className="h-4 w-4" />
+                                      <Eye className="h-4 w-4" />
                                     </Button>
-                                  )}
-                                  {userCanDeleteUser && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => triggerDelete(job._id)}
-                                      className="h-8 w-8 text-slate-400 hover:text-rose-600"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                                    {userCanEditUser && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openStatusDialog(job)}
+                                        className="text-xs"
+                                      >
+                                        Status
+                                      </Button>
+                                    )}
+                                    {userCanEditUser && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleEdit(job)}
+                                        className="h-8 w-8 text-slate-400 hover:text-emerald-600"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    {userCanDeleteUser && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => triggerDelete(job._id)}
+                                        className="h-8 w-8 text-slate-400 hover:text-rose-600"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                         )}
                       </TableBody>
                     </Table>
@@ -614,6 +710,67 @@ const JobPostsPage = () => {
           title="Delete Job Post"
           description="Are you sure you want to remove this listing? This will permanently delete the post and cannot be undone."
         />
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update Job Status</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Job Title</p>
+
+                <p className="font-medium">{selectedStatusJob?.title}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+
+                <Select
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+
+                    <SelectItem value="published">Published</SelectItem>
+
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setStatusDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                disabled={updateStatusMutation.isPending || !selectedStatus}
+                onClick={() => {
+                  if (!selectedStatusJob?._id) return;
+
+                  updateStatusMutation.mutate({
+                    id: selectedStatusJob._id,
+                    status: selectedStatus,
+                  });
+                }}
+              >
+                {updateStatusMutation.isPending
+                  ? "Updating..."
+                  : "Update Status"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
