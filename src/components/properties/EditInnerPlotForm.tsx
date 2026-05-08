@@ -230,11 +230,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         <Label>Thumbnail</Label>
         {thumbnailPreview && (
           <img
-            src={
-              thumbnailPreview?.startsWith("blob:")
-                ? thumbnailPreview
-                : `${import.meta.env.VITE_URL}${thumbnailPreview}`
-            }
+            src={thumbnailPreview}
             className="h-28 w-40 object-cover rounded border"
           />
         )}
