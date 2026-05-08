@@ -24,7 +24,7 @@ import { InnerPlotFormValues, innerPlotSchema } from "@/types/InnerPlot";
 
 interface Props {
   innerPlot: any;
-  onSuccess: () => void;
+  onSuccess: (updatedPlot: any) => void;
 }
 
 export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
@@ -102,19 +102,40 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         imagePreviews.filter((img) => !img.startsWith("blob:")),
       ),
 
-    onSuccess: async () => {
+    onSuccess: async (updatedPlot) => {
       toast.success("Inner plot updated successfully");
+
+      // update cache instantly
+      queryClient.setQueryData(["inner-plot", innerPlot._id], updatedPlot);
+
+      queryClient.setQueryData(
+        ["inner-plots", innerPlot.openPlotId?._id || innerPlot.openPlotId],
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
+
+          return old.map((item) =>
+            item._id === updatedPlot._id
+              ? {
+                  ...item,
+                  ...updatedPlot,
+                }
+              : item,
+          );
+        },
+      );
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["inner-plots", innerPlot.openPlotId],
+          queryKey: ["inner-plots"],
+          exact: false,
         }),
+
         queryClient.invalidateQueries({
           queryKey: ["inner-plot", innerPlot._id],
         }),
       ]);
 
-      onSuccess();
+      onSuccess(updatedPlot);
     },
 
     onError: (err: any) => {

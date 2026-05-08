@@ -553,13 +553,35 @@ export function InnerPlotDetails() {
 
             <EditInnerPlotForm
               innerPlot={plot}
-              onSuccess={() => {
+              onSuccess={(updatedPlot) => {
+                // Update single inner plot cache instantly
+                queryClient.setQueryData(["inner-plot", plot._id], updatedPlot);
+
+                // Update inner plots list instantly
+                queryClient.setQueryData(
+                  ["inner-plots", plot.openPlotId?._id || plot.openPlotId],
+                  (old: any) => {
+                    if (!Array.isArray(old)) return old;
+
+                    return old.map((item) =>
+                      item._id === updatedPlot._id
+                        ? {
+                            ...item,
+                            ...updatedPlot,
+                          }
+                        : item,
+                    );
+                  },
+                );
+
+                // Refetch in background for sync
                 queryClient.invalidateQueries({
                   queryKey: ["inner-plot", plot._id],
                 });
 
                 queryClient.invalidateQueries({
-                  queryKey: ["inner-plots", plot.openPlotId],
+                  queryKey: ["inner-plots"],
+                  exact: false,
                 });
 
                 setEditOpen(false);
