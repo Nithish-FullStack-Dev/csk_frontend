@@ -21,6 +21,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { InnerPlotFormValues, innerPlotSchema } from "@/types/InnerPlot";
+import { getImageUrl } from "@/lib/image";
 
 interface Props {
   innerPlot: any;
@@ -31,9 +32,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    innerPlot.thumbnailUrl
-      ? `${import.meta.env.VITE_URL}${innerPlot.thumbnailUrl}`
-      : "",
+    innerPlot.thumbnailUrl ? getImageUrl(innerPlot.thumbnailUrl) : "",
   );
   const queryClient = useQueryClient();
 
@@ -144,6 +143,8 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
       toast.error(err?.message || "Failed to update inner plot");
     },
   });
+
+  console.log(thumbnailPreview);
 
   return (
     <form
