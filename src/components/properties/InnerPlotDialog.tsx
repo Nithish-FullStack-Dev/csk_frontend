@@ -28,8 +28,12 @@ export function InnerPlotDialog({
 
         <InnerPlotForm
           openPlotId={openPlotId}
-          onSuccess={() => {
-            queryClient.invalidateQueries({
+          onSuccess={async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ["inner-plots", openPlotId],
+            });
+
+            await queryClient.refetchQueries({
               queryKey: ["inner-plots", openPlotId],
             });
             onOpenChange(false);

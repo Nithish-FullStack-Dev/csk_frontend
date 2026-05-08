@@ -81,6 +81,7 @@ interface PropertyDetailsProps {
   unitId: string;
   onDelete: () => void;
   onBack: () => void;
+  isDeleting?: boolean;
 }
 
 export function PropertyDetails({
@@ -88,11 +89,10 @@ export function PropertyDetails({
   onDelete,
   buildingId,
   floorId,
+  isDeleting,
 }: PropertyDetailsProps) {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [propertyDeleteDialogOpen, setPropertyDeleteDialogOpen] =
     useState(false);
   const [propertyRestoreDialogOpen, setPropertyRestoreDialogOpen] =
@@ -103,9 +103,7 @@ export function PropertyDetails({
     Property | undefined
   >();
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
-  const [apartmentToDelete, setApartmentToDelete] = useState<string | null>(
-    null,
-  );
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -169,7 +167,24 @@ export function PropertyDetails({
       unitId: string;
       unitData: FormData;
     }) => updateUnit(unitId, unitData),
-    onSuccess: (updatedUnit) => {
+    onSuccess: async (updatedUnit) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["units", buildingId, floorId],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["unit", updatedUnit._id],
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["unit", updatedUnit._id],
+        exact: true,
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["units", buildingId, floorId],
+        exact: true,
+      });
       queryClient.setQueryData(
         ["units", buildingId, floorId],
         (oldUnits: any[] = []) =>
@@ -187,60 +202,6 @@ export function PropertyDetails({
     },
   });
 
-  // DELETE UNIT
-  const deleteUnitMutation = useMutation({
-    mutationFn: deleteUnit,
-    onSuccess: (res) => {
-      // queryClient.removeQueries({
-      //   queryKey: ["unit", deletedUnitId],
-      //   exact: true,
-      // });
-
-      queryClient.invalidateQueries({
-        queryKey: ["units", buildingId, floorId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["unit", apartmentToDelete],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["lead-management"],
-        refetchType: "active",
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["inspections"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["fetchProjects"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["customers"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["invoice"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["schedules"],
-      });
-
-      queryClient.refetchQueries({
-        queryKey: ["units", buildingId, floorId],
-        exact: true,
-      });
-
-      toast.success(res.message || "Unit deleted successfully");
-
-      navigate(`/properties/building/${buildingId}/floor/${floorId}`);
-    },
-    onError: (error: any) => {
-      toast.error(
-        axios.isAxiosError(error)
-          ? error.response?.data?.message
-          : error.message,
-      );
-    },
-  });
-
   const restoreUnitMutation = useMutation({
     mutationFn: async (unitId: string) => {
       const { data } = await axios.patch(
@@ -252,15 +213,25 @@ export function PropertyDetails({
       return data;
     },
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       toast.success(res.message || "Unit restored successfully");
 
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["unit", property._id],
       });
 
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["unit", property._id],
+        exact: true,
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: ["units", buildingId, floorId],
+        exact: true,
       });
     },
 
@@ -288,20 +259,6 @@ export function PropertyDetails({
     setSelectedApartment(apartment);
     setDialogMode("edit");
     setApartmentDialogOpen(true);
-  };
-
-  const handleDeleteClick = (apartmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setApartmentToDelete(apartmentId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (apartmentToDelete) {
-      deleteUnitMutation.mutate(apartmentToDelete);
-    }
-    setDeleteDialogOpen(false);
-    setApartmentToDelete(null);
   };
 
   const handleSaveApartment = (data: FormData, mode: "add" | "edit") => {
@@ -352,9 +309,10 @@ export function PropertyDetails({
             )}
             {!isAnyDeleted && userCanDeleteUser && (
               <Button
+                disabled={isDeleting}
                 size="sm"
                 variant="destructive"
-                onClick={(e) => handleDeleteClick(property._id!, e)}
+                onClick={onDelete}
               >
                 <Trash className="mr-2 h-4 w-4" /> Delete
               </Button>
@@ -987,14 +945,6 @@ export function PropertyDetails({
         title="Restore Unit"
         description="Are you sure you want to restore this unit?"
         btnTxt="Restore"
-      />
-
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Unit"
-        description="Are you sure you want to delete this unit?"
       />
     </>
   );

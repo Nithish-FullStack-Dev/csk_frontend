@@ -28,7 +28,6 @@ interface Props {
 }
 
 export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
-  console.log(innerPlot);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
@@ -100,7 +99,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         data,
         thumbnail ?? undefined,
         images,
-        removedImages,
+        imagePreviews.filter((img) => !img.startsWith("blob:")),
       ),
 
     onSuccess: async () => {

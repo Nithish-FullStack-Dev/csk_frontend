@@ -1,5 +1,5 @@
-import { useNavigate, useParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Loader from "@/components/Loader";
 import OpenLandDetails from "@/components/properties/OpenLandDetails";
@@ -16,17 +16,31 @@ const OpenLandDetailsPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // 🔥 read already fetched lands from React Query cache
-  const lands = queryClient.getQueryData<OpenLand[]>(["openLand"]);
+  const {
+    data: land,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["openLand", id],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL}/api/openLand/getOpenLandById/${id}`,
+        {
+          withCredentials: true,
+        },
+      );
 
-  if (!lands) return <Loader />;
+      return data.data;
+    },
+    enabled: !!id,
+  });
 
-  const land = lands.find((l) => l._id === id);
+  if (isLoading) {
+    return <Loader />;
+  }
 
-  if (!land) {
-    toast.error("Open land not found");
-    navigate("/properties");
-    return null;
+  if (isError || !land) {
+    return <Navigate to="/properties" replace />;
   }
 
   return (
