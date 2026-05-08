@@ -54,7 +54,7 @@ const fetchAllUsers = async () => {
   const csrfToken = await getCsrfToken();
   const { data } = await axios.get(
     `${import.meta.env.VITE_URL}/api/user/getExistingUsers`,
-    { withCredentials: true, headers: { "X-CSRF-Token": csrfToken } },
+    { withCredentials: true },
   );
   return data.users || [];
 };
@@ -127,8 +127,8 @@ const UserManagement = () => {
   });
 
   const filteredUsers = useMemo(() => {
-    const normalize = (str: string) =>
-      str?.toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
+    const normalize = (str?: string) =>
+      (str || "").toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
 
     const query = normalize(searchQuery);
 
@@ -321,7 +321,6 @@ const UserManagement = () => {
     if (!selectedUser?._id) return;
     restoreMutation.mutate(selectedUser._id);
   };
-
   return (
     <MainLayout>
       <div className="space-y-6">

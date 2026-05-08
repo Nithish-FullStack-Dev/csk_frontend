@@ -28,6 +28,7 @@ interface Props {
 }
 
 export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
+  console.log(innerPlot);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
@@ -43,7 +44,10 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const form = useForm<InnerPlotFormValues>({
     resolver: zodResolver(innerPlotSchema),
     defaultValues: {
-      openPlotId: innerPlot.openPlotId,
+      openPlotId:
+        typeof innerPlot.openPlotId === "string"
+          ? innerPlot.openPlotId
+          : innerPlot.openPlotId?._id || "",
       plotNo: innerPlot.plotNo,
       // wastageArea: innerPlot.wastageArea,
       area: innerPlot.area,
@@ -121,7 +125,13 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
 
   return (
     <form
-      onSubmit={form.handleSubmit((d) => mutation.mutate(d))}
+      onSubmit={form.handleSubmit(
+        (d) => mutation.mutate(d),
+        (errors) => {
+          console.log(errors);
+          toast.error("Validation failed");
+        },
+      )}
       className="space-y-6"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
