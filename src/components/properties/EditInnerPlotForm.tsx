@@ -31,7 +31,9 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    innerPlot.thumbnailUrl || "",
+    innerPlot.thumbnailUrl
+      ? `${import.meta.env.VITE_URL}${innerPlot.thumbnailUrl}`
+      : "",
   );
   const queryClient = useQueryClient();
 
