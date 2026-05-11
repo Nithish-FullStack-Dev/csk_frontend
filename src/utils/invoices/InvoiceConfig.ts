@@ -42,6 +42,7 @@ export interface Invoice {
   user?: User | null;
   approvedByAccountant?: User | null;
   createdRole?: "contractor" | "accountant";
+  createdBy?: User;
 }
 
 export const fetchInvoices = async () => {

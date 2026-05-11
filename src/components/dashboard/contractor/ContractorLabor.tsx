@@ -242,7 +242,35 @@ const ContractorLabor = () => {
   );
 
   const totalTeams = teams.length;
-  const activeTeams = teams.filter((t) => t.status === "Active").length;
+
+  const inactiveTeams = teams.filter((team) => {
+    const isBuildingDeleted =
+      typeof team?.project === "object" &&
+      typeof team?.project?.projectId === "object" &&
+      team?.project?.projectId?.isDeleted === true;
+
+    const isFloorDeleted =
+      typeof team?.project === "object" &&
+      typeof team?.project?.floorUnit === "object" &&
+      team?.project?.floorUnit?.isDeleted === true;
+
+    const isUnitDeleted =
+      typeof team?.project === "object" &&
+      typeof team?.project?.unit === "object" &&
+      team?.project?.unit?.isDeleted === true;
+
+    const isContractorDeleted = team?.contractor?.isDeleted === true;
+
+    return (
+      isBuildingDeleted ||
+      isFloorDeleted ||
+      isUnitDeleted ||
+      isContractorDeleted
+    );
+  }).length;
+
+  const activeTeams = totalTeams - inactiveTeams;
+
   const totalWorkers = teams.reduce((acc, t) => acc + t.members, 0);
   const averageAttendance =
     teams.reduce((acc, t) => acc + (t.attendancePercentage || 0), 0) /
@@ -262,7 +290,7 @@ const ContractorLabor = () => {
               <div className="text-2xl font-bold">{totalTeams}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {activeTeams} active, {totalTeams - activeTeams} inactive
+              {activeTeams} active, {inactiveTeams} inactive
             </p>
           </CardContent>
         </Card>

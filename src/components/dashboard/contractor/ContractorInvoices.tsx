@@ -1823,8 +1823,8 @@ const ContractorInvoices = () => {
                     <p className="text-sm text-muted-foreground">Created By:</p>
 
                     <p>
-                      {selectedInvoice?.user?.name || "-"} (
-                      {selectedInvoice?.user?.email || "-"})
+                      {selectedInvoice?.createdBy?.name || "-"} (
+                      {selectedInvoice?.createdBy?.email || "-"})
                     </p>
                   </div>
 
