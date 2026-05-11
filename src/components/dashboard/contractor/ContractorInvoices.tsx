@@ -613,21 +613,48 @@ const ContractorInvoices = () => {
 
       {/* Tabs for filtering */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="draft" className="flex items-center">
-            <Clock className="mr-2 h-4 w-4" /> Draft
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="flex items-center">
-            <ArrowDown className="mr-2 h-4 w-4" /> Pending
-          </TabsTrigger>
-          <TabsTrigger value="paid" className="flex items-center">
-            <CheckCircle className="mr-2 h-4 w-4" /> Paid
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="flex items-center">
-            <AlertCircle className="mr-2 h-4 w-4" /> Overdue
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-1 scrollbar-hide">
+          <TabsList className="flex w-max min-w-full gap-2 rounded-xl bg-muted/60 p-1">
+            <TabsTrigger
+              value="all"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              All
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="draft"
+              className="flex items-center whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              <Clock className="mr-2 h-4 w-4 shrink-0" />
+              Draft
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="pending"
+              className="flex items-center whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              <ArrowDown className="mr-2 h-4 w-4 shrink-0" />
+              Pending
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="paid"
+              className="flex items-center whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              <CheckCircle className="mr-2 h-4 w-4 shrink-0" />
+              Paid
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="overdue"
+              className="flex items-center whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              <AlertCircle className="mr-2 h-4 w-4 shrink-0" />
+              Overdue
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Invoices Table */}

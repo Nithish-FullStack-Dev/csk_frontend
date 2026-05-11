@@ -158,9 +158,67 @@ const NewProperties = () => {
         },
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Open plot deleted");
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+
+      // update openPlots listing instantly
+      queryClient.setQueryData(["openPlots"], (old: any) => {
+        if (!Array.isArray(old)) return old;
+
+        return old.map((plot) =>
+          plot._id === currentOpenPlot?._id
+            ? {
+                ...plot,
+                isDeleted: true,
+              }
+            : plot,
+        );
+      });
+
+      // VERY IMPORTANT
+      // update detail page cache instantly
+      queryClient.setQueryData(
+        ["open-plot", currentOpenPlot?._id],
+        (old: any) => ({
+          ...old,
+          isDeleted: true,
+        }),
+      );
+
+      // update all inner plots instantly
+      queryClient.setQueryData(
+        ["inner-plots", currentOpenPlot?._id],
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
+
+          return old.map((inner) => ({
+            ...inner,
+            isDeleted: true,
+          }));
+        },
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["openPlots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["open-plot"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot"],
+          exact: false,
+        }),
+      ]);
     },
     onError: (err: any) => {
       console.error("deleteOpenPlot error:", err?.response || err);
@@ -301,9 +359,61 @@ const NewProperties = () => {
       return data;
     },
 
-    onSuccess: (data) => {
-      toast.success(data?.message || "Open plot restore successfully");
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+    onSuccess: async (data) => {
+      toast.success(data?.message || "Open plot restored successfully");
+
+      // update listing
+      queryClient.setQueryData(["openPlots"], (old: any) => {
+        if (!Array.isArray(old)) return old;
+
+        return old.map((plot) =>
+          plot._id === restorePlotId
+            ? {
+                ...plot,
+                isDeleted: false,
+              }
+            : plot,
+        );
+      });
+
+      // update detail page cache
+      queryClient.setQueryData(["open-plot", restorePlotId], (old: any) => ({
+        ...old,
+        isDeleted: false,
+      }));
+
+      // restore inner plots
+      queryClient.setQueryData(["inner-plots", restorePlotId], (old: any) => {
+        if (!Array.isArray(old)) return old;
+
+        return old.map((inner) => ({
+          ...inner,
+          isDeleted: false,
+        }));
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["openPlots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["open-plot"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot"],
+          exact: false,
+        }),
+      ]);
+
       setRestorePlotOpen(false);
       setRestorePlotId(null);
     },

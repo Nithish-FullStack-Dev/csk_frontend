@@ -139,7 +139,9 @@ const materialUnits = [
 const ContractorMaterials = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { userCanAddUser } = useRBAC({ roleSubmodule: "Materials" });
+  const { userCanAddUser, userCanEditUser } = useRBAC({
+    roleSubmodule: "Materials",
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -459,14 +461,51 @@ const ContractorMaterials = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="In Transit">In Transit</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="ordered">Ordered</TabsTrigger>
-          <TabsTrigger value="Cancelled">Cancelled</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto pb-1 scrollbar-hide">
+          <TabsList className="flex w-max min-w-full gap-2 bg-muted/60 p-1 rounded-xl">
+            <TabsTrigger
+              value="all"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              All
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="In Transit"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              In Transit
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="pending"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              Pending
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="delivered"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              Delivered
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="ordered"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              Ordered
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="Cancelled"
+              className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+            >
+              Cancelled
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       <div className="border rounded-md">
@@ -600,21 +639,25 @@ const ContractorMaterials = () => {
                               View
                             </DropdownMenuItem>
 
-                            {!isAnyDeleted && (
-                              <DropdownMenuItem
-                                onSelect={() => openEditDialog(material)}
-                              >
-                                Edit
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onSelect={() => openEditDialog(material)}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+                              )}
 
-                            {!isAnyDeleted && (
-                              <DropdownMenuItem
-                                onSelect={() => openStatusDialog(material)}
-                              >
-                                Update Status
-                              </DropdownMenuItem>
-                            )}
+                            {!isAnyDeleted &&
+                              user?.role !== "admin" &&
+                              userCanEditUser && (
+                                <DropdownMenuItem
+                                  onSelect={() => openStatusDialog(material)}
+                                >
+                                  Update Status
+                                </DropdownMenuItem>
+                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -720,15 +763,17 @@ const ContractorMaterials = () => {
                     >
                       View
                     </Button>
-                    {!isAnyDeleted && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditDialog(material)}
-                      >
-                        Edit
-                      </Button>
-                    )}
+                    {!isAnyDeleted &&
+                      user?.role !== "admin" &&
+                      userCanEditUser && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditDialog(material)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                   </div>
                 </div>
               );
@@ -1350,6 +1395,8 @@ const ContractorMaterials = () => {
                   Close
                 </Button>
                 {selectedMaterial &&
+                  user?.role !== "admin" &&
+                  userCanEditUser &&
                   selectedMaterial?.status !== "Delivered" && (
                     <Button onClick={markAsDelivered}>Mark as Delivered</Button>
                   )}

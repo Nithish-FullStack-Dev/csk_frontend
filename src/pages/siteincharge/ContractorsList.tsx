@@ -418,16 +418,25 @@ const ContractorsList = () => {
         <Card>
           <CardContent className="p-0">
             <Tabs defaultValue="contractorlist">
-              <TabsList className="w-full justify-start rounded-none border-b">
-                <TabsTrigger value="contractorlist">
-                  Contractor List
-                </TabsTrigger>
-                {user.role !== "accountant" && (
-                  <TabsTrigger value="assignedcontractor">
-                    Assigned Contractors
+              <div className="w-full overflow-x-auto border-b pb-1 scrollbar-hide">
+                <TabsList className="flex w-max min-w-full justify-start gap-2 rounded-none bg-transparent p-0">
+                  <TabsTrigger
+                    value="contractorlist"
+                    className="whitespace-nowrap rounded-t-lg px-4 py-2 text-sm"
+                  >
+                    Contractor List
                   </TabsTrigger>
-                )}
-              </TabsList>
+
+                  {user.role !== "accountant" && (
+                    <TabsTrigger
+                      value="assignedcontractor"
+                      className="whitespace-nowrap rounded-t-lg px-4 py-2 text-sm"
+                    >
+                      Assigned Contractors
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+              </div>
 
               <TabsContent value="assignedcontractor">
                 <div className="rounded-xl border bg-background p-4 sm:p-5 mb-6">
@@ -1431,7 +1440,7 @@ const ContractorsList = () => {
 
                   <div className="flex justify-end gap-2 pt-4">
                     <Button
-                    type="button"
+                      type="button"
                       variant="ghost"
                       onClick={() => setOpenDialog(false)}
                     >

@@ -26,7 +26,7 @@ import { toast } from "sonner";
 
 const fetchJobs = async () => {
   const res = await axios.get(
-    `${import.meta.env.VITE_URL}/api/job-posts/getJobPosts`,
+    `${import.meta.env.VITE_URL}/api/job-posts/getPublishedCareers`,
     { withCredentials: true },
   );
   return res.data;
@@ -199,70 +199,79 @@ export default function Careers() {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-8">
-                {jobOpenings.map((job: any) => (
-                  <div
-                    key={job._id}
-                    className="group border rounded-2xl p-6 shadow-sm hover:shadow-md transition bg-gray-50 flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-bold text-estate-navy">
-                          {job.title}
-                        </h3>
-                        <Badge
-                          variant="secondary"
-                          className="bg-estate-gold/10 text-estate-gold border-none"
-                        >
-                          {job.jobType}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" /> {job.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Briefcase className="h-4 w-4" /> {job.department}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs mb-3">
-                        <span
-                          className={`px-2 py-1 rounded-full font-medium ${
-                            getExpiryText(job.expiresAt) === "Expired"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-green-100 text-green-600"
-                          }`}
-                        >
-                          {getExpiryText(job.expiresAt)}
-                        </span>
-                      </div>
-                      <div className="text-gray-600 mb-6 text-sm line-clamp-2">
-                        <RenderRichText html={job.overview} />
-                      </div>
-                    </div>
+                {jobOpenings.map((job: any) => {
+                  const isExpired = getExpiryText(job.expiresAt) === "Expired";
 
-                    <div className="flex items-center gap-3">
-                      <Button
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setIsDetailsOpen(true);
-                        }}
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        View Details
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setSelectedJob(job);
-                          setIsApplyOpen(true);
-                        }}
-                        className="flex-1 bg-estate-navy hover:bg-[#142a52]"
-                      >
-                        Apply Now
-                      </Button>
+                  return (
+                    <div
+                      key={job._id}
+                      className="group border rounded-2xl p-6 shadow-sm hover:shadow-md transition bg-gray-50 flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-xl font-bold text-estate-navy">
+                            {job.title}
+                          </h3>
+                          <Badge
+                            variant="secondary"
+                            className="bg-estate-gold/10 text-estate-gold border-none"
+                          >
+                            {job.jobType}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" /> {job.location}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="h-4 w-4" /> {job.department}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs mb-3">
+                          <span
+                            className={`px-2 py-1 rounded-full font-medium ${
+                              getExpiryText(job.expiresAt) === "Expired"
+                                ? "bg-red-100 text-red-600"
+                                : getExpiryText(job.expiresAt) ===
+                                    "Expires Today"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-600"
+                            }`}
+                          >
+                            {getExpiryText(job.expiresAt)}
+                          </span>
+                        </div>
+                        <div className="text-gray-600 mb-6 text-sm line-clamp-2">
+                          <RenderRichText html={job.overview} />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Button
+                          onClick={() => {
+                            setSelectedJob(job);
+                            setIsDetailsOpen(true);
+                          }}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          View Details
+                        </Button>
+                        <Button
+                          disabled={isExpired}
+                          onClick={() => {
+                            if (isExpired) return;
+                            setSelectedJob(job);
+                            setIsApplyOpen(true);
+                          }}
+                          className="flex-1 bg-estate-navy hover:bg-[#142a52]"
+                        >
+                          {isExpired ? "Applications Closed" : "Apply Now"}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -347,13 +356,23 @@ export default function Careers() {
                 Close
               </Button>
               <Button
+                disabled={getExpiryText(selectedJob?.expiresAt) === "Expired"}
                 onClick={() => {
+                  if (getExpiryText(selectedJob?.expiresAt) === "Expired") {
+                    return;
+                  }
                   setIsDetailsOpen(false);
                   setIsApplyOpen(true);
                 }}
-                className="bg-estate-navy"
+                className={
+                  getExpiryText(selectedJob?.expiresAt) === "Expired"
+                    ? "bg-gray-300 text-gray-500 hover:bg-gray-300 cursor-not-allowed"
+                    : "bg-estate-navy"
+                }
               >
-                Apply for this Role
+                {getExpiryText(selectedJob?.expiresAt) === "Expired"
+                  ? "Applications Closed"
+                  : "Apply for this Role"}
               </Button>
             </div>
           </DialogContent>

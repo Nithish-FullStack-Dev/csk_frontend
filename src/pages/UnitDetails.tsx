@@ -1,14 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 // import PropertyDetails from "";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchUnit, deleteUnit } from "@/utils/units/Methods";
 import { toast } from "sonner";
 import { PropertyDetails } from "@/components/properties/PropertyDetails";
+import { DeleteConfirmDialog } from "@/components/properties/DeleteConfirmDialog";
+import { useState } from "react";
 
 const UnitDetails = () => {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { unitId, buildingId, floorId } = useParams<{
     unitId: string;
     buildingId: string;
@@ -38,6 +39,14 @@ const UnitDetails = () => {
       queryClient.invalidateQueries({
         queryKey: ["units", buildingId, floorId],
       });
+
+      queryClient.invalidateQueries({
+        queryKey: ["unit"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", unitId],
+      });
+
       toast.success("Unit deleted successfully");
       navigate(`/properties/building/${buildingId}/floor/${floorId}`);
     },
@@ -56,7 +65,7 @@ const UnitDetails = () => {
     if (buildingId && floorId) {
       navigate(`/buildings/${buildingId}/floors/${floorId}/units`);
     } else {
-      navigate("/app"); // fallback
+      navigate("/"); // fallback
     }
   };
 
@@ -73,17 +82,31 @@ const UnitDetails = () => {
           </p>
         </div>
       ) : (
-        <PropertyDetails
-          property={apartment}
-          onBack={handleBack}
-          onDelete={handleDelete}
-          // onEdit={() => {
-          //   console.log("Edit unit", unitId);
-          // }}
-          buildingId={buildingId}
-          floorId={floorId}
-          unitId={unitId}
-        />
+        <>
+          <PropertyDetails
+            property={apartment}
+            onBack={handleBack}
+            onDelete={() => setDeleteDialogOpen(true)}
+            // onEdit={() => {
+            //   console.log("Edit unit", unitId);
+            // }}
+            buildingId={buildingId}
+            floorId={floorId}
+            unitId={unitId}
+            isDeleting={deleteMutation.isPending}
+          />
+
+          <DeleteConfirmDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            onConfirm={() => {
+              handleDelete();
+              setDeleteDialogOpen(false);
+            }}
+            title="Delete Unit"
+            description="Are you sure you want to delete this unit?"
+          />
+        </>
       )}
     </MainLayout>
   );

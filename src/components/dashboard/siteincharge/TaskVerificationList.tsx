@@ -50,15 +50,7 @@ const statusColors: Record<string, string> = {
   rejected: "bg-red-100 text-red-800",
   rework: "bg-amber-100 text-amber-800",
 };
-// const getImageUrl = (url?: string) => {
-//   if (!url) return "";
 
-//   // cloudinary or external
-//   if (url.startsWith("http")) return url;
-
-//   // local upload
-//   return `${import.meta.env.VITE_IMAGE_URL}${url}`;
-// };
 const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -209,60 +201,120 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTasks.map((task: any) => (
-                  <TableRow key={task?._id}>
-                    <TableCell>{task?.taskTitle}</TableCell>
-                    <TableCell>
-                      {task?.projectName} / {task?.floorNumber} - {task?.plotNo}
-                    </TableCell>
-                    <TableCell>{task?.contractorName}</TableCell>
-                    <TableCell>
-                      {new Date(
-                        task?.submittedByContractorOn,
-                      ).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={statusColors[task?.status]}
-                      >
-                        {task?.status === "pending_verification"
-                          ? "Pending Verification"
-                          : task?.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={priorityColors[task?.priority]}
-                      >
-                        {task?.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {userCanViewUser && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setVerificationStatus(
-                              task?.verificationDecision || "approved",
-                            );
-                            setQuality(task?.qualityAssessment || "good");
-                            setNotes(task?.noteBySiteIncharge || "");
-                            setVerificationDialogOpen(true);
-                          }}
+                filteredTasks.map((task: any) => {
+                  const isDeleted =
+                    task?.isBuildingDeleted ||
+                    task?.isFloorDeleted ||
+                    task?.isUnitDeleted ||
+                    task?.isSiteInchargeDeleted ||
+                    task?.isContractorDeleted;
+                  return (
+                    <TableRow
+                      className={`transition-all ${
+                        isDeleted
+                          ? "opacity-50 bg-muted/20"
+                          : "hover:bg-muted/30"
+                      }`}
+                      key={task?._id}
+                    >
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={
+                              isDeleted
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }
+                          >
+                            {task?.taskTitle}
+                          </span>
+
+                          {task?.isBuildingDeleted && (
+                            <Badge variant="destructive">
+                              Building Deleted
+                            </Badge>
+                          )}
+
+                          {task?.isFloorDeleted && (
+                            <Badge variant="destructive">Floor Deleted</Badge>
+                          )}
+
+                          {task?.isUnitDeleted && (
+                            <Badge variant="destructive">Unit Deleted</Badge>
+                          )}
+                          {task?.isSiteInchargeDeleted && (
+                            <Badge variant="destructive">
+                              Site Incharge Deleted
+                            </Badge>
+                          )}
+                          {task?.isContractorDeleted && (
+                            <Badge variant="destructive">
+                              Contractor Deleted
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={
+                            isDeleted
+                              ? "line-through text-muted-foreground"
+                              : ""
+                          }
                         >
-                          <Camera className="h-4 w-4 mr-1" />
+                          {task?.projectName} / {task?.floorNumber} -{" "}
+                          {task?.plotNo}
+                        </span>
+                      </TableCell>
+                      <TableCell>{task?.contractorName}</TableCell>
+                      <TableCell>
+                        {new Date(
+                          task?.submittedByContractorOn,
+                        ).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={statusColors[task?.status]}
+                        >
                           {task?.status === "pending_verification"
-                            ? "Verify"
-                            : "View"}
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                            ? "Pending Verification"
+                            : task?.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={priorityColors[task?.priority]}
+                        >
+                          {task?.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {userCanViewUser && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setVerificationStatus(
+                                task?.verificationDecision || "approved",
+                              );
+                              setQuality(task?.qualityAssessment || "good");
+                              setNotes(task?.noteBySiteIncharge || "");
+                              setVerificationDialogOpen(true);
+                            }}
+                          >
+                            <Camera className="h-4 w-4 mr-1" />
+                            {task?.status === "pending_verification"
+                              ? "Verify"
+                              : "View"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -280,7 +332,42 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-            <div className="bg-muted p-3 rounded-md">
+            <div
+              className={`p-3 rounded-md ${
+                selectedTask?.isBuildingDeleted ||
+                selectedTask?.isFloorDeleted ||
+                selectedTask?.isUnitDeleted ||
+                selectedTask?.isSiteInchargeDeleted ||
+                selectedTask?.isContractorDeleted
+                  ? "bg-red-50 border border-red-200"
+                  : "bg-muted"
+              }`}
+            >
+              {(selectedTask?.isBuildingDeleted ||
+                selectedTask?.isFloorDeleted ||
+                selectedTask?.isUnitDeleted ||
+                selectedTask?.isSiteInchargeDeleted ||
+                selectedTask?.isContractorDeleted) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedTask?.isBuildingDeleted && (
+                    <Badge variant="destructive">Building Deleted</Badge>
+                  )}
+
+                  {selectedTask?.isFloorDeleted && (
+                    <Badge variant="destructive">Floor Deleted</Badge>
+                  )}
+
+                  {selectedTask?.isUnitDeleted && (
+                    <Badge variant="destructive">Unit Deleted</Badge>
+                  )}
+                  {selectedTask?.isSiteInchargeDeleted && (
+                    <Badge variant="destructive">Site Incharge Deleted</Badge>
+                  )}
+                  {selectedTask?.isContractorDeleted && (
+                    <Badge variant="destructive">Contractor Deleted</Badge>
+                  )}
+                </div>
+              )}
               <p className="font-medium">{selectedTask?.taskTitle}</p>
               <p className="text-sm text-muted-foreground">
                 {selectedTask?.projectName} / {selectedTask?.floorNumber} -{" "}
@@ -333,22 +420,27 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                   </div>
                 </div>
 
-                {user?.role !== "admin" && (
-                  <div className="space-y-2">
-                    <Label>Upload New Verification Photos</Label>
-                    <Input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) =>
-                        setPhotos((prev) => [
-                          ...prev,
-                          ...Array.from(e.target.files || []),
-                        ])
-                      }
-                    />
-                  </div>
-                )}
+                {user?.role !== "admin" &&
+                  !selectedTask?.isBuildingDeleted &&
+                  !selectedTask?.isFloorDeleted &&
+                  !selectedTask?.isUnitDeleted &&
+                  !selectedTask?.isSiteInchargeDeleted &&
+                  !selectedTask?.isContractorDeleted && (
+                    <div className="space-y-2">
+                      <Label>Upload New Verification Photos</Label>
+                      <Input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) =>
+                          setPhotos((prev) => [
+                            ...prev,
+                            ...Array.from(e.target.files || []),
+                          ])
+                        }
+                      />
+                    </div>
+                  )}
               </TabsContent>
             </Tabs>
 
@@ -415,14 +507,21 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
               >
                 Cancel
               </Button>
-              {user?.role !== "admin" && (
-                <Button
-                  type="submit"
-                  disabled={mutation.isPending || isUploading}
-                >
-                  {mutation.isPending ? "Updating..." : "Submit Verification"}
-                </Button>
-              )}
+              {user?.role !== "admin" &&
+                !(
+                  selectedTask?.isBuildingDeleted ||
+                  selectedTask?.isFloorDeleted ||
+                  selectedTask?.isUnitDeleted ||
+                  selectedTask?.isSiteInchargeDeleted ||
+                  selectedTask?.isContractorDeleted
+                ) && (
+                  <Button
+                    type="submit"
+                    disabled={mutation.isPending || isUploading}
+                  >
+                    {mutation.isPending ? "Updating..." : "Submit Verification"}
+                  </Button>
+                )}
             </DialogFooter>
           </form>
         </DialogContent>

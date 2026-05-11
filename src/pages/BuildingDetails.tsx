@@ -591,12 +591,12 @@ const BuildingDetails = () => {
         <Card>
           <CardHeader>
             {!isBuildingDeleted && (
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center md:flex-row flex-col md:gap-2 gap-6">
                 <CardTitle className="flex items-center">
                   <Layers className="mr-2 h-5 w-5" /> Floors & Units
                 </CardTitle>
                 {userCanAddUser && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 md:flex-row flex-col">
                     <Button onClick={handleAddFloor}>
                       <Plus className="mr-2 h-4 w-4" /> Add Floor/Unit
                     </Button>

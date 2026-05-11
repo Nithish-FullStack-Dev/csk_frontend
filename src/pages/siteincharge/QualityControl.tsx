@@ -392,12 +392,37 @@ const QualityControl = () => {
         </div>
 
         <Tabs defaultValue="all" onValueChange={setFilter}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="open">Open</TabsTrigger>
-            <TabsTrigger value="under_review">Under Review</TabsTrigger>
-            <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-1 scrollbar-hide">
+            <TabsList className="flex w-max min-w-full gap-2 rounded-xl bg-muted/60 p-1">
+              <TabsTrigger
+                value="all"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                All
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="open"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Open
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="under_review"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Under Review
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="resolved"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Resolved
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="flex flex-col md:flex-row justify-between my-4 gap-4">
             <div className="flex flex-1 items-center space-x-2 md:flex-row flex-col md:gap-0 gap-5">

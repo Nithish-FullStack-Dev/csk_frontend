@@ -21,17 +21,18 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { InnerPlotFormValues, innerPlotSchema } from "@/types/InnerPlot";
+import { getImageUrl } from "@/lib/image";
 
 interface Props {
   innerPlot: any;
-  onSuccess: () => void;
+  onSuccess: (updatedPlot: any) => void;
 }
 
 export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [removedImages, setRemovedImages] = useState<string[]>([]);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(
-    innerPlot.thumbnailUrl || "",
+    innerPlot.thumbnailUrl ? getImageUrl(innerPlot.thumbnailUrl) : "",
   );
   const queryClient = useQueryClient();
 
@@ -43,7 +44,10 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
   const form = useForm<InnerPlotFormValues>({
     resolver: zodResolver(innerPlotSchema),
     defaultValues: {
-      openPlotId: innerPlot.openPlotId,
+      openPlotId:
+        typeof innerPlot.openPlotId === "string"
+          ? innerPlot.openPlotId
+          : innerPlot.openPlotId?._id || "",
       plotNo: innerPlot.plotNo,
       // wastageArea: innerPlot.wastageArea,
       area: innerPlot.area,
@@ -96,22 +100,43 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         data,
         thumbnail ?? undefined,
         images,
-        removedImages,
+        imagePreviews.filter((img) => !img.startsWith("blob:")),
       ),
 
-    onSuccess: async () => {
+    onSuccess: async (updatedPlot) => {
       toast.success("Inner plot updated successfully");
+
+      // update cache instantly
+      queryClient.setQueryData(["inner-plot", innerPlot._id], updatedPlot);
+
+      queryClient.setQueryData(
+        ["inner-plots", innerPlot.openPlotId?._id || innerPlot.openPlotId],
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
+
+          return old.map((item) =>
+            item._id === updatedPlot._id
+              ? {
+                  ...item,
+                  ...updatedPlot,
+                }
+              : item,
+          );
+        },
+      );
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["inner-plots", innerPlot.openPlotId],
+          queryKey: ["inner-plots"],
+          exact: false,
         }),
+
         queryClient.invalidateQueries({
           queryKey: ["inner-plot", innerPlot._id],
         }),
       ]);
 
-      onSuccess();
+      onSuccess(updatedPlot);
     },
 
     onError: (err: any) => {
@@ -119,9 +144,17 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
     },
   });
 
+  console.log(thumbnailPreview);
+
   return (
     <form
-      onSubmit={form.handleSubmit((d) => mutation.mutate(d))}
+      onSubmit={form.handleSubmit(
+        (d) => mutation.mutate(d),
+        (errors) => {
+          console.log(errors);
+          toast.error("Validation failed");
+        },
+      )}
       className="space-y-6"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,11 +233,7 @@ export function EditInnerPlotForm({ innerPlot, onSuccess }: Props) {
         <Label>Thumbnail</Label>
         {thumbnailPreview && (
           <img
-            src={
-              thumbnailPreview?.startsWith("blob:")
-                ? thumbnailPreview
-                : `${import.meta.env.VITE_URL}${thumbnailPreview}`
-            }
+            src={thumbnailPreview}
             className="h-28 w-40 object-cover rounded border"
           />
         )}

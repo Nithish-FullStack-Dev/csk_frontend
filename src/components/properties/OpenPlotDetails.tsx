@@ -113,17 +113,59 @@ export function OpenPlotDetails({ plot }: OpenPlotDetailsProps) {
       return data;
     },
 
-    onSuccess: (data) => {
-      toast.success(data?.message || "Open plot deleted successfully");
+    onSuccess: async (data) => {
+      queryClient.setQueryData(["open-plot", plot?._id], (old: any) => ({
+        ...old,
+        isDeleted: true,
+      }));
 
-      // 🔥 VERY IMPORTANT (same like NewProperties)
-      queryClient.invalidateQueries({ queryKey: ["openPlots"] });
+      // update listing instantly
+      queryClient.setQueryData(["openPlots"], (old: any) => {
+        if (!Array.isArray(old)) return old;
 
-      // also remove single cache
-      queryClient.removeQueries({
-        queryKey: ["open-plot", openPlotData?._id],
+        return old.map((item) =>
+          item._id === plot?._id
+            ? {
+                ...item,
+                isDeleted: true,
+              }
+            : item,
+        );
       });
 
+      // update all inner plots instantly
+      queryClient.setQueryData(["inner-plots", plot?._id], (old: any) => {
+        if (!Array.isArray(old)) return old;
+
+        return old.map((inner) => ({
+          ...inner,
+          isDeleted: true,
+        }));
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["openPlots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["open-plot"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot"],
+          exact: false,
+        }),
+      ]);
+
+      toast.success(data?.message || "Open plot deleted successfully");
       navigate("/properties");
     },
 
@@ -259,7 +301,7 @@ export function OpenPlotDetails({ plot }: OpenPlotDetailsProps) {
               Inner Plots
             </CardTitle>
 
-            {plot?.isDeleted === false && userCanAddUser && (
+            {openPlotData?.isDeleted === false && userCanAddUser && (
               <div className="flex gap-2">
                 <Button
                   variant="default"
@@ -300,7 +342,8 @@ export function OpenPlotDetails({ plot }: OpenPlotDetailsProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {innerPlots.map((inner, idx) => {
-                const isPlotDeleted = Boolean(inner?.isDeleted);
+                const isPlotDeleted =
+                  Boolean(inner?.isDeleted) || Boolean(openPlotData?.isDeleted);
                 return (
                   <Card
                     className={`overflow-hidden hover:shadow-lg transition cursor-pointer ${

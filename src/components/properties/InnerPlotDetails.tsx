@@ -104,22 +104,42 @@ export function InnerPlotDetails() {
   const deleteMutation = useMutation({
     mutationFn: deleteInnerPlot,
     onSuccess: async () => {
-      // queryClient.removeQueries({
-      //   queryKey: ["inner-plot", _id],
-      // });
+      queryClient.setQueryData(["inner-plot", _id], (old: any) => ({
+        ...old,
+        isDeleted: true,
+      }));
 
-      // refresh inner plot list
-      await queryClient.invalidateQueries({
-        queryKey: ["inner-plots"],
-        exact: false,
-      });
+      queryClient.setQueryData(
+        ["inner-plots", plot?.openPlotId?._id],
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
 
-      // refresh open plot page
-      await queryClient.invalidateQueries({
-        queryKey: ["open-plot"],
-        exact: false,
-      });
-      navigate(-1);
+          return old.map((item) =>
+            item._id === _id
+              ? {
+                  ...item,
+                  isDeleted: true,
+                }
+              : item,
+          );
+        },
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["open-plot"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot", _id],
+        }),
+      ]);
     },
     onError: (error) => {
       console.error("Error deleting inner plot:", error);
@@ -142,19 +162,46 @@ export function InnerPlotDetails() {
     },
 
     onSuccess: async (data) => {
-      toast.success(data?.message || "inner plot restore successfully");
-      await queryClient.invalidateQueries({
-        queryKey: ["inner-plots"],
-        exact: false,
-      });
+      queryClient.setQueryData(["inner-plot", _id], (old: any) => ({
+        ...old,
+        isDeleted: false,
+      }));
 
-      // refresh open plot page
-      await queryClient.invalidateQueries({
-        queryKey: ["open-plot"],
-        exact: false,
-      });
+      queryClient.setQueryData(
+        ["inner-plots", plot?.openPlotId?._id],
+        (old: any) => {
+          if (!Array.isArray(old)) return old;
+
+          return old.map((item) =>
+            item._id === _id
+              ? {
+                  ...item,
+                  isDeleted: false,
+                }
+              : item,
+          );
+        },
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plots"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["open-plot"],
+          exact: false,
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["inner-plot", _id],
+        }),
+      ]);
+
+      toast.success(data?.message || "Inner plot restored successfully");
+
       setRestorePlotOpen(false);
-      navigate(-1);
     },
 
     onError: (error) => {
@@ -506,13 +553,35 @@ export function InnerPlotDetails() {
 
             <EditInnerPlotForm
               innerPlot={plot}
-              onSuccess={() => {
+              onSuccess={(updatedPlot) => {
+                // Update single inner plot cache instantly
+                queryClient.setQueryData(["inner-plot", plot._id], updatedPlot);
+
+                // Update inner plots list instantly
+                queryClient.setQueryData(
+                  ["inner-plots", plot.openPlotId?._id || plot.openPlotId],
+                  (old: any) => {
+                    if (!Array.isArray(old)) return old;
+
+                    return old.map((item) =>
+                      item._id === updatedPlot._id
+                        ? {
+                            ...item,
+                            ...updatedPlot,
+                          }
+                        : item,
+                    );
+                  },
+                );
+
+                // Refetch in background for sync
                 queryClient.invalidateQueries({
                   queryKey: ["inner-plot", plot._id],
                 });
 
                 queryClient.invalidateQueries({
-                  queryKey: ["inner-plots", plot.openPlotId],
+                  queryKey: ["inner-plots"],
+                  exact: false,
                 });
 
                 setEditOpen(false);

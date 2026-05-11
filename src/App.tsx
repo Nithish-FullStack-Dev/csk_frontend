@@ -303,7 +303,7 @@ const App = () => {
                   <Route element={<PrivateSuspenseWrapper />}>
                     <Route path="/login" element={<Login />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
-                    <Route path="/app" element={<Dashboard />} />
+                    <Route path="/" element={<Dashboard />} />
                     <Route
                       path="/messaging"
                       element={

@@ -157,29 +157,42 @@ const ContractorProjectsOverview: React.FC<ContractorProjectsOverviewProps> = ({
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between pr-10">
-                <h2 className="text-xl font-semibold">
-                  {project.projectId && typeof project.projectId === "object"
-                    ? project.projectId.projectName
-                    : "Untitled Project"}
-                  {isBuildingDeleted && (
-                    <Badge variant="destructive">Building De-Activated</Badge>
-                  )}
+              <div className="flex flex-col gap-3 pr-10 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="break-words text-lg font-semibold sm:text-xl">
+                      {project.projectId &&
+                      typeof project.projectId === "object"
+                        ? project.projectId.projectName + " "
+                        : "Untitled Project"}
+                    </h2>
 
-                  {!isBuildingDeleted && isFloorDeleted && (
-                    <Badge className="bg-orange-500 text-white">
-                      Floor De-Activated
-                    </Badge>
-                  )}
+                    {isBuildingDeleted && (
+                      <Badge
+                        variant="destructive"
+                        className="whitespace-nowrap"
+                      >
+                        Building De-Activated
+                      </Badge>
+                    )}
 
-                  {!isBuildingDeleted && !isFloorDeleted && isUnitDeleted && (
-                    <Badge variant="secondary">Unit De-Activated</Badge>
-                  )}
-                </h2>
+                    {!isBuildingDeleted && isFloorDeleted && (
+                      <Badge className="whitespace-nowrap bg-orange-500 text-white">
+                        Floor De-Activated
+                      </Badge>
+                    )}
+
+                    {!isBuildingDeleted && !isFloorDeleted && isUnitDeleted && (
+                      <Badge variant="secondary" className="whitespace-nowrap">
+                        Unit De-Activated
+                      </Badge>
+                    )}
+                  </div>
+                </div>
 
                 <Badge
                   variant="outline"
-                  className={`text-sm ${
+                  className={`w-fit whitespace-nowrap text-xs sm:text-sm ${
                     statusColors[
                       (project.status || "not started").toLowerCase()
                     ] || statusColors["not started"]
