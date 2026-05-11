@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Home, Users, Image, MapPin } from "lucide-react";
+import { Home, Users, Image, MapPin, Feather } from "lucide-react";
 import HeroSectionCMS from "@/components/cms/HeroSectionCMS";
 import AboutSectionCMS from "@/components/cms/AboutSectionCMS";
 import ContactCMS from "@/components/cms/ContactCMS";
@@ -13,7 +13,7 @@ import FeatureCMS from "@/components/cms/FeatureCMS";
 
 const tabItems = [
   { value: "hero", label: "Hero Section", icon: Home },
-  { value: "feat", label: "Feature Section", icon: Home },
+  { value: "feat", label: "Feature Section", icon: Feather },
   { value: "about", label: "About Section", icon: Users },
   { value: "gallery", label: "Gallery", icon: Image },
   { value: "contact", label: "Contact Info", icon: MapPin },

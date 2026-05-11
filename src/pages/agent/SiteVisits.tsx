@@ -298,11 +298,30 @@ const SiteVisits = () => {
         </div>
 
         <Tabs defaultValue="upcoming">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upcoming">Upcoming Visits</TabsTrigger>
-            <TabsTrigger value="completed">Completed Visits</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelled Visits</TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-1 scrollbar-hide">
+            <TabsList className="flex w-max min-w-full gap-2 rounded-xl bg-muted/60 p-1">
+              <TabsTrigger
+                value="upcoming"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Upcoming Visits
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="completed"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Completed Visits
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="cancelled"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Cancelled Visits
+              </TabsTrigger>
+            </TabsList>
+          </div>
           <div className="mt-6">
             <TabsContent value="upcoming">
               <div className="grid gap-6">

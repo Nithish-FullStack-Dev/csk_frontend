@@ -202,32 +202,36 @@ const ContractorTimeline: React.FC = () => {
                 item.isUnitDeleted;
               return (
                 <div
-                  key={item.id}
                   className={`
-    p-4 border rounded-lg transition
-    ${isAnyDeleted ? "bg-muted/40 border-dashed opacity-70" : "hover:shadow-md"}
+    rounded-lg border p-4 transition
+    ${isAnyDeleted ? "bg-muted/30" : "bg-white hover:shadow-md"}
   `}
                 >
-                  <div className="absolute w-3 h-3 rounded-full bg-blue-600 -left-[3rem] top-2"></div>
-                  <div className="p-4 border rounded-lg hover:shadow-md transition">
-                    <div className="flex flex-wrap justify-between mb-2">
-                      <div className="flex items-center">
-                        <h4 className="font-medium text-md mr-2">
+                  {/* Header */}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="break-words text-sm font-medium sm:text-base">
                           {item.title}
                         </h4>
+
                         <Badge
                           variant="secondary"
-                          className={`${
+                          className={`w-fit whitespace-nowrap ${
                             statusColors[item.status] || "bg-gray-100"
                           }`}
                         >
                           {getStatusIcon(item.status)}
-                          {item.status.charAt(0).toUpperCase() +
-                            item.status.slice(1)}
+
+                          <span className="ml-1">
+                            {item.status.charAt(0).toUpperCase() +
+                              item.status.slice(1)}
+                          </span>
                         </Badge>
                       </div>
+
                       {isAnyDeleted && (
-                        <div className="mb-3">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           {item.isBuildingDeleted && (
                             <Badge variant="destructive">
                               Building De-Activated
@@ -249,37 +253,44 @@ const ContractorTimeline: React.FC = () => {
                             )}
                         </div>
                       )}
-                      <Badge variant="outline" className="capitalize">
-                        {typeIcons[item.type]}
-                        {item.type}
-                      </Badge>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-2">
-                      {item.description}
-                    </p>
+                    <Badge
+                      variant="outline"
+                      className="w-fit capitalize whitespace-nowrap"
+                    >
+                      {typeIcons[item.type]}
+                      {item.type}
+                    </Badge>
+                  </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-500">
-                      <div>
-                        <span className="font-medium text-gray-700">Unit:</span>{" "}
-                        {item.unit}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Start:
-                        </span>{" "}
-                        {new Date(item.startDate).toLocaleDateString()}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">End:</span>{" "}
-                        {new Date(item.endDate).toLocaleDateString()}
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700">
-                          Project:
-                        </span>{" "}
-                        {item.project}
-                      </div>
+                  {/* Description */}
+                  <p className="mt-3 break-words text-sm text-gray-600">
+                    {item.description}
+                  </p>
+
+                  {/* Details */}
+                  <div className="mt-4 grid grid-cols-1 gap-3 text-xs text-gray-500 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="break-words">
+                      <span className="font-medium text-gray-700">Unit:</span>{" "}
+                      {item.unit}
+                    </div>
+
+                    <div>
+                      <span className="font-medium text-gray-700">Start:</span>{" "}
+                      {new Date(item.startDate).toLocaleDateString()}
+                    </div>
+
+                    <div>
+                      <span className="font-medium text-gray-700">End:</span>{" "}
+                      {new Date(item.endDate).toLocaleDateString()}
+                    </div>
+
+                    <div className="break-words">
+                      <span className="font-medium text-gray-700">
+                        Project:
+                      </span>{" "}
+                      {item.project}
                     </div>
                   </div>
                 </div>

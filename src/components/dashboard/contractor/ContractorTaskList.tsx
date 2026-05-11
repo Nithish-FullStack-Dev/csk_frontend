@@ -282,8 +282,8 @@ const ContractorTaskList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div className="relative w-[50%]">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative md:w-[50%] w-full mt-5">
+          <Search className="absolute left-2 top-2.5 h-4 md:w-4 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             className="pl-8"

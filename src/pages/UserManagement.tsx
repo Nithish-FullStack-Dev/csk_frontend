@@ -591,74 +591,84 @@ const UserManagement = () => {
                   </p>
                 ) : (
                   filteredUsers.map((user) => (
-                    <Card key={user._id} className="p-4 shadow-sm border">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold text-base">
-                            {user.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {user.email}
-                          </p>
+                    <Card className="border shadow-sm" key={user._id}>
+                      <div className="space-y-4 p-4">
+                        {/* Top Section */}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="truncate text-base font-semibold">
+                              {user.name}
+                            </h3>
+
+                            <p className="break-all text-sm text-muted-foreground">
+                              {user.email}
+                            </p>
+                          </div>
+
+                          <Badge
+                            className={`w-fit whitespace-nowrap ${getRoleBadgeColor(user.role)}`}
+                            variant="outline"
+                          >
+                            {user.role.replace("_", " ")}
+                          </Badge>
                         </div>
-                        <Badge
-                          className={getRoleBadgeColor(user.role)}
-                          variant="outline"
-                        >
-                          {user.role.replace("_", " ")}
-                        </Badge>
-                      </div>
 
-                      <div className="mt-3 flex justify-between items-center">
-                        <Badge
-                          className={getStatusBadgeColor(user.status)}
-                          variant="outline"
-                        >
-                          {user.status}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {user?.lastLogin
-                            ? formatDistanceToNowStrict(
-                                new Date(user.lastLogin),
-                                {
-                                  addSuffix: true,
-                                },
-                              )
-                            : "Never logged in"}
-                        </span>
-                      </div>
+                        {/* Middle Section */}
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <Badge
+                            className={`w-fit whitespace-nowrap ${getStatusBadgeColor(user.status)}`}
+                            variant="outline"
+                          >
+                            {user.status}
+                          </Badge>
 
-                      <div className="mt-3 flex justify-end gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditUserDialog(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowResetPasswordDialog(true);
-                          }}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setshowResetDeleteDialog(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <span className="text-xs text-muted-foreground sm:text-right">
+                            {user?.lastLogin
+                              ? formatDistanceToNowStrict(
+                                  new Date(user.lastLogin),
+                                  {
+                                    addSuffix: true,
+                                  },
+                                )
+                              : "Never logged in"}
+                          </span>
+                        </div>
+
+                        {/* Bottom Actions */}
+                        <div className="flex items-center justify-end gap-2 border-t pt-3">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowEditUserDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowResetPasswordDialog(true);
+                            }}
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setshowResetDeleteDialog(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))

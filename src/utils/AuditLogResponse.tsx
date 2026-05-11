@@ -853,94 +853,120 @@ export default function AuditLogViewer() {
           </div>
 
           {data && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-200">
-              <div className="flex items-center gap-3">
-                <p className="text-xs text-slate-400 font-mono">
-                  {(filters.page - 1) * filters.pageSize + 1}–
-                  {Math.min(filters.page * filters.pageSize, data.total)} of{" "}
-                  {data.total.toLocaleString()}
-                </p>
-                <Select
-                  value={String(filters.pageSize)}
-                  onValueChange={(v) =>
-                    setFilters((f) => ({ ...f, pageSize: Number(v), page: 1 }))
-                  }
-                >
-                  <SelectTrigger className="bg-white border-slate-200 text-slate-500 h-7 text-xs w-20 font-mono">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200">
-                    {[10, 20, 50, 100].map((n) => (
-                      <SelectItem
-                        key={n}
-                        value={String(n)}
-                        className="text-xs font-mono text-slate-700 focus:bg-slate-50"
-                      >
-                        {n} / pg
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="mt-5 border-t border-slate-200 pt-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Left Section */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <p className="text-center text-xs text-slate-400 font-mono sm:text-left">
+                    {(filters.page - 1) * filters.pageSize + 1}–
+                    {Math.min(filters.page * filters.pageSize, data.total)} of{" "}
+                    {data.total.toLocaleString()}
+                  </p>
 
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  onClick={() => setFilters((f) => ({ ...f, page: 1 }))}
-                  disabled={filters.page === 1}
-                  className="bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 h-7 px-2 text-xs font-mono disabled:opacity-30"
-                >
-                  «
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setFilters((f) => ({ ...f, page: f.page - 1 }))
-                  }
-                  disabled={filters.page === 1}
-                  className="bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 h-7 px-2 text-xs font-mono disabled:opacity-30"
-                >
-                  ‹
-                </Button>
-                <div className="flex items-center gap-1">
-                  {[...Array(Math.min(7, totalPages))].map((_, i) => {
-                    let pg: number;
-                    if (totalPages <= 7) pg = i + 1;
-                    else if (filters.page <= 4) pg = i + 1;
-                    else if (filters.page >= totalPages - 3)
-                      pg = totalPages - 6 + i;
-                    else pg = filters.page - 3 + i;
-                    return (
-                      <button
-                        key={pg}
-                        onClick={() => setFilters((f) => ({ ...f, page: pg }))}
-                        className={`w-7 h-7 rounded text-xs font-mono transition-all ${filters.page === pg ? "bg-amber-50 text-amber-700 border border-amber-200" : "text-slate-400 hover:text-slate-800 hover:bg-slate-100"}`}
-                      >
-                        {pg}
-                      </button>
-                    );
-                  })}
+                  <Select
+                    value={String(filters.pageSize)}
+                    onValueChange={(v) =>
+                      setFilters((f) => ({
+                        ...f,
+                        pageSize: Number(v),
+                        page: 1,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="bg-white border-slate-200 text-slate-500 h-8 text-xs w-full sm:w-24 font-mono">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent className="bg-white border-slate-200">
+                      {[10, 20, 50, 100].map((n) => (
+                        <SelectItem
+                          key={n}
+                          value={String(n)}
+                          className="text-xs font-mono text-slate-700 focus:bg-slate-50"
+                        >
+                          {n} / pg
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setFilters((f) => ({ ...f, page: f.page + 1 }))
-                  }
-                  disabled={filters.page === totalPages}
-                  className="bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 h-7 px-2 text-xs font-mono disabled:opacity-30"
-                >
-                  ›
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setFilters((f) => ({ ...f, page: totalPages }))
-                  }
-                  disabled={filters.page === totalPages}
-                  className="bg-white border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 h-7 px-2 text-xs font-mono disabled:opacity-30"
-                >
-                  »
-                </Button>
+
+                {/* Right Section */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => setFilters((f) => ({ ...f, page: 1 }))}
+                    disabled={filters.page === 1}
+                    className="h-8 min-w-8 px-2 text-xs font-mono"
+                  >
+                    «
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setFilters((f) => ({ ...f, page: f.page - 1 }))
+                    }
+                    disabled={filters.page === 1}
+                    className="h-8 min-w-8 px-2 text-xs font-mono"
+                  >
+                    ‹
+                  </Button>
+
+                  <div className="flex flex-wrap items-center justify-center gap-1">
+                    {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                      let pg: number;
+
+                      if (totalPages <= 5) {
+                        pg = i + 1;
+                      } else if (filters.page <= 3) {
+                        pg = i + 1;
+                      } else if (filters.page >= totalPages - 2) {
+                        pg = totalPages - 4 + i;
+                      } else {
+                        pg = filters.page - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pg}
+                          onClick={() =>
+                            setFilters((f) => ({ ...f, page: pg }))
+                          }
+                          className={`h-8 min-w-8 rounded-md px-2 text-xs font-mono transition-all ${
+                            filters.page === pg
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                          }`}
+                        >
+                          {pg}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setFilters((f) => ({ ...f, page: f.page + 1 }))
+                    }
+                    disabled={filters.page === totalPages}
+                    className="h-8 min-w-8 px-2 text-xs font-mono"
+                  >
+                    ›
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setFilters((f) => ({ ...f, page: totalPages }))
+                    }
+                    disabled={filters.page === totalPages}
+                    className="h-8 min-w-8 px-2 text-xs font-mono"
+                  >
+                    »
+                  </Button>
+                </div>
               </div>
             </div>
           )}

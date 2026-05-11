@@ -281,17 +281,30 @@ const Approvals = () => {
 
         {/* Tabs Section */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="pending">
-              Pending ({pendingRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="approved">
-              Approved ({approvedRequests.length})
-            </TabsTrigger>
-            <TabsTrigger value="rejected">
-              Rejected ({rejectedRequests.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-1 scrollbar-hide">
+            <TabsList className="flex w-max min-w-full gap-2 rounded-xl bg-muted/60 p-1">
+              <TabsTrigger
+                value="pending"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Pending ({pendingRequests.length})
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="approved"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Approved ({approvedRequests.length})
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="rejected"
+                className="whitespace-nowrap rounded-lg px-4 py-2 text-sm"
+              >
+                Rejected ({rejectedRequests.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Pending Requests Tab Content */}
           <TabsContent value="pending" className="space-y-4">

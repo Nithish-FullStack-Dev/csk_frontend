@@ -20,13 +20,17 @@ const TaskCard = ({ task, contractors }: any) => {
   const progressVal = task.progressPercentage || 0;
 
   return (
-    <div className="border rounded-lg p-4 space-y-2 shadow-sm bg-white">
-      <div className="flex justify-between items-center">
-        <h4 className="font-semibold text-sm">{task.title}</h4>
+    <div className="space-y-3 rounded-lg border bg-white p-4 shadow-sm">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <h4 className="break-words text-sm font-semibold leading-5">
+          {task.title}
+        </h4>
+
         {task.priority && (
           <Badge
             variant="outline"
-            className={`text-xs ${
+            className={`w-fit whitespace-nowrap text-xs ${
               priorityColors[task.priority] || priorityColors.normal
             }`}
           >
@@ -35,21 +39,32 @@ const TaskCard = ({ task, contractors }: any) => {
         )}
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      {/* Contractor */}
+      <p className="break-words text-sm text-muted-foreground">
         Contractor:{" "}
         <span className="font-medium text-foreground">{contractorName}</span>
       </p>
 
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">Deadline:</span> {deadline}
+      {/* Deadline */}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <Calendar className="h-4 w-4 shrink-0" />
+
+        <span className="font-medium text-foreground">Deadline:</span>
+
+        <span className="break-words">{deadline}</span>
       </div>
 
+      {/* Progress */}
       <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">Progress</span>
+
+          <span className="text-xs font-medium text-muted-foreground">
+            {progressVal}%
+          </span>
+        </div>
+
         <Progress value={progressVal} />
-        <p className="text-xs text-right text-muted-foreground">
-          {progressVal}%
-        </p>
       </div>
     </div>
   );
