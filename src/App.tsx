@@ -176,6 +176,7 @@ import CreateJobPost from "./pages/dashboards/JobPostsPage";
 import JobPostsPage from "./pages/dashboards/JobPostsPage";
 import PrivacyPolicy from "./pages/public/PrivacyPolicy";
 import TermsOfService from "./pages/public/TermsOfService";
+import HelpSupportPage from "./pages/HelpSupportPage";
 // const OpenLandDetailsPage = lazy(() => import("./pages/OpenLandDetailsPage"));
 
 const queryClient = new QueryClient({
@@ -304,6 +305,14 @@ const App = () => {
                     <Route path="/login" element={<Login />} />
                     <Route path="/unauthorized" element={<Unauthorized />} />
                     <Route path="/" element={<Dashboard />} />
+                    <Route
+                      path="/help&support"
+                      element={
+                        <ProtectedRoute roleSubmodule={"System Config"}>
+                          <HelpSupportPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="/messaging"
                       element={
