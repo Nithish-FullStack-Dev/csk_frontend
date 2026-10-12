@@ -51,8 +51,15 @@ const statusColors: Record<string, string> = {
   rework: "bg-amber-100 text-amber-800",
 };
 
-const TaskVerificationList = ({ tasks, isLoading, isError }) => {
-  const [filter, setFilter] = useState("all");
+const TaskVerificationList = ({
+  tasks,
+  isLoading,
+  isError,
+  activeFilter,
+  setActiveFilter,
+  statusKey,
+  isSiteIncharge,
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState("approved");
@@ -134,13 +141,13 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
   };
 
   const filteredTasks = tasks.filter((task: any) => {
-    if (filter !== "all" && task.status?.toLowerCase() !== filter.toLowerCase())
-      return false;
     if (
       searchQuery &&
       !task.taskTitle.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    ) {
       return false;
+    }
+
     return true;
   });
 
@@ -163,13 +170,29 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
         </div>
       </div>
 
-      <Tabs defaultValue="all" onValueChange={setFilter}>
-        <TabsList className="hidden md:block">
+      <Tabs value={activeFilter} onValueChange={setActiveFilter}>
+        <TabsList className="hidden md:flex">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="pending verification">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rework">Rework</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+
+          {isSiteIncharge ? (
+            <>
+              <TabsTrigger value="pending verification">Pending</TabsTrigger>
+
+              <TabsTrigger value="approved">Approved</TabsTrigger>
+
+              <TabsTrigger value="rework">Rework</TabsTrigger>
+
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+
+              <TabsTrigger value="pending_review">Pending Review</TabsTrigger>
+            </>
+          )}
         </TabsList>
       </Tabs>
 
@@ -275,11 +298,11 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={statusColors[task?.status]}
+                          className={statusColors[task?.[statusKey]]}
                         >
-                          {task?.status === "pending_verification"
-                            ? "Pending Verification"
-                            : task?.status}
+                          {task?.[statusKey]
+                            ?.replaceAll("_", " ")
+                            ?.replace(/\b\w/g, (c) => c.toUpperCase())}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -306,7 +329,7 @@ const TaskVerificationList = ({ tasks, isLoading, isError }) => {
                             }}
                           >
                             <Camera className="h-4 w-4 mr-1" />
-                            {task?.status === "pending_verification"
+                            {task?.siteInchargeStatus === "pending verification"
                               ? "Verify"
                               : "View"}
                           </Button>
