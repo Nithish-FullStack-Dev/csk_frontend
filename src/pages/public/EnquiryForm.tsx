@@ -772,25 +772,25 @@ const ModernEnquiryForm: React.FC = () => {
             <div className="flex flex-col items-center">
               <Phone className="h-7 w-7 text-blue-600" />
               <p className="mt-2 font-semibold text-gray-700">
-                {contact.phone}
+                {contact?.phone}
               </p>
             </div>
             <div className="flex flex-col items-center">
               <Mail className="h-7 w-7 text-blue-600" />
               <p className="mt-2 font-semibold text-gray-700">
-                {contact.email}
+                {contact?.email}
               </p>
             </div>
             <div className="flex flex-col items-center">
               <MapPin className="h-7 w-7 text-blue-600" />
               <p className="mt-2 font-semibold text-gray-700">
-                {contact.address}
+                {contact?.address}
               </p>
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="font-semibold text-gray-700">Business Hours</p>
-            <p className="text-sm mt-2">{contact.workingHours}</p>
+            <p className="text-sm mt-2">{contact?.workingHours}</p>
           </div>
         </div>
       </div>

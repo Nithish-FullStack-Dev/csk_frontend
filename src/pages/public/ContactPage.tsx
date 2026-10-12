@@ -92,9 +92,25 @@ const ContactPage: React.FC = () => {
       const { data } = await axios.get(
         `${import.meta.env.VITE_URL}/api/contact/contactInfo`,
       );
-      setContact(data);
+
+      const contactData = data?.data ?? data;
+
+      setContact({
+        name: contactData?.name ?? "",
+        address: contactData?.address ?? "",
+        phone: contactData?.phone ?? "",
+        email: contactData?.email ?? "",
+        workingHours: contactData?.workingHours ?? "",
+      });
     } catch (error) {
       console.log("error while fetching contact", error);
+      setContact({
+        name: "",
+        address: "",
+        phone: "",
+        email: "",
+        workingHours: "",
+      });
     }
   };
 
@@ -106,10 +122,10 @@ const ContactPage: React.FC = () => {
   const offices: ContactInfo[] = [
     {
       name: "Head Office",
-      address: contact.address,
-      phone: contact.phone,
-      email: contact.email,
-      workingHours: contact.workingHours,
+      address: contact?.address ?? "",
+      phone: contact?.phone ?? "",
+      email: contact?.email ?? "",
+      workingHours: contact?.workingHours ?? "",
     },
   ];
 
